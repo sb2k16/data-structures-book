@@ -125,7 +125,324 @@ void demonstrateVector() {
 - **Deletion from beginning/middle**: O(n) - need to shift elements
 - **Search**: O(n) - linear search required
 
-## 3.4 Common Array Algorithms
+## 3.4 Dynamic Vector Growth Mechanisms
+
+Understanding how vectors dynamically grow is crucial for efficient programming and performance optimization. This section explores the internal mechanisms, growth strategies, and optimization techniques.
+
+### How Vector Growth Works
+
+Vectors maintain two key properties:
+- **Size**: Number of elements currently stored
+- **Capacity**: Number of elements that can be stored without reallocation
+
+```cpp
+#include <vector>
+#include <iostream>
+#include <chrono>
+using namespace std;
+
+void demonstrateVectorGrowth() {
+    vector<int> vec;
+    
+    cout << "Initial state:" << endl;
+    cout << "Size: " << vec.size() << ", Capacity: " << vec.capacity() << endl;
+    
+    // Add elements and observe growth
+    for (int i = 1; i <= 20; i++) {
+        vec.push_back(i);
+        cout << "After adding " << i << ": Size = " << vec.size() 
+             << ", Capacity = " << vec.capacity() << endl;
+    }
+}
+```
+
+### Growth Strategy Analysis
+
+Most C++ implementations use a **doubling strategy** where capacity is doubled when more space is needed:
+
+```cpp
+class VectorGrowthAnalyzer {
+private:
+    vector<int> vec;
+    vector<size_t> capacityHistory;
+    
+public:
+    void analyzeGrowth() {
+        cout << "Growth Analysis:" << endl;
+        cout << "Elements\tSize\tCapacity\tGrowth Factor" << endl;
+        cout << "--------\t----\t--------\t-------------" << endl;
+        
+        for (int i = 0; i < 100; i++) {
+            size_t oldCapacity = vec.capacity();
+            vec.push_back(i);
+            size_t newCapacity = vec.capacity();
+            
+            if (newCapacity != oldCapacity) {
+                double growthFactor = (double)newCapacity / oldCapacity;
+                cout << i + 1 << "\t\t" << vec.size() << "\t" 
+                     << newCapacity << "\t\t" << growthFactor << endl;
+            }
+        }
+    }
+    
+    void demonstrateReallocationCost() {
+        cout << "\nReallocation Cost Analysis:" << endl;
+        
+        // Measure time for push_back operations
+        auto start = chrono::high_resolution_clock::now();
+        
+        vector<int> smallVec;
+        for (int i = 0; i < 1000000; i++) {
+            smallVec.push_back(i);
+        }
+        
+        auto end = chrono::high_resolution_clock::now();
+        auto duration = chrono::duration_cast<chrono::microseconds>(end - start);
+        cout << "Push back 1M elements: " << duration.count() << " microseconds" << endl;
+        
+        // Compare with pre-allocated vector
+        start = chrono::high_resolution_clock::now();
+        
+        vector<int> largeVec;
+        largeVec.reserve(1000000);  // Pre-allocate capacity
+        for (int i = 0; i < 1000000; i++) {
+            largeVec.push_back(i);
+        }
+        
+        end = chrono::high_resolution_clock::now();
+        duration = chrono::duration_cast<chrono::microseconds>(end - start);
+        cout << "Push back 1M elements (pre-allocated): " << duration.count() << " microseconds" << endl;
+    }
+};
+```
+
+### Memory Reallocation Process
+
+When a vector needs to grow, it performs these steps:
+
+```cpp
+// Simplified vector reallocation process
+class SimpleVector {
+private:
+    int* data;
+    size_t size;
+    size_t capacity;
+    
+public:
+    SimpleVector() : data(nullptr), size(0), capacity(0) {}
+    
+    ~SimpleVector() {
+        delete[] data;
+    }
+    
+    void push_back(int value) {
+        if (size >= capacity) {
+            // Need to reallocate
+            size_t newCapacity = (capacity == 0) ? 1 : capacity * 2;
+            reallocate(newCapacity);
+        }
+        
+        data[size] = value;
+        size++;
+    }
+    
+private:
+    void reallocate(size_t newCapacity) {
+        cout << "Reallocating from capacity " << capacity 
+             << " to " << newCapacity << endl;
+        
+        int* newData = new int[newCapacity];
+        
+        // Copy existing elements
+        for (size_t i = 0; i < size; i++) {
+            newData[i] = data[i];
+        }
+        
+        delete[] data;
+        data = newData;
+        capacity = newCapacity;
+    }
+    
+public:
+    size_t getSize() const { return size; }
+    size_t getCapacity() const { return capacity; }
+};
+```
+
+### Optimization Techniques
+
+#### 1. Reserve Capacity
+```cpp
+void demonstrateReserve() {
+    cout << "=== Reserve Optimization ===" << endl;
+    
+    // Without reserve
+    vector<int> vec1;
+    auto start = chrono::high_resolution_clock::now();
+    
+    for (int i = 0; i < 100000; i++) {
+        vec1.push_back(i);
+    }
+    
+    auto end = chrono::high_resolution_clock::now();
+    auto duration1 = chrono::duration_cast<chrono::microseconds>(end - start);
+    cout << "Without reserve: " << duration1.count() << " microseconds" << endl;
+    cout << "Final capacity: " << vec1.capacity() << endl;
+    
+    // With reserve
+    vector<int> vec2;
+    vec2.reserve(100000);  // Pre-allocate exact capacity needed
+    
+    start = chrono::high_resolution_clock::now();
+    
+    for (int i = 0; i < 100000; i++) {
+        vec2.push_back(i);
+    }
+    
+    end = chrono::high_resolution_clock::now();
+    auto duration2 = chrono::duration_cast<chrono::microseconds>(end - start);
+    cout << "With reserve: " << duration2.count() << " microseconds" << endl;
+    cout << "Final capacity: " << vec2.capacity() << endl;
+    
+    cout << "Performance improvement: " 
+         << (double)duration1.count() / duration2.count() << "x faster" << endl;
+}
+```
+
+#### 2. Shrink to Fit
+```cpp
+void demonstrateShrinkToFit() {
+    cout << "=== Shrink to Fit ===" << endl;
+    
+    vector<int> vec;
+    
+    // Add many elements
+    for (int i = 0; i < 1000; i++) {
+        vec.push_back(i);
+    }
+    
+    cout << "After adding 1000 elements:" << endl;
+    cout << "Size: " << vec.size() << ", Capacity: " << vec.capacity() << endl;
+    
+    // Remove most elements
+    vec.erase(vec.begin() + 100, vec.end());
+    
+    cout << "After removing 900 elements:" << endl;
+    cout << "Size: " << vec.size() << ", Capacity: " << vec.capacity() << endl;
+    
+    // Shrink to fit
+    vec.shrink_to_fit();
+    
+    cout << "After shrink_to_fit():" << endl;
+    cout << "Size: " << vec.size() << ", Capacity: " << vec.capacity() << endl;
+}
+```
+
+#### 3. Emplace vs Push Back
+```cpp
+class Person {
+private:
+    string name;
+    int age;
+    
+public:
+    Person(const string& n, int a) : name(n), age(a) {
+        cout << "Person constructor called for " << name << endl;
+    }
+    
+    Person(const Person& other) : name(other.name), age(other.age) {
+        cout << "Person copy constructor called for " << name << endl;
+    }
+    
+    Person(Person&& other) noexcept : name(move(other.name)), age(other.age) {
+        cout << "Person move constructor called for " << name << endl;
+    }
+};
+
+void demonstrateEmplace() {
+    cout << "=== Emplace vs Push Back ===" << endl;
+    
+    vector<Person> people;
+    
+    cout << "\nUsing push_back (creates temporary):" << endl;
+    people.push_back(Person("Alice", 25));  // Creates temporary, then copies
+    
+    cout << "\nUsing emplace_back (constructs in place):" << endl;
+    people.emplace_back("Bob", 30);  // Constructs directly in vector
+    
+    cout << "\nUsing push_back with move:" << endl;
+    people.push_back(move(Person("Charlie", 35)));  // Uses move constructor
+}
+```
+
+### Best Practices for Vector Growth
+
+```cpp
+class VectorBestPractices {
+public:
+    // 1. Use reserve() when you know the approximate size
+    static void useReserveWhenPossible() {
+        vector<int> vec;
+        vec.reserve(1000);  // Reserve space for known size
+        
+        for (int i = 0; i < 1000; i++) {
+            vec.push_back(i);
+        }
+    }
+    
+    // 2. Use emplace_back() instead of push_back() for complex objects
+    static void preferEmplaceBack() {
+        vector<pair<string, int>> vec;
+        
+        // Good: constructs in place
+        vec.emplace_back("Alice", 25);
+        
+        // Less efficient: creates temporary
+        vec.push_back(make_pair("Bob", 30));
+    }
+    
+    // 3. Use move semantics when possible
+    static void useMoveSemantics() {
+        vector<string> vec;
+        string largeString = "This is a very long string...";
+        
+        // Good: moves the string
+        vec.push_back(move(largeString));
+        
+        // Less efficient: copies the string
+        // vec.push_back(largeString);
+    }
+    
+    // 4. Consider using shrink_to_fit() for memory optimization
+    static void optimizeMemoryUsage() {
+        vector<int> vec;
+        
+        // Add many elements
+        for (int i = 0; i < 10000; i++) {
+            vec.push_back(i);
+        }
+        
+        // Remove most elements
+        vec.erase(vec.begin() + 100, vec.end());
+        
+        // Shrink to save memory
+        vec.shrink_to_fit();
+    }
+    
+    // 5. Avoid frequent reallocations in loops
+    static void avoidFrequentReallocations() {
+        vector<int> result;
+        result.reserve(10000);  // Pre-allocate
+        
+        for (int i = 0; i < 10000; i++) {
+            // Process and add elements
+            result.push_back(i * 2);
+        }
+    }
+};
+```
+
+## 3.6 Common Array Algorithms
 
 ### Linear Search
 ```cpp
@@ -241,7 +558,7 @@ int removeDuplicates(vector<int>& arr) {
 }
 ```
 
-## 3.5 Multidimensional Arrays
+## 3.7 Multidimensional Arrays
 
 ### 2D Arrays (Matrices)
 ```cpp
@@ -319,7 +636,7 @@ vector<vector<int>> transpose(const vector<vector<int>>& matrix) {
 }
 ```
 
-## 3.6 String Manipulation
+## 3.8 String Manipulation
 
 ### Basic String Operations
 ```cpp
@@ -468,7 +785,7 @@ int longestCommonSubsequence(const string& text1, const string& text2) {
 }
 ```
 
-## 3.7 Advanced Array Techniques
+## 3.9 Advanced Array Techniques
 
 ### Sliding Window Technique
 ```cpp
@@ -539,7 +856,7 @@ void demonstratePrefixSum() {
 }
 ```
 
-## 3.8 Memory Management and Best Practices
+## 3.10 Memory Management and Best Practices
 
 ### Memory Layout of Arrays
 ```cpp
@@ -570,7 +887,7 @@ void demonstrateMemoryLayout() {
 5. **Use range-based for loops** for cleaner code
 6. **Prefer algorithms from `<algorithm>`** header
 
-## 3.9 Key Takeaways
+## 3.11 Key Takeaways
 
 1. **Arrays** provide O(1) random access but fixed size in C++
 2. **Vectors** offer dynamic sizing with automatic memory management
@@ -579,15 +896,18 @@ void demonstrateMemoryLayout() {
 5. **Memory management** is crucial for performance and correctness
 6. **STL containers and algorithms** provide efficient, tested implementations
 
-## 3.10 Exercises
+## 3.12 Exercises
 
 1. Implement a function to find the second largest element in an array.
 2. Write a function to rotate an array to the right by k steps.
 3. Create a function that finds the longest increasing subsequence in an array.
 4. Implement a function to merge two sorted arrays into one sorted array.
 5. Write a function that finds the majority element in an array (appears more than n/2 times).
+6. **Vector Growth Analysis**: Write a program that demonstrates the growth pattern of `std::vector` and measures the performance difference between using `reserve()` and not using it.
+7. **Custom Vector Implementation**: Implement a simplified version of `std::vector` with dynamic growth capabilities, including `push_back()`, `reserve()`, and `shrink_to_fit()` methods.
+8. **Memory Optimization**: Create a function that efficiently processes a large dataset by minimizing vector reallocations using appropriate reserve strategies.
 
-## 3.11 Summary
+## 3.13 Summary
 
 Arrays and strings are fundamental data structures that form the building blocks of more complex algorithms and data structures. Understanding their properties, operations, and common algorithms is essential for any programmer. The techniques learned in this chapter—such as two pointers, sliding window, and prefix sums—are widely applicable in solving various algorithmic problems.
 
