@@ -161,60 +161,22 @@ void demonstrateVectorGrowth() {
 Most C++ implementations use a **doubling strategy** where capacity is doubled when more space is needed:
 
 ```cpp
-class VectorGrowthAnalyzer {
-private:
+// Simple demonstration of vector growth
+void demonstrateGrowthPattern() {
     vector<int> vec;
-    vector<size_t> capacityHistory;
     
-public:
-    void analyzeGrowth() {
-        cout << "Growth Analysis:" << endl;
-        cout << "Elements\tSize\tCapacity\tGrowth Factor" << endl;
-        cout << "--------\t----\t--------\t-------------" << endl;
-        
-        for (int i = 0; i < 100; i++) {
-            size_t oldCapacity = vec.capacity();
-            vec.push_back(i);
-            size_t newCapacity = vec.capacity();
-            
-            if (newCapacity != oldCapacity) {
-                double growthFactor = (double)newCapacity / oldCapacity;
-                cout << i + 1 << "\t\t" << vec.size() << "\t" 
-                     << newCapacity << "\t\t" << growthFactor << endl;
-            }
-        }
-    }
+    cout << "Vector growth pattern:" << endl;
+    cout << "Elements\tSize\tCapacity" << endl;
     
-    void demonstrateReallocationCost() {
-        cout << "\nReallocation Cost Analysis:" << endl;
-        
-        // Measure time for push_back operations
-        auto start = chrono::high_resolution_clock::now();
-        
-        vector<int> smallVec;
-        for (int i = 0; i < 1000000; i++) {
-            smallVec.push_back(i);
-        }
-        
-        auto end = chrono::high_resolution_clock::now();
-        auto duration = chrono::duration_cast<chrono::microseconds>(end - start);
-        cout << "Push back 1M elements: " << duration.count() << " microseconds" << endl;
-        
-        // Compare with pre-allocated vector
-        start = chrono::high_resolution_clock::now();
-        
-        vector<int> largeVec;
-        largeVec.reserve(1000000);  // Pre-allocate capacity
-        for (int i = 0; i < 1000000; i++) {
-            largeVec.push_back(i);
-        }
-        
-        end = chrono::high_resolution_clock::now();
-        duration = chrono::duration_cast<chrono::microseconds>(end - start);
-        cout << "Push back 1M elements (pre-allocated): " << duration.count() << " microseconds" << endl;
+    for (int i = 0; i < 20; i++) {
+        vec.push_back(i);
+        cout << i + 1 << "\t\t" << vec.size() 
+             << "\t" << vec.capacity() << endl;
     }
-};
+}
 ```
+
+> **Note**: For detailed performance analysis and benchmarking, see `examples/arrays/vector_growth_analysis.cpp`
 
 ### Memory Reallocation Process
 
@@ -273,173 +235,73 @@ public:
 
 #### 1. Reserve Capacity
 ```cpp
-void demonstrateReserve() {
-    cout << "=== Reserve Optimization ===" << endl;
+// Use reserve() when you know the approximate size
+void efficientVectorUsage() {
+    vector<int> vec;
+    vec.reserve(1000);  // Pre-allocate capacity
     
-    // Without reserve
-    vector<int> vec1;
-    auto start = chrono::high_resolution_clock::now();
-    
-    for (int i = 0; i < 100000; i++) {
-        vec1.push_back(i);
+    for (int i = 0; i < 1000; i++) {
+        vec.push_back(i);  // No reallocations needed
     }
-    
-    auto end = chrono::high_resolution_clock::now();
-    auto duration1 = chrono::duration_cast<chrono::microseconds>(end - start);
-    cout << "Without reserve: " << duration1.count() << " microseconds" << endl;
-    cout << "Final capacity: " << vec1.capacity() << endl;
-    
-    // With reserve
-    vector<int> vec2;
-    vec2.reserve(100000);  // Pre-allocate exact capacity needed
-    
-    start = chrono::high_resolution_clock::now();
-    
-    for (int i = 0; i < 100000; i++) {
-        vec2.push_back(i);
-    }
-    
-    end = chrono::high_resolution_clock::now();
-    auto duration2 = chrono::duration_cast<chrono::microseconds>(end - start);
-    cout << "With reserve: " << duration2.count() << " microseconds" << endl;
-    cout << "Final capacity: " << vec2.capacity() << endl;
-    
-    cout << "Performance improvement: " 
-         << (double)duration1.count() / duration2.count() << "x faster" << endl;
 }
 ```
 
 #### 2. Shrink to Fit
 ```cpp
-void demonstrateShrinkToFit() {
-    cout << "=== Shrink to Fit ===" << endl;
-    
+// Use shrink_to_fit() to reduce memory usage
+void optimizeMemoryUsage() {
     vector<int> vec;
     
     // Add many elements
-    for (int i = 0; i < 1000; i++) {
+    for (int i = 0; i < 10000; i++) {
         vec.push_back(i);
     }
-    
-    cout << "After adding 1000 elements:" << endl;
-    cout << "Size: " << vec.size() << ", Capacity: " << vec.capacity() << endl;
     
     // Remove most elements
     vec.erase(vec.begin() + 100, vec.end());
     
-    cout << "After removing 900 elements:" << endl;
-    cout << "Size: " << vec.size() << ", Capacity: " << vec.capacity() << endl;
-    
-    // Shrink to fit
+    // Shrink to save memory
     vec.shrink_to_fit();
-    
-    cout << "After shrink_to_fit():" << endl;
-    cout << "Size: " << vec.size() << ", Capacity: " << vec.capacity() << endl;
 }
 ```
 
 #### 3. Emplace vs Push Back
 ```cpp
-class Person {
-private:
-    string name;
-    int age;
+// Use emplace_back() for better performance with complex objects
+void preferEmplaceBack() {
+    vector<pair<string, int>> vec;
     
-public:
-    Person(const string& n, int a) : name(n), age(a) {
-        cout << "Person constructor called for " << name << endl;
-    }
+    // Good: constructs in place
+    vec.emplace_back("Alice", 25);
     
-    Person(const Person& other) : name(other.name), age(other.age) {
-        cout << "Person copy constructor called for " << name << endl;
-    }
-    
-    Person(Person&& other) noexcept : name(move(other.name)), age(other.age) {
-        cout << "Person move constructor called for " << name << endl;
-    }
-};
-
-void demonstrateEmplace() {
-    cout << "=== Emplace vs Push Back ===" << endl;
-    
-    vector<Person> people;
-    
-    cout << "\nUsing push_back (creates temporary):" << endl;
-    people.push_back(Person("Alice", 25));  // Creates temporary, then copies
-    
-    cout << "\nUsing emplace_back (constructs in place):" << endl;
-    people.emplace_back("Bob", 30);  // Constructs directly in vector
-    
-    cout << "\nUsing push_back with move:" << endl;
-    people.push_back(move(Person("Charlie", 35)));  // Uses move constructor
+    // Less efficient: creates temporary
+    vec.push_back(make_pair("Bob", 30));
 }
 ```
 
-### Best Practices for Vector Growth
+> **Note**: For detailed performance comparisons and benchmarking, see `examples/arrays/vector_optimization_tests.cpp`
+
+### Best Practices Summary
+
+1. **Use `reserve()`** when you know the approximate size
+2. **Use `emplace_back()`** instead of `push_back()` for complex objects
+3. **Use move semantics** when possible to avoid unnecessary copies
+4. **Consider `shrink_to_fit()`** for memory optimization after removing many elements
+5. **Avoid frequent reallocations** in loops by pre-allocating capacity
 
 ```cpp
-class VectorBestPractices {
-public:
-    // 1. Use reserve() when you know the approximate size
-    static void useReserveWhenPossible() {
-        vector<int> vec;
-        vec.reserve(1000);  // Reserve space for known size
-        
-        for (int i = 0; i < 1000; i++) {
-            vec.push_back(i);
-        }
+// Example combining best practices
+void processDataEfficiently(const vector<int>& input) {
+    vector<int> result;
+    result.reserve(input.size());  // Pre-allocate
+    
+    for (int value : input) {
+        result.emplace_back(value * 2);  // Construct in place
     }
     
-    // 2. Use emplace_back() instead of push_back() for complex objects
-    static void preferEmplaceBack() {
-        vector<pair<string, int>> vec;
-        
-        // Good: constructs in place
-        vec.emplace_back("Alice", 25);
-        
-        // Less efficient: creates temporary
-        vec.push_back(make_pair("Bob", 30));
-    }
-    
-    // 3. Use move semantics when possible
-    static void useMoveSemantics() {
-        vector<string> vec;
-        string largeString = "This is a very long string...";
-        
-        // Good: moves the string
-        vec.push_back(move(largeString));
-        
-        // Less efficient: copies the string
-        // vec.push_back(largeString);
-    }
-    
-    // 4. Consider using shrink_to_fit() for memory optimization
-    static void optimizeMemoryUsage() {
-        vector<int> vec;
-        
-        // Add many elements
-        for (int i = 0; i < 10000; i++) {
-            vec.push_back(i);
-        }
-        
-        // Remove most elements
-        vec.erase(vec.begin() + 100, vec.end());
-        
-        // Shrink to save memory
-        vec.shrink_to_fit();
-    }
-    
-    // 5. Avoid frequent reallocations in loops
-    static void avoidFrequentReallocations() {
-        vector<int> result;
-        result.reserve(10000);  // Pre-allocate
-        
-        for (int i = 0; i < 10000; i++) {
-            // Process and add elements
-            result.push_back(i * 2);
-        }
-    }
-};
+    // Optional: shrink if we know we won't add more
+    result.shrink_to_fit();
+}
 ```
 
 ## 3.6 Common Array Algorithms
