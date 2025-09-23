@@ -16,11 +16,32 @@ While classical string search algorithms like KMP, Boyer-Moore, and Rabin-Karp f
 
 ### 8.2.1 The HASH Family and q-gram Optimization
 
-Recent work by Lecroq (2023) has significantly improved the HASH family of algorithms by optimizing q-gram selection and hash function design.
+Recent work by Lecroq (2023) has significantly improved the HASH family of algorithms by optimizing q-gram selection and hash function design. This represents a major advancement in string matching efficiency, particularly for short patterns on large alphabets.
 
 #### Core Concept
 
-The optimal-hash approach selects the minimal q such that each q-gram of the pattern has a unique hash value. This eliminates hash collisions and reduces redundant work.
+The optimal-hash approach selects the minimal q such that each q-gram of the pattern has a unique hash value. This eliminates hash collisions and reduces redundant work, addressing one of the major limitations of traditional hash-based string matching algorithms.
+
+#### Theoretical Foundation
+
+**Problem with Traditional Hashing**: Classical hash-based algorithms like Rabin-Karp suffer from hash collisions, where different strings produce the same hash value. This leads to:
+- False positive matches requiring expensive character-by-character verification
+- Reduced skip distances due to conservative collision handling
+- Increased computational overhead for verification steps
+
+**Optimal Hash Solution**: By ensuring each q-gram in the pattern has a unique hash value, we can:
+- Eliminate false positives entirely
+- Use larger skip distances when q-grams don't match
+- Reduce verification overhead to near zero
+- Achieve better average-case performance
+
+#### Mathematical Analysis
+
+For a pattern of length m and alphabet size σ, the optimal q-gram size q* is the smallest integer such that:
+- σ^q* ≥ m - q* + 1 (ensuring unique q-grams)
+- q* ≤ m (fitting within pattern length)
+
+The probability of hash collision becomes zero, and the expected number of character comparisons approaches O(n/m) for random text.
 
 #### Algorithm Description
 
@@ -28,6 +49,24 @@ The optimal-hash approach selects the minimal q such that each q-gram of the pat
 2. **Hash Function Design**: Create collision-free hash functions
 3. **Skip Optimization**: Use q-gram mismatches to skip larger distances
 4. **Verification**: Character-by-character verification only when needed
+
+#### Step-by-Step Process
+
+**Phase 1: Pattern Preprocessing**
+1. Analyze the pattern to find the optimal q-gram size
+2. Build a hash table mapping each q-gram to its position in the pattern
+3. Ensure all q-grams have unique hash values
+
+**Phase 2: Text Scanning**
+1. Slide a window of size q across the text
+2. Compute hash for each q-gram in the window
+3. If hash matches a pattern q-gram, verify character-by-character
+4. If no match, skip by q positions
+
+**Phase 3: Verification**
+1. Only perform character-by-character comparison when hash matches
+2. Use the precomputed position information to align comparisons
+3. Report matches when all characters align correctly
 
 #### Implementation Example
 
@@ -198,7 +237,58 @@ public:
 
 ### 8.2.2 Elongated q-gram Shifting
 
-Recent research has explored using longer q-grams for more aggressive skipping, particularly beneficial for large alphabets.
+Recent research has explored using longer q-grams for more aggressive skipping, particularly beneficial for large alphabets. This technique builds upon the optimal hash approach by using even longer q-grams when possible, enabling larger skip distances and better performance on certain text patterns.
+
+#### Theoretical Foundation
+
+**Motivation**: While optimal hash matching eliminates collisions, it doesn't necessarily maximize skip distances. Elongated q-gram shifting aims to use the longest possible q-grams that still maintain uniqueness, enabling more aggressive skipping.
+
+**Key Insight**: For patterns with low character repetition, we can often use q-grams much longer than the minimum required for uniqueness. This allows us to:
+- Skip larger distances when mismatches occur
+- Reduce the number of text positions that need checking
+- Improve performance on patterns with good character distribution
+
+#### Mathematical Analysis
+
+For a pattern of length m with character frequency distribution, the elongated q-gram size q* is the largest integer such that:
+- All q*-grams in the pattern are unique
+- q* ≤ m (fitting within pattern length)
+- The skip distance is maximized
+
+The expected skip distance becomes O(q*) instead of O(1) for traditional algorithms, leading to significant performance improvements.
+
+#### Algorithm Description
+
+1. **Pattern Analysis**: Find the maximum q-gram size that maintains uniqueness
+2. **Position Mapping**: Build a map from q-grams to their positions in the pattern
+3. **Aggressive Skipping**: Use q-gram mismatches to skip by q positions
+4. **Efficient Verification**: Only verify when q-grams match
+
+#### Step-by-Step Process
+
+**Phase 1: Pattern Preprocessing**
+1. Start with the maximum possible q-gram size (min(m, maxQ))
+2. Check if all q-grams are unique
+3. If not, reduce q-gram size until uniqueness is achieved
+4. Build position mapping for all unique q-grams
+
+**Phase 2: Text Scanning**
+1. Extract q-gram from current text position
+2. If q-gram exists in pattern, check all possible alignments
+3. If q-gram doesn't exist, skip by q positions
+4. Continue until end of text
+
+**Phase 3: Verification**
+1. For each potential match position, verify character-by-character
+2. Use the precomputed position information for efficient alignment
+3. Report matches when verification succeeds
+
+#### Performance Characteristics
+
+- **Skip Distance**: O(q) where q is the elongated q-gram size
+- **Time Complexity**: O(n/q) for text scanning, O(m) for verification
+- **Space Complexity**: O(σ^q) for position mapping
+- **Best Case**: When q-grams are unique and long, achieving near-optimal performance
 
 #### Implementation Example
 
@@ -289,11 +379,86 @@ public:
 
 ### 8.3.1 Bridging Classical and Quantum String Matching
 
-Recent work by Faro, Pavone, and Viola (2025) has translated bit-parallel algorithms into quantum models, obtaining quadratic speedups via Grover's search.
+Recent work by Faro, Pavone, and Viola (2025) has translated bit-parallel algorithms into quantum models, obtaining quadratic speedups via Grover's search. This represents a groundbreaking advancement in string matching, leveraging quantum computing principles to achieve theoretical performance improvements.
 
 #### Core Concept
 
-The quantum approach uses Grover's search algorithm to find pattern matches in O(√n) time instead of O(n) for classical algorithms.
+The quantum approach uses Grover's search algorithm to find pattern matches in O(√n) time instead of O(n) for classical algorithms. This is achieved by encoding the string matching problem as a quantum search problem and using quantum superposition and interference to explore multiple possibilities simultaneously.
+
+#### Theoretical Foundation
+
+**Quantum Computing Principles**: Quantum algorithms exploit quantum mechanical phenomena such as:
+- **Superposition**: Quantum bits (qubits) can exist in multiple states simultaneously
+- **Interference**: Quantum states can interfere constructively or destructively
+- **Entanglement**: Qubits can be correlated in ways impossible in classical systems
+
+**Grover's Search Algorithm**: Grover's algorithm provides a quadratic speedup for unstructured search problems:
+- Classical search: O(n) time complexity
+- Quantum search: O(√n) time complexity
+- Optimal for unstructured search problems
+
+#### Mathematical Analysis
+
+For a text of length n and pattern of length m, the quantum string matching algorithm achieves:
+- **Time Complexity**: O(√n) for finding all matches
+- **Space Complexity**: O(log n) qubits
+- **Query Complexity**: O(√n) oracle calls
+- **Success Probability**: High probability of finding all matches
+
+The algorithm uses quantum amplitude amplification to boost the probability of finding matches, similar to how Grover's algorithm boosts the probability of finding the target state.
+
+#### Algorithm Description
+
+1. **Quantum Encoding**: Encode the text and pattern as quantum states
+2. **Oracle Construction**: Create a quantum oracle that identifies match positions
+3. **Amplitude Amplification**: Use Grover's algorithm to amplify match probabilities
+4. **Measurement**: Measure the quantum state to extract match positions
+
+#### Step-by-Step Process
+
+**Phase 1: Quantum State Preparation**
+1. Encode the text as a quantum superposition of all possible positions
+2. Prepare the pattern as a quantum state
+3. Initialize auxiliary qubits for the matching process
+
+**Phase 2: Oracle Construction**
+1. Create a quantum oracle that flips the phase of states corresponding to matches
+2. The oracle uses quantum gates to implement the string matching logic
+3. Ensure the oracle is reversible and unitary
+
+**Phase 3: Amplitude Amplification**
+1. Apply Grover's algorithm to amplify the amplitude of match states
+2. Use quantum interference to suppress non-match states
+3. Repeat the amplification process O(√n) times
+
+**Phase 4: Measurement and Extraction**
+1. Measure the quantum state to collapse it to a classical result
+2. Extract match positions from the measurement outcome
+3. Repeat the process to find all matches
+
+#### Quantum Circuit Design
+
+The quantum string matching algorithm uses a quantum circuit with:
+- **Input Qubits**: log(n) qubits to represent text positions
+- **Pattern Qubits**: log(m) qubits to represent pattern characters
+- **Auxiliary Qubits**: Additional qubits for computation
+- **Oracle Gates**: Quantum gates implementing the matching logic
+- **Amplification Gates**: Gates implementing Grover's algorithm
+
+#### Performance Analysis
+
+**Theoretical Advantages**:
+- Quadratic speedup over classical algorithms
+- Exponential speedup for certain structured problems
+- Potential for massive parallelism
+
+**Practical Considerations**:
+- Requires quantum hardware with sufficient qubits
+- Susceptible to quantum decoherence
+- Error correction overhead
+- Current quantum computers have limited qubit counts
+
+#### Implementation Example
 
 #### Quantum Algorithm Framework
 
@@ -416,11 +581,90 @@ public:
 
 ### 8.4.1 CUSMART: GPU-Accelerated Parallel String Matching
 
-Recent research has implemented parallel versions of 64 string matching algorithms using CUDA on NVIDIA GPUs, achieving significant throughput improvements.
+Recent research has implemented parallel versions of 64 string matching algorithms using CUDA on NVIDIA GPUs, achieving significant throughput improvements. This represents a major advancement in practical string matching performance, leveraging the massive parallelism available in modern GPU architectures.
 
 #### Core Concept
 
-The GPU approach divides the text or pattern search across multiple GPU cores, leveraging massive parallelism for large-scale string matching.
+The GPU approach divides the text or pattern search across multiple GPU cores, leveraging massive parallelism for large-scale string matching. Unlike traditional CPU-based algorithms that process text sequentially, GPU algorithms can process thousands of text positions simultaneously.
+
+#### Theoretical Foundation
+
+**GPU Architecture**: Modern GPUs contain thousands of cores organized in a hierarchical structure:
+- **Streaming Multiprocessors (SMs)**: Groups of cores that share memory
+- **CUDA Cores**: Individual processing units within each SM
+- **Memory Hierarchy**: Global memory, shared memory, and registers
+- **Thread Blocks**: Groups of threads that execute together
+
+**Parallelization Strategies**: GPU string matching algorithms use several parallelization approaches:
+- **Data Parallelism**: Each thread processes a different portion of the text
+- **Task Parallelism**: Different threads handle different pattern matching tasks
+- **Pipeline Parallelism**: Overlap computation and memory operations
+
+#### Mathematical Analysis
+
+For a text of length n, pattern of length m, and GPU with p cores:
+- **Theoretical Speedup**: Up to p× speedup over single-threaded algorithms
+- **Memory Bandwidth**: Limited by GPU memory bandwidth, not compute power
+- **Load Balancing**: Performance depends on even distribution of work across cores
+- **Synchronization Overhead**: Thread synchronization can limit performance
+
+#### Algorithm Description
+
+1. **Text Partitioning**: Divide the text into chunks for parallel processing
+2. **Thread Assignment**: Assign each chunk to a GPU thread
+3. **Parallel Matching**: Each thread performs string matching on its chunk
+4. **Result Aggregation**: Collect and merge results from all threads
+
+#### Step-by-Step Process
+
+**Phase 1: Memory Allocation and Transfer**
+1. Allocate GPU memory for text, pattern, and results
+2. Transfer text and pattern from CPU to GPU memory
+3. Initialize result arrays on the GPU
+
+**Phase 2: Kernel Launch and Execution**
+1. Launch CUDA kernel with appropriate thread block configuration
+2. Each thread processes a portion of the text
+3. Threads perform string matching independently
+4. Store match results in GPU memory
+
+**Phase 3: Result Collection**
+1. Transfer results from GPU to CPU memory
+2. Merge results from all threads
+3. Return final match positions
+
+#### CUDA Implementation Details
+
+**Thread Block Configuration**:
+- **Block Size**: Typically 256 or 512 threads per block
+- **Grid Size**: Calculated based on text length and block size
+- **Memory Access**: Coalesced memory access for optimal performance
+
+**Memory Management**:
+- **Global Memory**: Store text and pattern data
+- **Shared Memory**: Cache frequently accessed data
+- **Registers**: Store thread-local variables
+
+**Synchronization**:
+- **Thread Synchronization**: Within thread blocks using __syncthreads()
+- **Memory Fences**: Ensure memory operations complete before proceeding
+- **Atomic Operations**: For updating shared result counters
+
+#### Performance Characteristics
+
+**Advantages**:
+- **Massive Parallelism**: Thousands of threads processing simultaneously
+- **High Throughput**: Excellent for large texts and multiple patterns
+- **Scalability**: Performance scales with GPU capabilities
+- **Memory Bandwidth**: Efficient use of GPU memory hierarchy
+
+**Limitations**:
+- **Memory Transfer Overhead**: CPU-GPU data transfer costs
+- **Thread Divergence**: Performance degradation when threads take different paths
+- **Memory Coalescing**: Uncoalesced memory access reduces performance
+- **Synchronization Overhead**: Thread synchronization can limit parallelism
+
+#### Implementation Example
 
 #### CUDA Implementation Framework
 
@@ -538,11 +782,73 @@ public:
 
 ### 8.5.1 Reverse Colussi Algorithm
 
-The Reverse Colussi algorithm optimizes pattern scanning by changing the order of character comparisons to reduce the average number of comparisons.
+The Reverse Colussi algorithm optimizes pattern scanning by changing the order of character comparisons to reduce the average number of comparisons. This represents a significant advancement in practical string matching performance, focusing on optimizing the fundamental operation of character comparison.
 
 #### Core Concept
 
-Instead of scanning the pattern from left to right, Reverse Colussi scans from right to left, using information about character frequencies and positions to minimize comparisons.
+Instead of scanning the pattern from left to right, Reverse Colussi scans from right to left, using information about character frequencies and positions to minimize comparisons. This approach is based on the observation that certain character positions are more likely to cause early mismatches, and checking these positions first can eliminate many unnecessary comparisons.
+
+#### Theoretical Foundation
+
+**Character Frequency Analysis**: The algorithm analyzes the pattern to determine:
+- **Character Frequencies**: How often each character appears in the pattern
+- **Position Weights**: The importance of each position for early mismatch detection
+- **Skip Probabilities**: The likelihood of being able to skip after checking each position
+
+**Optimal Scan Order**: The algorithm determines the optimal order of character comparisons by:
+- Prioritizing positions with low-frequency characters
+- Considering the position's distance from the pattern start
+- Balancing between early mismatch detection and verification efficiency
+
+#### Mathematical Analysis
+
+For a pattern of length m with character frequency distribution f(c), the optimal scan order minimizes:
+- **Expected Comparisons**: Σ P(position i causes mismatch) × i
+- **Skip Distance**: Average distance skipped after mismatch
+- **Verification Cost**: Cost of character-by-character verification
+
+The algorithm achieves O(n/m) average-case performance for random text, with significant improvements over naive approaches.
+
+#### Algorithm Description
+
+1. **Pattern Analysis**: Analyze character frequencies and positions
+2. **Scan Order Optimization**: Determine optimal character comparison order
+3. **Skip Strategy**: Implement intelligent skipping based on mismatch positions
+4. **Verification**: Perform character-by-character verification when needed
+
+#### Step-by-Step Process
+
+**Phase 1: Pattern Preprocessing**
+1. Count character frequencies in the pattern
+2. Calculate position weights based on character rarity
+3. Determine optimal scan order for character comparisons
+4. Build skip tables for efficient pattern shifting
+
+**Phase 2: Text Scanning**
+1. Start at the beginning of the text
+2. Compare characters in the optimized order
+3. Stop as soon as a mismatch is found
+4. Use skip information to advance the pattern position
+
+**Phase 3: Verification and Reporting**
+1. When all characters match, verify the complete match
+2. Report the match position
+3. Continue scanning from the next position
+
+#### Performance Characteristics
+
+**Advantages**:
+- **Reduced Comparisons**: Fewer character comparisons on average
+- **Better Cache Performance**: Improved memory access patterns
+- **Adaptive Behavior**: Adjusts to pattern characteristics
+- **Practical Speedup**: Real-world performance improvements
+
+**Limitations**:
+- **Preprocessing Overhead**: Additional analysis time
+- **Memory Overhead**: Storage for optimization tables
+- **Pattern Dependency**: Performance varies with pattern characteristics
+
+#### Implementation Example
 
 #### Implementation Example
 
@@ -643,7 +949,81 @@ public:
 
 ### 8.6.1 Cache-Friendly String Matching
 
-Modern processors have complex memory hierarchies, and optimizing for cache performance can significantly improve string matching performance.
+Modern processors have complex memory hierarchies, and optimizing for cache performance can significantly improve string matching performance. This represents a crucial aspect of modern algorithm design, focusing on the practical realities of computer hardware rather than just theoretical complexity.
+
+#### Core Concept
+
+Cache-friendly string matching algorithms are designed to work efficiently with modern processor memory hierarchies, minimizing cache misses and maximizing data locality. The goal is to ensure that frequently accessed data remains in fast cache memory, reducing the time spent waiting for data from slower main memory.
+
+#### Theoretical Foundation
+
+**Memory Hierarchy**: Modern processors have a complex memory hierarchy:
+- **L1 Cache**: Fastest, smallest cache (typically 32-64 KB)
+- **L2 Cache**: Medium speed, medium size (typically 256 KB - 1 MB)
+- **L3 Cache**: Slower, larger cache (typically 8-32 MB)
+- **Main Memory**: Slowest, largest storage (typically 8-64 GB)
+
+**Cache Performance Principles**:
+- **Temporal Locality**: Recently accessed data is likely to be accessed again
+- **Spatial Locality**: Data near recently accessed data is likely to be accessed
+- **Cache Line Size**: Data is transferred in fixed-size blocks (typically 64 bytes)
+- **Cache Associativity**: How many cache lines can map to the same set
+
+#### Mathematical Analysis
+
+For a text of length n and cache line size L, cache-friendly algorithms aim to:
+- **Minimize Cache Misses**: Reduce the number of times data must be fetched from main memory
+- **Maximize Cache Hits**: Ensure frequently accessed data remains in cache
+- **Optimize Memory Access Patterns**: Access data in a way that maximizes cache utilization
+
+The performance improvement can be significant, with cache-friendly algorithms often achieving 2-5× speedup over naive implementations.
+
+#### Algorithm Description
+
+1. **Data Layout Optimization**: Organize data to maximize cache utilization
+2. **Access Pattern Optimization**: Access data in cache-friendly patterns
+3. **Chunking Strategy**: Process data in cache-sized chunks
+4. **Memory Alignment**: Align data structures to cache line boundaries
+
+#### Step-by-Step Process
+
+**Phase 1: Data Layout Analysis**
+1. Analyze the memory access patterns of the algorithm
+2. Identify frequently accessed data structures
+3. Determine optimal data layout for cache performance
+4. Plan memory allocation strategy
+
+**Phase 2: Chunking Strategy**
+1. Divide the text into cache-friendly chunks
+2. Process each chunk independently
+3. Ensure chunk size fits within cache capacity
+4. Minimize data movement between chunks
+
+**Phase 3: Access Pattern Optimization**
+1. Access data in sequential patterns when possible
+2. Minimize random memory access
+3. Use prefetching to load data before it's needed
+4. Optimize loop structures for cache performance
+
+**Phase 4: Memory Alignment and Prefetching**
+1. Align data structures to cache line boundaries
+2. Use prefetching instructions to load data early
+3. Minimize cache line conflicts
+4. Optimize for specific processor architectures
+
+#### Performance Characteristics
+
+**Advantages**:
+- **Reduced Memory Latency**: Fewer cache misses mean faster execution
+- **Better Throughput**: More efficient use of memory bandwidth
+- **Scalability**: Performance scales better with larger datasets
+- **Real-world Performance**: Significant improvements in practice
+
+**Limitations**:
+- **Architecture Dependency**: Performance varies across different processors
+- **Implementation Complexity**: More complex than naive algorithms
+- **Memory Overhead**: May require additional memory for optimization
+- **Tuning Required**: May need tuning for specific hardware
 
 #### Implementation Example
 
@@ -773,9 +1153,85 @@ public:
 
 ### 8.7.1 Modern Benchmarking Framework
 
-Recent studies have shown that algorithm performance depends heavily on hardware characteristics, data patterns, and implementation details.
+Recent studies have shown that algorithm performance depends heavily on hardware characteristics, data patterns, and implementation details. This represents a crucial aspect of modern algorithm evaluation, focusing on real-world performance rather than just theoretical complexity.
 
-#### Benchmarking Implementation
+#### Core Concept
+
+Modern benchmarking frameworks provide comprehensive evaluation of string matching algorithms across diverse hardware platforms, data patterns, and implementation scenarios. The goal is to understand how algorithms perform in practice, considering factors like cache behavior, branch prediction, and memory hierarchy effects.
+
+#### Theoretical Foundation
+
+**Performance Factors**: Modern benchmarking considers multiple performance factors:
+- **Algorithmic Complexity**: Theoretical time and space complexity
+- **Hardware Characteristics**: CPU architecture, cache size, memory bandwidth
+- **Data Patterns**: Text and pattern characteristics that affect performance
+- **Implementation Details**: Compiler optimizations, memory layout, data structures
+
+**Benchmarking Methodology**: Effective benchmarking requires:
+- **Controlled Experiments**: Isolate specific performance factors
+- **Statistical Analysis**: Account for measurement variability
+- **Hardware Profiling**: Use performance counters and profiling tools
+- **Real-world Data**: Test with realistic data patterns
+
+#### Mathematical Analysis
+
+For comprehensive benchmarking, we need to measure:
+- **Execution Time**: Wall-clock time for algorithm completion
+- **Memory Usage**: Peak and average memory consumption
+- **Cache Performance**: Cache hit/miss ratios and memory bandwidth
+- **CPU Utilization**: Instructions per cycle and branch prediction accuracy
+
+The performance of algorithm A on hardware H with data D can be modeled as:
+P(A, H, D) = f(complexity(A), characteristics(H), patterns(D))
+
+#### Algorithm Description
+
+1. **Test Suite Design**: Create comprehensive test cases covering various scenarios
+2. **Hardware Profiling**: Measure hardware-specific performance characteristics
+3. **Statistical Analysis**: Analyze performance data with appropriate statistical methods
+4. **Performance Modeling**: Build models to predict performance across different scenarios
+
+#### Step-by-Step Process
+
+**Phase 1: Test Suite Design**
+1. Create diverse test cases with varying text and pattern characteristics
+2. Include edge cases and pathological inputs
+3. Generate synthetic data with known properties
+4. Include real-world data from various domains
+
+**Phase 2: Hardware Profiling**
+1. Measure baseline hardware performance characteristics
+2. Profile memory hierarchy behavior
+3. Analyze CPU pipeline efficiency
+4. Measure I/O and system call overhead
+
+**Phase 3: Algorithm Evaluation**
+1. Run each algorithm on each test case
+2. Measure execution time and memory usage
+3. Profile cache behavior and branch prediction
+4. Record performance counter data
+
+**Phase 4: Data Analysis and Modeling**
+1. Analyze performance data statistically
+2. Identify performance bottlenecks and optimization opportunities
+3. Build performance models for different scenarios
+4. Generate performance reports and recommendations
+
+#### Performance Characteristics
+
+**Advantages**:
+- **Real-world Insights**: Understand actual performance characteristics
+- **Hardware Optimization**: Identify hardware-specific optimizations
+- **Algorithm Selection**: Choose the best algorithm for specific scenarios
+- **Performance Prediction**: Predict performance on different hardware
+
+**Limitations**:
+- **Measurement Overhead**: Benchmarking can affect performance measurements
+- **Hardware Dependency**: Results may not generalize across different hardware
+- **Data Dependency**: Performance may vary with different data patterns
+- **Implementation Dependency**: Results depend on specific implementations
+
+#### Implementation Example
 
 ```cpp
 #include <chrono>
