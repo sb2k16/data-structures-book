@@ -1068,7 +1068,178 @@ bool subsetSum(vector<int>& nums, int target) {
 5. **Space optimization** can significantly reduce memory usage
 6. **Pattern recognition** helps identify DP problems quickly
 
-## 12.8 Exercises
+## 12.8 Practice Problems
+
+### Easy Level Problems
+
+#### Problem 1: Generate Parentheses
+**Description**: Given n pairs of parentheses, generate all combinations of well-formed parentheses.
+
+**Example**:
+- Input: n = 3
+- Output: ["((()))", "(()())", "(())()", "()(())", "()()()"]
+
+**Key Concepts**: Backtracking, constraint satisfaction, string generation
+
+#### Problem 2: Letter Combinations of a Phone Number
+**Description**: Given a string containing digits from 2-9, return all possible letter combinations that the number could represent.
+
+**Example**:
+- Input: "23"
+- Output: ["ad", "ae", "af", "bd", "be", "bf", "cd", "ce", "cf"]
+
+**Key Concepts**: Backtracking, string manipulation, mapping
+
+#### Problem 3: Subsets
+**Description**: Given an integer array nums, return all possible subsets (the power set).
+
+**Example**:
+- Input: nums = [1,2,3]
+- Output: [[], [1], [2], [1,2], [3], [1,3], [2,3], [1,2,3]]
+
+**Key Concepts**: Backtracking, subset generation, bit manipulation
+
+### Medium Level Problems
+
+#### Problem 4: Permutations
+**Description**: Given an array nums of distinct integers, return all possible permutations.
+
+**Example**:
+- Input: nums = [1,2,3]
+- Output: [[1,2,3], [1,3,2], [2,1,3], [2,3,1], [3,1,2], [3,2,1]]
+
+**Key Concepts**: Backtracking, permutation generation, state management
+
+#### Problem 5: Combination Sum
+**Description**: Given an array of distinct integers and a target, return all unique combinations where the numbers sum to target.
+
+**Example**:
+- Input: candidates = [2,3,6,7], target = 7
+- Output: [[2,2,3], [7]]
+
+**Key Concepts**: Backtracking, combination generation, pruning
+
+#### Problem 6: Word Search
+**Description**: Given a 2D board and a word, find if the word exists in the grid.
+
+**Example**:
+- Input: board = [["A","B","C","E"],["S","F","C","S"],["A","D","E","E"]], word = "ABCCED"
+- Output: true
+
+**Key Concepts**: Backtracking, 2D grid traversal, path finding
+
+#### Problem 7: Palindrome Partitioning
+**Description**: Given a string s, partition s such that every substring of the partition is a palindrome.
+
+**Example**:
+- Input: s = "aab"
+- Output: [["a","a","b"], ["aa","b"]]
+
+**Key Concepts**: Backtracking, palindrome checking, string partitioning
+
+### Hard Level Problems
+
+#### Problem 8: N-Queens
+**Description**: Place n queens on an n×n chessboard such that no two queens attack each other.
+
+**Example**:
+- Input: n = 4
+- Output: [[".Q..","...Q","Q...","..Q."], ["..Q.","Q...","...Q",".Q.."]]
+
+**Key Concepts**: Backtracking, constraint satisfaction, 2D board problems
+
+#### Problem 9: Sudoku Solver
+**Description**: Write a program to solve a Sudoku puzzle by filling the empty cells.
+
+**Example**:
+- Input: 9×9 grid with some cells filled
+- Output: Complete valid Sudoku solution
+
+**Key Concepts**: Backtracking, constraint propagation, 2D grid problems
+
+#### Problem 10: Word Ladder II
+**Description**: Given two words and a dictionary, find all shortest transformation sequences from beginWord to endWord.
+
+**Example**:
+- Input: beginWord = "hit", endWord = "cog", wordList = ["hot","dot","dog","lot","log","cog"]
+- Output: [["hit","hot","dot","dog","cog"], ["hit","hot","lot","log","cog"]]
+
+**Key Concepts**: Backtracking, graph traversal, shortest path, BFS + DFS
+
+#### Problem 11: Expression Add Operators
+**Description**: Given a string num and a target, add binary operators (+, -, *) to make the expression evaluate to the target.
+
+**Example**:
+- Input: num = "123", target = 6
+- Output: ["1+2+3", "1*2*3"]
+
+**Key Concepts**: Backtracking, expression evaluation, operator precedence
+
+#### Problem 12: Restore IP Addresses
+**Description**: Given a string containing only digits, restore it by returning all possible valid IP address combinations.
+
+**Example**:
+- Input: s = "25525511135"
+- Output: ["255.255.11.135", "255.255.111.35"]
+
+**Key Concepts**: Backtracking, string validation, IP address formatting
+
+### Advanced Problems
+
+#### Problem 13: Word Pattern II
+**Description**: Given a pattern and a string, determine if the string matches the pattern using backtracking.
+
+**Example**:
+- Input: pattern = "abab", str = "redblueredblue"
+- Output: true
+
+**Key Concepts**: Backtracking, pattern matching, bijection mapping
+
+#### Problem 14: Remove Invalid Parentheses
+**Description**: Remove the minimum number of invalid parentheses to make the input string valid.
+
+**Example**:
+- Input: s = "()())()"
+- Output: ["()()()", "(())()"]
+
+**Key Concepts**: Backtracking, string manipulation, optimization
+
+#### Problem 15: Android Unlock Patterns
+**Description**: Given Android 9-dot lock screen, count the number of valid unlock patterns of length m to n.
+
+**Example**:
+- Input: m = 1, n = 1
+- Output: 9
+
+**Key Concepts**: Backtracking, constraint satisfaction, counting problems
+
+### Problem-Solving Strategies
+
+#### 1. **Identify the Problem Type**
+- **Combinatorial Generation**: Subsets, permutations, combinations
+- **Constraint Satisfaction**: N-Queens, Sudoku, word problems
+- **Path Finding**: Word search, maze problems
+- **Optimization**: Remove invalid parentheses, expression evaluation
+
+#### 2. **Choose the Right Approach**
+- **Pure Backtracking**: When you need to explore all possibilities
+- **Backtracking + Memoization**: When there are overlapping subproblems
+- **Backtracking + Pruning**: When you can eliminate impossible paths early
+- **Backtracking + Heuristics**: When you can guide the search intelligently
+
+#### 3. **Implementation Tips**
+- **State Management**: Keep track of current state and choices made
+- **Pruning**: Eliminate impossible paths as early as possible
+- **Base Cases**: Define clear termination conditions
+- **Backtracking**: Undo changes when returning from recursive calls
+
+#### 4. **Optimization Techniques**
+- **Memoization**: Cache results to avoid redundant calculations
+- **Constraint Propagation**: Use constraints to reduce search space
+- **Heuristic Ordering**: Try most promising choices first
+- **Early Termination**: Stop when solution is found (if only one needed)
+
+## 12.9 Exercises
 
 1. Implement a DP solution for the "Maximum Subarray" problem (Kadane's algorithm).
 2. Solve the "Word Break" problem using DP.

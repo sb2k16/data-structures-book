@@ -34,6 +34,34 @@ Advanced memoization patterns and techniques:
 - Performance profiling and analysis
 - Template-based reusable solutions
 
+### `backtracking_practice_solutions.cpp`
+Comprehensive solutions to practice problems from Chapter 12:
+
+- **Easy Problems**: Generate Parentheses, Letter Combinations, Subsets
+- **Medium Problems**: Permutations, Combination Sum, Word Search, Palindrome Partitioning
+- **Hard Problems**: N-Queens, Sudoku, Expression Add Operators, Restore IP Addresses
+- **Advanced Problems**: Word Pattern II, Remove Invalid Parentheses, Android Unlock Patterns
+
+**Key Features:**
+- Complete solutions with detailed explanations
+- Organized by difficulty level
+- Covers all major backtracking patterns
+- Real-world problem implementations
+
+### `backtracking_tests.cpp`
+Comprehensive test suite for backtracking practice problems:
+
+- **Unit Tests**: Individual problem validation
+- **Edge Cases**: Empty inputs, single elements, boundary conditions
+- **Performance Tests**: Large input validation and timing
+- **Integration Tests**: End-to-end problem solving verification
+
+**Key Features:**
+- Automated test framework
+- Performance benchmarking
+- Edge case coverage
+- Detailed test reporting
+
 ## Compilation and Running
 
 ### Prerequisites
@@ -47,6 +75,12 @@ g++ -std=c++17 -Wall -Wextra -O2 -o backtracking_memoization_demo backtracking_m
 
 # Memoization Patterns
 g++ -std=c++17 -Wall -Wextra -O2 -o memoization_patterns memoization_patterns.cpp
+
+# Backtracking Practice Solutions
+g++ -std=c++17 -Wall -Wextra -O2 -o backtracking_practice_solutions backtracking_practice_solutions.cpp
+
+# Backtracking Tests
+g++ -std=c++17 -Wall -Wextra -O2 -o backtracking_tests backtracking_tests.cpp
 ```
 
 ### Run Examples
@@ -56,6 +90,12 @@ g++ -std=c++17 -Wall -Wextra -O2 -o memoization_patterns memoization_patterns.cp
 
 # Run memoization patterns demo
 ./memoization_patterns
+
+# Run practice problems solutions
+./backtracking_practice_solutions
+
+# Run test suite
+./backtracking_tests
 ```
 
 ### Using Makefile (from project root)
@@ -65,6 +105,12 @@ make run-backtracking-demo
 
 # Compile and run memoization patterns
 make run-memoization-patterns
+
+# Compile and run practice problems solutions
+make run-backtracking-practice
+
+# Compile and run test suite
+make run-backtracking-tests
 ```
 
 ## Algorithm Complexity
