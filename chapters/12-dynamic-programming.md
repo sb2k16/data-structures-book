@@ -662,7 +662,299 @@ int minimumTotalOptimized(vector<vector<int>>& triangle) {
 }
 ```
 
-## 12.5 DP Patterns and Techniques
+## 12.5 Backtracking and Memoization Solutions
+
+### 12.5.1 Understanding Backtracking in DP Context
+
+Backtracking is a systematic way to explore all possible solutions to a problem by building solutions incrementally and abandoning partial solutions that cannot lead to a complete solution. When combined with memoization, backtracking becomes a powerful tool for solving complex DP problems.
+
+#### Core Concept
+
+Backtracking with memoization combines:
+- **Systematic Exploration**: Try all possible choices at each step
+- **Pruning**: Abandon paths that cannot lead to optimal solutions
+- **Memoization**: Cache results to avoid redundant calculations
+- **State Space Reduction**: Use constraints to limit the search space
+
+#### When to Use Backtracking with Memoization
+
+- **Combinatorial Problems**: Finding all possible combinations or permutations
+- **Constraint Satisfaction**: Problems with multiple constraints
+- **Decision Trees**: Problems that can be represented as decision trees
+- **Optimization with Constraints**: Finding optimal solutions under constraints
+
+### 12.5.2 Memoization Techniques and Implementation
+
+#### Basic Memoization Pattern
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <unordered_map>
+#include <string>
+using namespace std;
+
+// Basic memoization template
+template<typename Func>
+class Memoizer {
+private:
+    unordered_map<string, int> cache;
+    Func func;
+    
+public:
+    Memoizer(Func f) : func(f) {}
+    
+    int operator()(const vector<int>& params) {
+        string key = createKey(params);
+        
+        if (cache.find(key) != cache.end()) {
+            return cache[key];
+        }
+        
+        int result = func(params);
+        cache[key] = result;
+        return result;
+    }
+    
+private:
+    string createKey(const vector<int>& params) {
+        string key = "";
+        for (int param : params) {
+            key += to_string(param) + ",";
+        }
+        return key;
+    }
+};
+```
+
+#### Advanced Memoization with State Compression
+
+```cpp
+// State compression for efficient memoization
+class StateCompressor {
+private:
+    unordered_map<long long, int> cache;
+    
+public:
+    long long compressState(const vector<int>& state) {
+        long long compressed = 0;
+        for (int i = 0; i < state.size(); i++) {
+            compressed = compressed * 1000 + state[i];
+        }
+        return compressed;
+    }
+    
+    int getMemoized(long long state) {
+        return cache.find(state) != cache.end() ? cache[state] : -1;
+    }
+    
+    void setMemoized(long long state, int value) {
+        cache[state] = value;
+    }
+};
+```
+
+### 12.5.3 Classic Backtracking Problems with Memoization
+
+#### N-Queens Problem with Memoization
+
+```cpp
+class NQueensSolver {
+private:
+    int n;
+    vector<vector<int>> board;
+    unordered_map<string, int> memo;
+    
+    string createBoardKey() {
+        string key = "";
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                key += to_string(board[i][j]);
+            }
+        }
+        return key;
+    }
+    
+    bool isSafe(int row, int col) {
+        // Check column
+        for (int i = 0; i < row; i++) {
+            if (board[i][col] == 1) return false;
+        }
+        
+        // Check diagonal
+        for (int i = row, j = col; i >= 0 && j >= 0; i--, j--) {
+            if (board[i][j] == 1) return false;
+        }
+        
+        // Check anti-diagonal
+        for (int i = row, j = col; i >= 0 && j < n; i--, j++) {
+            if (board[i][j] == 1) return false;
+        }
+        
+        return true;
+    }
+    
+public:
+    NQueensSolver(int n) : n(n), board(n, vector<int>(n, 0)) {}
+    
+    int solveWithMemoization(int row = 0) {
+        if (row == n) {
+            return 1; // Found a valid solution
+        }
+        
+        string key = createBoardKey() + "," + to_string(row);
+        if (memo.find(key) != memo.end()) {
+            return memo[key];
+        }
+        
+        int solutions = 0;
+        for (int col = 0; col < n; col++) {
+            if (isSafe(row, col)) {
+                board[row][col] = 1;
+                solutions += solveWithMemoization(row + 1);
+                board[row][col] = 0; // Backtrack
+            }
+        }
+        
+        memo[key] = solutions;
+        return solutions;
+    }
+    
+    void printSolutions() {
+        cout << "Total solutions for " << n << "-Queens: " 
+             << solveWithMemoization() << endl;
+    }
+};
+```
+
+#### Subset Sum with Memoization
+
+```cpp
+class SubsetSumSolver {
+private:
+    vector<int> numbers;
+    unordered_map<string, bool> memo;
+    
+    string createKey(int index, int target) {
+        return to_string(index) + "," + to_string(target);
+    }
+    
+public:
+    SubsetSumSolver(const vector<int>& nums) : numbers(nums) {}
+    
+    bool canMakeSum(int target) {
+        return canMakeSumMemo(0, target);
+    }
+    
+private:
+    bool canMakeSumMemo(int index, int target) {
+        if (target == 0) return true;
+        if (index >= numbers.size() || target < 0) return false;
+        
+        string key = createKey(index, target);
+        if (memo.find(key) != memo.end()) {
+            return memo[key];
+        }
+        
+        // Try including current number
+        bool include = canMakeSumMemo(index + 1, target - numbers[index]);
+        
+        // Try excluding current number
+        bool exclude = canMakeSumMemo(index + 1, target);
+        
+        bool result = include || exclude;
+        memo[key] = result;
+        return result;
+    }
+    
+public:
+    vector<vector<int>> getAllSubsets(int target) {
+        vector<vector<int>> result;
+        vector<int> current;
+        getAllSubsetsHelper(0, target, current, result);
+        return result;
+    }
+    
+private:
+    void getAllSubsetsHelper(int index, int target, vector<int>& current, 
+                           vector<vector<int>>& result) {
+        if (target == 0) {
+            result.push_back(current);
+            return;
+        }
+        
+        if (index >= numbers.size() || target < 0) return;
+        
+        // Include current number
+        current.push_back(numbers[index]);
+        getAllSubsetsHelper(index + 1, target - numbers[index], current, result);
+        current.pop_back();
+        
+        // Exclude current number
+        getAllSubsetsHelper(index + 1, target, current, result);
+    }
+};
+```
+
+### 12.5.4 Advanced Memoization Patterns
+
+#### Multi-Dimensional Memoization
+
+```cpp
+class MultiDimMemoization {
+private:
+    unordered_map<string, int> memo;
+    
+    string createKey(const vector<int>& dimensions) {
+        string key = "";
+        for (int dim : dimensions) {
+            key += to_string(dim) + ",";
+        }
+        return key;
+    }
+    
+public:
+    int knapsack3D(vector<int>& weights, vector<int>& values, 
+                   vector<int>& volumes, int maxWeight, int maxVolume) {
+        return knapsack3DMemo(0, maxWeight, maxVolume, weights, values, volumes);
+    }
+    
+private:
+    int knapsack3DMemo(int index, int remainingWeight, int remainingVolume,
+                      const vector<int>& weights, const vector<int>& values,
+                      const vector<int>& volumes) {
+        if (index >= weights.size() || remainingWeight < 0 || remainingVolume < 0) {
+            return 0;
+        }
+        
+        vector<int> state = {index, remainingWeight, remainingVolume};
+        string key = createKey(state);
+        
+        if (memo.find(key) != memo.end()) {
+            return memo[key];
+        }
+        
+        // Don't take current item
+        int notTake = knapsack3DMemo(index + 1, remainingWeight, remainingVolume,
+                                   weights, values, volumes);
+        
+        // Take current item
+        int take = 0;
+        if (weights[index] <= remainingWeight && volumes[index] <= remainingVolume) {
+            take = values[index] + knapsack3DMemo(index + 1, 
+                                                remainingWeight - weights[index],
+                                                remainingVolume - volumes[index],
+                                                weights, values, volumes);
+        }
+        
+        int result = max(notTake, take);
+        memo[key] = result;
+        return result;
+    }
+};
+```
+
+## 12.6 DP Patterns and Techniques
 
 ### Pattern 1: 0/1 Knapsack
 
