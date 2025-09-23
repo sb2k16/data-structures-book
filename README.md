@@ -19,21 +19,22 @@ A comprehensive introduction to data structures and algorithms using C++ as the 
 
 ### Part III: Non-Linear Data Structures
 - [Chapter 6: Trees and Binary Trees](chapters/06-trees-and-binary-trees.md)
-- Chapter 7: Hash Tables and Hashing *(Coming Soon)*
-- Chapter 8: Graphs *(Coming Soon)*
+- [Chapter 7: String Search Algorithms](chapters/07-string-search-algorithms.md)
+- Chapter 8: Hash Tables and Hashing *(Coming Soon)*
+- Chapter 9: Graphs *(Coming Soon)*
 
 ### Part IV: Advanced Data Structures
-- [Chapter 9: Sorting Algorithms](chapters/09-sorting-algorithms.md)
-- Chapter 10: Searching Algorithms *(Coming Soon)*
-- Chapter 11: Advanced Data Structures (Heaps, Tries) *(Coming Soon)*
+- [Chapter 10: Sorting Algorithms](chapters/10-sorting-algorithms.md)
+- Chapter 11: Searching Algorithms *(Coming Soon)*
+- Chapter 12: Advanced Data Structures (Heaps, Tries) *(Coming Soon)*
 
 ### Part V: Algorithm Design Paradigms
-- [Chapter 12: Dynamic Programming](chapters/12-dynamic-programming.md)
-- Chapter 13: Greedy Algorithms *(Coming Soon)*
-- Chapter 14: Divide and Conquer *(Coming Soon)*
+- [Chapter 13: Dynamic Programming](chapters/13-dynamic-programming.md)
+- Chapter 14: Greedy Algorithms *(Coming Soon)*
+- Chapter 15: Divide and Conquer *(Coming Soon)*
 
 ### Part VI: Practical Applications
-- [Chapter 15: Problem Solving Strategies and Practice](chapters/15-problem-solving-strategies.md)
+- [Chapter 16: Problem Solving Strategies and Practice](chapters/16-problem-solving-strategies.md)
 
 ## 🚀 Quick Start
 
@@ -66,11 +67,13 @@ data-structures-book/
 │   ├── 04-linked-lists.md
 │   ├── 05-stacks-and-queues.md
 │   ├── 06-trees-and-binary-trees.md
-│   ├── 09-sorting-algorithms.md
-│   ├── 12-dynamic-programming.md
-│   └── 15-problem-solving-strategies.md
+│   ├── 07-string-search-algorithms.md
+│   ├── 10-sorting-algorithms.md
+│   ├── 13-dynamic-programming.md
+│   └── 16-problem-solving-strategies.md
 ├── examples/                          # Runnable code examples
 │   ├── arrays/
+│   ├── string_search/
 │   ├── linked_lists/
 │   ├── trees/
 │   └── sorting/
@@ -117,17 +120,18 @@ After completing this book, readers will be able to:
 - [x] Chapter 4: Linked Lists
 - [x] Chapter 5: Stacks and Queues
 - [x] Chapter 6: Trees and Binary Trees
-- [x] Chapter 9: Sorting Algorithms
-- [x] Chapter 12: Dynamic Programming
-- [x] Chapter 15: Problem Solving Strategies and Practice
+- [x] Chapter 7: String Search Algorithms
+- [x] Chapter 10: Sorting Algorithms
+- [x] Chapter 13: Dynamic Programming
+- [x] Chapter 16: Problem Solving Strategies and Practice
 
 ### 🚧 In Progress
-- [ ] Chapter 7: Hash Tables and Hashing
-- [ ] Chapter 8: Graphs
-- [ ] Chapter 10: Searching Algorithms
-- [ ] Chapter 11: Advanced Data Structures (Heaps, Tries)
-- [ ] Chapter 13: Greedy Algorithms
-- [ ] Chapter 14: Divide and Conquer
+- [ ] Chapter 8: Hash Tables and Hashing
+- [ ] Chapter 9: Graphs
+- [ ] Chapter 11: Searching Algorithms
+- [ ] Chapter 12: Advanced Data Structures (Heaps, Tries)
+- [ ] Chapter 14: Greedy Algorithms
+- [ ] Chapter 15: Divide and Conquer
 
 ### 📋 Planned Features
 - [ ] Interactive code examples
