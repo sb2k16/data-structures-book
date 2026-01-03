@@ -1334,9 +1334,505 @@ public:
 - Course prerequisites
 - Event ordering
 
-## 11.9 Graph Applications
+## 11.9 Finding Bridges in a Graph
 
-### 11.9.1 Finding Connected Components
+A **bridge** (also called a cut edge) is an edge whose removal increases the number of connected components in the graph. Bridges are critical edges that, if removed, disconnect the graph.
+
+### Algorithm Overview
+
+We use DFS with the concept of **discovery time** and **low link value**:
+- **Discovery time (disc)**: When a vertex is first visited
+- **Low link (low)**: The earliest discovery time reachable from a vertex
+
+An edge (u, v) is a bridge if `low[v] > disc[u]`, meaning v cannot reach any ancestor of u.
+
+### Implementation
+```cpp
+#include <vector>
+#include <list>
+#include <algorithm>
+
+class BridgeFinder {
+private:
+    vector<list<int>> graph;
+    int numVertices;
+    vector<int> disc;  // Discovery time
+    vector<int> low;   // Low link value
+    vector<bool> visited;
+    int time;
+    vector<pair<int, int>> bridges;
+    
+    void dfs(int u, int parent) {
+        visited[u] = true;
+        disc[u] = low[u] = ++time;
+        
+        for (int v : graph[u]) {
+            if (v == parent) continue; // Skip parent edge
+            
+            if (!visited[v]) {
+                dfs(v, u);
+                low[u] = min(low[u], low[v]);
+                
+                // If low[v] > disc[u], then (u, v) is a bridge
+                if (low[v] > disc[u]) {
+                    bridges.push_back({u, v});
+                }
+            } else {
+                // Back edge - update low[u]
+                low[u] = min(low[u], disc[v]);
+            }
+        }
+    }
+    
+public:
+    BridgeFinder(int vertices) : numVertices(vertices) {
+        graph.resize(vertices);
+        disc.resize(vertices, 0);
+        low.resize(vertices, 0);
+        visited.resize(vertices, false);
+        time = 0;
+    }
+    
+    void addEdge(int from, int to) {
+        graph[from].push_back(to);
+        graph[to].push_back(from);
+    }
+    
+    vector<pair<int, int>> findBridges() {
+        bridges.clear();
+        fill(visited.begin(), visited.end(), false);
+        fill(disc.begin(), disc.end(), 0);
+        fill(low.begin(), low.end(), 0);
+        time = 0;
+        
+        for (int i = 0; i < numVertices; i++) {
+            if (!visited[i]) {
+                dfs(i, -1);
+            }
+        }
+        
+        return bridges;
+    }
+};
+```
+
+### Time Complexity
+- **Time**: O(V + E)
+- **Space**: O(V)
+
+### Applications
+- Network reliability analysis
+- Finding critical connections
+- Graph connectivity analysis
+
+## 11.10 Finding Articulation Points
+
+An **articulation point** (also called a cut vertex) is a vertex whose removal increases the number of connected components in the graph.
+
+### Algorithm Overview
+
+Similar to bridge finding, we use DFS with discovery time and low link value. A vertex u is an articulation point if:
+1. u is root and has at least 2 children, OR
+2. u is not root and has a child v such that `low[v] >= disc[u]`
+
+### Implementation
+```cpp
+class ArticulationPointFinder {
+private:
+    vector<list<int>> graph;
+    int numVertices;
+    vector<int> disc;
+    vector<int> low;
+    vector<bool> visited;
+    vector<bool> isArticulation;
+    int time;
+    
+    void dfs(int u, int parent, bool isRoot) {
+        visited[u] = true;
+        disc[u] = low[u] = ++time;
+        int children = 0;
+        
+        for (int v : graph[u]) {
+            if (v == parent) continue;
+            
+            if (!visited[v]) {
+                children++;
+                dfs(v, u, false);
+                low[u] = min(low[u], low[v]);
+                
+                // Check if u is an articulation point
+                if (!isRoot && low[v] >= disc[u]) {
+                    isArticulation[u] = true;
+                }
+            } else {
+                low[u] = min(low[u], disc[v]);
+            }
+        }
+        
+        // Root is articulation point if it has 2+ children
+        if (isRoot && children >= 2) {
+            isArticulation[u] = true;
+        }
+    }
+    
+public:
+    ArticulationPointFinder(int vertices) : numVertices(vertices) {
+        graph.resize(vertices);
+        disc.resize(vertices, 0);
+        low.resize(vertices, 0);
+        visited.resize(vertices, false);
+        isArticulation.resize(vertices, false);
+        time = 0;
+    }
+    
+    void addEdge(int from, int to) {
+        graph[from].push_back(to);
+        graph[to].push_back(from);
+    }
+    
+    vector<int> findArticulationPoints() {
+        fill(visited.begin(), visited.end(), false);
+        fill(isArticulation.begin(), isArticulation.end(), false);
+        fill(disc.begin(), disc.end(), 0);
+        fill(low.begin(), low.end(), 0);
+        time = 0;
+        
+        for (int i = 0; i < numVertices; i++) {
+            if (!visited[i]) {
+                dfs(i, -1, true);
+            }
+        }
+        
+        vector<int> result;
+        for (int i = 0; i < numVertices; i++) {
+            if (isArticulation[i]) {
+                result.push_back(i);
+            }
+        }
+        
+        return result;
+    }
+};
+```
+
+### Time Complexity
+- **Time**: O(V + E)
+- **Space**: O(V)
+
+### Applications
+- Network vulnerability analysis
+- Finding critical nodes
+- Social network analysis
+
+## 11.11 Strongly Connected Components
+
+A **Strongly Connected Component (SCC)** in a directed graph is a maximal set of vertices where every vertex is reachable from every other vertex.
+
+### Kosaraju's Algorithm
+
+Kosaraju's algorithm finds all SCCs in O(V + E) time using two DFS passes.
+
+#### Implementation
+```cpp
+class StronglyConnectedComponents {
+private:
+    vector<vector<int>> graph;
+    vector<vector<int>> reverseGraph;
+    int numVertices;
+    vector<bool> visited;
+    vector<int> order;
+    vector<int> component;
+    
+    void dfs1(int v) {
+        visited[v] = true;
+        for (int u : graph[v]) {
+            if (!visited[u]) {
+                dfs1(u);
+            }
+        }
+        order.push_back(v); // Add to order after processing
+    }
+    
+    void dfs2(int v, int compId) {
+        visited[v] = true;
+        component[v] = compId;
+        for (int u : reverseGraph[v]) {
+            if (!visited[u]) {
+                dfs2(u, compId);
+            }
+        }
+    }
+    
+public:
+    StronglyConnectedComponents(int vertices) : numVertices(vertices) {
+        graph.resize(vertices);
+        reverseGraph.resize(vertices);
+        visited.resize(vertices, false);
+        component.resize(vertices, -1);
+    }
+    
+    void addEdge(int from, int to) {
+        graph[from].push_back(to);
+        reverseGraph[to].push_back(from);
+    }
+    
+    vector<vector<int>> findSCCs() {
+        // Step 1: First DFS on original graph
+        fill(visited.begin(), visited.end(), false);
+        order.clear();
+        
+        for (int i = 0; i < numVertices; i++) {
+            if (!visited[i]) {
+                dfs1(i);
+            }
+        }
+        
+        // Step 2: Second DFS on reverse graph in reverse order
+        fill(visited.begin(), visited.end(), false);
+        reverse(order.begin(), order.end());
+        
+        int compId = 0;
+        for (int v : order) {
+            if (!visited[v]) {
+                dfs2(v, compId++);
+            }
+        }
+        
+        // Step 3: Group vertices by component
+        vector<vector<int>> components(compId);
+        for (int i = 0; i < numVertices; i++) {
+            components[component[i]].push_back(i);
+        }
+        
+        return components;
+    }
+    
+    int getComponentCount() {
+        findSCCs();
+        return *max_element(component.begin(), component.end()) + 1;
+    }
+};
+```
+
+### Tarjan's Algorithm (Alternative)
+
+Tarjan's algorithm finds SCCs in a single DFS pass using a stack.
+
+```cpp
+class TarjanSCC {
+private:
+    vector<vector<int>> graph;
+    int numVertices;
+    vector<int> disc;
+    vector<int> low;
+    vector<bool> onStack;
+    vector<int> stack;
+    int time;
+    vector<vector<int>> components;
+    
+    void dfs(int u) {
+        disc[u] = low[u] = ++time;
+        stack.push_back(u);
+        onStack[u] = true;
+        
+        for (int v : graph[u]) {
+            if (disc[v] == 0) {
+                dfs(v);
+                low[u] = min(low[u], low[v]);
+            } else if (onStack[v]) {
+                low[u] = min(low[u], disc[v]);
+            }
+        }
+        
+        // If u is root of SCC
+        if (low[u] == disc[u]) {
+            vector<int> component;
+            while (true) {
+                int v = stack.back();
+                stack.pop_back();
+                onStack[v] = false;
+                component.push_back(v);
+                if (v == u) break;
+            }
+            components.push_back(component);
+        }
+    }
+    
+public:
+    TarjanSCC(int vertices) : numVertices(vertices) {
+        graph.resize(vertices);
+        disc.resize(vertices, 0);
+        low.resize(vertices, 0);
+        onStack.resize(vertices, false);
+        time = 0;
+    }
+    
+    void addEdge(int from, int to) {
+        graph[from].push_back(to);
+    }
+    
+    vector<vector<int>> findSCCs() {
+        components.clear();
+        fill(disc.begin(), disc.end(), 0);
+        fill(low.begin(), low.end(), 0);
+        fill(onStack.begin(), onStack.end(), false);
+        stack.clear();
+        time = 0;
+        
+        for (int i = 0; i < numVertices; i++) {
+            if (disc[i] == 0) {
+                dfs(i);
+            }
+        }
+        
+        return components;
+    }
+};
+```
+
+### Time Complexity
+- **Time**: O(V + E) for both algorithms
+- **Space**: O(V)
+
+### Applications
+- Compiler design (control flow analysis)
+- Social network analysis
+- Web page ranking
+- Dependency resolution
+
+## 11.12 0-1 BFS
+
+**0-1 BFS** is a special case of BFS for graphs where edge weights are either 0 or 1. It's more efficient than Dijkstra's algorithm for this case.
+
+### Algorithm Overview
+
+Instead of a priority queue, we use a deque (double-ended queue):
+- Edges with weight 0 are added to the front
+- Edges with weight 1 are added to the back
+
+This ensures vertices are processed in order of distance.
+
+### Implementation
+```cpp
+#include <deque>
+#include <vector>
+#include <list>
+#include <limits>
+
+struct Edge01 {
+    int to;
+    int weight; // 0 or 1
+};
+
+class BFS01 {
+private:
+    vector<list<Edge01>> graph;
+    int numVertices;
+    
+public:
+    BFS01(int vertices) : numVertices(vertices) {
+        graph.resize(vertices);
+    }
+    
+    void addEdge(int from, int to, int weight) {
+        graph[from].push_back({to, weight});
+    }
+    
+    vector<int> shortestPath(int start) {
+        vector<int> dist(numVertices, numeric_limits<int>::max());
+        deque<int> dq;
+        
+        dist[start] = 0;
+        dq.push_back(start);
+        
+        while (!dq.empty()) {
+            int u = dq.front();
+            dq.pop_front();
+            
+            for (const Edge01& edge : graph[u]) {
+                int v = edge.to;
+                int w = edge.weight;
+                
+                if (dist[u] + w < dist[v]) {
+                    dist[v] = dist[u] + w;
+                    
+                    if (w == 0) {
+                        dq.push_front(v); // Weight 0 - add to front
+                    } else {
+                        dq.push_back(v);  // Weight 1 - add to back
+                    }
+                }
+            }
+        }
+        
+        return dist;
+    }
+    
+    vector<int> shortestPathTo(int start, int end) {
+        vector<int> dist(numVertices, numeric_limits<int>::max());
+        vector<int> parent(numVertices, -1);
+        deque<int> dq;
+        
+        dist[start] = 0;
+        dq.push_back(start);
+        
+        while (!dq.empty()) {
+            int u = dq.front();
+            dq.pop_front();
+            
+            if (u == end) break;
+            
+            for (const Edge01& edge : graph[u]) {
+                int v = edge.to;
+                int w = edge.weight;
+                
+                if (dist[u] + w < dist[v]) {
+                    dist[v] = dist[u] + w;
+                    parent[v] = u;
+                    
+                    if (w == 0) {
+                        dq.push_front(v);
+                    } else {
+                        dq.push_back(v);
+                    }
+                }
+            }
+        }
+        
+        // Reconstruct path
+        if (dist[end] == numeric_limits<int>::max()) {
+            return {};
+        }
+        
+        vector<int> path;
+        int current = end;
+        while (current != -1) {
+            path.push_back(current);
+            current = parent[current];
+        }
+        reverse(path.begin(), path.end());
+        return path;
+    }
+};
+```
+
+### Time Complexity
+- **Time**: O(V + E) - more efficient than Dijkstra's O((V + E) log V)
+- **Space**: O(V)
+
+### When to Use
+- Graph has only 0 and 1 edge weights
+- Need shortest paths in unweighted graph with some "free" edges
+- More efficient than Dijkstra for 0-1 weighted graphs
+
+### Applications
+- Grid problems with free moves and cost moves
+- Problems with "teleportation" edges (weight 0)
+- Network routing with binary costs
+
+## 11.13 Graph Applications
+
+### 11.13.1 Finding Connected Components
 ```cpp
 vector<vector<int>> findConnectedComponents(const vector<list<int>>& graph) {
     int n = graph.size();
@@ -1365,7 +1861,7 @@ vector<vector<int>> findConnectedComponents(const vector<list<int>>& graph) {
 }
 ```
 
-### 11.9.2 Cycle Detection
+### 11.13.2 Cycle Detection
 ```cpp
 bool hasCycle(const vector<list<int>>& graph) {
     int n = graph.size();
@@ -1398,7 +1894,7 @@ bool hasCycle(const vector<list<int>>& graph) {
 }
 ```
 
-### 11.9.3 Bipartite Graph Check
+### 11.13.3 Bipartite Graph Check
 ```cpp
 bool isBipartite(const vector<list<int>>& graph) {
     int n = graph.size();
@@ -1430,7 +1926,7 @@ bool isBipartite(const vector<list<int>>& graph) {
 }
 ```
 
-## 11.10 Key Takeaways
+## 11.14 Key Takeaways
 
 1. **Graphs** represent relationships and connections between entities
 2. **Adjacency matrix** is good for dense graphs, **adjacency list** for sparse graphs
@@ -1440,9 +1936,12 @@ bool isBipartite(const vector<list<int>>& graph) {
 6. **Floyd-Warshall** finds all-pairs shortest paths
 7. **Kruskal** and **Prim** find minimum spanning trees
 8. **Topological sort** orders vertices in a DAG
-9. Graphs have many real-world applications
+9. **Bridges and articulation points** identify critical edges and vertices
+10. **Strongly Connected Components** find maximal strongly connected subgraphs
+11. **0-1 BFS** efficiently handles graphs with binary edge weights
+12. Graphs have many real-world applications
 
-## 11.11 Exercises
+## 11.15 Exercises
 
 1. Implement a graph class that supports both adjacency matrix and adjacency list representations.
 
@@ -1456,15 +1955,15 @@ bool isBipartite(const vector<list<int>>& graph) {
 
 6. Create a function to find the longest path in a DAG.
 
-7. Implement an algorithm to find articulation points (cut vertices) in an undirected graph.
+7. Implement Tarjan's algorithm for finding strongly connected components.
 
-8. Create a function to find bridges (cut edges) in an undirected graph.
+8. Compare the performance of Kosaraju's and Tarjan's algorithms for SCC.
 
 9. Implement a function to check if a graph is Eulerian (has Eulerian path/cycle).
 
 10. Create a graph visualization tool that can display small graphs.
 
-## 11.12 Summary
+## 11.16 Summary
 
 Graphs are fundamental data structures that model relationships and connections. Understanding graph representations, traversal algorithms, shortest path algorithms, and minimum spanning tree algorithms is essential for solving many computational problems. The choice of representation and algorithm depends on the specific problem requirements, graph characteristics, and performance constraints.
 

@@ -6,6 +6,7 @@ This directory contains comprehensive examples demonstrating graph data structur
 
 - `graph_implementations.cpp` - Complete implementations of graph algorithms including DFS, BFS, Dijkstra, Kruskal, and more
 - `disjoint_sets.cpp` - Comprehensive examples of Union-Find (Disjoint Sets) data structure with optimizations and applications
+- `advanced_graph_algorithms.cpp` - Advanced graph algorithms: Bridges, Articulation Points, Strongly Connected Components, and 0-1 BFS
 
 ## Compilation
 
@@ -16,9 +17,13 @@ g++ -std=c++17 -O2 -o graph_demo graph_implementations.cpp
 # Compile disjoint sets example
 g++ -std=c++17 -O2 -o disjoint_sets disjoint_sets.cpp
 
+# Compile advanced graph algorithms
+g++ -std=c++17 -O2 -o advanced_graphs advanced_graph_algorithms.cpp
+
 # Run
 ./graph_demo
 ./disjoint_sets
+./advanced_graphs
 ```
 
 ## What's Included
@@ -50,6 +55,10 @@ g++ -std=c++17 -O2 -o disjoint_sets disjoint_sets.cpp
 - **Applications**: Connected components, cycle detection, Kruskal's MST
 
 ### 6. Advanced Algorithms
+- **Finding Bridges**: Critical edges in undirected graphs
+- **Finding Articulation Points**: Critical vertices in undirected graphs
+- **Strongly Connected Components**: Kosaraju's and Tarjan's algorithms
+- **0-1 BFS**: Efficient BFS for graphs with binary edge weights
 - **Topological Sort**: Ordering vertices in a DAG
 - **Cycle Detection**: Detecting cycles in directed graphs
 - **Connected Components**: Finding all connected components
@@ -70,8 +79,11 @@ After studying these examples, you should understand:
 3. How to find shortest paths (Dijkstra)
 4. How to find minimum spanning trees (Kruskal)
 5. How to implement and optimize disjoint sets (Union-Find)
-6. How to perform topological sorting
-7. How to detect cycles and find connected components
+6. How to find bridges and articulation points
+7. How to find strongly connected components
+8. How to use 0-1 BFS for binary weighted graphs
+9. How to perform topological sorting
+10. How to detect cycles and find connected components
 
 ## Graph Algorithms Complexity
 
@@ -82,6 +94,10 @@ After studying these examples, you should understand:
 | Dijkstra | O((V + E) log V) | O(V) |
 | Kruskal | O(E log E) | O(V) |
 | Union-Find (optimized) | O(α(V)) amortized | O(V) |
+| Finding Bridges | O(V + E) | O(V) |
+| Finding Articulation Points | O(V + E) | O(V) |
+| Strongly Connected Components | O(V + E) | O(V) |
+| 0-1 BFS | O(V + E) | O(V) |
 | Topological Sort | O(V + E) | O(V) |
 
 ## Exercises
