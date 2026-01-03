@@ -12,6 +12,8 @@ This chapter covers advanced data structures that are essential for solving comp
 4. **Fenwick Trees**: Binary Indexed Trees for prefix sums
 5. **Sparse Table**: O(1) range queries on static arrays
 6. **Sqrt Decomposition**: Simple range queries and updates
+7. **Skip Lists**: Probabilistic alternative to balanced trees
+8. **Bloom Filters**: Space-efficient probabilistic membership testing
 
 ## 14.2 Heaps
 
@@ -1114,7 +1116,372 @@ public:
 | Fenwick Tree | O(log n) | O(log n) | O(n) | Prefix/point |
 | Sqrt Decomp | O(√n) | O(√n) | O(n) | Simple |
 
-## 14.8 Failure Modes and Common Pitfalls
+## 14.8 Skip Lists
+
+A **skip list** is a probabilistic data structure that provides O(log n) average-case performance for search, insertion, and deletion operations. It's simpler to implement than balanced trees (Chapter 6) while offering similar performance characteristics.
+
+### 14.8.1 Introduction to Skip Lists
+
+Skip lists use multiple sorted linked lists (Chapter 4) with different levels of "express lanes" to skip over elements. Higher levels contain fewer elements, allowing fast navigation.
+
+#### Key Characteristics
+
+- **Probabilistic Structure**: Height determined probabilistically
+- **O(log n) Average Performance**: Similar to balanced trees
+- **Simpler than Trees**: Easier to implement than AVL/Red-Black trees
+- **Dynamic**: Supports efficient insertions and deletions
+
+### 14.8.2 Skip List Structure
+
+```
+Level 3:  [1] --------------------------> [9]
+Level 2:  [1] --------> [5] --------> [9]
+Level 1:  [1] -> [3] -> [5] -> [7] -> [9]
+Level 0:  [1] [2] [3] [4] [5] [6] [7] [8] [9]
+```
+
+Each node has:
+- **Data**: The value stored
+- **Forward pointers**: Array of pointers to next nodes at each level
+- **Level**: Maximum level this node appears in
+
+### 14.8.3 Skip List Implementation
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <random>
+#include <climits>
+using namespace std;
+
+class SkipListNode {
+public:
+    int value;
+    vector<SkipListNode*> forward;
+    int level;
+    
+    SkipListNode(int val, int lvl) : value(val), level(lvl) {
+        forward.resize(lvl + 1, nullptr);
+    }
+};
+
+class SkipList {
+private:
+    SkipListNode* header;
+    int maxLevel;
+    int currentLevel;
+    random_device rd;
+    mt19937 gen;
+    uniform_real_distribution<> dis;
+    
+    int randomLevel() {
+        int level = 0;
+        while (dis(gen) < 0.5 && level < maxLevel) {
+            level++;
+        }
+        return level;
+    }
+    
+public:
+    SkipList(int maxLvl = 16) : maxLevel(maxLvl), currentLevel(0), gen(rd()), dis(0.0, 1.0) {
+        header = new SkipListNode(INT_MIN, maxLevel);
+    }
+    
+    bool search(int target) {
+        SkipListNode* current = header;
+        
+        // Start from highest level
+        for (int i = currentLevel; i >= 0; i--) {
+            while (current->forward[i] != nullptr && 
+                   current->forward[i]->value < target) {
+                current = current->forward[i];
+            }
+        }
+        
+        current = current->forward[0];
+        return (current != nullptr && current->value == target);
+    }
+    
+    void insert(int value) {
+        vector<SkipListNode*> update(maxLevel + 1, nullptr);
+        SkipListNode* current = header;
+        
+        // Find insertion point at each level
+        for (int i = currentLevel; i >= 0; i--) {
+            while (current->forward[i] != nullptr && 
+                   current->forward[i]->value < value) {
+                current = current->forward[i];
+            }
+            update[i] = current;
+        }
+        
+        current = current->forward[0];
+        
+        // If value already exists, don't insert
+        if (current == nullptr || current->value != value) {
+            int newLevel = randomLevel();
+            
+            // Update max level if needed
+            if (newLevel > currentLevel) {
+                for (int i = currentLevel + 1; i <= newLevel; i++) {
+                    update[i] = header;
+                }
+                currentLevel = newLevel;
+            }
+            
+            // Create new node
+            SkipListNode* newNode = new SkipListNode(value, newLevel);
+            
+            // Insert at each level
+            for (int i = 0; i <= newLevel; i++) {
+                newNode->forward[i] = update[i]->forward[i];
+                update[i]->forward[i] = newNode;
+            }
+        }
+    }
+    
+    void remove(int value) {
+        vector<SkipListNode*> update(maxLevel + 1, nullptr);
+        SkipListNode* current = header;
+        
+        // Find node to delete
+        for (int i = currentLevel; i >= 0; i--) {
+            while (current->forward[i] != nullptr && 
+                   current->forward[i]->value < value) {
+                current = current->forward[i];
+            }
+            update[i] = current;
+        }
+        
+        current = current->forward[0];
+        
+        // If found, remove from all levels
+        if (current != nullptr && current->value == value) {
+            for (int i = 0; i <= currentLevel; i++) {
+                if (update[i]->forward[i] != current) {
+                    break;
+                }
+                update[i]->forward[i] = current->forward[i];
+            }
+            
+            delete current;
+            
+            // Update current level
+            while (currentLevel > 0 && header->forward[currentLevel] == nullptr) {
+                currentLevel--;
+            }
+        }
+    }
+    
+    void print() {
+        for (int i = currentLevel; i >= 0; i--) {
+            SkipListNode* node = header->forward[i];
+            cout << "Level " << i << ": ";
+            while (node != nullptr) {
+                cout << node->value << " ";
+                node = node->forward[i];
+            }
+            cout << endl;
+        }
+    }
+};
+```
+
+### 14.8.4 Performance Analysis
+
+**Time Complexity:**
+- **Search**: O(log n) average, O(n) worst case
+- **Insert**: O(log n) average
+- **Delete**: O(log n) average
+
+**Space Complexity:** O(n) average (each element appears in ~2 levels on average)
+
+**Comparison with Balanced Trees:**
+- **Skip Lists**: Simpler implementation, probabilistic guarantees
+- **Balanced Trees** (Chapter 6): Deterministic guarantees, more complex
+
+### 14.8.5 Applications
+
+- **Redis**: Uses skip lists for sorted sets
+- **Concurrent Data Structures**: Easier to make thread-safe than trees
+- **Alternative to Balanced Trees**: When simplicity matters
+
+## 14.9 Bloom Filters
+
+A **Bloom filter** is a space-efficient probabilistic data structure that tests whether an element is a member of a set. It can have false positives but never false negatives.
+
+### 14.9.1 Introduction to Bloom Filters
+
+Bloom filters provide O(1) insertion and lookup with minimal space overhead, making them ideal for large-scale systems where approximate membership testing is acceptable.
+
+#### Key Characteristics
+
+- **Probabilistic**: May return false positives (but never false negatives)
+- **Space Efficient**: Uses much less memory than hash tables (Chapter 10)
+- **Fast Operations**: O(k) where k is number of hash functions (typically small)
+- **No Deletion**: Standard Bloom filters don't support deletion
+
+### 14.9.2 How Bloom Filters Work
+
+1. **Initialization**: Create a bit array of size m (all bits set to 0)
+2. **Insertion**: Hash element with k hash functions, set corresponding bits to 1
+3. **Lookup**: Hash element with k hash functions, check if all bits are 1
+
+```
+Insert "apple":
+  hash1("apple") = 3  → set bit[3] = 1
+  hash2("apple") = 7  → set bit[7] = 1
+  hash3("apple") = 12 → set bit[12] = 1
+
+Check "apple":
+  hash1("apple") = 3  → bit[3] = 1 ✓
+  hash2("apple") = 7  → bit[7] = 1 ✓
+  hash3("apple") = 12 → bit[12] = 1 ✓
+  → "apple" is probably in set
+```
+
+### 14.9.3 Bloom Filter Implementation
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <functional>
+#include <bitset>
+#include <cmath>
+using namespace std;
+
+class BloomFilter {
+private:
+    vector<bool> bits;
+    int size;
+    int numHashFunctions;
+    
+    // Simple hash functions
+    size_t hash1(const string& key) const {
+        hash<string> hasher;
+        return hasher(key) % size;
+    }
+    
+    size_t hash2(const string& key) const {
+        hash<string> hasher;
+        return (hasher(key) * 31) % size;
+    }
+    
+    size_t hash3(const string& key) const {
+        hash<string> hasher;
+        return (hasher(key) * 17 + 7) % size;
+    }
+    
+public:
+    BloomFilter(int expectedElements, double falsePositiveRate) {
+        // Calculate optimal size: m = -n * ln(p) / (ln(2)^2)
+        size = static_cast<int>(-expectedElements * log(falsePositiveRate) / (log(2) * log(2)));
+        
+        // Calculate optimal number of hash functions: k = (m/n) * ln(2)
+        numHashFunctions = static_cast<int>((size / expectedElements) * log(2));
+        
+        bits.resize(size, false);
+        
+        cout << "Bloom Filter initialized:" << endl;
+        cout << "  Size: " << size << " bits" << endl;
+        cout << "  Hash functions: " << numHashFunctions << endl;
+    }
+    
+    void insert(const string& key) {
+        bits[hash1(key)] = true;
+        bits[hash2(key)] = true;
+        bits[hash3(key)] = true;
+        
+        // Add more hash functions if needed
+        for (int i = 3; i < numHashFunctions; i++) {
+            size_t h = (hash1(key) + i * hash2(key)) % size;
+            bits[h] = true;
+        }
+    }
+    
+    bool contains(const string& key) const {
+        if (!bits[hash1(key)]) return false;
+        if (!bits[hash2(key)]) return false;
+        if (!bits[hash3(key)]) return false;
+        
+        // Check additional hash functions
+        for (int i = 3; i < numHashFunctions; i++) {
+            size_t h = (hash1(key) + i * hash2(key)) % size;
+            if (!bits[h]) return false;
+        }
+        
+        return true; // Probably in set (may be false positive)
+    }
+    
+    double getFalsePositiveRate(int numElements) const {
+        // p = (1 - e^(-kn/m))^k
+        double exponent = -numHashFunctions * numElements / (double)size;
+        return pow(1 - exp(exponent), numHashFunctions);
+    }
+};
+```
+
+### 14.9.4 Performance Analysis
+
+**Time Complexity:**
+- **Insert**: O(k) where k is number of hash functions (typically 3-10)
+- **Lookup**: O(k)
+- **Space**: O(m) where m is bit array size
+
+**False Positive Rate:**
+- Depends on size m, number of elements n, and hash functions k
+- Optimal k ≈ (m/n) * ln(2)
+- False positive rate ≈ (1 - e^(-kn/m))^k
+
+### 14.9.5 Applications
+
+- **Database Systems**: Avoid expensive disk lookups
+- **Web Caches**: Check if URL is cached before expensive lookup
+- **Network Routers**: Fast packet routing decisions
+- **Distributed Systems**: Reduce network queries
+- **Spell Checkers**: Quick word existence check
+
+### 14.9.6 Counting Bloom Filters
+
+Standard Bloom filters don't support deletion. **Counting Bloom Filters** use counters instead of bits to enable deletion:
+
+```cpp
+class CountingBloomFilter {
+private:
+    vector<int> counters;
+    int size;
+    int numHashFunctions;
+    
+public:
+    CountingBloomFilter(int expectedElements, double falsePositiveRate) {
+        size = static_cast<int>(-expectedElements * log(falsePositiveRate) / (log(2) * log(2)));
+        numHashFunctions = static_cast<int>((size / expectedElements) * log(2));
+        counters.resize(size, 0);
+    }
+    
+    void insert(const string& key) {
+        // Increment counters instead of setting bits
+        counters[hash1(key)]++;
+        counters[hash2(key)]++;
+        counters[hash3(key)]++;
+    }
+    
+    void remove(const string& key) {
+        // Decrement counters
+        counters[hash1(key)]--;
+        counters[hash2(key)]--;
+        counters[hash3(key)]--;
+    }
+    
+    bool contains(const string& key) const {
+        return counters[hash1(key)] > 0 &&
+               counters[hash2(key)] > 0 &&
+               counters[hash3(key)] > 0;
+    }
+};
+```
+
+## 14.10 Failure Modes and Common Pitfalls
 
 Understanding common failure modes helps avoid bugs and performance issues.
 
@@ -1251,7 +1618,7 @@ int query(int index) {
 **Why it happens**: Fenwick trees use 1-based indexing internally
 **Impact**: Incorrect prefix sums, wrong query results
 
-## 14.9 Key Takeaways
+## 14.11 Key Takeaways
 
 1. **Heaps** provide efficient priority queue operations
 2. **Tries** excel at prefix-based string operations
@@ -1261,7 +1628,7 @@ int query(int index) {
 6. **Sqrt Decomposition** offers simple O(√n) queries and updates
 7. Choose the right structure based on operation requirements and constraints
 
-## 14.10 Exercises
+## 14.12 Exercises
 
 1. Implement a k-way merge using a min-heap.
 
@@ -1291,7 +1658,7 @@ int query(int index) {
 
 14. Implement a Sqrt Decomposition that supports range minimum and range sum queries.
 
-## 14.10 Summary
+## 14.13 Summary
 
 Advanced data structures provide specialized operations for specific use cases. Understanding when and how to use heaps, tries, segment trees, and Fenwick trees is essential for solving complex problems efficiently.
 

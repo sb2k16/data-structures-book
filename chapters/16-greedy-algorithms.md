@@ -354,14 +354,84 @@ vector<int> jobSequencing(vector<Job>& jobs) {
 
 ## 16.9 Dijkstra's Algorithm (Greedy)
 
-Dijkstra's algorithm for shortest paths is greedy because it always picks the unvisited vertex with the smallest distance.
+Dijkstra's algorithm for shortest paths is greedy because it always picks the unvisited vertex with the smallest distance. This is covered in detail in Chapter 11 (Graphs), but here we emphasize the greedy nature.
+
+**Greedy Choice**: At each step, select the unvisited vertex with minimum distance from source.
+
+**Why It's Greedy**: The algorithm makes locally optimal choices (closest unvisited vertex) without considering future implications, yet produces globally optimal shortest paths.
+
+**Key Insight**: Once a vertex is processed, its shortest distance is finalized. This is the greedy choice property - we commit to the locally best option.
+
+## 16.10 When Greedy Fails: Counterexamples
+
+Understanding when greedy algorithms fail is crucial for choosing the right approach.
+
+### Example: 0-1 Knapsack (Greedy Fails)
+
+The fractional knapsack (Section 16.3) works with greedy, but 0-1 knapsack doesn't:
 
 ```cpp
-// Already covered in Chapter 11
-// Greedy choice: Always process the vertex with minimum distance
+// Greedy approach for 0-1 Knapsack (WRONG)
+struct Item {
+    int value;
+    int weight;
+    double ratio;
+    
+    Item(int v, int w) : value(v), weight(w), ratio((double)v / w) {}
+};
+
+int knapsackGreedy(vector<Item>& items, int capacity) {
+    // Sort by value/weight ratio (greedy choice)
+    sort(items.begin(), items.end(), 
+         [](const Item& a, const Item& b) { return a.ratio > b.ratio; });
+    
+    int totalValue = 0;
+    for (const auto& item : items) {
+        if (capacity >= item.weight) {
+            totalValue += item.value;
+            capacity -= item.weight;
+        }
+    }
+    return totalValue; // May not be optimal!
+}
+
+// Example where greedy fails:
+// Items: (value=60, weight=10), (value=100, weight=20), (value=120, weight=30)
+// Capacity: 50
+// Greedy: Takes item 1 (60) + item 2 (100) = 160
+// Optimal: Takes item 2 (100) + item 3 (120) = 220
 ```
 
-## 16.10 Greedy Algorithm Patterns
+**Why Greedy Fails**: Once we take an item, we can't take a fraction of it. The greedy choice (best ratio) might prevent us from taking better combinations.
+
+**Solution**: Use Dynamic Programming (Chapter 12) for 0-1 Knapsack.
+
+### Example: Coin Change (Greedy Fails for Some Denominations)
+
+Greedy works for standard US coins (1, 5, 10, 25) but fails for arbitrary denominations:
+
+```cpp
+// Greedy coin change (works for some systems, fails for others)
+int coinChangeGreedy(vector<int>& coins, int amount) {
+    sort(coins.rbegin(), coins.rend()); // Descending order
+    
+    int count = 0;
+    for (int coin : coins) {
+        count += amount / coin;
+        amount %= coin;
+    }
+    return amount == 0 ? count : -1; // May not find solution even if one exists
+}
+
+// Example where greedy fails:
+// Coins: [1, 3, 4], Amount: 6
+// Greedy: 4 + 1 + 1 = 3 coins
+// Optimal: 3 + 3 = 2 coins
+```
+
+**Solution**: Use Dynamic Programming for arbitrary coin systems.
+
+## 16.11 Greedy Algorithm Patterns
 
 ### Pattern 1: Interval Problems
 - Sort by end time
@@ -379,7 +449,7 @@ Dijkstra's algorithm for shortest paths is greedy because it always picks the un
 - Use priority queue
 - Greedily process minimum cost edges/vertices
 
-## 16.11 Proving Greedy Correctness
+## 16.12 Proving Greedy Correctness
 
 ### Method 1: Greedy Choice Property
 Show that a greedy choice is part of some optimal solution.
@@ -390,7 +460,7 @@ Show that any solution can be transformed to include the greedy choice without m
 ### Method 3: Induction
 Prove that making greedy choices leads to optimal solution.
 
-## 16.12 Key Takeaways
+## 16.13 Key Takeaways
 
 1. **Greedy algorithms** make locally optimal choices
 2. **Greedy choice property** must hold for correctness
@@ -399,7 +469,7 @@ Prove that making greedy choices leads to optimal solution.
 5. **Often efficient** - simpler than DP
 6. **Common patterns** - intervals, scheduling, optimization
 
-## 16.13 Exercises
+## 16.14 Exercises
 
 1. Implement a greedy algorithm for the "Meeting Rooms" problem.
 
@@ -421,7 +491,7 @@ Prove that making greedy choices leads to optimal solution.
 
 10. Create a greedy solution for "Reorganize String" problem.
 
-## 16.14 Summary
+## 16.15 Summary
 
 Greedy algorithms are powerful tools for optimization problems. They work by making locally optimal choices, which often lead to globally optimal solutions. However, it's crucial to verify that the greedy choice property holds, as greedy algorithms don't always produce optimal results. Understanding when to use greedy algorithms and how to prove their correctness is essential for solving many algorithmic problems efficiently.
 

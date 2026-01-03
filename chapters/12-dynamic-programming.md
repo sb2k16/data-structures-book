@@ -717,11 +717,13 @@ int minimumTotalOptimized(vector<vector<int>>& triangle) {
 }
 ```
 
-## 12.5 Backtracking and Memoization Solutions
+## 12.5 Backtracking with Memoization
+
+**Note**: While backtracking is a distinct algorithmic technique, it often benefits from memoization to avoid redundant state exploration. This section shows how backtracking problems can be optimized using DP techniques.
 
 ### 12.5.1 Understanding Backtracking in DP Context
 
-Backtracking is a systematic way to explore all possible solutions to a problem by building solutions incrementally and abandoning partial solutions that cannot lead to a complete solution. When combined with memoization, backtracking becomes a powerful tool for solving complex DP problems.
+Backtracking systematically explores all possible solutions by building solutions incrementally and abandoning partial solutions that cannot lead to a complete solution. When combined with memoization, backtracking becomes a powerful tool for solving complex DP problems.
 
 #### Core Concept
 

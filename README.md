@@ -20,7 +20,6 @@ A comprehensive introduction to data structures and algorithms using C++ as the 
 ### Part III: Non-Linear Data Structures
 - [Chapter 6: Trees and Binary Trees](chapters/06-trees-and-binary-trees.md)
 - [Chapter 7: String Search Algorithms](chapters/07-string-search-algorithms.md)
-- [Chapter 8: Modern String Search Optimizations](chapters/08-modern-string-search-optimizations.md)
 - [Chapter 9: Sorting Algorithms](chapters/09-sorting-algorithms.md)
 - [Chapter 10: Hash Tables and Hashing](chapters/10-hash-tables-and-hashing.md)
 - [Chapter 11: Graphs](chapters/11-graphs.md)
@@ -32,6 +31,9 @@ A comprehensive introduction to data structures and algorithms using C++ as the 
 - [Chapter 15: Problem Solving Strategies and Practice](chapters/15-problem-solving-strategies.md)
 - [Chapter 16: Greedy Algorithms](chapters/16-greedy-algorithms.md)
 - [Chapter 17: Divide and Conquer](chapters/17-divide-and-conquer.md)
+
+### Part V: Advanced Topics
+- [Chapter 18: Advanced Topics and Modern Optimizations](chapters/18-advanced-topics.md)
 
 ## 🚀 Quick Start
 
@@ -65,7 +67,6 @@ data-structures-book/
 │   ├── 05-stacks-and-queues.md
 │   ├── 06-trees-and-binary-trees.md
 │   ├── 07-string-search-algorithms.md
-│   ├── 08-modern-string-search-optimizations.md
 │   ├── 09-sorting-algorithms.md
 │   ├── 10-hash-tables-and-hashing.md
 │   ├── 11-graphs.md
@@ -74,7 +75,8 @@ data-structures-book/
 │   ├── 14-advanced-data-structures.md
 │   ├── 15-problem-solving-strategies.md
 │   ├── 16-greedy-algorithms.md
-│   └── 17-divide-and-conquer.md
+│   ├── 17-divide-and-conquer.md
+│   └── 18-advanced-topics.md
 ├── examples/                          # Runnable code examples
 │   ├── arrays/
 │   ├── string_search/
@@ -132,7 +134,6 @@ After completing this book, readers will be able to:
 - [x] Chapter 5: Stacks and Queues
 - [x] Chapter 6: Trees and Binary Trees
 - [x] Chapter 7: String Search Algorithms
-- [x] Chapter 8: Modern String Search Optimizations
 - [x] Chapter 9: Sorting Algorithms
 - [x] Chapter 10: Hash Tables and Hashing
 - [x] Chapter 11: Graphs
@@ -142,6 +143,7 @@ After completing this book, readers will be able to:
 - [x] Chapter 15: Problem Solving Strategies and Practice
 - [x] Chapter 16: Greedy Algorithms
 - [x] Chapter 17: Divide and Conquer
+- [x] Chapter 18: Advanced Topics and Modern Optimizations
 
 ### 🚧 In Progress
 - All chapters completed! 🎉

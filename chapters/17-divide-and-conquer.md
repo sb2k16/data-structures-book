@@ -506,29 +506,179 @@ where:
 3. **Quick Sort (average)**: T(n) = 2T(n/2) + O(n)
    - Same as merge sort: Θ(n log n)
 
-## 17.10 Divide and Conquer Patterns
+## 17.10 Advanced Divide and Conquer Problems
+
+### 17.10.1 Counting Inversions
+
+Count the number of inversions (pairs where i < j but arr[i] > arr[j]):
+
+```cpp
+#include <iostream>
+#include <vector>
+using namespace std;
+
+long long mergeAndCount(vector<int>& arr, int left, int mid, int right) {
+    vector<int> temp(right - left + 1);
+    int i = left, j = mid + 1, k = 0;
+    long long inversions = 0;
+    
+    while (i <= mid && j <= right) {
+        if (arr[i] <= arr[j]) {
+            temp[k++] = arr[i++];
+        } else {
+            temp[k++] = arr[j++];
+            inversions += (mid - i + 1); // All remaining left elements form inversions
+        }
+    }
+    
+    while (i <= mid) temp[k++] = arr[i++];
+    while (j <= right) temp[k++] = arr[j++];
+    
+    for (i = left, k = 0; i <= right; i++, k++) {
+        arr[i] = temp[k];
+    }
+    
+    return inversions;
+}
+
+long long countInversions(vector<int>& arr, int left, int right) {
+    if (left >= right) return 0;
+    
+    int mid = left + (right - left) / 2;
+    long long inversions = 0;
+    
+    inversions += countInversions(arr, left, mid);
+    inversions += countInversions(arr, mid + 1, right);
+    inversions += mergeAndCount(arr, left, mid, right);
+    
+    return inversions;
+}
+
+// Time: O(n log n), Space: O(n)
+```
+
+### 17.10.2 Closest Pair of Points
+
+Find the closest pair of points in 2D space:
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <cmath>
+#include <climits>
+using namespace std;
+
+struct Point {
+    double x, y;
+    Point(double x, double y) : x(x), y(y) {}
+};
+
+double distance(const Point& p1, const Point& p2) {
+    return sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y));
+}
+
+double closestPairRec(vector<Point>& points, int left, int right) {
+    if (right - left <= 3) {
+        // Brute force for small sets
+        double minDist = INT_MAX;
+        for (int i = left; i <= right; i++) {
+            for (int j = i + 1; j <= right; j++) {
+                minDist = min(minDist, distance(points[i], points[j]));
+            }
+        }
+        return minDist;
+    }
+    
+    int mid = left + (right - left) / 2;
+    double midX = points[mid].x;
+    
+    double dl = closestPairRec(points, left, mid);
+    double dr = closestPairRec(points, mid + 1, right);
+    double d = min(dl, dr);
+    
+    // Check strip around mid line
+    vector<Point> strip;
+    for (int i = left; i <= right; i++) {
+        if (abs(points[i].x - midX) < d) {
+            strip.push_back(points[i]);
+        }
+    }
+    
+    // Sort by y-coordinate
+    sort(strip.begin(), strip.end(), 
+         [](const Point& a, const Point& b) { return a.y < b.y; });
+    
+    // Check points in strip (at most 6 points need checking)
+    for (int i = 0; i < strip.size(); i++) {
+        for (int j = i + 1; j < strip.size() && (strip[j].y - strip[i].y) < d; j++) {
+            d = min(d, distance(strip[i], strip[j]));
+        }
+    }
+    
+    return d;
+}
+
+double closestPair(vector<Point>& points) {
+    sort(points.begin(), points.end(), 
+         [](const Point& a, const Point& b) { return a.x < b.x; });
+    return closestPairRec(points, 0, points.size() - 1);
+}
+
+// Time: O(n log² n), can be optimized to O(n log n)
+```
+
+### 17.10.3 Majority Element
+
+Find element appearing more than n/2 times:
+
+```cpp
+int majorityElement(vector<int>& nums, int left, int right) {
+    if (left == right) return nums[left];
+    
+    int mid = left + (right - left) / 2;
+    int leftMajority = majorityElement(nums, left, mid);
+    int rightMajority = majorityElement(nums, mid + 1, right);
+    
+    if (leftMajority == rightMajority) return leftMajority;
+    
+    // Count occurrences of each candidate
+    int leftCount = count(nums.begin() + left, nums.begin() + right + 1, leftMajority);
+    int rightCount = count(nums.begin() + left, nums.begin() + right + 1, rightMajority);
+    
+    return leftCount > rightCount ? leftMajority : rightMajority;
+}
+
+// Time: O(n log n), Space: O(log n) for recursion
+```
+
+## 17.11 Divide and Conquer Patterns
 
 ### Pattern 1: Array Problems
-- Divide array into halves
-- Solve recursively
-- Combine results
+- **Divide**: Split array into halves
+- **Conquer**: Solve recursively on each half
+- **Combine**: Merge results (often O(n) work)
+- **Examples**: Merge Sort, Quick Sort, Counting Inversions
 
 ### Pattern 2: Tree Problems
-- Divide tree into subtrees
-- Solve recursively
-- Combine results
+- **Divide**: Split tree into subtrees
+- **Conquer**: Solve recursively on each subtree
+- **Combine**: Aggregate results from subtrees
+- **Examples**: Tree traversals, tree construction, tree queries
 
 ### Pattern 3: Geometric Problems
-- Divide plane/space
-- Solve recursively
-- Handle boundary cases
+- **Divide**: Partition plane/space
+- **Conquer**: Solve recursively in each partition
+- **Combine**: Handle boundary cases and merge
+- **Examples**: Closest Pair, Convex Hull, Line Intersection
 
 ### Pattern 4: Optimization Problems
-- Divide problem space
-- Find optimal in each part
-- Combine optimally
+- **Divide**: Split problem space
+- **Conquer**: Find optimal in each part
+- **Combine**: Select best from parts
+- **Examples**: Maximum Subarray, Optimal Binary Search Tree
 
-## 17.11 Key Takeaways
+## 17.12 Key Takeaways
 
 1. **Divide and Conquer** breaks problems into smaller subproblems
 2. **Recursive structure** is fundamental
@@ -538,7 +688,7 @@ where:
 6. **Many algorithms** use this paradigm
 7. **Efficiency** often comes from reducing problem size
 
-## 17.12 Exercises
+## 17.13 Exercises
 
 1. Implement merge sort for linked lists.
 
@@ -560,7 +710,7 @@ where:
 
 10. Create a divide and conquer solution for "The Skyline Problem".
 
-## 17.13 Summary
+## 17.14 Summary
 
 Divide and Conquer is a powerful algorithmic paradigm that solves problems by breaking them into smaller subproblems, solving them recursively, and combining the solutions. Understanding divide and conquer, the Master Theorem, and common patterns is essential for designing efficient algorithms and analyzing their complexity.
 
