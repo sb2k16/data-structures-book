@@ -374,7 +374,157 @@ public:
 
 ### 11.4.1 Depth-First Search (DFS)
 
-**Depth-First Search** explores as far as possible along each branch before backtracking.
+**Depth-First Search** explores as far as possible along each branch before backtracking. Think of it like exploring a maze: you go as deep as possible down one path, and only when you hit a dead end do you backtrack to try another path.
+
+#### How DFS Works: Step-by-Step Example
+
+Let's trace through DFS on the following graph, starting from vertex A:
+
+**Graph:**
+```
+    A
+   / \
+  B   C
+ / \   \
+D   E   F
+```
+
+**Step-by-Step Traversal:**
+
+**Step 1: Start at A**
+```
+Visited: [A]
+Stack: [A]
+Current: A
+```
+```
+    A*  (visited)
+   / \
+  B   C
+ / \   \
+D   E   F
+```
+
+**Step 2: Visit A's neighbors (B, C) - push to stack**
+```
+Visited: [A]
+Stack: [A, C, B]  (push in reverse order for correct traversal)
+Current: A
+```
+We push C first, then B, so B is on top (will be explored first).
+
+**Step 3: Pop B, mark visited, explore its neighbors**
+```
+Visited: [A, B]
+Stack: [A, C]
+Current: B
+```
+```
+    A*  (visited)
+   / \
+  B*  C  (B visited)
+ / \   \
+D   E   F
+```
+
+**Step 4: Visit B's neighbors (D, E) - push to stack**
+```
+Visited: [A, B]
+Stack: [A, C, E, D]  (E on top)
+Current: B
+```
+
+**Step 5: Pop D, mark visited**
+```
+Visited: [A, B, D]
+Stack: [A, C, E]
+Current: D
+```
+```
+    A*
+   / \
+  B*  C
+ / \   \
+D*  E   F  (D visited, no neighbors to explore)
+```
+
+**Step 6: Pop E, mark visited**
+```
+Visited: [A, B, D, E]
+Stack: [A, C]
+Current: E
+```
+```
+    A*
+   / \
+  B*  C
+ / \   \
+D*  E*  F  (E visited, no neighbors to explore)
+```
+
+**Step 7: Pop C, mark visited, explore its neighbors**
+```
+Visited: [A, B, D, E, C]
+Stack: [A]
+Current: C
+```
+```
+    A*
+   / \
+  B*  C*  (C visited)
+ / \   \
+D*  E*  F
+```
+
+**Step 8: Visit C's neighbor (F) - push to stack**
+```
+Visited: [A, B, D, E, C]
+Stack: [A, F]
+Current: C
+```
+
+**Step 9: Pop F, mark visited**
+```
+Visited: [A, B, D, E, C, F]
+Stack: [A]
+Current: F
+```
+```
+    A*
+   / \
+  B*  C*
+ / \   \
+D*  E*  F*  (F visited, no neighbors)
+```
+
+**Step 10: Pop A (already visited, stack empty)**
+```
+Visited: [A, B, D, E, C, F]
+Stack: []
+DFS Complete!
+```
+
+**Final Traversal Order:** A → B → D → E → C → F
+
+**Key Observations:**
+- DFS goes **deep** before going **wide**
+- Uses a **stack** (implicit in recursion, explicit in iterative)
+- Backtracks when no unvisited neighbors remain
+- Visits all vertices in a connected component
+
+#### Visual Comparison: DFS vs BFS
+
+**Same Graph, DFS (starting from A):**
+```
+A → B → D → (backtrack) → E → (backtrack) → C → F
+Depth-first: Goes deep into B's subtree before exploring C
+```
+
+**Same Graph, BFS (starting from A):**
+```
+A → B, C → D, E, F
+Breadth-first: Explores all neighbors at same level first
+```
 
 #### Recursive Implementation
 ```cpp
@@ -472,7 +622,158 @@ vector<int> dfsIterative(int start) {
 
 ### 11.4.2 Breadth-First Search (BFS)
 
-**Breadth-First Search** explores all neighbors at the current depth before moving to the next level.
+**Breadth-First Search** explores all neighbors at the current depth before moving to the next level. Think of it like ripples in water: it expands outward level by level, exploring all vertices at distance 1, then all at distance 2, and so on.
+
+#### How BFS Works: Step-by-Step Example
+
+Let's trace through BFS on the following graph, starting from vertex A:
+
+**Graph:**
+```
+    A
+   / \
+  B   C
+ / \   \
+D   E   F
+```
+
+**Step-by-Step Traversal:**
+
+**Step 1: Start at A, mark visited, enqueue**
+```
+Visited: [A]
+Queue: [A]
+Current Level: 0
+```
+```
+    A*  (visited, level 0)
+   / \
+  B   C
+ / \   \
+D   E   F
+```
+
+**Step 2: Dequeue A, visit its neighbors (B, C)**
+```
+Visited: [A]
+Queue: [B, C]  (enqueue neighbors)
+Current Level: 0 → 1
+```
+```
+    A*  (level 0, processed)
+   / \
+  B   C  (level 1, in queue)
+ / \   \
+D   E   F
+```
+
+**Step 3: Dequeue B, mark visited, enqueue its neighbors (D, E)**
+```
+Visited: [A, B]
+Queue: [C, D, E]
+Current Level: 1
+```
+```
+    A*
+   / \
+  B*  C  (B visited, level 1)
+ / \   \
+D   E   F  (D, E in queue, level 2)
+```
+
+**Step 4: Dequeue C, mark visited, enqueue its neighbor (F)**
+```
+Visited: [A, B, C]
+Queue: [D, E, F]
+Current Level: 1
+```
+```
+    A*
+   / \
+  B*  C*  (C visited, level 1)
+ / \   \
+D   E   F  (D, E, F in queue, level 2)
+```
+
+**Step 5: Dequeue D, mark visited (no neighbors to enqueue)**
+```
+Visited: [A, B, C, D]
+Queue: [E, F]
+Current Level: 2
+```
+```
+    A*
+   / \
+  B*  C*
+ / \   \
+D*  E   F  (D visited, level 2)
+```
+
+**Step 6: Dequeue E, mark visited (no neighbors to enqueue)**
+```
+Visited: [A, B, C, D, E]
+Queue: [F]
+Current Level: 2
+```
+```
+    A*
+   / \
+  B*  C*
+ / \   \
+D*  E*  F  (E visited, level 2)
+```
+
+**Step 7: Dequeue F, mark visited (no neighbors to enqueue)**
+```
+Visited: [A, B, C, D, E, F]
+Queue: []
+Current Level: 2
+BFS Complete!
+```
+```
+    A*
+   / \
+  B*  C*
+ / \   \
+D*  E*  F*  (F visited, level 2)
+```
+
+**Final Traversal Order:** A → B → C → D → E → F
+
+**Level Structure:**
+- **Level 0:** A
+- **Level 1:** B, C
+- **Level 2:** D, E, F
+
+**Key Observations:**
+- BFS explores **level by level** (breadth-first)
+- Uses a **queue** (FIFO: First In, First Out)
+- Finds **shortest path** in unweighted graphs
+- All vertices at distance k are visited before vertices at distance k+1
+
+#### Why BFS Finds Shortest Path in Unweighted Graphs
+
+**Example:** Find shortest path from A to F
+
+```
+    A
+   / \
+  B   C
+ / \   \
+D   E   F
+```
+
+**BFS Process:**
+1. **Level 0:** A (distance 0)
+2. **Level 1:** B, C (distance 1 from A)
+3. **Level 2:** D, E, F (distance 2 from A)
+
+Since BFS visits vertices in order of their distance from the source, when we first reach F at level 2, we've found the shortest path: A → C → F (length 2).
+
+**Why DFS might not find shortest path:**
+- DFS might take A → B → D → (backtrack) → E → (backtrack) → C → F
+- This path has length 2, but DFS doesn't guarantee finding it first
+- BFS guarantees finding the shortest path because it explores by distance
 
 #### Implementation
 ```cpp
@@ -577,7 +878,184 @@ public:
 
 ### 11.5.1 Dijkstra's Algorithm
 
-**Dijkstra's algorithm** finds the shortest path from a source vertex to all other vertices in a weighted graph with non-negative edge weights.
+**Dijkstra's algorithm** finds the shortest path from a source vertex to all other vertices in a weighted graph with non-negative edge weights. It uses a greedy approach: at each step, it selects the unvisited vertex with the smallest known distance and updates distances to its neighbors.
+
+#### How Dijkstra's Works: Step-by-Step Example
+
+Let's trace through Dijkstra's algorithm on the following weighted graph, starting from vertex A:
+
+**Graph:**
+```
+        A
+      / | \
+    6/  |1 \5
+    /   |   \
+   B    C    D
+   |\   |   /
+  3| \2 |4 /2
+   |  \ | /
+   E   F G
+```
+
+**Step-by-Step Execution:**
+
+**Initialization:**
+```
+Distances: A=0, B=∞, C=∞, D=∞, E=∞, F=∞, G=∞
+Visited: {}
+Priority Queue: [(0, A)]
+```
+
+**Step 1: Process A (distance = 0)**
+```
+Current: A (distance 0)
+Visited: {A}
+Distances: A=0, B=6, C=1, D=5, E=∞, F=∞, G=∞
+Queue: [(1, C), (5, D), (6, B)]
+```
+```
+        A*  (visited, dist=0)
+      / | \
+    6/  |1 \5
+    /   |   \
+   B    C    D
+  (6)  (1)  (5)  (updated distances)
+```
+
+**Step 2: Process C (distance = 1) - smallest unvisited**
+```
+Current: C (distance 1)
+Visited: {A, C}
+Distances: A=0, B=6, C=1, D=5, E=∞, F=3, G=∞
+Queue: [(3, F), (5, D), (6, B)]
+```
+```
+        A*
+      / | \
+    6/  |1 \5
+    /   |   \
+   B    C*   D
+  (6)  (1)  (5)
+        |2
+        F
+       (3)  (updated via C)
+```
+
+**Step 3: Process F (distance = 3) - smallest unvisited**
+```
+Current: F (distance 3)
+Visited: {A, C, F}
+Distances: A=0, B=5, C=1, D=5, E=∞, F=3, G=∞
+Queue: [(5, B), (5, D)]
+```
+```
+        A*
+      / | \
+    6/  |1 \5
+    /   |   \
+   B    C*   D
+  (5)  (1)  (5)  (B updated: 6→5 via F)
+   |\   |   /
+  3| \2 |4 /2
+   |  \ | /
+   E   F* G
+       (3)
+```
+
+**Step 4: Process B (distance = 5) - tie with D, pick B**
+```
+Current: B (distance 5)
+Visited: {A, C, F, B}
+Distances: A=0, B=5, C=1, D=5, E=8, F=3, G=∞
+Queue: [(5, D), (8, E)]
+```
+```
+        A*
+      / | \
+    6/  |1 \5
+    /   |   \
+   B*   C*   D
+  (5)  (1)  (5)
+   |\   |   /
+  3| \2 |4 /2
+   |  \ | /
+   E   F* G
+  (8)  (3)  (E updated via B)
+```
+
+**Step 5: Process D (distance = 5)**
+```
+Current: D (distance 5)
+Visited: {A, C, F, B, D}
+Distances: A=0, B=5, C=1, D=5, E=8, F=3, G=7
+Queue: [(7, G), (8, E)]
+```
+```
+        A*
+      / | \
+    6/  |1 \5
+    /   |   \
+   B*   C*   D*
+  (5)  (1)  (5)
+   |\   |   /
+  3| \2 |4 /2
+   |  \ | /
+   E   F* G
+  (8)  (3)  (7)  (G updated via D)
+```
+
+**Step 6: Process G (distance = 7)**
+```
+Current: G (distance 7)
+Visited: {A, C, F, B, D, G}
+Distances: A=0, B=5, C=1, D=5, E=8, F=3, G=7
+Queue: [(8, E)]
+```
+No updates (G has no unvisited neighbors).
+
+**Step 7: Process E (distance = 8)**
+```
+Current: E (distance 8)
+Visited: {A, C, F, B, D, G, E}
+Distances: A=0, B=5, C=1, D=5, E=8, F=3, G=7
+Queue: []
+Algorithm Complete!
+```
+
+**Final Shortest Distances from A:**
+- A: 0
+- C: 1 (A → C)
+- F: 3 (A → C → F)
+- B: 5 (A → C → F → B)
+- D: 5 (A → D)
+- G: 7 (A → D → G)
+- E: 8 (A → C → F → B → E)
+
+**Key Observations:**
+1. **Greedy Choice**: Always process the unvisited vertex with smallest distance
+2. **Relaxation**: Update distances if a shorter path is found
+3. **Non-negative weights**: Algorithm fails with negative weights
+4. **Optimal Substructure**: Once a vertex is processed, its distance is final
+
+#### Why Dijkstra's Requires Non-Negative Weights
+
+**Counterexample with Negative Edge:**
+```
+A --1--> B
+|        |
+-5       |
+|        1
+v        v
+C --1--> D
+```
+
+Starting from A:
+- Process A: distances B=1, C=-5
+- Process C (smallest): distance D=-4
+- Process B: distance D=2 (via B)
+- **Problem**: We already finalized D=-4, but A→B→D=2 is actually longer!
+
+With negative weights, we can't guarantee that processing a vertex means we've found its shortest path.
 
 #### Implementation
 ```cpp
@@ -1148,7 +1626,164 @@ A **Minimum Spanning Tree** is a subset of edges that connects all vertices with
 
 ### 11.7.1 Kruskal's Algorithm
 
-**Kruskal's algorithm** builds MST by adding edges in increasing order of weight.
+**Kruskal's algorithm** builds MST by adding edges in increasing order of weight, skipping edges that would create cycles. It uses Union-Find (Disjoint Set) to efficiently check for cycles.
+
+#### How Kruskal's Works: Step-by-Step Example
+
+Let's trace through Kruskal's algorithm on the following weighted graph:
+
+**Graph:**
+```
+    A ----2---- B
+    |\         /|
+    | \       / |
+   3|  \4    /5 |1
+    |   \   /   |
+    |    \ /    |
+    C ----6---- D
+    |           |
+   7|           |2
+    |           |
+    E ----------F
+         3
+```
+
+**Step-by-Step Execution:**
+
+**Step 1: Sort all edges by weight**
+```
+Edges sorted: (A-B:2), (B-D:1), (D-F:2), (E-F:3), (A-C:3), (A-D:4), (B-C:5), (C-D:6), (C-E:7)
+```
+
+**Step 2: Initialize Union-Find**
+```
+Each vertex is its own component:
+A: {A}, B: {B}, C: {C}, D: {D}, E: {E}, F: {F}
+MST edges: []
+```
+
+**Step 3: Process edge (B-D:1) - smallest weight**
+```
+Check: B and D in different components? Yes
+Action: Add edge, union B and D
+Components: {A}, {B,D}, {C}, {E}, {F}
+MST: [B-D:1]
+```
+```
+    A           B
+                |
+                |1
+                |
+    C           D
+    |           |
+    |           |2
+    |           |
+    E           F
+```
+
+**Step 4: Process edge (A-B:2)**
+```
+Check: A and B in different components? Yes (A vs {B,D})
+Action: Add edge, union A with {B,D}
+Components: {A,B,D}, {C}, {E}, {F}
+MST: [B-D:1, A-B:2]
+```
+```
+    A ----2---- B
+                |
+                |1
+                |
+    C           D
+```
+
+**Step 5: Process edge (D-F:2)**
+```
+Check: D and F in different components? Yes ({A,B,D} vs {F})
+Action: Add edge, union {A,B,D} with {F}
+Components: {A,B,D,F}, {C}, {E}
+MST: [B-D:1, A-B:2, D-F:2]
+```
+```
+    A ----2---- B
+                |
+                |1
+                |
+    C           D
+                |
+                |2
+                |
+                F
+```
+
+**Step 6: Process edge (E-F:3)**
+```
+Check: E and F in different components? Yes ({E} vs {A,B,D,F})
+Action: Add edge, union E with {A,B,D,F}
+Components: {A,B,D,E,F}, {C}
+MST: [B-D:1, A-B:2, D-F:2, E-F:3]
+```
+```
+    A ----2---- B
+                |
+                |1
+                |
+    C           D
+                |
+                |2
+                |
+    E ----------F
+         3
+```
+
+**Step 7: Process edge (A-C:3)**
+```
+Check: A and C in different components? Yes ({A,B,D,E,F} vs {C})
+Action: Add edge, union {A,B,D,E,F} with {C}
+Components: {A,B,C,D,E,F} (all connected!)
+MST: [B-D:1, A-B:2, D-F:2, E-F:3, A-C:3]
+```
+```
+    A ----2---- B
+    |           |
+    |3          |1
+    |           |
+    C           D
+                |
+                |2
+                |
+    E ----------F
+         3
+```
+
+**Step 8: Check remaining edges**
+```
+Edge (A-D:4): A and D in same component → Skip (would create cycle)
+Edge (B-C:5): B and C in same component → Skip
+Edge (C-D:6): C and D in same component → Skip
+Edge (C-E:7): C and E in same component → Skip
+```
+
+**Final MST:**
+- Total weight: 1 + 2 + 2 + 3 + 3 = 11
+- Edges: B-D, A-B, D-F, E-F, A-C
+
+**Key Observations:**
+1. **Greedy Strategy**: Always add the smallest edge that doesn't create a cycle
+2. **Union-Find**: Efficiently checks if two vertices are in the same component
+3. **Cycle Detection**: If find(u) == find(v), adding edge (u,v) would create a cycle
+4. **Stops Early**: When we have V-1 edges, we have a spanning tree
+
+#### Visual: Why We Skip Edges That Create Cycles
+
+**Before adding (A-D:4):**
+```
+    A ----2---- B
+    |           |
+    |3          |1
+    |           |
+    C           D
+```
+A and D are already connected via A→B→D. Adding A-D would create cycle A-B-D-A.
 
 #### Implementation
 ```cpp
@@ -1245,7 +1880,149 @@ public:
 
 ### 11.7.2 Prim's Algorithm
 
-**Prim's algorithm** builds MST by starting from a vertex and growing the tree.
+**Prim's algorithm** builds MST by starting from a vertex and growing the tree. At each step, it adds the minimum-weight edge that connects a vertex in the MST to a vertex outside the MST.
+
+#### How Prim's Works: Step-by-Step Example
+
+Let's trace through Prim's algorithm on the same graph, starting from vertex A:
+
+**Graph:**
+```
+    A ----2---- B
+    |\         /|
+    | \       / |
+   3|  \4    /5 |1
+    |   \   /   |
+    |    \ /    |
+    C ----6---- D
+    |           |
+   7|           |2
+    |           |
+    E ----------F
+         3
+```
+
+**Step-by-Step Execution:**
+
+**Step 1: Start with vertex A**
+```
+MST vertices: {A}
+MST edges: []
+Priority queue: [(A-C:3), (A-B:2), (A-D:4)]
+```
+```
+    A*  (in MST)
+    |\
+   3| \4
+    |  \
+    C   B, D  (candidates)
+```
+
+**Step 2: Add minimum edge (A-B:2)**
+```
+MST vertices: {A, B}
+MST edges: [A-B:2]
+Priority queue: [(A-C:3), (A-D:4), (B-D:1), (B-C:5)]
+```
+```
+    A* ----2---- B*  (both in MST)
+    |           /
+   3|          /5
+    |         /
+    C        D  (candidates: A-C:3, B-D:1, A-D:4)
+```
+
+**Step 3: Add minimum edge (B-D:1)**
+```
+MST vertices: {A, B, D}
+MST edges: [A-B:2, B-D:1]
+Priority queue: [(A-C:3), (A-D:4), (B-C:5), (D-F:2)]
+```
+```
+    A* ----2---- B*
+                /
+               /1
+              /
+    C        D*  (D in MST)
+             |
+             |2
+             |
+             F  (candidates: A-C:3, D-F:2, A-D:4)
+```
+
+**Step 4: Add minimum edge (D-F:2)**
+```
+MST vertices: {A, B, D, F}
+MST edges: [A-B:2, B-D:1, D-F:2]
+Priority queue: [(A-C:3), (A-D:4), (B-C:5), (E-F:3)]
+```
+```
+    A* ----2---- B*
+                /
+               /1
+              /
+    C        D* ----2---- F*  (F in MST)
+             |
+             |
+             |
+             E  (candidates: A-C:3, E-F:3, A-D:4)
+```
+
+**Step 5: Add minimum edge (A-C:3)**
+```
+MST vertices: {A, B, D, F, C}
+MST edges: [A-B:2, B-D:1, D-F:2, A-C:3]
+Priority queue: [(A-D:4), (B-C:5), (C-D:6), (C-E:7), (E-F:3)]
+```
+```
+    A* ----2---- B*
+    |           /
+    |3         /1
+    |         /
+    C*       D* ----2---- F*
+             |
+             |
+             |
+             E  (candidates: E-F:3, A-D:4, C-E:7)
+```
+
+**Step 6: Add minimum edge (E-F:3)**
+```
+MST vertices: {A, B, D, F, C, E}
+MST edges: [A-B:2, B-D:1, D-F:2, A-C:3, E-F:3]
+All vertices included! MST complete.
+```
+```
+    A* ----2---- B*
+    |           /
+    |3         /1
+    |         /
+    C*       D* ----2---- F*
+             |
+             |
+             |
+    E* ------3------ F*
+```
+
+**Final MST:**
+- Total weight: 2 + 1 + 2 + 3 + 3 = 11
+- Edges: A-B, B-D, D-F, A-C, E-F
+
+**Key Observations:**
+1. **Greedy Strategy**: Always add the minimum-weight edge connecting MST to outside
+2. **Grows from One Vertex**: Starts with one vertex and expands outward
+3. **Priority Queue**: Maintains minimum-weight edges from MST to outside vertices
+4. **Similar to Dijkstra's**: Uses similar structure but different edge selection criteria
+
+#### Kruskal vs Prim: When to Use Which?
+
+| Aspect | Kruskal's | Prim's |
+|--------|-----------|--------|
+| **Approach** | Sort edges, add in order | Grow from one vertex |
+| **Data Structure** | Union-Find | Priority Queue |
+| **Best For** | Sparse graphs | Dense graphs |
+| **Time Complexity** | O(E log E) | O(E log V) with binary heap |
+| **Implementation** | Simpler | Slightly more complex |
 
 #### Implementation
 ```cpp
@@ -1318,7 +2095,149 @@ public:
 
 ## 11.8 Topological Sorting
 
-**Topological sorting** is a linear ordering of vertices in a directed acyclic graph (DAG) such that for every directed edge (u, v), u comes before v.
+**Topological sorting** is a linear ordering of vertices in a directed acyclic graph (DAG) such that for every directed edge (u, v), u comes before v. Think of it as arranging tasks with dependencies: if task A depends on task B, then B must come before A in the ordering.
+
+#### How Topological Sort Works: Step-by-Step Example
+
+Let's trace through topological sorting on the following DAG:
+
+**Graph (Task Dependencies):**
+```
+    A → B → D
+    ↓   ↓   ↓
+    C → E → F
+```
+
+**Interpretation:**
+- A must complete before B and C
+- B must complete before D and E
+- C must complete before E
+- E must complete before F
+
+**Method 1: Kahn's Algorithm (BFS-based)**
+
+**Step-by-Step Execution:**
+
+**Step 1: Calculate in-degrees**
+```
+A: 0, B: 1, C: 1, D: 1, E: 2, F: 1
+```
+
+**Step 2: Initialize queue with vertices having in-degree 0**
+```
+Queue: [A]
+In-degrees: A=0, B=1, C=1, D=1, E=2, F=1
+Result: []
+```
+```
+    A* → B    (A has in-degree 0, process first)
+    ↓   ↓
+    C → E → F
+```
+
+**Step 3: Process A, remove outgoing edges, update in-degrees**
+```
+Queue: []
+In-degrees: A=0 (processed), B=0, C=0, D=1, E=2, F=1
+Result: [A]
+Add to queue: B, C (now have in-degree 0)
+Queue: [B, C]
+```
+```
+    A* → B*   (A processed, B now has in-degree 0)
+    ↓   ↓
+    C* → E → F  (C now has in-degree 0)
+```
+
+**Step 4: Process B, remove outgoing edges**
+```
+Queue: [C]
+In-degrees: B=0 (processed), D=0, E=1, F=1
+Result: [A, B]
+Add to queue: D (now has in-degree 0)
+Queue: [C, D]
+```
+```
+    A* → B* → D*  (B processed, D now has in-degree 0)
+    ↓
+    C* → E → F
+```
+
+**Step 5: Process C, remove outgoing edges**
+```
+Queue: [D]
+In-degrees: C=0 (processed), E=0, F=1
+Result: [A, B, C]
+Add to queue: E (now has in-degree 0)
+Queue: [D, E]
+```
+```
+    A* → B* → D*
+    ↓
+    C* → E*  (C processed, E now has in-degree 0)
+         ↓
+         F
+```
+
+**Step 6: Process D (no outgoing edges)**
+```
+Queue: [E]
+In-degrees: D=0 (processed)
+Result: [A, B, C, D]
+Queue: [E]
+```
+
+**Step 7: Process E**
+```
+Queue: []
+In-degrees: E=0 (processed), F=0
+Result: [A, B, C, D, E]
+Add to queue: F (now has in-degree 0)
+Queue: [F]
+```
+```
+    A* → B* → D*
+    ↓
+    C* → E* → F*  (E processed, F now has in-degree 0)
+```
+
+**Step 8: Process F**
+```
+Queue: []
+In-degrees: F=0 (processed)
+Result: [A, B, C, D, E, F]
+Topological Sort Complete!
+```
+
+**Final Ordering:** A → B → C → D → E → F
+
+**Valid Alternative Orderings:**
+- A → C → B → D → E → F
+- A → B → C → D → E → F
+- A → C → B → E → D → F
+
+**Key Observations:**
+1. **Multiple Valid Orderings**: A DAG can have multiple topological orderings
+2. **No Cycles**: If graph has cycles, topological sort is impossible
+3. **Source First**: Vertices with no incoming edges (sources) appear first
+4. **Sink Last**: Vertices with no outgoing edges (sinks) appear last
+
+#### Method 2: DFS-based Topological Sort
+
+**DFS Approach:**
+1. Perform DFS on the graph
+2. When a vertex finishes (all neighbors processed), add it to result
+3. Reverse the result to get topological order
+
+**Why Reverse?**
+- DFS finishes sinks first (no outgoing edges)
+- We want sources first, so we reverse
+
+**Example with same graph:**
+```
+DFS order (finish times): F, E, D, C, B, A
+Reversed: A, B, C, D, E, F
+```
 
 ### Implementation
 ```cpp
