@@ -1833,19 +1833,24 @@ A **Minimum Spanning Tree** is a subset of edges that connects all vertices with
 Let's trace through Kruskal's algorithm on the following weighted graph:
 
 **Graph:**
-```
-    A ----2---- B
-    |\         /|
-    | \       / |
-   3|  \4    /5 |1
-    |   \   /   |
-    |    \ /    |
-    C ----6---- D
-    |           |
-   7|           |2
-    |           |
-    E ----------F
-         3
+```mermaid
+graph TD
+    A -->|2| B
+    A -->|3| C
+    A -->|4| D
+    B -->|1| D
+    B -->|5| C
+    C -->|6| D
+    C -->|7| E
+    D -->|2| F
+    E -->|3| F
+    
+    style A fill:#E6E6FA,stroke:#333,stroke-width:2px
+    style B fill:#E6E6FA,stroke:#333,stroke-width:2px
+    style C fill:#E6E6FA,stroke:#333,stroke-width:2px
+    style D fill:#E6E6FA,stroke:#333,stroke-width:2px
+    style E fill:#E6E6FA,stroke:#333,stroke-width:2px
+    style F fill:#E6E6FA,stroke:#333,stroke-width:2px
 ```
 
 **Step-by-Step Execution:**
@@ -2119,19 +2124,24 @@ public:
 Let's trace through Prim's algorithm on the same graph, starting from vertex A:
 
 **Graph:**
-```
-    A ----2---- B
-    |\         /|
-    | \       / |
-   3|  \4    /5 |1
-    |   \   /   |
-    |    \ /    |
-    C ----6---- D
-    |           |
-   7|           |2
-    |           |
-    E ----------F
-         3
+```mermaid
+graph TD
+    A -->|2| B
+    A -->|3| C
+    A -->|4| D
+    B -->|1| D
+    B -->|5| C
+    C -->|6| D
+    C -->|7| E
+    D -->|2| F
+    E -->|3| F
+    
+    style A fill:#E6E6FA,stroke:#333,stroke-width:2px
+    style B fill:#E6E6FA,stroke:#333,stroke-width:2px
+    style C fill:#E6E6FA,stroke:#333,stroke-width:2px
+    style D fill:#E6E6FA,stroke:#333,stroke-width:2px
+    style E fill:#E6E6FA,stroke:#333,stroke-width:2px
+    style F fill:#E6E6FA,stroke:#333,stroke-width:2px
 ```
 
 **Step-by-Step Execution:**
