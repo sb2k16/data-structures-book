@@ -29,6 +29,53 @@ A **hash table** (also called a hash map) is a data structure that implements an
 | Space | O(n) | O(n) | O(n) | O(n) |
 | Ordered | No | Yes | Yes | Yes |
 
+### 10.1.1 Core Invariants
+
+Understanding hash table invariants is crucial for correct implementation and reasoning.
+
+#### Core Invariants of a Hash Table
+
+1. **Hash Function Invariant**:
+   - Same key always maps to same bucket (deterministic)
+   - Hash function distributes keys uniformly across buckets
+   - Hash computation is O(1) time
+
+2. **Key-Value Mapping Invariant**:
+   - Each key maps to at most one value
+   - Inserting same key updates existing value (or handles collision)
+   - No duplicate keys exist in the table
+
+3. **Load Factor Invariant**:
+   - Load factor = number of elements / table size
+   - Must stay below threshold (typically 0.75) to maintain O(1) performance
+   - When exceeded, rehashing must occur
+
+4. **Collision Resolution Invariant**:
+   - All keys that hash to same bucket are stored correctly
+   - Collision resolution method (chaining/probing) is consistently applied
+   - Search/insert/delete operations handle collisions correctly
+
+#### What Breaks Invariants
+
+- **Non-deterministic hash function**: Same key produces different hashes → breaks mapping
+- **Load factor too high**: Degrades to O(n) performance → breaks performance guarantee
+- **Incorrect collision handling**: Keys lost or overwritten → breaks key-value mapping
+- **Hash function with poor distribution**: Clustering causes performance degradation
+
+#### How Operations Restore Invariants
+
+- **Insert**: Compute hash → handle collision → update load factor → rehash if needed
+- **Delete**: Compute hash → locate key → remove → update load factor
+- **Rehash**: Create larger table → recompute all hashes → redistribute keys → restores load factor
+
+**Example**: When inserting a key-value pair:
+1. Compute hash (preserves hash function invariant)
+2. Handle collision if bucket occupied (preserves collision resolution invariant)
+3. Check load factor (preserves load factor invariant)
+4. Rehash if necessary (restores load factor invariant)
+
+Note: This builds on the **array representation** concepts from Chapter 3, but hash tables add the complexity of hash functions and collision resolution.
+
 ## 10.2 Understanding Hash Functions
 
 A **hash function** is any function that can be used to map data of arbitrary size to fixed-size values. The values returned by a hash function are called hash values, hash codes, digests, or simply hashes.
@@ -915,6 +962,74 @@ The **load factor** is the ratio of the number of elements to the number of buck
 ```
 Load Factor = Number of Elements / Number of Buckets
 ```
+
+### 10.6.1 Systems Perspective: Memory Layout and Rehashing Costs
+
+Understanding hash table behavior at the system level reveals critical performance considerations.
+
+#### Memory Layout and Cache Behavior
+
+**Separate Chaining:**
+- **Memory Layout**: Buckets are contiguous, but chains are linked lists (non-contiguous)
+- **Cache Performance**: Poor - pointer chasing causes cache misses
+- **Memory Overhead**: ~16-24 bytes per node (data + 2 pointers for doubly-linked)
+- **Real Impact**: Each chain traversal may cause 1-3 cache misses per node
+
+**Open Addressing (Linear Probing):**
+- **Memory Layout**: All data in contiguous array (like arrays from Chapter 3)
+- **Cache Performance**: Excellent - sequential access benefits from prefetching
+- **Memory Overhead**: Minimal - only data + status flags
+- **Real Impact**: Clustering hurts cache locality; good distribution = cache-friendly
+
+**Performance Comparison (Real-World):**
+```
+Operation          | Separate Chaining | Linear Probing
+-------------------|-------------------|---------------
+Cache misses/op    | 2-5               | 0-1
+Memory per element | ~32 bytes         | ~8 bytes
+Best case latency  | ~50-100 cycles    | ~5-10 cycles
+Worst case latency  | ~200-500 cycles   | ~100-200 cycles
+```
+
+#### Rehashing: The Hidden Cost
+
+Rehashing is expensive and can cause latency spikes:
+
+**What Happens During Rehash:**
+1. Allocate new table (2x size) - may trigger OS memory allocation
+2. Recompute all hashes - O(n) hash computations
+3. Redistribute all elements - O(n) memory copies
+4. Deallocate old table - may fragment memory
+
+**Real-World Impact:**
+- **Time Cost**: O(n) - can take milliseconds for large tables
+- **Memory Spike**: Temporarily uses 3x memory (old + new + overhead)
+- **Latency Spikes**: Insert operations can suddenly take 100-1000x longer
+- **Fragmentation**: Repeated rehashing can fragment heap memory
+
+**Mitigation Strategies:**
+1. **Pre-allocate capacity**: Use `reserve()` if size is known (like vectors in Chapter 3)
+2. **Incremental rehashing**: Rehash gradually over multiple operations
+3. **Load factor tuning**: Lower threshold (0.5) reduces rehash frequency
+4. **Memory pools**: Pre-allocate memory to reduce allocation overhead
+
+#### When Hash Tables Become a Bottleneck
+
+1. **High Collision Rate**:
+   - Poor hash function → clustering → O(n) performance
+   - Solution: Use better hash function (FNV-1a, MurmurHash)
+
+2. **Frequent Rehashing**:
+   - Growing table → repeated rehashing → latency spikes
+   - Solution: Pre-allocate or use incremental rehashing
+
+3. **Cache Thrashing**:
+   - Large table → doesn't fit in cache → constant misses
+   - Solution: Use smaller tables or cache-conscious design
+
+4. **Memory Pressure**:
+   - Many small hash tables → fragmentation
+   - Solution: Use memory pools or fewer, larger tables
 
 ### Why Load Factor Matters
 

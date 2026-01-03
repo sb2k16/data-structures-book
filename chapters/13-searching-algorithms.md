@@ -553,7 +553,124 @@ int boyerMooreSearch(const string& text, const string& pattern) {
 6. **Tree-based search** is efficient for dynamic data
 7. Choose the right algorithm based on data characteristics
 
-## 13.12 Exercises
+## 13.12 Choosing the Right Search Algorithm
+
+Search algorithms are engineering decisions, not just theoretical choices. Here's how to choose:
+
+### Decision Framework
+
+#### 1. Data Structure and Ordering
+
+**Sorted Array:**
+- **Binary Search**: O(log n), standard choice
+- **Interpolation Search**: O(log log n) average for uniform distribution
+- **Exponential Search**: O(log i) where i is position (unbounded arrays)
+- **Why**: Sorted data enables divide-and-conquer (like we saw in Chapter 9 sorting)
+
+**Unsorted Array:**
+- **Linear Search**: O(n), only option
+- **Hash Table** (Chapter 10): O(1) average if you can preprocess
+- **Why**: No structure to exploit
+
+**Dynamic Data (Insertions/Deletions):**
+- **Hash Table** (Chapter 10): O(1) average, O(n) worst
+- **Binary Search Tree** (Chapter 6): O(log n) average, maintains order
+- **Why**: Need structure that supports updates efficiently
+
+#### 2. Search Frequency
+
+**Single Search:**
+- **Linear Search**: Simple, no preprocessing
+- **Why**: Overhead of building index not worth it
+
+**Many Searches:**
+- **Hash Table**: O(1) average, worth preprocessing cost
+- **Binary Search Tree**: O(log n), maintains sorted order
+- **Why**: Amortize preprocessing cost over many searches
+
+#### 3. Memory Constraints
+
+**Tight Memory:**
+- **Linear/Binary Search**: No extra space
+- **Avoid**: Hash tables (require O(n) extra space)
+
+**Adequate Memory:**
+- **Hash Table**: Best average performance
+- **Tree Structures**: Good balance of performance and features
+
+#### 4. Data Distribution
+
+**Uniform Distribution:**
+- **Interpolation Search**: O(log log n) average
+- **Why**: Can estimate position accurately
+
+**Skewed Distribution:**
+- **Binary Search**: Consistent O(log n)
+- **Avoid**: Interpolation search (may degrade)
+
+**Unknown Distribution:**
+- **Binary Search**: Safe default
+- **Why**: Guaranteed O(log n) regardless of distribution
+
+#### 5. Additional Requirements
+
+**Need Range Queries:**
+- **Binary Search Tree** (Chapter 6): Supports range queries
+- **Segment Tree** (Chapter 14): O(log n) range queries
+- **Avoid**: Hash tables (no ordering)
+
+**Need Ordering:**
+- **Binary Search**: Maintains sorted order
+- **Tree Structures**: Natural ordering
+- **Avoid**: Hash tables (no order)
+
+**Need Fast Updates:**
+- **Hash Table**: O(1) insert/delete
+- **Tree Structures**: O(log n) insert/delete
+- **Avoid**: Sorted arrays (O(n) updates)
+
+### Real-World Recommendations
+
+**Database Indexing:**
+- **B-Trees**: Multi-level trees for disk-based systems
+- **Hash Indexes**: For equality lookups only
+
+**In-Memory Caches:**
+- **Hash Tables**: O(1) lookups, fast eviction
+- **Why**: Speed matters more than ordering
+
+**Search Engines:**
+- **Inverted Index**: Hash table mapping terms to documents
+- **Why**: Need fast keyword lookup
+
+**Autocomplete:**
+- **Trie** (Chapter 14): Prefix-based search
+- **Why**: Need prefix matching, not exact search
+
+### Decision Tree
+
+```
+Is data sorted?
+├─ Yes → Continue
+│   │
+│   Is distribution uniform?
+│   ├─ Yes → Interpolation Search
+│   └─ No → Binary Search
+│
+└─ No → Continue
+    │
+    How many searches?
+    ├─ One → Linear Search
+    └─ Many → Continue
+        │
+        Need ordering?
+        ├─ Yes → Binary Search Tree
+        └─ No → Hash Table
+```
+
+**Remember**: The best search algorithm depends on your data structure, access patterns, and requirements. Often, the data structure choice (sorted array vs. hash table) matters more than the search algorithm itself.
+
+## 13.13 Exercises
 
 1. Implement a function to find the number of occurrences of a target in a sorted array.
 
@@ -575,7 +692,7 @@ int boyerMooreSearch(const string& text, const string& pattern) {
 
 10. Implement a function to search in a nearly sorted array (elements can be at most k positions away from their sorted position).
 
-## 13.13 Summary
+## 13.14 Summary
 
 Searching is a fundamental operation in computer science. The choice of search algorithm depends on:
 - Whether data is sorted

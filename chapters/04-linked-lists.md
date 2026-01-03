@@ -26,7 +26,45 @@ A **linked list** is a linear data structure where elements (nodes) are stored i
 | Cache Performance | Better | Worse |
 | Memory Overhead | None | Pointer overhead |
 
-### 4.2 Basic Singly Linked List Implementation
+### 4.2 Core Invariants
+
+Understanding invariants is crucial for reasoning about linked lists correctly. An **invariant** is a property that must always be true for the data structure to be valid.
+
+#### Core Invariants of a Singly Linked List
+
+1. **Head Invariant**: 
+   - If the list is empty, `head == nullptr`
+   - If the list is non-empty, `head` points to the first node
+   - The first node has no predecessor
+
+2. **Linkage Invariant**:
+   - Each node (except the last) has exactly one successor via `next`
+   - The last node has `next == nullptr`
+   - No cycles exist (unless explicitly a circular list)
+
+3. **Size Invariant**:
+   - `size` equals the number of nodes in the list
+   - `size == 0` if and only if `head == nullptr`
+
+4. **Memory Invariant**:
+   - All nodes are reachable from `head` (no orphaned nodes)
+   - No dangling pointers (all `next` pointers are either `nullptr` or valid)
+
+#### Why Invariants Matter
+
+- **Correctness**: Operations must preserve invariants
+- **Debugging**: Violated invariants indicate bugs
+- **Reasoning**: Invariants help prove algorithm correctness
+- **Design**: Clear invariants guide implementation decisions
+
+**Example**: When inserting at head, we must:
+1. Create new node with `next = current head` (preserves linkage)
+2. Update `head` to new node (preserves head invariant)
+3. Increment `size` (preserves size invariant)
+
+If any step fails, invariants are violated and the list becomes invalid.
+
+### 4.3 Basic Singly Linked List Implementation
 
 ### Node Structure
 ```cpp
@@ -1120,7 +1158,105 @@ ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {
 - **Doubly Linked List**: O(1) extra space per operation
 - **Overall Space**: O(n) where n is the number of elements
 
-### 4.11 Key Takeaways
+### 4.11 Failure Modes and Common Pitfalls
+
+Understanding common failure modes helps avoid bugs and performance issues.
+
+#### 1. Memory Leaks (Raw Pointers)
+```cpp
+// WRONG: Memory leak
+ListNode* node = new ListNode(5);
+// ... use node ...
+// Forgot to delete node;
+
+// CORRECT: Use smart pointers
+unique_ptr<ListNode> node = make_unique<ListNode>(5);
+// Automatically deleted
+```
+
+**Why it happens**: Manual memory management is error-prone
+**Impact**: Memory leaks, eventual program crash
+
+#### 2. Dangling Pointers
+```cpp
+// WRONG: Dangling pointer
+ListNode* node = new ListNode(5);
+delete node;
+cout << node->data;  // Undefined behavior!
+
+// CORRECT: Set to nullptr after deletion
+delete node;
+node = nullptr;
+```
+
+**Why it happens**: Using deleted memory
+**Impact**: Undefined behavior, crashes, security vulnerabilities
+
+#### 3. Breaking Invariants
+```cpp
+// WRONG: Creating cycles accidentally
+node1->next = node2;
+node2->next = node1;  // Cycle! Violates acyclicity invariant
+
+// CORRECT: Ensure no cycles
+// Use cycle detection algorithms to verify
+```
+
+**Why it happens**: Incorrect pointer manipulation
+**Impact**: Infinite loops, broken traversal, memory leaks
+
+#### 4. Off-by-One Errors in Traversal
+```cpp
+// WRONG: Accessing beyond list
+ListNode* current = head;
+for (int i = 0; i <= size; i++) {  // Should be <
+    current = current->next;  // May be nullptr
+}
+
+// CORRECT: Check for nullptr
+ListNode* current = head;
+while (current != nullptr) {
+    // process current
+    current = current->next;
+}
+```
+
+**Why it happens**: Confusion between size and indices
+**Impact**: Null pointer dereference, crashes
+
+#### 5. Iterator Invalidation
+```cpp
+// WRONG: Modifying list while iterating
+for (auto it = list.begin(); it != list.end(); ++it) {
+    if (*it == target) {
+        list.erase(it);  // May invalidate iterator
+    }
+}
+
+// CORRECT: Use erase-remove idiom or careful iteration
+```
+
+**Why it happens**: List modification during iteration
+**Impact**: Undefined behavior, crashes
+
+#### 6. Performance Pitfalls
+```cpp
+// WRONG: O(n) insertion at tail without tail pointer
+void insertAtTail(int value) {
+    ListNode* current = head;
+    while (current->next) {  // O(n) traversal
+        current = current->next;
+    }
+    current->next = new ListNode(value);
+}
+
+// CORRECT: Maintain tail pointer for O(1) insertion
+```
+
+**Why it happens**: Not maintaining auxiliary pointers
+**Impact**: Degraded performance, O(n) instead of O(1)
+
+### 4.12 Key Takeaways
 
 1. **Linked lists** provide dynamic sizing and efficient insertion/deletion
 2. **Singly linked lists** are memory efficient but only support forward traversal
@@ -1130,7 +1266,7 @@ ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {
 6. **Common algorithms** include cycle detection, merging, and palindrome checking
 7. **Trade-offs** exist between arrays and linked lists for different use cases
 
-### 4.12 Practice Exercises
+### 4.13 Practice Exercises
 
 1. Implement a function to find the middle element of a linked list in one pass.
 2. Write a function to remove all duplicate elements from a sorted linked list.
@@ -1138,8 +1274,15 @@ ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {
 4. Implement a function to add two numbers represented as linked lists.
 5. Write a function to clone a linked list with random pointers.
 
-### 4.13 Summary
+### 4.14 Summary
 
 Linked lists are fundamental data structures that offer flexibility in memory management and efficient insertion/deletion operations. While they don't provide random access like arrays, they excel in scenarios where the size is unknown beforehand or frequent insertions/deletions are required. Understanding the different types of linked lists and their associated algorithms is crucial for solving many programming problems and designing efficient data structures.
 
-In the next chapter, we'll explore stacks and queues, which are linear data structures that follow specific access patterns and are often implemented using linked lists or arrays.
+**What We Learned:**
+- Linked lists use pointers to connect nodes, enabling dynamic sizing
+- Core invariants: head pointer, acyclicity, and linkage must be preserved
+- Common pitfalls: memory leaks, dangling pointers, and broken invariants
+- Trade-offs: flexibility vs. cache performance compared to arrays
+
+**Why the Next Chapter Follows:**
+Now that we understand both arrays and linked lists, we'll explore **stacks and queues** in Chapter 5. These abstract data types can be implemented using either arrays or linked lists, demonstrating how the same interface can be built on different foundations. This illustrates the principle of abstraction: separating what a data structure does from how it's implemented.

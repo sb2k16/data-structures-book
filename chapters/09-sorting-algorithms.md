@@ -656,7 +656,114 @@ void runSortingBenchmarks() {
 }
 ```
 
-## 9.7 Key Takeaways
+## 9.7 Choosing the Right Sorting Algorithm
+
+Sorting algorithms aren't just academic exercises—they're engineering decisions. Here's how to choose:
+
+### Decision Framework
+
+#### 1. Dataset Size
+
+**Small datasets (< 100 elements):**
+- **Insertion Sort**: Simple, cache-friendly, O(n) for nearly sorted
+- **Selection Sort**: Minimal writes (useful for flash memory)
+- **Why**: O(n²) algorithms are fast enough, simpler code
+
+**Medium datasets (100 - 10,000 elements):**
+- **Quick Sort**: Excellent average case, in-place
+- **Merge Sort**: Guaranteed O(n log n), stable
+- **Why**: O(n log n) algorithms shine, cache still effective
+
+**Large datasets (> 10,000 elements):**
+- **Quick Sort**: With good pivot selection
+- **Heap Sort**: Guaranteed O(n log n), no worst-case degradation
+- **Hybrid (Timsort)**: Combines merge + insertion (used in Python, Java)
+- **Why**: Cache misses matter, need guaranteed performance
+
+#### 2. Memory Constraints
+
+**Tight Memory (Embedded Systems):**
+- **In-place algorithms**: Quick Sort, Heap Sort, Insertion Sort
+- **Avoid**: Merge Sort (requires O(n) extra space)
+- **Consider**: Selection Sort (minimal writes for flash memory)
+
+**Adequate Memory:**
+- **Merge Sort**: Stable, predictable, parallelizable
+- **Quick Sort**: Faster in practice, but needs fallback for worst case
+
+#### 3. Stability Requirements
+
+**Stability Required:**
+- **Merge Sort**: Always stable, O(n log n)
+- **Insertion Sort**: Stable, good for small/partially sorted data
+- **Avoid**: Quick Sort, Heap Sort (not stable)
+
+**Stability Not Required:**
+- **Quick Sort**: Faster, in-place
+- **Heap Sort**: Guaranteed O(n log n), in-place
+
+#### 4. Data Characteristics
+
+**Nearly Sorted Data:**
+- **Insertion Sort**: O(n) best case, adaptive
+- **Bubble Sort**: O(n) best case (but still slower than insertion)
+- **Avoid**: Quick Sort (may degrade to O(n²))
+
+**Random Data:**
+- **Quick Sort**: Excellent average case
+- **Merge Sort**: Consistent performance
+
+**Reverse Sorted:**
+- **Merge Sort**: Consistent O(n log n)
+- **Avoid**: Quick Sort with naive pivot (O(n²))
+
+#### 5. Online vs. Offline
+
+**Online (Streaming Data):**
+- **Insertion Sort**: Process as data arrives
+- **Heap-based**: Maintain sorted window
+
+**Offline (All Data Available):**
+- **Quick Sort**: Best average performance
+- **Merge Sort**: Predictable, parallelizable
+
+### Real-World Recommendations
+
+**General Purpose (C++ std::sort):**
+- Uses **Introsort**: Quick Sort → Heap Sort fallback → Insertion Sort for small arrays
+- Combines best of all worlds
+
+**Database Systems:**
+- **External Sort**: Merge Sort variant for disk-based sorting
+- **Index Building**: Often uses multi-way merge
+
+**Embedded Systems:**
+- **Insertion Sort**: Small datasets, simple, predictable
+- **Heap Sort**: When guaranteed O(n log n) needed
+
+**Parallel Systems:**
+- **Merge Sort**: Naturally parallelizable (divide-and-conquer)
+- **Sample Sort**: Parallel Quick Sort variant
+
+### Decision Tree
+
+```
+Is dataset small (< 100)?
+├─ Yes → Insertion Sort (simple, fast enough)
+└─ No → Continue
+    │
+    Is stability required?
+    ├─ Yes → Merge Sort
+    └─ No → Continue
+        │
+        Is memory tight?
+        ├─ Yes → Quick Sort (with fallback)
+        └─ No → Quick Sort or Merge Sort
+```
+
+**Remember**: The "best" algorithm depends on your constraints. `std::sort` uses a hybrid approach for good reason—it adapts to different scenarios.
+
+## 9.8 Key Takeaways
 
 1. **Sorting algorithms** vary in performance characteristics and use cases
 2. **Comparison-based sorts** have O(n log n) lower bound in worst case
@@ -665,7 +772,7 @@ void runSortingBenchmarks() {
 5. **Real-world performance** depends on data characteristics and implementation details
 6. **Hybrid algorithms** combine benefits of multiple sorting techniques
 
-## 9.8 Exercises
+## 9.9 Exercises
 
 1. Implement a stable version of Quick Sort.
 2. Write a function to sort an array of strings using Radix Sort.
@@ -673,7 +780,7 @@ void runSortingBenchmarks() {
 4. Implement a function to find the kth smallest element using Quick Select.
 5. Write a program to sort an array of custom objects with multiple fields.
 
-## 9.9 Summary
+## 9.10 Summary
 
 Sorting algorithms are fundamental tools in computer science, each with unique characteristics and optimal use cases. Understanding the trade-offs between different sorting algorithms helps in choosing the right one for specific applications. From simple O(n²) algorithms like Bubble Sort to sophisticated O(n log n) algorithms like Merge Sort and Quick Sort, each has its place in the programmer's toolkit. Non-comparison sorting algorithms like Counting Sort and Radix Sort can achieve linear time complexity under specific conditions, making them valuable for specialized use cases.
 

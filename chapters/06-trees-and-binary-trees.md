@@ -24,9 +24,68 @@ A **tree** is a hierarchical data structure consisting of nodes connected by edg
 2. **Acyclic**: No cycles exist in the tree
 3. **Unique path**: Exactly one path exists between any two nodes
 
+### 6.1.1 Core Invariants
+
+Understanding tree invariants is essential for correct implementation and reasoning.
+
+#### Core Invariants of a Tree
+
+1. **Root Invariant**:
+   - Exactly one root node exists (no parent)
+   - All other nodes have exactly one parent
+   - Root is reachable from itself (trivially)
+
+2. **Acyclicity Invariant**:
+   - No node is its own ancestor
+   - No cycles exist in the tree structure
+   - Following parent pointers from any node eventually reaches the root
+
+3. **Connectivity Invariant**:
+   - Every node is reachable from the root
+   - There exists exactly one path from root to any node
+   - No isolated nodes exist
+
+4. **Parent-Child Invariant**:
+   - If node B is a child of node A, then A is the parent of B
+   - Each node has at most one parent
+   - Parent-child relationships form a directed acyclic graph (DAG)
+
+#### Why Invariants Matter
+
+- **Insertion**: Must maintain acyclicity and connectivity
+- **Deletion**: Must ensure no orphaned subtrees
+- **Traversal**: Relies on connectivity invariant
+- **Search**: Depends on unique path invariant
+
+**Example**: When inserting a node, we must:
+1. Set the new node's parent pointer (preserves parent-child invariant)
+2. Add the new node to parent's children (preserves connectivity)
+3. Ensure no cycle is created (preserves acyclicity)
+
+Violating any invariant creates an invalid tree structure.
+
 ## 6.2 Binary Trees
 
 A **binary tree** is a tree where each node has at most two children, referred to as the **left child** and **right child**.
+
+### 6.2.1 Core Invariants of Binary Trees
+
+In addition to general tree invariants, binary trees have specific constraints:
+
+1. **Binary Constraint**:
+   - Each node has at most 2 children
+   - Children are distinguished as "left" and "right"
+   - A node may have 0, 1, or 2 children
+
+2. **Left-Right Invariant**:
+   - `left` and `right` pointers are distinct (or both null)
+   - No node appears as both left and right child of the same parent
+   - Left and right subtrees are independent
+
+3. **Binary Search Tree Invariant** (if applicable):
+   - For any node: `left->data < node->data < right->data`
+   - All nodes in left subtree < node
+   - All nodes in right subtree > node
 
 ### Binary Tree Node Structure
 ```cpp
@@ -211,6 +270,58 @@ public:
     }
 };
 ```
+
+### 6.2.2 Systems Perspective: Memory Layout and Cache Behavior
+
+Trees use pointer-based structures, which have different cache characteristics than the contiguous arrays we saw in Chapter 3.
+
+#### Memory Layout
+
+**Pointer-Based Trees:**
+- **Non-Contiguous Memory**: Nodes allocated separately (like linked lists from Chapter 4)
+- **Cache Performance**: Poor - pointer chasing causes cache misses
+- **Memory Overhead**: ~24-32 bytes per node (data + 2-3 pointers)
+- **Access Pattern**: Traversal follows pointers → unpredictable memory access
+
+**Comparison with Arrays (Chapter 3):**
+```
+Structure    | Memory Layout    | Cache Misses/Op | Memory/Element
+-------------|------------------|-----------------|----------------
+Array        | Contiguous       | 0-1             | 4-8 bytes
+Tree Node    | Scattered        | 2-5             | 24-32 bytes
+```
+
+#### Cache Behavior
+
+**Tree Traversal:**
+- **DFS**: Follows pointers → 2-5 cache misses per level
+- **BFS**: Uses queue (Chapter 5) → additional cache misses
+- **Search**: O(log n) levels → O(log n) cache misses in balanced tree
+
+**Why Trees Are Slower Than Arrays:**
+- **Arrays** (Chapter 3): Sequential access → prefetcher helps → 0-1 misses
+- **Trees**: Random pointer access → prefetcher can't help → 2-5 misses per node
+- **Real Impact**: Tree search is O(log n) but with 3-5x higher constant factor
+
+#### When Trees Become a Bottleneck
+
+1. **Deep Trees:**
+   - Unbalanced tree → O(n) depth → many cache misses
+   - Solution: Use balanced trees (AVL, Red-Black) or arrays for small datasets
+
+2. **Frequent Traversals:**
+   - Many traversals → repeated cache misses
+   - Solution: Consider array-based heap (Chapter 14) if structure allows
+
+3. **Memory Fragmentation:**
+   - Many small trees → heap fragmentation
+   - Solution: Use memory pools or allocate nodes in batches
+
+**Comparison with Heaps (Chapter 14):**
+While both are tree-like structures:
+- **Trees**: Pointer-based → poor cache, flexible structure
+- **Heaps**: Array-based → excellent cache, fixed structure
+- **Trade-off**: Flexibility vs. performance
 
 ## 6.3 Tree Traversal Algorithms
 
@@ -832,7 +943,116 @@ int main() {
 - **Recursion stack**: O(h) where h is the height of the tree
 - **Worst case**: O(n) for skewed trees
 
-## 6.8 Key Takeaways
+## 6.8 Failure Modes and Common Pitfalls
+
+Understanding common failure modes helps avoid bugs and performance issues.
+
+#### 1. Memory Leaks in Recursive Structures
+```cpp
+// WRONG: Not deleting children recursively
+~TreeNode() {
+    delete left;   // Only deletes immediate children
+    delete right;  // But not grandchildren!
+}
+
+// CORRECT: Recursive deletion
+~TreeNode() {
+    delete left;   // Recursively deletes entire left subtree
+    delete right; // Recursively deletes entire right subtree
+}
+```
+
+**Why it happens**: Trees are recursive structures requiring recursive cleanup
+**Impact**: Memory leaks, especially in deep trees
+
+#### 2. Breaking BST Invariant
+```cpp
+// WRONG: Inserting without maintaining BST property
+void insert(int value) {
+    if (!root) {
+        root = new TreeNode(value);
+        return;
+    }
+    root->left = new TreeNode(value);  // Violates BST invariant!
+}
+
+// CORRECT: Maintain BST property
+void insert(int value) {
+    root = insertHelper(root, value);
+}
+```
+
+**Why it happens**: Not maintaining ordering invariant
+**Impact**: Search operations fail, tree becomes invalid
+
+#### 3. Stack Overflow in Deep Trees
+```cpp
+// WRONG: Recursive traversal on very deep tree
+void inorder(TreeNode* node) {
+    if (!node) return;
+    inorder(node->left);   // May cause stack overflow
+    process(node);
+    inorder(node->right);
+}
+
+// CORRECT: Use iterative approach for deep trees
+void inorderIterative() {
+    stack<TreeNode*> st;
+    // ... iterative implementation
+}
+```
+
+**Why it happens**: Deep recursion exhausts stack space
+**Impact**: Stack overflow, program crash
+
+#### 4. Dangling Pointers After Deletion
+```cpp
+// WRONG: Using node after deletion
+TreeNode* node = findNode(value);
+deleteNode(node);
+cout << node->data;  // Undefined behavior!
+
+// CORRECT: Set to nullptr or don't use after deletion
+deleteNode(node);
+node = nullptr;
+```
+
+**Why it happens**: Not handling deleted nodes properly
+**Impact**: Undefined behavior, crashes
+
+#### 5. Incorrect Height Calculation
+```cpp
+// WRONG: Not handling null case
+int height(TreeNode* node) {
+    return 1 + max(height(node->left), height(node->right));
+    // Crashes if node is nullptr
+}
+
+// CORRECT: Handle base case
+int height(TreeNode* node) {
+    if (!node) return -1;  // or 0, depending on definition
+    return 1 + max(height(node->left), height(node->right));
+}
+```
+
+**Why it happens**: Missing base case in recursion
+**Impact**: Null pointer dereference, crashes
+
+#### 6. Creating Cycles
+```cpp
+// WRONG: Creating cycle in tree
+node->left = child;
+child->parent = node;
+node->left = node;  // Cycle! Violates acyclicity invariant
+
+// CORRECT: Ensure no cycles
+// Use cycle detection or careful pointer management
+```
+
+**Why it happens**: Incorrect pointer manipulation
+**Impact**: Infinite loops, broken traversal, memory leaks
+
+## 6.9 Key Takeaways
 
 1. **Trees** provide hierarchical data organization with efficient search, insert, and delete operations
 2. **Binary Search Trees** maintain sorted order and provide O(log n) average-case operations
@@ -841,7 +1061,7 @@ int main() {
 5. **BST operations** are efficient when the tree is balanced
 6. **Tree algorithms** often use recursion naturally due to the recursive structure
 
-## 6.9 Exercises
+## 6.10 Exercises
 
 1. Implement a function to find the diameter of a binary tree.
 2. Write a function to convert a sorted array to a balanced BST.
@@ -849,8 +1069,15 @@ int main() {
 4. Create a function to check if a binary tree is a valid BST.
 5. Write a function to serialize and deserialize a binary tree.
 
-## 6.10 Summary
+## 6.11 Summary
 
 Trees and binary trees are fundamental hierarchical data structures that provide efficient organization and access patterns. Binary Search Trees, in particular, offer excellent average-case performance for search, insertion, and deletion operations. Understanding tree traversal algorithms, tree properties, and common tree problems is essential for solving many algorithmic challenges and designing efficient data structures.
 
-In the next chapter, we'll explore hash tables and hashing techniques, which provide constant-time average-case performance for key-value operations and are widely used in modern software systems.
+**What We Learned:**
+- Trees organize data hierarchically with parent-child relationships
+- Core invariants: acyclicity, connectivity, and (for BSTs) ordering
+- Common pitfalls: memory leaks, stack overflow, and broken invariants
+- Recursive algorithms naturally fit tree structures
+
+**Why the Next Chapter Follows:**
+Now that we understand hierarchical structures, we'll explore **string search algorithms** in Chapter 7. While trees organize data hierarchically, strings are linear sequences, and efficient searching within strings is a fundamental problem in text processing, pattern matching, and many real-world applications.

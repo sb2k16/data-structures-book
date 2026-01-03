@@ -2,23 +2,17 @@
 
 ## 11.1 Introduction to Graphs
 
-A **graph** is a non-linear data structure consisting of a finite set of vertices (nodes) and edges that connect pairs of vertices. Graphs are used to represent relationships and connections between entities, making them one of the most versatile and important data structures in computer science.
+A **graph** is a collection of vertices (nodes) connected by edges. Unlike trees (Chapter 6), graphs can have cycles and multiple paths between vertices, making them ideal for modeling complex relationships.
 
 ### Key Characteristics
 
-- **Vertices (Nodes)**: The fundamental units of a graph
-- **Edges**: Connections between vertices
-- **Directed/Undirected**: Edges can have direction or be bidirectional
-- **Weighted/Unweighted**: Edges can have associated weights
-- **Cyclic/Acyclic**: Graphs can contain cycles or be acyclic
+- **Vertices (Nodes)**: The fundamental units
+- **Edges**: Connections between vertices (can be directed/undirected, weighted/unweighted)
+- **Cyclic/Acyclic**: Can contain cycles (unlike trees from Chapter 6)
 
 ### Why Graphs Matter
 
-1. **Real-world Modeling**: Represent networks, social connections, maps, dependencies
-2. **Problem Solving**: Many problems are naturally graph problems
-3. **Algorithm Foundation**: Basis for many important algorithms
-4. **Interview Importance**: Frequently asked in technical interviews
-5. **System Design**: Used in routing, scheduling, resource allocation
+Graphs model real-world relationships (networks, dependencies, maps) and are fundamental to many algorithms. They're essential for system design (routing, scheduling) and frequently appear in technical interviews.
 
 ### Graph vs. Trees
 
@@ -29,6 +23,51 @@ A **graph** is a non-linear data structure consisting of a finite set of vertice
 | Root | Has a root | No root |
 | Parent-Child | Hierarchical | No hierarchy |
 | Edges | n-1 edges (n nodes) | Can have any number |
+
+### 11.1.1 Core Invariants
+
+Understanding graph invariants helps reason about graph algorithms and representations.
+
+#### Core Invariants of a Graph
+
+1. **Edge Consistency Invariant**:
+   - If edge (u, v) exists in undirected graph, then (v, u) must be represented
+   - If edge (u, v) exists in directed graph, (v, u) may or may not exist
+   - Edge representation matches graph type (directed/undirected)
+
+2. **Vertex-Edge Relationship Invariant**:
+   - Every edge connects exactly two vertices (or one vertex to itself for self-loops)
+   - Vertices referenced by edges must exist in the graph
+   - No dangling edges (edges pointing to non-existent vertices)
+
+3. **Representation Consistency Invariant**:
+   - Adjacency list/matrix accurately reflects all edges
+   - No duplicate edges (unless multigraph)
+   - Graph representation matches graph structure
+
+4. **Weight Invariant** (for weighted graphs):
+   - All edges have valid weights
+   - Weight values are consistent with graph semantics (distances, costs, etc.)
+
+#### What Breaks Invariants
+
+- **Inconsistent edge representation**: Undirected graph with only one direction stored → breaks edge consistency
+- **Dangling references**: Edge points to deleted vertex → breaks vertex-edge relationship
+- **Stale adjacency data**: Vertex deleted but edges remain → breaks representation consistency
+- **Invalid weights**: Negative weights in distance graph → breaks weight invariant
+
+#### How Operations Restore Invariants
+
+- **Add edge**: Update both vertices' adjacency lists/matrix → preserves edge consistency
+- **Remove vertex**: Remove all incident edges first → preserves vertex-edge relationship
+- **Update representation**: Rebuild adjacency structure → restores representation consistency
+
+**Example**: When adding an edge (u, v) to an undirected graph:
+1. Add v to u's adjacency list (preserves edge consistency)
+2. Add u to v's adjacency list (preserves edge consistency for undirected graph)
+3. Update adjacency matrix if used (preserves representation consistency)
+
+Note: This builds on the **connectivity invariant** we established in Chapter 6 (Trees), but graphs relax the acyclicity constraint. Unlike trees, graphs can have cycles and multiple paths between vertices, which requires different representation strategies (adjacency matrix vs. list) as we'll see next.
 
 ## 11.2 Graph Terminology
 
@@ -176,6 +215,53 @@ public:
 - O(V²) space complexity
 - Inefficient for sparse graphs
 - Adding/removing vertices is expensive
+
+### 11.3.1.1 Systems Perspective: Memory Layout and Cache Behavior
+
+Understanding graph representation at the system level reveals critical performance trade-offs.
+
+#### Memory Layout Comparison
+
+**Adjacency Matrix:**
+- **Memory Layout**: Contiguous 2D array (like 2D arrays from Chapter 3)
+- **Cache Performance**: Excellent for dense graphs - sequential access patterns
+- **Memory Overhead**: O(V²) - significant for large graphs
+- **Access Pattern**: Random access for edge queries, but matrix is cache-friendly
+
+**Adjacency List:**
+- **Memory Layout**: Array of linked lists (combines arrays from Chapter 3 with linked lists from Chapter 4)
+- **Cache Performance**: Poor - pointer chasing causes cache misses
+- **Memory Overhead**: O(V + E) - efficient for sparse graphs
+- **Access Pattern**: Sequential within each list, but jumping between lists hurts cache
+
+**Performance Comparison (Real-World):**
+```
+Operation          | Adjacency Matrix | Adjacency List
+-------------------|------------------|---------------
+Edge Query         | ~5 cycles        | ~50-100 cycles
+Iterate Neighbors  | O(V) scans       | O(degree) - cache-friendly
+Memory (sparse)    | O(V²)            | O(V + E) - much better
+Cache Misses       | 0-1 per query    | 2-5 per neighbor
+```
+
+#### When Each Representation Wins
+
+**Use Adjacency Matrix When:**
+- Graph is dense (E ≈ V²)
+- Need frequent edge existence checks
+- Cache performance matters more than memory
+- Graph is small enough to fit in memory
+
+**Use Adjacency List When:**
+- Graph is sparse (E << V²)
+- Memory is constrained
+- Need to iterate neighbors frequently
+- Graph is large (memory savings significant)
+
+**Real-World Example:**
+- **Social Networks**: Sparse (each person has ~100-1000 friends) → Adjacency List
+- **Complete Graphs**: Dense (all pairs connected) → Adjacency Matrix
+- **Road Networks**: Sparse (each intersection connects to ~4 roads) → Adjacency List
 
 ### 11.3.2 Adjacency List
 

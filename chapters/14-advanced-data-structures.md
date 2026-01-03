@@ -23,12 +23,104 @@ A **heap** is a complete binary tree that satisfies the heap property. In a max-
 - **Heap Property**: Parent-child relationship maintained
 - **Array Representation**: Efficiently stored in an array
 
+### 14.2.1 Core Invariants
+
+Heaps maintain critical invariants that must be preserved by all operations.
+
+#### Core Invariants of a Heap
+
+1. **Heap Property Invariant**:
+   - **Max-Heap**: For every node, `parent >= all children`
+   - **Min-Heap**: For every node, `parent <= all children`
+   - This property holds recursively for all subtrees
+
+2. **Complete Binary Tree Invariant**:
+   - All levels are completely filled except possibly the last level
+   - Last level is filled from left to right
+   - No gaps exist in the tree structure
+
+3. **Array Representation Invariant**:
+   - `heap[0]` is the root
+   - For node at index `i`: parent at `(i-1)/2`, children at `2i+1` and `2i+2`
+   - Array size equals number of elements (no unused slots)
+
+4. **Shape Invariant**:
+   - Tree height is always ⌊log₂(n)⌋ or ⌊log₂(n)⌋ + 1
+   - Adding elements maintains left-to-right filling order
+
+#### Why Invariants Matter
+
+- **Extract Operations**: Heap property ensures root is max/min
+- **Insert Operations**: Must maintain both shape and heap property
+- **Heapify**: Restores invariants after violations
+- **Correctness**: All operations must preserve invariants
+
+**Example**: When inserting a value:
+1. Add to end (preserves shape invariant)
+2. Heapify up (restores heap property invariant)
+3. If heapify fails, heap property is violated → invalid heap
+
+**Example**: When extracting max:
+1. Remove root, move last element to root (may violate heap property)
+2. Heapify down (restores heap property invariant)
+3. If heapify fails, result is not a valid heap
+
 ### Array Representation
 
 For a node at index `i`:
 - Parent: `(i - 1) / 2`
 - Left child: `2 * i + 1`
 - Right child: `2 * i + 2`
+
+### 14.2.2 Systems Perspective: Cache Performance and Memory Layout
+
+Heaps excel at cache performance due to their array representation, similar to the cache benefits we discussed for arrays in Chapter 3.
+
+#### Memory Layout and Cache Behavior
+
+**Array-Based Storage:**
+- **Contiguous Memory**: All elements stored in single array (like arrays from Chapter 3)
+- **Cache Locality**: Excellent - parent and children are nearby in memory
+- **Memory Overhead**: Minimal - only data, no pointers (unlike trees from Chapter 6)
+- **Access Pattern**: Heapify operations access parent → children → grandchildren (spatial locality)
+
+**Cache Performance Analysis:**
+```
+Operation          | Cache Misses | Notes
+-------------------|---------------|------------------
+heapifyUp          | 0-1           | Sequential parent access
+heapifyDown        | 0-2           | Children are adjacent
+insert            | 0-1           | Append + heapifyUp
+extractMax        | 0-2           | Swap + heapifyDown
+buildHeap         | ~log n        | Bottom-up construction
+```
+
+**Why Heaps Beat Tree-Based Priority Queues:**
+- **Trees** (Chapter 6): Pointer chasing → 2-5 cache misses per level
+- **Heaps**: Array access → 0-1 cache misses per operation
+- **Real Impact**: Heaps are 2-3x faster in practice despite same O(log n) complexity
+
+#### When Heaps Become a Bottleneck
+
+1. **Large Heap Operations**:
+   - Heapify traverses O(log n) levels → cache misses accumulate
+   - Solution: Use d-ary heaps (more children, fewer levels) for better cache behavior
+
+2. **Frequent Resizing**:
+   - Vector reallocation (like arrays in Chapter 3) → O(n) cost
+   - Solution: Pre-allocate capacity if size is known
+
+3. **Memory Fragmentation**:
+   - Many small heaps → fragmentation
+   - Solution: Use memory pools or fewer, larger heaps
+
+**Comparison with Balanced Trees:**
+While balanced trees (Chapter 6) also provide O(log n) operations, heaps win in practice:
+- **Memory**: Heaps use ~50% less memory (no pointers)
+- **Cache**: Heaps have better cache locality (contiguous array, as we saw in Chapter 3)
+- **Overhead**: Heaps have lower constant factors
+
+This demonstrates the same principle we established in Chapter 3: contiguous memory layouts (arrays) provide superior cache performance compared to pointer-based structures (trees from Chapter 6).
 
 ### Max Heap Implementation
 ```cpp
@@ -1022,7 +1114,144 @@ public:
 | Fenwick Tree | O(log n) | O(log n) | O(n) | Prefix/point |
 | Sqrt Decomp | O(√n) | O(√n) | O(n) | Simple |
 
-## 14.8 Key Takeaways
+## 14.8 Failure Modes and Common Pitfalls
+
+Understanding common failure modes helps avoid bugs and performance issues.
+
+#### 1. Heap Property Violation
+```cpp
+// WRONG: Not maintaining heap property
+void insert(int value) {
+    heap.push_back(value);  // Violates heap property!
+    // Missing heapifyUp()
+}
+
+// CORRECT: Always restore heap property
+void insert(int value) {
+    heap.push_back(value);
+    heapifyUp(heap.size() - 1);  // Restore invariant
+}
+```
+
+**Why it happens**: Forgetting to restore heap property after modification
+**Impact**: Extract operations return wrong value, heap becomes invalid
+
+#### 2. Index Out of Bounds
+```cpp
+// WRONG: Not checking bounds
+int parent(int i) {
+    return (i - 1) / 2;  // Crashes if i == 0
+}
+
+void heapifyUp(int index) {
+    while (index > 0) {  // Must check!
+        int p = parent(index);
+        // ...
+    }
+}
+```
+
+**Why it happens**: Array indexing without bounds checking
+**Impact**: Out-of-bounds access, undefined behavior
+
+#### 3. Incorrect Heapify Logic
+```cpp
+// WRONG: Only checking one child
+void heapifyDown(int index) {
+    int left = 2 * index + 1;
+    if (heap[index] < heap[left]) {
+        swap(heap[index], heap[left]);
+    }
+    // Missing right child check!
+}
+
+// CORRECT: Check both children
+void heapifyDown(int index) {
+    int largest = index;
+    int left = 2 * index + 1;
+    int right = 2 * index + 2;
+    
+    if (left < heap.size() && heap[left] > heap[largest])
+        largest = left;
+    if (right < heap.size() && heap[right] > heap[largest])
+        largest = right;
+    // ...
+}
+```
+
+**Why it happens**: Incomplete comparison logic
+**Impact**: Heap property not maintained, incorrect results
+
+#### 4. Trie Memory Leaks
+```cpp
+// WRONG: Not deleting children
+~TrieNode() {
+    // Children not deleted!
+}
+
+// CORRECT: Recursive deletion
+~TrieNode() {
+    for (auto& pair : children) {
+        delete pair.second;  // Recursively delete
+    }
+}
+```
+
+**Why it happens**: Trees require recursive cleanup
+**Impact**: Memory leaks, especially with many words
+
+#### 5. Segment Tree Index Calculation Errors
+```cpp
+// WRONG: Incorrect segment tree indexing
+int query(int node, int start, int end, int l, int r) {
+    if (l > end || r < start) return 0;
+    if (l <= start && end <= r) return tree[node];
+    
+    int mid = (start + end) / 2;
+    return query(2 * node, start, mid, l, r) +  // Wrong: should be mid+1
+           query(2 * node + 1, mid, end, l, r);   // Wrong: should be mid+1
+}
+
+// CORRECT: Proper range splitting
+int query(int node, int start, int end, int l, int r) {
+    if (l > end || r < start) return 0;
+    if (l <= start && end <= r) return tree[node];
+    
+    int mid = (start + end) / 2;
+    return query(2 * node, start, mid, l, r) +
+           query(2 * node + 1, mid + 1, end, l, r);
+}
+```
+
+**Why it happens**: Off-by-one errors in range splitting
+**Impact**: Incorrect query results, infinite recursion
+
+#### 6. Fenwick Tree Index Confusion
+```cpp
+// WRONG: Using 0-based indexing directly
+void update(int index, int delta) {
+    index++;  // Convert to 1-based
+    while (index <= n) {
+        tree[index] += delta;
+        index += index & -index;  // Correct
+    }
+}
+
+int query(int index) {
+    // WRONG: Forgot to convert to 1-based
+    int sum = 0;
+    while (index > 0) {
+        sum += tree[index];
+        index -= index & -index;
+    }
+    return sum;
+}
+```
+
+**Why it happens**: Fenwick trees use 1-based indexing internally
+**Impact**: Incorrect prefix sums, wrong query results
+
+## 14.9 Key Takeaways
 
 1. **Heaps** provide efficient priority queue operations
 2. **Tries** excel at prefix-based string operations
@@ -1032,7 +1261,7 @@ public:
 6. **Sqrt Decomposition** offers simple O(√n) queries and updates
 7. Choose the right structure based on operation requirements and constraints
 
-## 14.9 Exercises
+## 14.10 Exercises
 
 1. Implement a k-way merge using a min-heap.
 
@@ -1065,4 +1294,14 @@ public:
 ## 14.10 Summary
 
 Advanced data structures provide specialized operations for specific use cases. Understanding when and how to use heaps, tries, segment trees, and Fenwick trees is essential for solving complex problems efficiently.
+
+**What We Learned:**
+- Heaps maintain heap property invariant for efficient priority queue operations
+- Tries enable fast prefix-based string operations
+- Segment Trees and Fenwick Trees support efficient range queries
+- Sparse Table and Sqrt Decomposition offer alternative approaches for range queries
+- Common pitfalls: heap property violations, index calculation errors, memory leaks
+
+**Why the Next Chapter Follows:**
+Now that we've covered advanced data structures, we'll explore **greedy algorithms** in Chapter 16. These algorithms make locally optimal choices at each step, and many greedy algorithms (like Huffman coding) rely on heaps and other advanced structures we've just learned.
 

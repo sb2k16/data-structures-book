@@ -18,6 +18,57 @@ A **queue** follows the **First-In-First-Out (FIFO)** principle:
 - The first element added is the first to be removed
 - Operations: `enqueue()` (add), `dequeue()` (remove), `front()` (view front element), `isEmpty()`
 
+### 5.1.1 Core Invariants
+
+Understanding invariants ensures correct stack and queue implementations.
+
+#### Core Invariants of a Stack
+
+1. **LIFO Invariant**:
+   - Last element pushed is first element popped
+   - Elements maintain insertion order in reverse
+   - `top()` always returns most recently pushed element
+
+2. **Size Invariant**:
+   - `size == 0` if and only if stack is empty
+   - Size equals number of elements in stack
+   - Size increases by 1 on push, decreases by 1 on pop
+
+3. **Access Invariant**:
+   - Only top element is accessible
+   - No random access to middle elements
+   - Operations only affect top of stack
+
+#### Core Invariants of a Queue
+
+1. **FIFO Invariant**:
+   - First element enqueued is first element dequeued
+   - Elements maintain insertion order
+   - `front()` always returns oldest element
+
+2. **Size Invariant**:
+   - `size == 0` if and only if queue is empty
+   - Size equals number of elements in queue
+   - Size increases by 1 on enqueue, decreases by 1 on dequeue
+
+3. **Access Invariant**:
+   - Only front and rear elements are directly accessible
+   - No random access to middle elements
+   - Enqueue affects rear, dequeue affects front
+
+#### What Breaks Invariants
+
+- **Stack**: Popping from middle → breaks LIFO invariant
+- **Queue**: Dequeuing from wrong end → breaks FIFO invariant
+- **Both**: Size mismatch → breaks size invariant
+
+#### How Operations Restore Invariants
+
+- **Stack push**: Add to top → preserves LIFO, increments size
+- **Stack pop**: Remove from top → preserves LIFO, decrements size
+- **Queue enqueue**: Add to rear → preserves FIFO, increments size
+- **Queue dequeue**: Remove from front → preserves FIFO, decrements size
+
 ### 5.2 Basic Stack Implementation
 
 ### Array-Based Stack
