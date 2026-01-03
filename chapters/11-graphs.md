@@ -1591,13 +1591,126 @@ public:
 
 ## 11.10 Finding Articulation Points
 
-An **articulation point** (also called a cut vertex) is a vertex whose removal increases the number of connected components in the graph.
+An **articulation point** (also called a cut vertex) is a vertex whose removal increases the number of connected components in the graph. Unlike bridges (which are edges), articulation points are vertices that are critical to graph connectivity.
 
 ### Algorithm Overview
 
 Similar to bridge finding, we use DFS with discovery time and low link value. A vertex u is an articulation point if:
-1. u is root and has at least 2 children, OR
-2. u is not root and has a child v such that `low[v] >= disc[u]`
+1. **u is root** and has at least 2 children, OR
+2. **u is not root** and has a child v such that `low[v] >= disc[u]`
+
+### Understanding the Articulation Point Condition: `low[v] >= disc[u]`
+
+The condition `low[v] >= disc[u]` identifies articulation points through a similar insight to bridges, but with an important difference: **we use `>=` instead of `>`**.
+
+#### Intuitive Explanation
+
+**Key Difference from Bridges:**
+- **Bridge condition**: `low[v] > disc[u]` (strictly greater)
+- **Articulation point condition**: `low[v] >= disc[u]` (greater or equal)
+
+**Why the difference?**
+
+When checking if edge (u, v) is a bridge:
+- If `low[v] = disc[u]`, v can reach u itself (but not ancestors)
+- Removing edge (u, v) might not disconnect if there's another path to u
+- **But** removing vertex u would disconnect v's subtree
+
+**What `low[v] >= disc[u]` means:**
+
+1. **If `low[v] > disc[u]`**:
+   - v cannot reach u or any ancestor of u
+   - Removing u disconnects v's entire subtree
+   - **u is an articulation point**
+
+2. **If `low[v] = disc[u]`**:
+   - v can reach u itself, but not any ancestor of u
+   - Even if v can reach u, removing u still disconnects v's subtree
+   - **u is an articulation point** (this is why we use `>=`)
+
+3. **If `low[v] < disc[u]`**:
+   - v can reach an ancestor of u (via back edge)
+   - Removing u doesn't disconnect v's subtree (alternative path exists)
+   - **u is NOT an articulation point**
+
+#### Visual Example
+
+Consider this graph:
+```
+    0
+   / \
+  1   2
+  |   |
+  3---4
+  |
+  5
+```
+
+**DFS Tree (starting from 0):**
+```
+    0 (disc=1)
+   / \
+  1   2 (disc=3)
+  |   |
+  3   4 (disc=5)
+  |
+  5 (disc=6)
+```
+
+**Analysis:**
+
+**Vertex 0 (Root):**
+- Has 2 children (1 and 2)
+- **IS an articulation point** (root with 2+ children)
+
+**Vertex 1:**
+- Child 3: `low[3] = 1` (can reach 0 via back edge 3-4-2-0), `disc[1] = 2`
+- `low[3] < disc[1]` → **NOT an articulation point**
+
+**Vertex 3:**
+- Child 5: `low[5] = 6` (can only reach 5), `disc[3] = 4`
+- `low[5] > disc[3]` → **IS an articulation point**
+- If we remove 3, vertex 5 becomes disconnected
+
+**Why vertex 3 is an articulation point:**
+- Vertex 5 can only reach vertices discovered at time 6 or later
+- It cannot reach vertex 3 (disc=4) or any ancestor
+- Removing vertex 3 disconnects vertex 5 from the rest of the graph
+
+#### Why Root Needs Special Handling
+
+**Root case (2+ children):**
+- If root has only 1 child, removing root doesn't disconnect (the child subtree remains connected)
+- If root has 2+ children, removing root disconnects the subtrees (they're only connected through root)
+- **Example**: In a tree, the root is an articulation point if it has degree > 1
+
+**Non-root case (`low[v] >= disc[u]`):**
+- If `low[v] >= disc[u]`, v's subtree cannot reach any ancestor of u
+- Removing u disconnects v's subtree
+- **u is an articulation point**
+
+#### Step-by-Step Reasoning
+
+1. **During DFS**, we traverse from u to v
+2. **After exploring v's subtree**, we check `low[v]`
+3. **If `low[v] >= disc[u]`**:
+   - v's earliest reachable vertex was discovered at time `>= disc[u]`
+   - This means v cannot reach any ancestor of u (or can only reach u itself)
+   - Removing u would disconnect v's entire subtree
+4. **Therefore**, u is an articulation point
+
+**Key Insight**: An articulation point is a vertex that is the **only connection** between its parent and at least one of its child subtrees. If there's any alternative path (back edge to an ancestor), the vertex is not an articulation point.
+
+#### Comparison: Bridges vs. Articulation Points
+
+| Aspect | Bridges | Articulation Points |
+|--------|---------|---------------------|
+| **What** | Critical edge | Critical vertex |
+| **Condition** | `low[v] > disc[u]` | `low[v] >= disc[u]` |
+| **Why different** | Edge removal: need strict `>` | Vertex removal: need `>=` (can reach u itself) |
+| **Root case** | N/A | Needs 2+ children |
+
+**Important Note**: If edge (u, v) is a bridge, then either u or v (or both) must be an articulation point, but the reverse is not always true.
 
 ### Implementation
 ```cpp
@@ -1624,7 +1737,11 @@ private:
                 dfs(v, u, false);
                 low[u] = min(low[u], low[v]);
                 
-                // Check if u is an articulation point
+                // Articulation point condition: low[v] >= disc[u]
+                // This means v cannot reach any ancestor of u (or can only reach u itself).
+                // If we remove u, v's subtree becomes disconnected.
+                // Note: We use >= (not >) because even if v can reach u, removing u disconnects.
+                // See detailed explanation above for intuition.
                 if (!isRoot && low[v] >= disc[u]) {
                     isArticulation[u] = true;
                 }
@@ -1634,6 +1751,8 @@ private:
         }
         
         // Root is articulation point if it has 2+ children
+        // If root has only 1 child, removing root doesn't disconnect.
+        // If root has 2+ children, removing root disconnects the subtrees.
         if (isRoot && children >= 2) {
             isArticulation[u] = true;
         }

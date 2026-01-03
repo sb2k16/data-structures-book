@@ -14,6 +14,7 @@ This chapter covers advanced data structures that are essential for solving comp
 6. **Sqrt Decomposition**: Simple range queries and updates
 7. **Skip Lists**: Probabilistic alternative to balanced trees
 8. **Bloom Filters**: Space-efficient probabilistic membership testing
+9. **Count-Min Sketch**: Probabilistic frequency counting for data streams
 
 ## 14.2 Heaps
 
@@ -1481,7 +1482,245 @@ public:
 };
 ```
 
-## 14.10 Failure Modes and Common Pitfalls
+## 14.10 Count-Min Sketch
+
+A **Count-Min Sketch** is a probabilistic data structure that provides approximate frequency counts for elements in a stream. It's space-efficient and uses multiple hash functions, similar to Bloom Filters (Section 14.9), but designed for counting rather than membership testing.
+
+### 14.10.1 Introduction to Count-Min Sketch
+
+Count-Min Sketch estimates the frequency of elements in a data stream with guaranteed error bounds. It's particularly useful for:
+- **Heavy hitters**: Finding most frequent elements
+- **Frequency estimation**: Approximate counts in large datasets
+- **Stream processing**: Real-time frequency tracking
+- **Network monitoring**: Tracking packet frequencies
+
+#### Key Characteristics
+
+- **Probabilistic**: Provides approximate counts (may overestimate, never underestimate)
+- **Space Efficient**: Uses O(d × w) space where d is depth (hash functions) and w is width
+- **Fast Operations**: O(d) time for increment and query
+- **Guaranteed Bounds**: Error is bounded with high probability
+
+### 14.10.2 How Count-Min Sketch Works
+
+Count-Min Sketch uses a 2D array (d rows × w columns) and d independent hash functions:
+
+1. **Initialization**: Create d × w array, all initialized to 0
+2. **Increment**: For element x, hash it with each of d hash functions, increment corresponding cells
+3. **Query**: For element x, hash it with each hash function, return minimum count across all d cells
+
+**Why minimum?** Since we may have collisions, counts can only increase. Taking the minimum gives the best estimate (closest to true count).
+
+```
+Example with d=3, w=5:
+
+Increment "apple":
+  hash1("apple") = 2  → increment sketch[0][2]
+  hash2("apple") = 0  → increment sketch[1][0]
+  hash3("apple") = 4  → increment sketch[2][4]
+
+Query "apple":
+  hash1("apple") = 2  → sketch[0][2] = 1
+  hash2("apple") = 0  → sketch[1][0] = 1
+  hash3("apple") = 4  → sketch[2][4] = 1
+  → min(1, 1, 1) = 1 (true count)
+```
+
+### 14.10.3 Count-Min Sketch Implementation
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <functional>
+#include <algorithm>
+#include <climits>
+#include <cmath>
+using namespace std;
+
+class CountMinSketch {
+private:
+    vector<vector<int>> sketch;
+    int depth;  // Number of hash functions (rows)
+    int width;  // Number of buckets per hash function (columns)
+    vector<function<size_t(const string&)>> hashFunctions;
+    
+    // Simple hash functions (in practice, use better ones)
+    size_t hash1(const string& key) const {
+        hash<string> hasher;
+        return hasher(key) % width;
+    }
+    
+    size_t hash2(const string& key) const {
+        hash<string> hasher;
+        return (hasher(key) * 31) % width;
+    }
+    
+    size_t hash3(const string& key) const {
+        hash<string> hasher;
+        return (hasher(key) * 17 + 7) % width;
+    }
+    
+    size_t hash4(const string& key) const {
+        hash<string> hasher;
+        return (hasher(key) * 13 + 11) % width;
+    }
+    
+public:
+    CountMinSketch(int d, int w) : depth(d), width(w) {
+        sketch.resize(depth, vector<int>(width, 0));
+        
+        // Initialize hash functions
+        hashFunctions.push_back([this](const string& k) { return hash1(k); });
+        hashFunctions.push_back([this](const string& k) { return hash2(k); });
+        hashFunctions.push_back([this](const string& k) { return hash3(k); });
+        if (depth > 3) {
+            hashFunctions.push_back([this](const string& k) { return hash4(k); });
+        }
+    }
+    
+    // Increment count for an element
+    void increment(const string& key) {
+        for (int i = 0; i < depth; i++) {
+            size_t index = hashFunctions[i](key);
+            sketch[i][index]++;
+        }
+    }
+    
+    // Query approximate count
+    int query(const string& key) const {
+        int minCount = INT_MAX;
+        for (int i = 0; i < depth; i++) {
+            size_t index = hashFunctions[i](key);
+            minCount = min(minCount, sketch[i][index]);
+        }
+        return minCount;
+    }
+    
+    // Get error bound (with probability 1 - δ)
+    // Error ≤ (ε × N) with probability ≥ (1 - δ)
+    // where N is total number of increments
+    double getErrorBound(int totalIncrements, double epsilon, double delta) const {
+        // width = ceil(e/ε), depth = ceil(ln(1/δ))
+        // Error ≤ ε × N with probability ≥ 1 - δ
+        return epsilon * totalIncrements;
+    }
+    
+    void print() const {
+        cout << "Count-Min Sketch (depth=" << depth << ", width=" << width << "):" << endl;
+        for (int i = 0; i < depth; i++) {
+            cout << "Row " << i << ": ";
+            for (int j = 0; j < width; j++) {
+                cout << sketch[i][j] << " ";
+            }
+            cout << endl;
+        }
+    }
+};
+```
+
+### 14.10.4 Performance Analysis
+
+**Time Complexity:**
+- **Increment**: O(d) where d is number of hash functions
+- **Query**: O(d)
+- **Space**: O(d × w)
+
+**Error Analysis:**
+- **Guarantee**: With probability ≥ (1 - δ), error ≤ ε × N
+- **Parameters**: 
+  - Width w = ⌈e/ε⌉ (e ≈ 2.718)
+  - Depth d = ⌈ln(1/δ)⌉
+- **Example**: For ε = 0.01 (1% error), δ = 0.01 (1% failure probability):
+  - w = ⌈2.718/0.01⌉ = 272
+  - d = ⌈ln(100)⌉ = 5
+  - Space = 272 × 5 = 1,360 integers
+
+**Why It Works:**
+- Hash collisions cause overestimation (never underestimation)
+- Taking minimum across d independent hash functions reduces error
+- More hash functions (depth) → higher accuracy
+- More buckets (width) → lower collision probability
+
+### 14.10.5 Applications
+
+**1. Heavy Hitters Problem**
+Find elements with frequency > threshold:
+
+```cpp
+vector<string> findHeavyHitters(const vector<string>& stream, 
+                                 double threshold, 
+                                 int totalElements) {
+    CountMinSketch cms(5, 272); // ε=0.01, δ=0.01
+    
+    // Count all elements
+    for (const string& elem : stream) {
+        cms.increment(elem);
+    }
+    
+    // Find heavy hitters
+    vector<string> heavyHitters;
+    for (const string& elem : stream) {
+        int count = cms.query(elem);
+        if (count >= threshold * totalElements) {
+            heavyHitters.push_back(elem);
+        }
+    }
+    
+    return heavyHitters;
+}
+```
+
+**2. Network Traffic Monitoring**
+- Track packet frequencies
+- Identify DDoS attacks (unusual frequency patterns)
+- Monitor bandwidth usage
+
+**3. Database Query Optimization**
+- Estimate frequency of query patterns
+- Cache frequently accessed data
+
+**4. Recommendation Systems**
+- Track item view frequencies
+- Identify trending items
+
+### 14.10.6 Comparison with Other Structures
+
+| Structure | Purpose | Space | Error | Notes |
+|-----------|---------|-------|-------|-------|
+| **Hash Table** (Chapter 10) | Exact counting | O(n) | None | Exact but uses more space |
+| **Count-Min Sketch** | Approximate counting | O(d×w) | Overestimate | Space-efficient, probabilistic |
+| **Bloom Filter** (Section 14.9) | Membership test | O(m) | False positives | Different purpose (membership vs. counting) |
+
+**When to Use Count-Min Sketch:**
+- ✅ Large data streams where exact counts aren't needed
+- ✅ Space is constrained
+- ✅ Approximate counts are acceptable
+- ✅ Need to handle high-frequency updates
+
+**When NOT to Use:**
+- ❌ Exact counts are required
+- ❌ Small datasets (overhead not worth it)
+- ❌ Need to decrement counts (standard CMS doesn't support)
+
+### 14.10.7 Variants and Extensions
+
+**1. Count Sketch**
+Similar to Count-Min but can have negative errors (more accurate on average):
+
+```cpp
+class CountSketch {
+    // Uses random signs (+1/-1) to reduce bias
+    // Better average error, but can underestimate
+};
+```
+
+**2. Hierarchical Count-Min Sketch**
+Tracks frequencies at multiple time scales (recent, hourly, daily).
+
+**3. Conservative Update**
+Only updates minimum cells, reducing overestimation.
+
+## 14.11 Failure Modes and Common Pitfalls
 
 Understanding common failure modes helps avoid bugs and performance issues.
 
@@ -1618,7 +1857,7 @@ int query(int index) {
 **Why it happens**: Fenwick trees use 1-based indexing internally
 **Impact**: Incorrect prefix sums, wrong query results
 
-## 14.11 Key Takeaways
+## 14.12 Key Takeaways
 
 1. **Heaps** provide efficient priority queue operations
 2. **Tries** excel at prefix-based string operations
@@ -1628,7 +1867,7 @@ int query(int index) {
 6. **Sqrt Decomposition** offers simple O(√n) queries and updates
 7. Choose the right structure based on operation requirements and constraints
 
-## 14.12 Exercises
+## 14.13 Exercises
 
 1. Implement a k-way merge using a min-heap.
 
@@ -1658,7 +1897,7 @@ int query(int index) {
 
 14. Implement a Sqrt Decomposition that supports range minimum and range sum queries.
 
-## 14.13 Summary
+## 14.14 Summary
 
 Advanced data structures provide specialized operations for specific use cases. Understanding when and how to use heaps, tries, segment trees, and Fenwick trees is essential for solving complex problems efficiently.
 
