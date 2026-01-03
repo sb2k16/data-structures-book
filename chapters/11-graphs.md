@@ -89,31 +89,34 @@ Note: This builds on the **connectivity invariant** we established in Chapter 6 
 #### 1. Undirected Graph
 Edges have no direction - connection is bidirectional.
 
-```
-A --- B
-|     |
-C --- D
+```mermaid
+graph LR
+    A --- B
+    A --- C
+    B --- D
+    C --- D
 ```
 
 #### 2. Directed Graph (Digraph)
 Edges have direction - connection is one-way.
 
-```
-A --> B
-^     |
-|     v
-D <-- C
+```mermaid
+graph LR
+    A --> B
+    B --> C
+    C --> D
+    D --> A
 ```
 
 #### 3. Weighted Graph
 Edges have associated weights (costs, distances, etc.).
 
-```
-A --5-- B
-|       |
-3       2
-|       |
-C --1-- D
+```mermaid
+graph LR
+    A -->|5| B
+    A -->|3| C
+    B -->|2| D
+    C -->|1| D
 ```
 
 #### 4. Unweighted Graph
@@ -381,12 +384,13 @@ public:
 Let's trace through DFS on the following graph, starting from vertex A:
 
 **Graph:**
-```
-    A
-   / \
-  B   C
- / \   \
-D   E   F
+```mermaid
+graph TD
+    A --> B
+    A --> C
+    B --> D
+    B --> E
+    C --> F
 ```
 
 **Step-by-Step Traversal:**
@@ -460,12 +464,21 @@ Visited: [A, B, D]
 Stack: [A, C, E]
 Current: D
 ```
-```
-    A*
-   / \
-  B*  C
- / \   \
-D*  E   F  (D visited, no neighbors to explore)
+
+```mermaid
+graph TD
+    A[A<br/>visited] --> B[B<br/>visited]
+    A --> C[C<br/>in stack]
+    B --> D[D<br/>visited]
+    B --> E[E<br/>in stack]
+    C --> F[F<br/>unvisited]
+    
+    style A fill:#90EE90,stroke:#333,stroke-width:3px
+    style B fill:#90EE90,stroke:#333,stroke-width:3px
+    style D fill:#90EE90,stroke:#333,stroke-width:3px
+    style C fill:#FFE4E1,stroke:#333,stroke-width:2px
+    style E fill:#FFE4E1,stroke:#333,stroke-width:2px
+    style F fill:#E6E6FA,stroke:#333,stroke-width:2px
 ```
 
 **Step 6: Pop E, mark visited**
@@ -474,12 +487,21 @@ Visited: [A, B, D, E]
 Stack: [A, C]
 Current: E
 ```
-```
-    A*
-   / \
-  B*  C
- / \   \
-D*  E*  F  (E visited, no neighbors to explore)
+
+```mermaid
+graph TD
+    A[A<br/>visited] --> B[B<br/>visited]
+    A --> C[C<br/>in stack]
+    B --> D[D<br/>visited]
+    B --> E[E<br/>visited]
+    C --> F[F<br/>unvisited]
+    
+    style A fill:#90EE90,stroke:#333,stroke-width:3px
+    style B fill:#90EE90,stroke:#333,stroke-width:3px
+    style D fill:#90EE90,stroke:#333,stroke-width:3px
+    style E fill:#90EE90,stroke:#333,stroke-width:3px
+    style C fill:#FFE4E1,stroke:#333,stroke-width:2px
+    style F fill:#E6E6FA,stroke:#333,stroke-width:2px
 ```
 
 **Step 7: Pop C, mark visited, explore its neighbors**
@@ -488,12 +510,21 @@ Visited: [A, B, D, E, C]
 Stack: [A]
 Current: C
 ```
-```
-    A*
-   / \
-  B*  C*  (C visited)
- / \   \
-D*  E*  F
+
+```mermaid
+graph TD
+    A[A<br/>visited] --> B[B<br/>visited]
+    A --> C[C<br/>visited]
+    B --> D[D<br/>visited]
+    B --> E[E<br/>visited]
+    C --> F[F<br/>unvisited]
+    
+    style A fill:#90EE90,stroke:#333,stroke-width:3px
+    style B fill:#90EE90,stroke:#333,stroke-width:3px
+    style C fill:#90EE90,stroke:#333,stroke-width:3px
+    style D fill:#90EE90,stroke:#333,stroke-width:3px
+    style E fill:#90EE90,stroke:#333,stroke-width:3px
+    style F fill:#E6E6FA,stroke:#333,stroke-width:2px
 ```
 
 **Step 8: Visit C's neighbor (F) - push to stack**
@@ -724,12 +755,21 @@ Visited: [A]
 Queue: [B, C]  (enqueue neighbors)
 Current Level: 0 → 1
 ```
-```
-    A*  (level 0, processed)
-   / \
-  B   C  (level 1, in queue)
- / \   \
-D   E   F
+
+```mermaid
+graph TD
+    A[A<br/>processed, level 0] --> B[B<br/>in queue, level 1]
+    A --> C[C<br/>in queue, level 1]
+    B --> D[D<br/>unvisited]
+    B --> E[E<br/>unvisited]
+    C --> F[F<br/>unvisited]
+    
+    style A fill:#90EE90,stroke:#333,stroke-width:3px
+    style B fill:#FFB6C1,stroke:#333,stroke-width:2px
+    style C fill:#FFB6C1,stroke:#333,stroke-width:2px
+    style D fill:#E6E6FA,stroke:#333,stroke-width:2px
+    style E fill:#E6E6FA,stroke:#333,stroke-width:2px
+    style F fill:#E6E6FA,stroke:#333,stroke-width:2px
 ```
 
 **Step 3: Dequeue B, mark visited, enqueue its neighbors (D, E)**
@@ -738,12 +778,21 @@ Visited: [A, B]
 Queue: [C, D, E]
 Current Level: 1
 ```
-```
-    A*
-   / \
-  B*  C  (B visited, level 1)
- / \   \
-D   E   F  (D, E in queue, level 2)
+
+```mermaid
+graph TD
+    A[A<br/>visited, level 0] --> B[B<br/>visited, level 1]
+    A --> C[C<br/>in queue, level 1]
+    B --> D[D<br/>in queue, level 2]
+    B --> E[E<br/>in queue, level 2]
+    C --> F[F<br/>unvisited]
+    
+    style A fill:#90EE90,stroke:#333,stroke-width:3px
+    style B fill:#90EE90,stroke:#333,stroke-width:3px
+    style C fill:#FFB6C1,stroke:#333,stroke-width:2px
+    style D fill:#FFB6C1,stroke:#333,stroke-width:2px
+    style E fill:#FFB6C1,stroke:#333,stroke-width:2px
+    style F fill:#E6E6FA,stroke:#333,stroke-width:2px
 ```
 
 **Step 4: Dequeue C, mark visited, enqueue its neighbor (F)**
@@ -752,12 +801,21 @@ Visited: [A, B, C]
 Queue: [D, E, F]
 Current Level: 1
 ```
-```
-    A*
-   / \
-  B*  C*  (C visited, level 1)
- / \   \
-D   E   F  (D, E, F in queue, level 2)
+
+```mermaid
+graph TD
+    A[A<br/>visited, level 0] --> B[B<br/>visited, level 1]
+    A --> C[C<br/>visited, level 1]
+    B --> D[D<br/>in queue, level 2]
+    B --> E[E<br/>in queue, level 2]
+    C --> F[F<br/>in queue, level 2]
+    
+    style A fill:#90EE90,stroke:#333,stroke-width:3px
+    style B fill:#90EE90,stroke:#333,stroke-width:3px
+    style C fill:#90EE90,stroke:#333,stroke-width:3px
+    style D fill:#FFB6C1,stroke:#333,stroke-width:2px
+    style E fill:#FFB6C1,stroke:#333,stroke-width:2px
+    style F fill:#FFB6C1,stroke:#333,stroke-width:2px
 ```
 
 **Step 5: Dequeue D, mark visited (no neighbors to enqueue)**
@@ -766,12 +824,21 @@ Visited: [A, B, C, D]
 Queue: [E, F]
 Current Level: 2
 ```
-```
-    A*
-   / \
-  B*  C*
- / \   \
-D*  E   F  (D visited, level 2)
+
+```mermaid
+graph TD
+    A[A<br/>visited] --> B[B<br/>visited]
+    A --> C[C<br/>visited]
+    B --> D[D<br/>visited, level 2]
+    B --> E[E<br/>in queue, level 2]
+    C --> F[F<br/>in queue, level 2]
+    
+    style A fill:#90EE90,stroke:#333,stroke-width:3px
+    style B fill:#90EE90,stroke:#333,stroke-width:3px
+    style C fill:#90EE90,stroke:#333,stroke-width:3px
+    style D fill:#90EE90,stroke:#333,stroke-width:3px
+    style E fill:#FFB6C1,stroke:#333,stroke-width:2px
+    style F fill:#FFB6C1,stroke:#333,stroke-width:2px
 ```
 
 **Step 6: Dequeue E, mark visited (no neighbors to enqueue)**
@@ -780,12 +847,21 @@ Visited: [A, B, C, D, E]
 Queue: [F]
 Current Level: 2
 ```
-```
-    A*
-   / \
-  B*  C*
- / \   \
-D*  E*  F  (E visited, level 2)
+
+```mermaid
+graph TD
+    A[A<br/>visited] --> B[B<br/>visited]
+    A --> C[C<br/>visited]
+    B --> D[D<br/>visited]
+    B --> E[E<br/>visited, level 2]
+    C --> F[F<br/>in queue, level 2]
+    
+    style A fill:#90EE90,stroke:#333,stroke-width:3px
+    style B fill:#90EE90,stroke:#333,stroke-width:3px
+    style C fill:#90EE90,stroke:#333,stroke-width:3px
+    style D fill:#90EE90,stroke:#333,stroke-width:3px
+    style E fill:#90EE90,stroke:#333,stroke-width:3px
+    style F fill:#FFB6C1,stroke:#333,stroke-width:2px
 ```
 
 **Step 7: Dequeue F, mark visited (no neighbors to enqueue)**
@@ -795,12 +871,21 @@ Queue: []
 Current Level: 2
 BFS Complete!
 ```
-```
-    A*
-   / \
-  B*  C*
- / \   \
-D*  E*  F*  (F visited, level 2)
+
+```mermaid
+graph TD
+    A[A<br/>visited] --> B[B<br/>visited]
+    A --> C[C<br/>visited]
+    B --> D[D<br/>visited]
+    B --> E[E<br/>visited]
+    C --> F[F<br/>visited, level 2]
+    
+    style A fill:#90EE90,stroke:#333,stroke-width:3px
+    style B fill:#90EE90,stroke:#333,stroke-width:3px
+    style C fill:#90EE90,stroke:#333,stroke-width:3px
+    style D fill:#90EE90,stroke:#333,stroke-width:3px
+    style E fill:#90EE90,stroke:#333,stroke-width:3px
+    style F fill:#90EE90,stroke:#333,stroke-width:3px
 ```
 
 **Final Traversal Order:** A → B → C → D → E → F
@@ -820,12 +905,16 @@ D*  E*  F*  (F visited, level 2)
 
 **Example:** Find shortest path from A to F
 
-```
-    A
-   / \
-  B   C
- / \   \
-D   E   F
+```mermaid
+graph TD
+    A[Start: A] --> B
+    A --> C
+    B --> D
+    B --> E
+    C --> F[Target: F]
+    
+    style A fill:#90EE90,stroke:#333,stroke-width:3px
+    style F fill:#FFB6C1,stroke:#333,stroke-width:3px
 ```
 
 **BFS Process:**
@@ -950,16 +1039,18 @@ public:
 Let's trace through Dijkstra's algorithm on the following weighted graph, starting from vertex A:
 
 **Graph:**
-```
-        A
-      / | \
-    6/  |1 \5
-    /   |   \
-   B    C    D
-   |\   |   /
-  3| \2 |4 /2
-   |  \ | /
-   E   F G
+```mermaid
+graph TD
+    A[Start: A] -->|6| B
+    A -->|1| C
+    A -->|5| D
+    B -->|3| E
+    B -->|2| F
+    C -->|2| F
+    C -->|4| G
+    D -->|2| G
+    
+    style A fill:#90EE90,stroke:#333,stroke-width:3px
 ```
 
 **Step-by-Step Execution:**
@@ -978,13 +1069,25 @@ Visited: {A}
 Distances: A=0, B=6, C=1, D=5, E=∞, F=∞, G=∞
 Queue: [(1, C), (5, D), (6, B)]
 ```
-```
-        A*  (visited, dist=0)
-      / | \
-    6/  |1 \5
-    /   |   \
-   B    C    D
-  (6)  (1)  (5)  (updated distances)
+
+```mermaid
+graph TD
+    A[A<br/>visited<br/>dist=0] -->|6| B[B<br/>dist=6]
+    A -->|1| C[C<br/>dist=1]
+    A -->|5| D[D<br/>dist=5]
+    B -->|3| E[E<br/>dist=∞]
+    B -->|2| F[F<br/>dist=∞]
+    C -->|2| F
+    C -->|4| G[G<br/>dist=∞]
+    D -->|2| G
+    
+    style A fill:#90EE90,stroke:#333,stroke-width:3px
+    style B fill:#FFB6C1,stroke:#333,stroke-width:2px
+    style C fill:#FFB6C1,stroke:#333,stroke-width:2px
+    style D fill:#FFB6C1,stroke:#333,stroke-width:2px
+    style E fill:#E6E6FA,stroke:#333,stroke-width:2px
+    style F fill:#E6E6FA,stroke:#333,stroke-width:2px
+    style G fill:#E6E6FA,stroke:#333,stroke-width:2px
 ```
 
 **Step 2: Process C (distance = 1) - smallest unvisited**
@@ -994,16 +1097,25 @@ Visited: {A, C}
 Distances: A=0, B=6, C=1, D=5, E=∞, F=3, G=∞
 Queue: [(3, F), (5, D), (6, B)]
 ```
-```
-        A*
-      / | \
-    6/  |1 \5
-    /   |   \
-   B    C*   D
-  (6)  (1)  (5)
-        |2
-        F
-       (3)  (updated via C)
+
+```mermaid
+graph TD
+    A[A<br/>visited<br/>dist=0] -->|6| B[B<br/>dist=6]
+    A -->|1| C[C<br/>visited<br/>dist=1]
+    A -->|5| D[D<br/>dist=5]
+    B -->|3| E[E<br/>dist=∞]
+    B -->|2| F[F<br/>dist=3]
+    C -->|2| F
+    C -->|4| G[G<br/>dist=∞]
+    D -->|2| G
+    
+    style A fill:#90EE90,stroke:#333,stroke-width:3px
+    style C fill:#90EE90,stroke:#333,stroke-width:3px
+    style B fill:#FFB6C1,stroke:#333,stroke-width:2px
+    style D fill:#FFB6C1,stroke:#333,stroke-width:2px
+    style F fill:#FFB6C1,stroke:#333,stroke-width:2px
+    style E fill:#E6E6FA,stroke:#333,stroke-width:2px
+    style G fill:#E6E6FA,stroke:#333,stroke-width:2px
 ```
 
 **Step 3: Process F (distance = 3) - smallest unvisited**
@@ -1013,18 +1125,25 @@ Visited: {A, C, F}
 Distances: A=0, B=5, C=1, D=5, E=∞, F=3, G=∞
 Queue: [(5, B), (5, D)]
 ```
-```
-        A*
-      / | \
-    6/  |1 \5
-    /   |   \
-   B    C*   D
-  (5)  (1)  (5)  (B updated: 6→5 via F)
-   |\   |   /
-  3| \2 |4 /2
-   |  \ | /
-   E   F* G
-       (3)
+
+```mermaid
+graph TD
+    A[A<br/>visited<br/>dist=0] -->|6| B[B<br/>dist=5<br/>updated!]
+    A -->|1| C[C<br/>visited<br/>dist=1]
+    A -->|5| D[D<br/>dist=5]
+    B -->|3| E[E<br/>dist=∞]
+    B -->|2| F[F<br/>visited<br/>dist=3]
+    C -->|2| F
+    C -->|4| G[G<br/>dist=∞]
+    D -->|2| G
+    
+    style A fill:#90EE90,stroke:#333,stroke-width:3px
+    style C fill:#90EE90,stroke:#333,stroke-width:3px
+    style F fill:#90EE90,stroke:#333,stroke-width:3px
+    style B fill:#FFB6C1,stroke:#333,stroke-width:2px
+    style D fill:#FFB6C1,stroke:#333,stroke-width:2px
+    style E fill:#E6E6FA,stroke:#333,stroke-width:2px
+    style G fill:#E6E6FA,stroke:#333,stroke-width:2px
 ```
 
 **Step 4: Process B (distance = 5) - tie with D, pick B**
@@ -1034,18 +1153,25 @@ Visited: {A, C, F, B}
 Distances: A=0, B=5, C=1, D=5, E=8, F=3, G=∞
 Queue: [(5, D), (8, E)]
 ```
-```
-        A*
-      / | \
-    6/  |1 \5
-    /   |   \
-   B*   C*   D
-  (5)  (1)  (5)
-   |\   |   /
-  3| \2 |4 /2
-   |  \ | /
-   E   F* G
-  (8)  (3)  (E updated via B)
+
+```mermaid
+graph TD
+    A[A<br/>visited<br/>dist=0] -->|6| B[B<br/>visited<br/>dist=5]
+    A -->|1| C[C<br/>visited<br/>dist=1]
+    A -->|5| D[D<br/>dist=5]
+    B -->|3| E[E<br/>dist=8<br/>updated!]
+    B -->|2| F[F<br/>visited<br/>dist=3]
+    C -->|2| F
+    C -->|4| G[G<br/>dist=∞]
+    D -->|2| G
+    
+    style A fill:#90EE90,stroke:#333,stroke-width:3px
+    style C fill:#90EE90,stroke:#333,stroke-width:3px
+    style F fill:#90EE90,stroke:#333,stroke-width:3px
+    style B fill:#90EE90,stroke:#333,stroke-width:3px
+    style D fill:#FFB6C1,stroke:#333,stroke-width:2px
+    style E fill:#FFB6C1,stroke:#333,stroke-width:2px
+    style G fill:#E6E6FA,stroke:#333,stroke-width:2px
 ```
 
 **Step 5: Process D (distance = 5)**
@@ -1055,18 +1181,25 @@ Visited: {A, C, F, B, D}
 Distances: A=0, B=5, C=1, D=5, E=8, F=3, G=7
 Queue: [(7, G), (8, E)]
 ```
-```
-        A*
-      / | \
-    6/  |1 \5
-    /   |   \
-   B*   C*   D*
-  (5)  (1)  (5)
-   |\   |   /
-  3| \2 |4 /2
-   |  \ | /
-   E   F* G
-  (8)  (3)  (7)  (G updated via D)
+
+```mermaid
+graph TD
+    A[A<br/>visited<br/>dist=0] -->|6| B[B<br/>visited<br/>dist=5]
+    A -->|1| C[C<br/>visited<br/>dist=1]
+    A -->|5| D[D<br/>visited<br/>dist=5]
+    B -->|3| E[E<br/>dist=8]
+    B -->|2| F[F<br/>visited<br/>dist=3]
+    C -->|2| F
+    C -->|4| G[G<br/>dist=7<br/>updated!]
+    D -->|2| G
+    
+    style A fill:#90EE90,stroke:#333,stroke-width:3px
+    style C fill:#90EE90,stroke:#333,stroke-width:3px
+    style F fill:#90EE90,stroke:#333,stroke-width:3px
+    style B fill:#90EE90,stroke:#333,stroke-width:3px
+    style D fill:#90EE90,stroke:#333,stroke-width:3px
+    style E fill:#FFB6C1,stroke:#333,stroke-width:2px
+    style G fill:#FFB6C1,stroke:#333,stroke-width:2px
 ```
 
 **Step 6: Process G (distance = 7)**
@@ -1105,13 +1238,15 @@ Algorithm Complete!
 #### Why Dijkstra's Requires Non-Negative Weights
 
 **Counterexample with Negative Edge:**
-```
-A --1--> B
-|        |
--5       |
-|        1
-v        v
-C --1--> D
+```mermaid
+graph TD
+    A[Start: A] -->|1| B
+    A -->|-5| C
+    B -->|1| D[Target: D]
+    C -->|1| D
+    
+    style A fill:#90EE90,stroke:#333,stroke-width:3px
+    style D fill:#FFB6C1,stroke:#333,stroke-width:3px
 ```
 
 Starting from A:
@@ -1734,16 +1869,21 @@ Action: Add edge, union B and D
 Components: {A}, {B,D}, {C}, {E}, {F}
 MST: [B-D:1]
 ```
-```
-    A           B
-                |
-                |1
-                |
-    C           D
-    |           |
-    |           |2
-    |           |
-    E           F
+
+```mermaid
+graph TD
+    A[A] 
+    B[B] -->|1| D[D]
+    C[C]
+    E[E]
+    F[F]
+    
+    style B fill:#90EE90,stroke:#333,stroke-width:3px
+    style D fill:#90EE90,stroke:#333,stroke-width:3px
+    style A fill:#E6E6FA,stroke:#333,stroke-width:2px
+    style C fill:#E6E6FA,stroke:#333,stroke-width:2px
+    style E fill:#E6E6FA,stroke:#333,stroke-width:2px
+    style F fill:#E6E6FA,stroke:#333,stroke-width:2px
 ```
 
 **Step 4: Process edge (A-B:2)**
@@ -1753,12 +1893,21 @@ Action: Add edge, union A with {B,D}
 Components: {A,B,D}, {C}, {E}, {F}
 MST: [B-D:1, A-B:2]
 ```
-```
-    A ----2---- B
-                |
-                |1
-                |
-    C           D
+
+```mermaid
+graph TD
+    A[A] -->|2| B[B]
+    B -->|1| D[D]
+    C[C]
+    E[E]
+    F[F]
+    
+    style A fill:#90EE90,stroke:#333,stroke-width:3px
+    style B fill:#90EE90,stroke:#333,stroke-width:3px
+    style D fill:#90EE90,stroke:#333,stroke-width:3px
+    style C fill:#E6E6FA,stroke:#333,stroke-width:2px
+    style E fill:#E6E6FA,stroke:#333,stroke-width:2px
+    style F fill:#E6E6FA,stroke:#333,stroke-width:2px
 ```
 
 **Step 5: Process edge (D-F:2)**
@@ -1768,16 +1917,21 @@ Action: Add edge, union {A,B,D} with {F}
 Components: {A,B,D,F}, {C}, {E}
 MST: [B-D:1, A-B:2, D-F:2]
 ```
-```
-    A ----2---- B
-                |
-                |1
-                |
-    C           D
-                |
-                |2
-                |
-                F
+
+```mermaid
+graph TD
+    A[A] -->|2| B[B]
+    B -->|1| D[D]
+    D -->|2| F[F]
+    C[C]
+    E[E]
+    
+    style A fill:#90EE90,stroke:#333,stroke-width:3px
+    style B fill:#90EE90,stroke:#333,stroke-width:3px
+    style D fill:#90EE90,stroke:#333,stroke-width:3px
+    style F fill:#90EE90,stroke:#333,stroke-width:3px
+    style C fill:#E6E6FA,stroke:#333,stroke-width:2px
+    style E fill:#E6E6FA,stroke:#333,stroke-width:2px
 ```
 
 **Step 6: Process edge (E-F:3)**
@@ -1787,17 +1941,21 @@ Action: Add edge, union E with {A,B,D,F}
 Components: {A,B,D,E,F}, {C}
 MST: [B-D:1, A-B:2, D-F:2, E-F:3]
 ```
-```
-    A ----2---- B
-                |
-                |1
-                |
-    C           D
-                |
-                |2
-                |
-    E ----------F
-         3
+
+```mermaid
+graph TD
+    A[A] -->|2| B[B]
+    B -->|1| D[D]
+    D -->|2| F[F]
+    E[E] -->|3| F
+    C[C]
+    
+    style A fill:#90EE90,stroke:#333,stroke-width:3px
+    style B fill:#90EE90,stroke:#333,stroke-width:3px
+    style D fill:#90EE90,stroke:#333,stroke-width:3px
+    style F fill:#90EE90,stroke:#333,stroke-width:3px
+    style E fill:#90EE90,stroke:#333,stroke-width:3px
+    style C fill:#E6E6FA,stroke:#333,stroke-width:2px
 ```
 
 **Step 7: Process edge (A-C:3)**
@@ -1807,17 +1965,21 @@ Action: Add edge, union {A,B,D,E,F} with {C}
 Components: {A,B,C,D,E,F} (all connected!)
 MST: [B-D:1, A-B:2, D-F:2, E-F:3, A-C:3]
 ```
-```
-    A ----2---- B
-    |           |
-    |3          |1
-    |           |
-    C           D
-                |
-                |2
-                |
-    E ----------F
-         3
+
+```mermaid
+graph TD
+    A[A] -->|2| B[B]
+    A -->|3| C[C]
+    B -->|1| D[D]
+    D -->|2| F[F]
+    E[E] -->|3| F
+    
+    style A fill:#90EE90,stroke:#333,stroke-width:3px
+    style B fill:#90EE90,stroke:#333,stroke-width:3px
+    style C fill:#90EE90,stroke:#333,stroke-width:3px
+    style D fill:#90EE90,stroke:#333,stroke-width:3px
+    style E fill:#90EE90,stroke:#333,stroke-width:3px
+    style F fill:#90EE90,stroke:#333,stroke-width:3px
 ```
 
 **Step 8: Check remaining edges**
@@ -1841,13 +2003,18 @@ Edge (C-E:7): C and E in same component → Skip
 #### Visual: Why We Skip Edges That Create Cycles
 
 **Before adding (A-D:4):**
+```mermaid
+graph TD
+    A[A] -->|2| B[B]
+    A -->|3| C[C]
+    B -->|1| D[D]
+    
+    style A fill:#90EE90,stroke:#333,stroke-width:3px
+    style B fill:#90EE90,stroke:#333,stroke-width:3px
+    style C fill:#90EE90,stroke:#333,stroke-width:3px
+    style D fill:#90EE90,stroke:#333,stroke-width:3px
 ```
-    A ----2---- B
-    |           |
-    |3          |1
-    |           |
-    C           D
-```
+
 A and D are already connected via A→B→D. Adding A-D would create cycle A-B-D-A.
 
 #### Implementation
@@ -1975,12 +2142,17 @@ MST vertices: {A}
 MST edges: []
 Priority queue: [(A-C:3), (A-B:2), (A-D:4)]
 ```
-```
-    A*  (in MST)
-    |\
-   3| \4
-    |  \
-    C   B, D  (candidates)
+
+```mermaid
+graph TD
+    A[A<br/>in MST] -->|3| C[C<br/>candidate]
+    A -->|2| B[B<br/>candidate]
+    A -->|4| D[D<br/>candidate]
+    
+    style A fill:#90EE90,stroke:#333,stroke-width:3px
+    style B fill:#FFB6C1,stroke:#333,stroke-width:2px
+    style C fill:#FFB6C1,stroke:#333,stroke-width:2px
+    style D fill:#FFB6C1,stroke:#333,stroke-width:2px
 ```
 
 **Step 2: Add minimum edge (A-B:2)**
@@ -1989,12 +2161,19 @@ MST vertices: {A, B}
 MST edges: [A-B:2]
 Priority queue: [(A-C:3), (A-D:4), (B-D:1), (B-C:5)]
 ```
-```
-    A* ----2---- B*  (both in MST)
-    |           /
-   3|          /5
-    |         /
-    C        D  (candidates: A-C:3, B-D:1, A-D:4)
+
+```mermaid
+graph TD
+    A[A<br/>in MST] -->|2| B[B<br/>in MST]
+    A -->|3| C[C<br/>candidate]
+    A -->|4| D[D<br/>candidate]
+    B -->|1| D
+    B -->|5| C
+    
+    style A fill:#90EE90,stroke:#333,stroke-width:3px
+    style B fill:#90EE90,stroke:#333,stroke-width:3px
+    style C fill:#FFB6C1,stroke:#333,stroke-width:2px
+    style D fill:#FFB6C1,stroke:#333,stroke-width:2px
 ```
 
 **Step 3: Add minimum edge (B-D:1)**
@@ -2003,16 +2182,21 @@ MST vertices: {A, B, D}
 MST edges: [A-B:2, B-D:1]
 Priority queue: [(A-C:3), (A-D:4), (B-C:5), (D-F:2)]
 ```
-```
-    A* ----2---- B*
-                /
-               /1
-              /
-    C        D*  (D in MST)
-             |
-             |2
-             |
-             F  (candidates: A-C:3, D-F:2, A-D:4)
+
+```mermaid
+graph TD
+    A[A<br/>in MST] -->|2| B[B<br/>in MST]
+    A -->|3| C[C<br/>candidate]
+    A -->|4| D[D<br/>in MST]
+    B -->|1| D
+    B -->|5| C
+    D -->|2| F[F<br/>candidate]
+    
+    style A fill:#90EE90,stroke:#333,stroke-width:3px
+    style B fill:#90EE90,stroke:#333,stroke-width:3px
+    style D fill:#90EE90,stroke:#333,stroke-width:3px
+    style C fill:#FFB6C1,stroke:#333,stroke-width:2px
+    style F fill:#FFB6C1,stroke:#333,stroke-width:2px
 ```
 
 **Step 4: Add minimum edge (D-F:2)**
@@ -2021,16 +2205,23 @@ MST vertices: {A, B, D, F}
 MST edges: [A-B:2, B-D:1, D-F:2]
 Priority queue: [(A-C:3), (A-D:4), (B-C:5), (E-F:3)]
 ```
-```
-    A* ----2---- B*
-                /
-               /1
-              /
-    C        D* ----2---- F*  (F in MST)
-             |
-             |
-             |
-             E  (candidates: A-C:3, E-F:3, A-D:4)
+
+```mermaid
+graph TD
+    A[A<br/>in MST] -->|2| B[B<br/>in MST]
+    A -->|3| C[C<br/>candidate]
+    A -->|4| D[D<br/>in MST]
+    B -->|1| D
+    B -->|5| C
+    D -->|2| F[F<br/>in MST]
+    E[E<br/>candidate] -->|3| F
+    
+    style A fill:#90EE90,stroke:#333,stroke-width:3px
+    style B fill:#90EE90,stroke:#333,stroke-width:3px
+    style D fill:#90EE90,stroke:#333,stroke-width:3px
+    style F fill:#90EE90,stroke:#333,stroke-width:3px
+    style C fill:#FFB6C1,stroke:#333,stroke-width:2px
+    style E fill:#FFB6C1,stroke:#333,stroke-width:2px
 ```
 
 **Step 5: Add minimum edge (A-C:3)**
@@ -2039,16 +2230,21 @@ MST vertices: {A, B, D, F, C}
 MST edges: [A-B:2, B-D:1, D-F:2, A-C:3]
 Priority queue: [(A-D:4), (B-C:5), (C-D:6), (C-E:7), (E-F:3)]
 ```
-```
-    A* ----2---- B*
-    |           /
-    |3         /1
-    |         /
-    C*       D* ----2---- F*
-             |
-             |
-             |
-             E  (candidates: E-F:3, A-D:4, C-E:7)
+
+```mermaid
+graph TD
+    A[A<br/>in MST] -->|2| B[B<br/>in MST]
+    A -->|3| C[C<br/>in MST]
+    B -->|1| D[D<br/>in MST]
+    D -->|2| F[F<br/>in MST]
+    E[E<br/>candidate] -->|3| F
+    
+    style A fill:#90EE90,stroke:#333,stroke-width:3px
+    style B fill:#90EE90,stroke:#333,stroke-width:3px
+    style C fill:#90EE90,stroke:#333,stroke-width:3px
+    style D fill:#90EE90,stroke:#333,stroke-width:3px
+    style F fill:#90EE90,stroke:#333,stroke-width:3px
+    style E fill:#FFB6C1,stroke:#333,stroke-width:2px
 ```
 
 **Step 6: Add minimum edge (E-F:3)**
@@ -2057,16 +2253,21 @@ MST vertices: {A, B, D, F, C, E}
 MST edges: [A-B:2, B-D:1, D-F:2, A-C:3, E-F:3]
 All vertices included! MST complete.
 ```
-```
-    A* ----2---- B*
-    |           /
-    |3         /1
-    |         /
-    C*       D* ----2---- F*
-             |
-             |
-             |
-    E* ------3------ F*
+
+```mermaid
+graph TD
+    A[A<br/>in MST] -->|2| B[B<br/>in MST]
+    A -->|3| C[C<br/>in MST]
+    B -->|1| D[D<br/>in MST]
+    D -->|2| F[F<br/>in MST]
+    E[E<br/>in MST] -->|3| F
+    
+    style A fill:#90EE90,stroke:#333,stroke-width:3px
+    style B fill:#90EE90,stroke:#333,stroke-width:3px
+    style C fill:#90EE90,stroke:#333,stroke-width:3px
+    style D fill:#90EE90,stroke:#333,stroke-width:3px
+    style E fill:#90EE90,stroke:#333,stroke-width:3px
+    style F fill:#90EE90,stroke:#333,stroke-width:3px
 ```
 
 **Final MST:**
