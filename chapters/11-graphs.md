@@ -1427,10 +1427,85 @@ A **bridge** (also called a cut edge) is an edge whose removal increases the num
 ### Algorithm Overview
 
 We use DFS with the concept of **discovery time** and **low link value**:
-- **Discovery time (disc)**: When a vertex is first visited
-- **Low link (low)**: The earliest discovery time reachable from a vertex
+- **Discovery time (disc[u])**: When vertex u is first visited during DFS
+- **Low link (low[u])**: The earliest discovery time of any vertex reachable from u (including u itself) via tree edges and back edges
 
-An edge (u, v) is a bridge if `low[v] > disc[u]`, meaning v cannot reach any ancestor of u.
+### Understanding the Bridge Condition: `low[v] > disc[u]`
+
+The condition `low[v] > disc[u]` identifies bridges through a key insight: **if removing edge (u, v) disconnects the graph, then v and its descendants cannot reach any ancestor of u**.
+
+#### Intuitive Explanation
+
+**What `disc[u]` represents:**
+- `disc[u]` is the timestamp when we first discovered vertex u during DFS
+- If u was discovered at time 5, then `disc[u] = 5`
+- All ancestors of u in the DFS tree were discovered **before** time 5
+
+**What `low[v]` represents:**
+- `low[v]` is the earliest discovery time reachable from v
+- If v can reach an ancestor of u (via back edges), then `low[v] ≤ disc[u]`
+- If v **cannot** reach any ancestor of u, then `low[v] > disc[u]`
+
+**Why `low[v] > disc[u]` means (u, v) is a bridge:**
+
+1. **If `low[v] > disc[u]`**: 
+   - v and all its descendants can only reach vertices discovered **after** u
+   - They cannot reach u or any ancestor of u
+   - Removing edge (u, v) disconnects v's subtree from the rest of the graph
+   - **Therefore, (u, v) is a bridge**
+
+2. **If `low[v] ≤ disc[u]`**:
+   - v can reach u or an ancestor of u (via some back edge)
+   - Even if we remove (u, v), v's subtree remains connected through the back edge
+   - **Therefore, (u, v) is NOT a bridge**
+
+#### Visual Example
+
+Consider this graph:
+```
+    0
+   / \
+  1   2
+  |   |
+  3---4
+```
+
+**DFS Tree (starting from 0):**
+```
+    0 (disc=1)
+   / \
+  1   2 (disc=3)
+  |   |
+  3   4 (disc=5)
+  |
+  (back edge 3-4)
+```
+
+**Analysis:**
+- Edge (0, 1): `low[1] = 1` (can reach 0), `disc[0] = 1` → `low[1] ≤ disc[0]` → **NOT a bridge**
+- Edge (0, 2): `low[2] = 3` (can reach 2), `disc[0] = 1` → `low[2] > disc[0]` → **IS a bridge**
+- Edge (1, 3): `low[3] = 1` (can reach 0 via back edge 3-4-2-0), `disc[1] = 2` → `low[3] < disc[1]` → **NOT a bridge**
+
+**Why edge (0, 2) is a bridge:**
+- If we remove (0, 2), vertex 2 and its subtree (including 4) become disconnected
+- Even though there's a back edge (3-4), it doesn't help because 3 is in a different subtree
+
+**Why edge (1, 3) is NOT a bridge:**
+- If we remove (1, 3), vertex 3 can still reach 0 via: 3 → 4 → 2 → 0
+- The back edge (3-4) provides an alternative path
+
+#### Step-by-Step Reasoning
+
+1. **During DFS**, we traverse from u to v
+2. **After exploring v's subtree**, we check `low[v]`
+3. **If `low[v] > disc[u]`**:
+   - v's earliest reachable vertex was discovered **after** u
+   - This means v cannot reach u or any ancestor of u
+   - The only connection from v's subtree to the rest of the graph is through edge (u, v)
+   - Removing (u, v) would disconnect v's entire subtree
+4. **Therefore**, (u, v) is a bridge
+
+**Key Insight**: A bridge is an edge that is the **only path** connecting two parts of the graph. If there's any alternative path (back edge), the edge is not a bridge.
 
 ### Implementation
 ```cpp
@@ -1459,7 +1534,10 @@ private:
                 dfs(v, u);
                 low[u] = min(low[u], low[v]);
                 
-                // If low[v] > disc[u], then (u, v) is a bridge
+                // Bridge condition: low[v] > disc[u]
+                // This means v cannot reach any ancestor of u.
+                // If we remove (u, v), v's subtree becomes disconnected.
+                // See detailed explanation above for intuition.
                 if (low[v] > disc[u]) {
                     bridges.push_back({u, v});
                 }
