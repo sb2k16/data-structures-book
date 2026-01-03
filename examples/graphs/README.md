@@ -5,6 +5,7 @@ This directory contains comprehensive examples demonstrating graph data structur
 ## Files
 
 - `graph_implementations.cpp` - Complete implementations of graph algorithms including DFS, BFS, Dijkstra, Kruskal, and more
+- `disjoint_sets.cpp` - Comprehensive examples of Union-Find (Disjoint Sets) data structure with optimizations and applications
 
 ## Compilation
 
@@ -12,8 +13,12 @@ This directory contains comprehensive examples demonstrating graph data structur
 # Compile the main example
 g++ -std=c++17 -O2 -o graph_demo graph_implementations.cpp
 
+# Compile disjoint sets example
+g++ -std=c++17 -O2 -o disjoint_sets disjoint_sets.cpp
+
 # Run
 ./graph_demo
+./disjoint_sets
 ```
 
 ## What's Included
@@ -37,7 +42,14 @@ g++ -std=c++17 -O2 -o graph_demo graph_implementations.cpp
 - **Kruskal's Algorithm**: MST using union-find data structure
 - Edge sorting and cycle detection
 
-### 5. Advanced Algorithms
+### 5. Disjoint Sets (Union-Find)
+- **Naive Implementation**: Basic union-find without optimizations
+- **Path Compression**: Optimized find operation
+- **Union by Rank**: Balanced tree structure
+- **Union by Size**: Alternative optimization strategy
+- **Applications**: Connected components, cycle detection, Kruskal's MST
+
+### 6. Advanced Algorithms
 - **Topological Sort**: Ordering vertices in a DAG
 - **Cycle Detection**: Detecting cycles in directed graphs
 - **Connected Components**: Finding all connected components
@@ -57,8 +69,9 @@ After studying these examples, you should understand:
 2. How to traverse graphs (DFS and BFS)
 3. How to find shortest paths (Dijkstra)
 4. How to find minimum spanning trees (Kruskal)
-5. How to perform topological sorting
-6. How to detect cycles and find connected components
+5. How to implement and optimize disjoint sets (Union-Find)
+6. How to perform topological sorting
+7. How to detect cycles and find connected components
 
 ## Graph Algorithms Complexity
 
@@ -68,6 +81,7 @@ After studying these examples, you should understand:
 | BFS | O(V + E) | O(V) |
 | Dijkstra | O((V + E) log V) | O(V) |
 | Kruskal | O(E log E) | O(V) |
+| Union-Find (optimized) | O(α(V)) amortized | O(V) |
 | Topological Sort | O(V + E) | O(V) |
 
 ## Exercises

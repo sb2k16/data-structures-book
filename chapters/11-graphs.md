@@ -739,11 +739,328 @@ public:
 - Transitive closure
 - Detecting negative cycles
 
-## 11.6 Minimum Spanning Tree (MST)
+## 11.6 Disjoint Sets (Union-Find Data Structure)
+
+A **Disjoint Set** (also called Union-Find) is a data structure that tracks a set of elements partitioned into disjoint (non-overlapping) subsets. It provides efficient operations to:
+- **Find**: Determine which subset an element belongs to
+- **Union**: Merge two subsets into one
+
+### Why Disjoint Sets Matter
+
+Disjoint sets are essential for many graph algorithms:
+- **Kruskal's Algorithm**: Detecting cycles when building MST
+- **Connected Components**: Finding all connected components in a graph
+- **Cycle Detection**: Determining if adding an edge creates a cycle
+- **Network Connectivity**: Checking if nodes are in the same network
+
+### Basic Operations
+
+1. **MakeSet(x)**: Creates a new set containing element x
+2. **Find(x)**: Returns the representative (root) of the set containing x
+3. **Union(x, y)**: Merges the sets containing x and y
+
+### Naive Implementation
+
+```cpp
+class UnionFindNaive {
+private:
+    vector<int> parent;
+    int n;
+    
+public:
+    UnionFindNaive(int size) : n(size) {
+        parent.resize(n);
+        // Initially, each element is its own parent
+        for (int i = 0; i < n; i++) {
+            parent[i] = i;
+        }
+    }
+    
+    // Find the root of x
+    int find(int x) {
+        if (parent[x] != x) {
+            return find(parent[x]); // Recursive find
+        }
+        return x;
+    }
+    
+    // Union two sets
+    void unite(int x, int y) {
+        int rootX = find(x);
+        int rootY = find(y);
+        
+        if (rootX != rootY) {
+            parent[rootX] = rootY;
+        }
+    }
+    
+    // Check if two elements are in the same set
+    bool connected(int x, int y) {
+        return find(x) == find(y);
+    }
+};
+```
+
+**Time Complexity**: 
+- Find: O(n) worst case (can form a chain)
+- Union: O(n) worst case
+
+### Optimized Implementation with Path Compression
+
+**Path Compression** flattens the tree structure during find operations, making future finds faster.
+
+```cpp
+class UnionFindPathCompression {
+private:
+    vector<int> parent;
+    int n;
+    
+public:
+    UnionFindPathCompression(int size) : n(size) {
+        parent.resize(n);
+        for (int i = 0; i < n; i++) {
+            parent[i] = i;
+        }
+    }
+    
+    // Find with path compression
+    int find(int x) {
+        if (parent[x] != x) {
+            parent[x] = find(parent[x]); // Path compression
+        }
+        return parent[x];
+    }
+    
+    void unite(int x, int y) {
+        int rootX = find(x);
+        int rootY = find(y);
+        
+        if (rootX != rootY) {
+            parent[rootX] = rootY;
+        }
+    }
+    
+    bool connected(int x, int y) {
+        return find(x) == find(y);
+    }
+};
+```
+
+**Time Complexity**: 
+- Find: O(α(n)) amortized, where α is the inverse Ackermann function (practically constant)
+- Union: O(α(n)) amortized
+
+### Union by Rank (or Union by Size)
+
+**Union by Rank** keeps trees balanced by always attaching the smaller tree under the root of the larger tree.
+
+```cpp
+class UnionFind {
+private:
+    vector<int> parent;
+    vector<int> rank; // Height of tree (or use size for union by size)
+    int n;
+    
+public:
+    UnionFind(int size) : n(size) {
+        parent.resize(n);
+        rank.resize(n, 0);
+        
+        for (int i = 0; i < n; i++) {
+            parent[i] = i;
+        }
+    }
+    
+    // Find with path compression
+    int find(int x) {
+        if (parent[x] != x) {
+            parent[x] = find(parent[x]); // Path compression
+        }
+        return parent[x];
+    }
+    
+    // Union by rank
+    void unite(int x, int y) {
+        int rootX = find(x);
+        int rootY = find(y);
+        
+        if (rootX == rootY) {
+            return; // Already in same set
+        }
+        
+        // Attach smaller rank tree under root of higher rank tree
+        if (rank[rootX] < rank[rootY]) {
+            parent[rootX] = rootY;
+        } else if (rank[rootX] > rank[rootY]) {
+            parent[rootY] = rootX;
+        } else {
+            // Ranks are same, make one root and increment its rank
+            parent[rootY] = rootX;
+            rank[rootX]++;
+        }
+    }
+    
+    bool connected(int x, int y) {
+        return find(x) == find(y);
+    }
+    
+    // Get number of disjoint sets
+    int countSets() {
+        int count = 0;
+        for (int i = 0; i < n; i++) {
+            if (parent[i] == i) {
+                count++;
+            }
+        }
+        return count;
+    }
+};
+```
+
+**Time Complexity**: 
+- Find: O(α(n)) amortized
+- Union: O(α(n)) amortized
+- Space: O(n)
+
+### Union by Size (Alternative)
+
+```cpp
+class UnionFindBySize {
+private:
+    vector<int> parent;
+    vector<int> size; // Size of each set
+    int n;
+    
+public:
+    UnionFindBySize(int size) : n(size) {
+        parent.resize(n);
+        this->size.resize(n, 1);
+        
+        for (int i = 0; i < n; i++) {
+            parent[i] = i;
+        }
+    }
+    
+    int find(int x) {
+        if (parent[x] != x) {
+            parent[x] = find(parent[x]);
+        }
+        return parent[x];
+    }
+    
+    void unite(int x, int y) {
+        int rootX = find(x);
+        int rootY = find(y);
+        
+        if (rootX == rootY) return;
+        
+        // Attach smaller set to larger set
+        if (size[rootX] < size[rootY]) {
+            parent[rootX] = rootY;
+            size[rootY] += size[rootX];
+        } else {
+            parent[rootY] = rootX;
+            size[rootX] += size[rootY];
+        }
+    }
+    
+    bool connected(int x, int y) {
+        return find(x) == find(y);
+    }
+    
+    int getSize(int x) {
+        return size[find(x)];
+    }
+};
+```
+
+### Applications in Graph Algorithms
+
+#### 1. Kruskal's Algorithm for MST
+Disjoint sets are used to detect cycles when building the minimum spanning tree.
+
+#### 2. Finding Connected Components
+```cpp
+int countConnectedComponents(const vector<vector<int>>& graph) {
+    int n = graph.size();
+    UnionFind uf(n);
+    
+    // Union all connected vertices
+    for (int i = 0; i < n; i++) {
+        for (int neighbor : graph[i]) {
+            uf.unite(i, neighbor);
+        }
+    }
+    
+    return uf.countSets();
+}
+```
+
+#### 3. Cycle Detection in Undirected Graph
+```cpp
+bool hasCycle(const vector<pair<int, int>>& edges, int numVertices) {
+    UnionFind uf(numVertices);
+    
+    for (const auto& edge : edges) {
+        int u = edge.first;
+        int v = edge.second;
+        
+        if (uf.connected(u, v)) {
+            return true; // Cycle detected
+        }
+        uf.unite(u, v);
+    }
+    
+    return false;
+}
+```
+
+#### 4. Network Connectivity
+```cpp
+class NetworkConnectivity {
+private:
+    UnionFind uf;
+    
+public:
+    NetworkConnectivity(int n) : uf(n) {}
+    
+    void connect(int a, int b) {
+        uf.unite(a, b);
+    }
+    
+    bool isConnected(int a, int b) {
+        return uf.connected(a, b);
+    }
+    
+    int getComponentCount() {
+        return uf.countSets();
+    }
+};
+```
+
+### Time Complexity Analysis
+
+| Operation | Naive | Path Compression | Path Compression + Union by Rank |
+|-----------|-------|------------------|----------------------------------|
+| Find | O(n) | O(log n) amortized | O(α(n)) amortized |
+| Union | O(n) | O(log n) amortized | O(α(n)) amortized |
+| Space | O(n) | O(n) | O(n) |
+
+Where α(n) is the inverse Ackermann function, which grows extremely slowly and is practically constant (≤ 4 for any reasonable n).
+
+### Key Takeaways
+
+1. **Disjoint Sets** efficiently track partitions of elements
+2. **Path Compression** flattens trees during find operations
+3. **Union by Rank/Size** keeps trees balanced
+4. **Amortized Complexity** is nearly constant with optimizations
+5. **Essential for** Kruskal's algorithm, cycle detection, and connected components
+
+## 11.7 Minimum Spanning Tree (MST)
 
 A **Minimum Spanning Tree** is a subset of edges that connects all vertices with minimum total weight.
 
-### 11.6.1 Kruskal's Algorithm
+### 11.7.1 Kruskal's Algorithm
 
 **Kruskal's algorithm** builds MST by adding edges in increasing order of weight.
 
@@ -840,7 +1157,7 @@ public:
 - **Time**: O(E log E) = O(E log V)
 - **Space**: O(V)
 
-### 11.6.2 Prim's Algorithm
+### 11.7.2 Prim's Algorithm
 
 **Prim's algorithm** builds MST by starting from a vertex and growing the tree.
 
@@ -913,7 +1230,7 @@ public:
 - **Time**: O((V + E) log V) with binary heap
 - **Space**: O(V)
 
-## 11.7 Topological Sorting
+## 11.8 Topological Sorting
 
 **Topological sorting** is a linear ordering of vertices in a directed acyclic graph (DAG) such that for every directed edge (u, v), u comes before v.
 
@@ -1017,9 +1334,9 @@ public:
 - Course prerequisites
 - Event ordering
 
-## 11.8 Graph Applications
+## 11.9 Graph Applications
 
-### 11.8.1 Finding Connected Components
+### 11.9.1 Finding Connected Components
 ```cpp
 vector<vector<int>> findConnectedComponents(const vector<list<int>>& graph) {
     int n = graph.size();
@@ -1048,7 +1365,7 @@ vector<vector<int>> findConnectedComponents(const vector<list<int>>& graph) {
 }
 ```
 
-### 11.8.2 Cycle Detection
+### 11.9.2 Cycle Detection
 ```cpp
 bool hasCycle(const vector<list<int>>& graph) {
     int n = graph.size();
@@ -1081,7 +1398,7 @@ bool hasCycle(const vector<list<int>>& graph) {
 }
 ```
 
-### 11.8.3 Bipartite Graph Check
+### 11.9.3 Bipartite Graph Check
 ```cpp
 bool isBipartite(const vector<list<int>>& graph) {
     int n = graph.size();
@@ -1113,7 +1430,7 @@ bool isBipartite(const vector<list<int>>& graph) {
 }
 ```
 
-## 11.9 Key Takeaways
+## 11.10 Key Takeaways
 
 1. **Graphs** represent relationships and connections between entities
 2. **Adjacency matrix** is good for dense graphs, **adjacency list** for sparse graphs
@@ -1125,7 +1442,7 @@ bool isBipartite(const vector<list<int>>& graph) {
 8. **Topological sort** orders vertices in a DAG
 9. Graphs have many real-world applications
 
-## 11.10 Exercises
+## 11.11 Exercises
 
 1. Implement a graph class that supports both adjacency matrix and adjacency list representations.
 
@@ -1147,7 +1464,7 @@ bool isBipartite(const vector<list<int>>& graph) {
 
 10. Create a graph visualization tool that can display small graphs.
 
-## 11.11 Summary
+## 11.12 Summary
 
 Graphs are fundamental data structures that model relationships and connections. Understanding graph representations, traversal algorithms, shortest path algorithms, and minimum spanning tree algorithms is essential for solving many computational problems. The choice of representation and algorithm depends on the specific problem requirements, graph characteristics, and performance constraints.
 
