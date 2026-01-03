@@ -21,21 +21,21 @@ A comprehensive introduction to data structures and algorithms using C++ as the 
 - [Chapter 6: Trees and Binary Trees](chapters/06-trees-and-binary-trees.md)
 - [Chapter 7: String Search Algorithms](chapters/07-string-search-algorithms.md)
 - [Chapter 8: Modern String Search Optimizations](chapters/08-modern-string-search-optimizations.md)
-- Chapter 9: Hash Tables and Hashing *(Coming Soon)*
-- Chapter 10: Graphs *(Coming Soon)*
+- [Chapter 10: Hash Tables and Hashing](chapters/10-hash-tables-and-hashing.md)
+- [Chapter 11: Graphs](chapters/11-graphs.md)
 
 ### Part IV: Advanced Data Structures
-- [Chapter 11: Sorting Algorithms](chapters/11-sorting-algorithms.md)
-- Chapter 12: Searching Algorithms *(Coming Soon)*
-- Chapter 13: Advanced Data Structures (Heaps, Tries) *(Coming Soon)*
+- [Chapter 9: Sorting Algorithms](chapters/09-sorting-algorithms.md)
+- [Chapter 13: Searching Algorithms](chapters/13-searching-algorithms.md)
+- [Chapter 14: Advanced Data Structures (Heaps, Tries)](chapters/14-advanced-data-structures.md)
 
 ### Part V: Algorithm Design Paradigms
-- [Chapter 14: Dynamic Programming](chapters/14-dynamic-programming.md)
-- Chapter 15: Greedy Algorithms *(Coming Soon)*
-- Chapter 16: Divide and Conquer *(Coming Soon)*
+- [Chapter 12: Dynamic Programming](chapters/12-dynamic-programming.md)
+- [Chapter 16: Greedy Algorithms](chapters/16-greedy-algorithms.md)
+- [Chapter 17: Divide and Conquer](chapters/17-divide-and-conquer.md)
 
 ### Part VI: Practical Applications
-- [Chapter 17: Problem Solving Strategies and Practice](chapters/17-problem-solving-strategies.md)
+- [Chapter 15: Problem Solving Strategies and Practice](chapters/15-problem-solving-strategies.md)
 
 ## 🚀 Quick Start
 
@@ -78,7 +78,13 @@ data-structures-book/
 │   ├── modern_string_search/
 │   ├── linked_lists/
 │   ├── trees/
-│   └── sorting/
+│   ├── sorting/
+│   ├── hash_tables/
+│   ├── graphs/
+│   ├── searching/
+│   ├── advanced_data_structures/
+│   ├── greedy_algorithms/
+│   └── divide_and_conquer/
 ├── docs/                              # Documentation
 │   ├── readme.md                      # Detailed book overview
 │   └── compilation-guide.md           # C++ setup and compilation guide
@@ -124,17 +130,18 @@ After completing this book, readers will be able to:
 - [x] Chapter 6: Trees and Binary Trees
 - [x] Chapter 7: String Search Algorithms
 - [x] Chapter 8: Modern String Search Optimizations
-- [x] Chapter 11: Sorting Algorithms
-- [x] Chapter 14: Dynamic Programming
-- [x] Chapter 17: Problem Solving Strategies and Practice
+- [x] Chapter 9: Sorting Algorithms
+- [x] Chapter 10: Hash Tables and Hashing
+- [x] Chapter 11: Graphs
+- [x] Chapter 12: Dynamic Programming
+- [x] Chapter 13: Searching Algorithms
+- [x] Chapter 14: Advanced Data Structures (Heaps, Tries)
+- [x] Chapter 15: Problem Solving Strategies and Practice
+- [x] Chapter 16: Greedy Algorithms
+- [x] Chapter 17: Divide and Conquer
 
 ### 🚧 In Progress
-- [ ] Chapter 9: Hash Tables and Hashing
-- [ ] Chapter 10: Graphs
-- [ ] Chapter 12: Searching Algorithms
-- [ ] Chapter 13: Advanced Data Structures (Heaps, Tries)
-- [ ] Chapter 15: Greedy Algorithms
-- [ ] Chapter 16: Divide and Conquer
+- All chapters completed! 🎉
 
 ### 📋 Planned Features
 - [ ] Interactive code examples

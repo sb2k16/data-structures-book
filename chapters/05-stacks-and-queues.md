@@ -1,6 +1,8 @@
 # Chapter 5: Stacks and Queues
 
-## 5.1 Introduction to Stacks and Queues
+## Part I: Fundamentals
+
+### 5.1 Introduction to Stacks and Queues
 
 **Stacks** and **Queues** are fundamental linear data structures that follow specific access patterns. They are abstract data types that define how elements are added, removed, and accessed.
 
@@ -16,7 +18,7 @@ A **queue** follows the **First-In-First-Out (FIFO)** principle:
 - The first element added is the first to be removed
 - Operations: `enqueue()` (add), `dequeue()` (remove), `front()` (view front element), `isEmpty()`
 
-## 5.2 Stack Implementation
+### 5.2 Basic Stack Implementation
 
 ### Array-Based Stack
 ```cpp
@@ -189,7 +191,7 @@ void demonstrateStack() {
 }
 ```
 
-## 5.3 Queue Implementation
+### 5.3 Basic Queue Implementation
 
 ### Array-Based Queue
 ```cpp
@@ -391,7 +393,9 @@ void demonstrateQueue() {
 }
 ```
 
-## 5.4 Specialized Queue Types
+## Part II: Advanced Implementations
+
+### 5.4 Specialized Data Structures
 
 ### Deque (Double-Ended Queue)
 ```cpp
@@ -574,7 +578,40 @@ public:
 };
 ```
 
-## 5.5 Stack Applications
+### 5.5 Implementation Trade-offs and Analysis
+
+#### Time Complexity Comparison
+
+| Operation | Array Stack | Linked Stack | Array Queue | Linked Queue |
+|-----------|-------------|--------------|-------------|--------------|
+| Push/Enqueue | O(1) amortized | O(1) | O(1) amortized | O(1) |
+| Pop/Dequeue | O(1) | O(1) | O(1) | O(1) |
+| Top/Front | O(1) | O(1) | O(1) | O(1) |
+| Search | O(n) | O(n) | O(n) | O(n) |
+
+#### Space Complexity
+- **Array-based**: O(n) where n is the maximum number of elements
+- **Linked list-based**: O(n) where n is the current number of elements
+
+#### When to Use Each Implementation
+
+**Array-based Stack/Queue:**
+- ✅ Better cache locality
+- ✅ Lower memory overhead per element
+- ✅ Simpler implementation
+- ❌ Fixed size (unless resized)
+- ❌ Memory waste if not full
+
+**Linked List-based Stack/Queue:**
+- ✅ Dynamic size
+- ✅ No memory waste
+- ✅ Easy to grow/shrink
+- ❌ Extra memory for pointers
+- ❌ Poor cache locality
+
+## Part III: Applications
+
+### 5.6 Stack Applications
 
 ### Expression Evaluation
 ```cpp
@@ -724,7 +761,7 @@ public:
 };
 ```
 
-## 5.6 Queue Applications
+### 5.7 Queue Applications
 
 ### BFS (Breadth-First Search) Implementation
 ```cpp
@@ -846,9 +883,536 @@ void printLevelOrder(TreeNode* root) {
 }
 ```
 
-## 5.7 Performance Analysis
+## Part IV: Problem Solving
 
-### Time Complexity
+### 5.8 Advanced Stack Problems
+
+### Min Stack Implementation
+
+A **Min Stack** is a stack that supports all regular stack operations plus an additional operation `getMin()` that returns the minimum element in O(1) time.
+
+**Problem Statement**: Design a stack that supports push, pop, top, and retrieving the minimum element in constant time.
+
+**Solution Approach**: Use an auxiliary stack to keep track of minimum values.
+
+```cpp
+class MinStack {
+private:
+    stack<int> mainStack;
+    stack<int> minStack;
+    
+public:
+    MinStack() {}
+    
+    void push(int val) {
+        mainStack.push(val);
+        
+        // Push to min stack if it's empty or val is <= current minimum
+        if (minStack.empty() || val <= minStack.top()) {
+            minStack.push(val);
+        }
+    }
+    
+    void pop() {
+        if (mainStack.empty()) return;
+        
+        // If we're popping the minimum element, remove it from min stack too
+        if (mainStack.top() == minStack.top()) {
+            minStack.pop();
+        }
+        
+        mainStack.pop();
+    }
+    
+    int top() {
+        if (mainStack.empty()) {
+            throw runtime_error("Stack is empty");
+        }
+        return mainStack.top();
+    }
+    
+    int getMin() {
+        if (minStack.empty()) {
+            throw runtime_error("Stack is empty");
+        }
+        return minStack.top();
+    }
+    
+    bool empty() {
+        return mainStack.empty();
+    }
+    
+    size_t size() {
+        return mainStack.size();
+    }
+};
+
+// Alternative implementation using a single stack with pairs
+class MinStackOptimized {
+private:
+    stack<pair<int, int>> st; // {value, current_min}
+    
+public:
+    MinStackOptimized() {}
+    
+    void push(int val) {
+        if (st.empty()) {
+            st.push({val, val});
+        } else {
+            int currentMin = min(val, st.top().second);
+            st.push({val, currentMin});
+        }
+    }
+    
+    void pop() {
+        if (st.empty()) return;
+        st.pop();
+    }
+    
+    int top() {
+        if (st.empty()) {
+            throw runtime_error("Stack is empty");
+        }
+        return st.top().first;
+    }
+    
+    int getMin() {
+        if (st.empty()) {
+            throw runtime_error("Stack is empty");
+        }
+        return st.top().second;
+    }
+    
+    bool empty() {
+        return st.empty();
+    }
+};
+```
+
+**Example Usage**:
+```cpp
+void demonstrateMinStack() {
+    MinStack minStack;
+    
+    minStack.push(-2);
+    minStack.push(0);
+    minStack.push(-3);
+    
+    cout << "Current minimum: " << minStack.getMin() << endl; // -3
+    minStack.pop();
+    cout << "Top element: " << minStack.top() << endl; // 0
+    cout << "Current minimum: " << minStack.getMin() << endl; // -2
+    
+    minStack.push(-5);
+    cout << "Current minimum: " << minStack.getMin() << endl; // -5
+}
+```
+
+**Time Complexity**:
+- `push()`: O(1)
+- `pop()`: O(1)
+- `top()`: O(1)
+- `getMin()`: O(1)
+
+**Space Complexity**: O(n) for storing elements and minimum values
+
+### Max Stack Implementation
+
+A **Max Stack** is similar to a Min Stack but tracks the maximum element instead.
+
+**Problem Statement**: Design a stack that supports push, pop, top, and retrieving the maximum element in constant time.
+
+**Advanced Problem Statement**: Design a stack that supports push, pop, top, peekMax, and popMax operations.
+
+```cpp
+class MaxStack {
+private:
+    stack<int> mainStack;
+    stack<int> maxStack;
+    
+public:
+    MaxStack() {}
+    
+    void push(int val) {
+        mainStack.push(val);
+        
+        // Push to max stack if it's empty or val is >= current maximum
+        if (maxStack.empty() || val >= maxStack.top()) {
+            maxStack.push(val);
+        }
+    }
+    
+    void pop() {
+        if (mainStack.empty()) return;
+        
+        // If we're popping the maximum element, remove it from max stack too
+        if (mainStack.top() == maxStack.top()) {
+            maxStack.pop();
+        }
+        
+        mainStack.pop();
+    }
+    
+    int top() {
+        if (mainStack.empty()) {
+            throw runtime_error("Stack is empty");
+        }
+        return mainStack.top();
+    }
+    
+    int getMax() {
+        if (maxStack.empty()) {
+            throw runtime_error("Stack is empty");
+        }
+        return maxStack.top();
+    }
+    
+    bool empty() {
+        return mainStack.empty();
+    }
+    
+    size_t size() {
+        return mainStack.size();
+    }
+};
+
+// Alternative implementation using a single stack with pairs
+class MaxStackOptimized {
+private:
+    stack<pair<int, int>> st; // {value, current_max}
+    
+public:
+    MaxStackOptimized() {}
+    
+    void push(int val) {
+        if (st.empty()) {
+            st.push({val, val});
+        } else {
+            int currentMax = max(val, st.top().second);
+            st.push({val, currentMax});
+        }
+    }
+    
+    void pop() {
+        if (st.empty()) return;
+        st.pop();
+    }
+    
+    int top() {
+        if (st.empty()) {
+            throw runtime_error("Stack is empty");
+        }
+        return st.top().first;
+    }
+    
+    int getMax() {
+        if (st.empty()) {
+            throw runtime_error("Stack is empty");
+        }
+        return st.top().second;
+    }
+    
+    bool empty() {
+        return st.empty();
+    }
+};
+```
+
+**Example Usage**:
+```cpp
+void demonstrateMaxStack() {
+    MaxStack maxStack;
+    
+    maxStack.push(5);
+    maxStack.push(1);
+    maxStack.push(10);
+    maxStack.push(7);
+    
+    cout << "Current maximum: " << maxStack.getMax() << endl; // 10
+    maxStack.pop();
+    cout << "Top element: " << maxStack.top() << endl; // 10
+    cout << "Current maximum: " << maxStack.getMax() << endl; // 10
+    
+    maxStack.push(15);
+    cout << "Current maximum: " << maxStack.getMax() << endl; // 15
+}
+```
+
+### Advanced Max Stack with popMax() Operation
+
+For scenarios where you need to remove the maximum element from anywhere in the stack, here's a more sophisticated implementation using `set`:
+
+```cpp
+class AdvancedMaxStack {
+public:
+    AdvancedMaxStack() {}
+    
+    void push(int x) {
+        stk.insert({++counter, x});
+        max_stk.insert({x, counter});
+    }
+    
+    int pop() {
+        if (stk.empty()) {
+            return -1;
+        }
+        auto it = prev(stk.end());
+        int v = it->second; 
+        int count = it->first;
+        stk.erase(it);
+        max_stk.erase({v, count});
+        return v;
+    }
+    
+    int top() {
+        if (stk.empty()) {
+            return -1;
+        }
+        auto it = prev(stk.end());
+        return it->second;
+    }
+    
+    int peekMax() {
+        if (max_stk.empty()) {
+            return -1;
+        }
+        auto it = prev(max_stk.end());
+        return it->first;
+    }
+    
+    int popMax() {
+        if (max_stk.empty()) {
+            return -1;
+        }
+        auto it = prev(max_stk.end());
+        int v = it->first; 
+        int count = it->second;
+        stk.erase({count, v});
+        max_stk.erase(it);
+        return v;
+    }
+    
+    bool empty() {
+        return stk.empty();
+    }
+    
+    size_t size() {
+        return stk.size();
+    }
+
+private:
+    set<pair<int, int>> stk, max_stk;  // {counter, value} and {value, counter}
+    int counter{0};
+};
+```
+
+**Example Usage**:
+```cpp
+void demonstrateAdvancedMaxStack() {
+    AdvancedMaxStack maxStack;
+    
+    maxStack.push(5);
+    maxStack.push(1);
+    maxStack.push(10);
+    maxStack.push(7);
+    
+    cout << "Current maximum: " << maxStack.peekMax() << endl; // 10
+    cout << "Top element: " << maxStack.top() << endl; // 7
+    
+    cout << "Popping maximum: " << maxStack.popMax() << endl; // 10
+    cout << "Current maximum: " << maxStack.peekMax() << endl; // 7
+    cout << "Top element: " << maxStack.top() << endl; // 7
+    
+    cout << "Popping top: " << maxStack.pop() << endl; // 7
+    cout << "Current maximum: " << maxStack.peekMax() << endl; // 5
+}
+```
+
+**Time Complexity Analysis**:
+- `push()`: O(log n) - inserting into set
+- `pop()`: O(log n) - erasing from set  
+- `top()`: O(log n) - accessing last element in set
+- `peekMax()`: O(log n) - accessing last element in max set
+- `popMax()`: O(log n) - erasing from both sets
+
+**Space Complexity**: O(n) for storing elements and counters
+
+**Trade-offs**:
+- **Advantage**: Supports `popMax()` operation - can remove maximum from anywhere
+- **Disadvantage**: Slower than O(1) solutions for basic operations
+- **Use Case**: When you need to remove maximum elements frequently
+
+### Advanced Min/Max Stack with Additional Operations
+
+For more complex scenarios, here's an implementation that supports both min and max operations:
+
+```cpp
+class MinMaxStack {
+private:
+    struct Element {
+        int value;
+        int min;
+        int max;
+        
+        Element(int val, int minVal, int maxVal) 
+            : value(val), min(minVal), max(maxVal) {}
+    };
+    
+    stack<Element> st;
+    
+public:
+    MinMaxStack() {}
+    
+    void push(int val) {
+        if (st.empty()) {
+            st.push(Element(val, val, val));
+        } else {
+            int currentMin = min(val, st.top().min);
+            int currentMax = max(val, st.top().max);
+            st.push(Element(val, currentMin, currentMax));
+        }
+    }
+    
+    void pop() {
+        if (st.empty()) return;
+        st.pop();
+    }
+    
+    int top() {
+        if (st.empty()) {
+            throw runtime_error("Stack is empty");
+        }
+        return st.top().value;
+    }
+    
+    int getMin() {
+        if (st.empty()) {
+            throw runtime_error("Stack is empty");
+        }
+        return st.top().min;
+    }
+    
+    int getMax() {
+        if (st.empty()) {
+            throw runtime_error("Stack is empty");
+        }
+        return st.top().max;
+    }
+    
+    bool empty() {
+        return st.empty();
+    }
+    
+    size_t size() {
+        return st.size();
+    }
+};
+```
+
+### Key Insights and Trade-offs
+
+1. **Two Stack Approach**: Uses O(n) extra space but provides O(1) time complexity for all operations
+2. **Single Stack with Pairs**: More memory efficient but still O(n) space complexity
+3. **Set-based Approach**: O(log n) operations but supports `popMax()` functionality
+4. **When to use each approach**:
+   - **O(1) solutions**: When you only need peekMin/peekMax operations
+   - **Set-based solution**: When you need to remove min/max elements from anywhere
+   - **Range queries on stack elements**
+   - **Sliding window problems**
+   - **Monotonic stack applications**
+   - **Dynamic programming with stack-based solutions**
+
+5. **Real-world Applications**:
+   - Undo operations with minimum/maximum tracking
+   - Expression evaluation with bounds checking
+   - Game engines for tracking high/low scores
+   - Financial applications for tracking price ranges
+   - Priority-based task management systems
+
+### 5.9 Common Interview Problems
+
+#### Problem 1: Valid Parentheses
+**Problem**: Given a string containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid.
+
+**Solution Approach**: Use a stack to track opening brackets and match them with closing brackets.
+
+```cpp
+bool isValid(string s) {
+    stack<char> st;
+    for (char c : s) {
+        if (c == '(' || c == '[' || c == '{') {
+            st.push(c);
+        } else {
+            if (st.empty()) return false;
+            char top = st.top();
+            st.pop();
+            if ((c == ')' && top != '(') ||
+                (c == ']' && top != '[') ||
+                (c == '}' && top != '{')) {
+                return false;
+            }
+        }
+    }
+    return st.empty();
+}
+```
+
+#### Problem 2: Daily Temperatures
+**Problem**: Given an array of temperatures, return an array such that for each day in the input, tells you how many days you would have to wait until a warmer temperature.
+
+**Solution Approach**: Use a stack to keep track of indices of temperatures that haven't found a warmer day yet.
+
+```cpp
+vector<int> dailyTemperatures(vector<int>& temperatures) {
+    int n = temperatures.size();
+    vector<int> result(n, 0);
+    stack<int> st; // Store indices
+    
+    for (int i = 0; i < n; i++) {
+        while (!st.empty() && temperatures[i] > temperatures[st.top()]) {
+            int prevIndex = st.top();
+            st.pop();
+            result[prevIndex] = i - prevIndex;
+        }
+        st.push(i);
+    }
+    
+    return result;
+}
+```
+
+#### Problem 3: Largest Rectangle in Histogram
+**Problem**: Given an array of heights representing a histogram, find the area of the largest rectangle.
+
+**Solution Approach**: Use a stack to maintain increasing heights and calculate areas when a smaller height is encountered.
+
+```cpp
+int largestRectangleArea(vector<int>& heights) {
+    stack<int> st;
+    int maxArea = 0;
+    int n = heights.size();
+    
+    for (int i = 0; i <= n; i++) {
+        int h = (i == n) ? 0 : heights[i];
+        
+        while (!st.empty() && h < heights[st.top()]) {
+            int height = heights[st.top()];
+            st.pop();
+            int width = st.empty() ? i : i - st.top() - 1;
+            maxArea = max(maxArea, height * width);
+        }
+        st.push(i);
+    }
+    
+    return maxArea;
+}
+```
+
+## Part V: Summary
+
+### 5.10 Performance Analysis
+
+#### Time Complexity
 
 | Operation | Array Stack | Linked Stack | Array Queue | Linked Queue |
 |-----------|-------------|--------------|-------------|--------------|
@@ -861,15 +1425,16 @@ void printLevelOrder(TreeNode* root) {
 - **Array-based**: O(n) where n is the maximum number of elements
 - **Linked list-based**: O(n) where n is the current number of elements
 
-## 5.8 Key Takeaways
+### 5.11 Key Takeaways
 
 1. **Stacks** follow LIFO principle and are useful for function calls, expression evaluation, and undo operations
 2. **Queues** follow FIFO principle and are essential for BFS, task scheduling, and buffering
-3. **Implementation choices** affect performance: arrays provide better cache locality, linked lists avoid memory waste
-4. **Specialized variants** like deque and priority queue extend basic functionality
-5. **Applications** are numerous in system programming, algorithms, and user interfaces
+3. **Min/Max stacks** extend basic stack functionality to provide O(1) minimum/maximum retrieval
+4. **Implementation choices** affect performance: arrays provide better cache locality, linked lists avoid memory waste
+5. **Specialized variants** like deque and priority queue extend basic functionality
+6. **Applications** are numerous in system programming, algorithms, and user interfaces
 
-## 5.9 Exercises
+### 5.12 Practice Exercises
 
 1. Implement a stack that can return the minimum element in O(1) time.
 2. Design a queue using two stacks.
@@ -877,7 +1442,7 @@ void printLevelOrder(TreeNode* root) {
 4. Create a function to check if a string is a palindrome using a stack.
 5. Implement a sliding window maximum using a deque.
 
-## 5.10 Summary
+### 5.13 Summary
 
 Stacks and queues are fundamental abstract data types that provide specific access patterns essential for many algorithms and system operations. Understanding their implementations, trade-offs, and applications is crucial for solving problems that require LIFO or FIFO behavior. These data structures serve as building blocks for more complex algorithms and are widely used in computer science and software engineering.
 

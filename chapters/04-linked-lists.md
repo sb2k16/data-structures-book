@@ -1,6 +1,8 @@
 # Chapter 4: Linked Lists
 
-## 4.1 Introduction to Linked Lists
+## Part I: Fundamentals
+
+### 4.1 Introduction to Linked Lists
 
 A **linked list** is a linear data structure where elements (nodes) are stored in sequence, but unlike arrays, the elements are not stored in contiguous memory locations. Instead, each node contains data and a reference (pointer) to the next node in the sequence.
 
@@ -24,7 +26,7 @@ A **linked list** is a linear data structure where elements (nodes) are stored i
 | Cache Performance | Better | Worse |
 | Memory Overhead | None | Pointer overhead |
 
-## 4.2 Singly Linked List
+### 4.2 Basic Singly Linked List Implementation
 
 ### Node Structure
 ```cpp
@@ -265,7 +267,7 @@ void demonstrateSinglyLinkedList() {
 }
 ```
 
-## 4.3 Doubly Linked List
+### 4.3 Basic Doubly Linked List Implementation
 
 A doubly linked list has nodes with pointers to both the next and previous nodes, enabling traversal in both directions.
 
@@ -391,7 +393,7 @@ public:
 };
 ```
 
-## 4.4 Circular Linked List
+### 4.4 Basic Circular Linked List Implementation
 
 A circular linked list is a variation where the last node points back to the first node, forming a circle.
 
@@ -462,7 +464,244 @@ public:
 };
 ```
 
-## 4.5 Common Linked List Algorithms
+## Part II: Advanced Implementations
+
+### 4.5 Skip Lists
+
+A **Skip List** is a probabilistic data structure that allows for fast search, insertion, and deletion operations. It was invented by William Pugh in 1989 as an alternative to balanced trees. Skip lists provide O(log n) average-case performance for search, insertion, and deletion operations, making them comparable to balanced binary search trees but with simpler implementation.
+
+### Key Characteristics of Skip Lists
+
+- **Probabilistic structure** - uses randomization to maintain balance
+- **Multiple levels** - each node can have multiple forward pointers at different levels
+- **Sorted order** - elements are maintained in sorted order
+- **Fast operations** - O(log n) average time complexity for search, insert, and delete
+- **Simple implementation** - easier to implement than balanced trees
+- **Space efficient** - uses O(n) space on average
+
+### Advantages of Skip Lists
+
+1. **Simplicity**: Much easier to implement than balanced trees (AVL, Red-Black)
+2. **Probabilistic balance**: No complex rebalancing operations needed
+3. **Concurrent operations**: Easier to make thread-safe compared to balanced trees
+4. **Cache friendly**: Better memory locality than some tree structures
+5. **Dynamic**: Supports efficient insertion and deletion
+6. **Range queries**: Can efficiently find elements in a range
+7. **Maintenance**: No complex rotation or rebalancing operations
+
+### Skip List Structure
+
+A skip list consists of multiple levels, where:
+- **Level 0**: Contains all elements in sorted order (like a regular linked list)
+- **Higher levels**: Contain fewer elements, acting as "express lanes"
+- **Head node**: Special node that points to the first element at each level
+- **Forward pointers**: Each node has an array of forward pointers for different levels
+
+### Skip List Implementation
+
+```cpp
+#include <memory>
+#include <vector>
+#include <random>
+using namespace std;
+
+class Skiplist {
+    struct Node {
+        int val;
+        vector<shared_ptr<Node>> forward;
+
+        Node(int v, int level): val(v), forward(level, nullptr) {}
+    };
+private:
+    int max_level{16};
+    int level{0};
+    shared_ptr<Node> head;
+    mt19937 rng{random_device{}()};
+
+private:
+
+    int random_level() {
+        int lvl = 0;
+        uniform_int_distribution<int> dist(0, 1);
+        while (dist(rng) && lvl < max_level - 1) {
+            lvl++;
+        }
+        return lvl;
+    }
+
+public:
+    Skiplist() {
+        head = make_shared<Node>(-1, max_level);
+    }
+    
+    bool search(int target) {
+        shared_ptr<Node> curr = head;
+        for (int i=level; i>=0; i--) {
+            while (curr->forward[i] && curr->forward[i]->val < target) {
+                curr = curr->forward[i];
+            }
+        }
+        if (!curr) return false;
+        shared_ptr<Node> target_node = curr->forward[0];
+        if (!target_node || target_node->val != target) return false;
+        return true;
+    }
+    
+    void add(int num) {
+        vector<shared_ptr<Node>> update(max_level, nullptr);
+        shared_ptr<Node> curr = head;
+        for (int i=level; i>=0; i--) {
+            while (curr->forward[i] && curr->forward[i]->val < num) {
+                curr = curr->forward[i];
+            }
+            update[i] = curr;
+        }
+
+        int new_level = random_level();
+        if (new_level > level) {
+            for (int i=level+1; i<=new_level; i++) {
+                update[i] = head;
+            }
+            level = new_level;
+        }
+
+        auto newNode = make_shared<Node>(num, new_level+1);
+        for (int i=0; i<=new_level; i++) {
+            newNode->forward[i] = update[i]->forward[i];
+            update[i]->forward[i] = newNode;
+        }
+    }
+    
+    bool erase(int num) {
+        vector<shared_ptr<Node>> update(max_level, nullptr);
+        shared_ptr<Node> curr = head;
+        for (int i=level; i>=0; i--) {
+            while (curr->forward[i] && curr->forward[i]->val < num) {
+                curr = curr->forward[i];
+            }
+            update[i] = curr;
+        }
+        if (!curr || !curr->forward[0]) return false;
+        curr = curr->forward[0];
+        if (curr->val != num) return false;
+
+        for (int i=0; i<=level; i++) {
+            if (update[i]->forward[i] != curr) break;
+            update[i]->forward[i] = curr->forward[i];
+        }
+
+        while (level > 0 && !head->forward[level]) {
+            level--;
+        }
+
+        return true;
+    }
+};
+
+/**
+ * Example usage with smart pointers:
+ * Skiplist skiplist;
+ * bool param_1 = skiplist.search(target);
+ * skiplist.add(num);
+ * bool param_3 = skiplist.erase(num);
+ */
+```
+
+### How Skip Lists Work
+
+1. **Search Operation**:
+   - Start at the highest level of the head node
+   - Move right as long as the next node's value is less than the target
+   - When we can't move right, move down one level
+   - Continue until we reach level 0
+   - Check if the target node exists
+
+2. **Insert Operation**:
+   - Find the position where the new node should be inserted (similar to search)
+   - Determine the level of the new node using randomization
+   - Create the new node with the determined level
+   - Update all forward pointers at each level
+
+3. **Delete Operation**:
+   - Find the node to be deleted (similar to search)
+   - Update all forward pointers to bypass the deleted node
+   - Adjust the skip list level if necessary
+   - Delete the node
+
+### Time and Space Complexity
+
+| Operation | Average Case | Worst Case | Space |
+|-----------|-------------|------------|-------|
+| Search | O(log n) | O(n) | O(n) |
+| Insert | O(log n) | O(n) | O(n) |
+| Delete | O(log n) | O(n) | O(n) |
+
+### When to Use Skip Lists
+
+- **Database indexing**: Used in some database systems for indexing
+- **Concurrent data structures**: Easier to make thread-safe than balanced trees
+- **Range queries**: Efficient for finding elements in a range
+- **When simplicity matters**: Easier to implement and maintain than balanced trees
+- **Memory-constrained environments**: Better cache performance than some tree structures
+
+### Skip Lists vs Other Data Structures
+
+| Feature | Skip List | Balanced BST | Hash Table |
+|---------|-----------|--------------|------------|
+| Search | O(log n) | O(log n) | O(1) average |
+| Insert | O(log n) | O(log n) | O(1) average |
+| Delete | O(log n) | O(log n) | O(1) average |
+| Range Queries | O(log n + k) | O(log n + k) | O(n) |
+| Implementation | Simple | Complex | Medium |
+| Memory | O(n) | O(n) | O(n) |
+| Ordering | Sorted | Sorted | No |
+
+### 4.6 Implementation Trade-offs and Analysis
+
+#### Time Complexity Comparison
+
+| Operation | Singly Linked List | Doubly Linked List | Skip List |
+|-----------|-------------------|-------------------|-----------|
+| Access | O(n) | O(n) | O(log n) average |
+| Search | O(n) | O(n) | O(log n) average |
+| Insertion at Head | O(1) | O(1) | O(log n) average |
+| Insertion at Tail | O(n) | O(1) | O(log n) average |
+| Insertion at Position | O(n) | O(n) | O(log n) average |
+| Deletion at Head | O(1) | O(1) | O(log n) average |
+| Deletion at Tail | O(n) | O(1) | O(log n) average |
+| Deletion at Position | O(n) | O(n) | O(log n) average |
+
+#### Space Complexity
+- **Singly Linked List**: O(1) extra space per operation, O(n) total space
+- **Doubly Linked List**: O(1) extra space per operation, O(n) total space  
+- **Skip List**: O(n) average space for multiple levels
+
+#### When to Use Each Implementation
+
+**Singly Linked List:**
+- ✅ Memory efficient (single pointer per node)
+- ✅ Simple implementation
+- ✅ Good for forward-only traversal
+- ❌ No backward traversal
+- ❌ O(n) for tail operations
+
+**Doubly Linked List:**
+- ✅ Bidirectional traversal
+- ✅ O(1) tail operations
+- ✅ Easy to implement deque
+- ❌ More memory overhead (two pointers per node)
+- ❌ More complex implementation
+
+**Skip List:**
+- ✅ O(log n) average performance
+- ✅ Simpler than balanced trees
+- ✅ Good for range queries
+- ❌ Probabilistic performance
+- ❌ More complex implementation
+
+## Part III: Applications
+
+### 4.7 Common Linked List Algorithms
 
 ### Detect Cycle in Linked List (Floyd's Cycle Detection)
 ```cpp
@@ -656,7 +895,7 @@ ListNode<int>* getIntersectionNode(ListNode<int>* headA, ListNode<int>* headB) {
 }
 ```
 
-## 4.6 Advanced Linked List Operations
+### 4.8 Advanced Linked List Operations
 
 ### Sort Linked List (Merge Sort)
 ```cpp
@@ -731,9 +970,139 @@ unique_ptr<ListNode<int>> rotateRight(unique_ptr<ListNode<int>> head, int k) {
 }
 ```
 
-## 4.7 Performance Analysis
+## Part IV: Problem Solving
 
-### Time Complexity Comparison
+### 4.9 Common Interview Problems
+
+#### Problem 1: Reverse Linked List
+**Problem**: Given the head of a singly linked list, reverse the list and return the reversed list.
+
+**Solution Approach**: Use iterative approach with three pointers to reverse links.
+
+```cpp
+ListNode* reverseList(ListNode* head) {
+    ListNode* prev = nullptr;
+    ListNode* current = head;
+    
+    while (current != nullptr) {
+        ListNode* next = current->next;
+        current->next = prev;
+        prev = current;
+        current = next;
+    }
+    
+    return prev;
+}
+```
+
+#### Problem 2: Merge Two Sorted Lists
+**Problem**: Merge two sorted linked lists and return it as a sorted list.
+
+**Solution Approach**: Use a dummy node and compare elements from both lists.
+
+```cpp
+ListNode* mergeTwoLists(ListNode* list1, ListNode* list2) {
+    ListNode dummy(0);
+    ListNode* current = &dummy;
+    
+    while (list1 && list2) {
+        if (list1->val <= list2->val) {
+            current->next = list1;
+            list1 = list1->next;
+        } else {
+            current->next = list2;
+            list2 = list2->next;
+        }
+        current = current->next;
+    }
+    
+    current->next = list1 ? list1 : list2;
+    return dummy.next;
+}
+```
+
+#### Problem 3: Find Middle of Linked List
+**Problem**: Given the head of a singly linked list, return the middle node. If there are two middle nodes, return the second middle node.
+
+**Solution Approach**: Use slow and fast pointers (Floyd's cycle detection technique).
+
+```cpp
+ListNode* findMiddle(ListNode* head) {
+    if (!head) return nullptr;
+    
+    ListNode* slow = head;
+    ListNode* fast = head;
+    
+    while (fast && fast->next) {
+        slow = slow->next;
+        fast = fast->next->next;
+    }
+    
+    return slow;
+}
+```
+
+#### Problem 4: Remove Duplicates from Sorted List
+**Problem**: Given the head of a sorted linked list, delete all duplicates such that each element appears only once.
+
+**Solution Approach**: Compare current node with next node and skip duplicates.
+
+```cpp
+ListNode* deleteDuplicates(ListNode* head) {
+    if (!head) return nullptr;
+    
+    ListNode* current = head;
+    
+    while (current->next) {
+        if (current->val == current->next->val) {
+            ListNode* temp = current->next;
+            current->next = current->next->next;
+            delete temp;
+        } else {
+            current = current->next;
+        }
+    }
+    
+    return head;
+}
+```
+
+#### Problem 5: Add Two Numbers
+**Problem**: You are given two non-empty linked lists representing two non-negative integers. The digits are stored in reverse order, and each of their nodes contains a single digit. Add the two numbers and return the sum as a linked list.
+
+**Solution Approach**: Simulate addition with carry handling.
+
+```cpp
+ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {
+    ListNode dummy(0);
+    ListNode* current = &dummy;
+    int carry = 0;
+    
+    while (l1 || l2 || carry) {
+        int sum = carry;
+        if (l1) {
+            sum += l1->val;
+            l1 = l1->next;
+        }
+        if (l2) {
+            sum += l2->val;
+            l2 = l2->next;
+        }
+        
+        carry = sum / 10;
+        current->next = new ListNode(sum % 10);
+        current = current->next;
+    }
+    
+    return dummy.next;
+}
+```
+
+## Part V: Summary
+
+### 4.10 Performance Analysis
+
+#### Time Complexity Comparison
 
 | Operation | Singly Linked List | Doubly Linked List |
 |-----------|-------------------|-------------------|
@@ -751,16 +1120,17 @@ unique_ptr<ListNode<int>> rotateRight(unique_ptr<ListNode<int>> head, int k) {
 - **Doubly Linked List**: O(1) extra space per operation
 - **Overall Space**: O(n) where n is the number of elements
 
-## 4.8 Key Takeaways
+### 4.11 Key Takeaways
 
 1. **Linked lists** provide dynamic sizing and efficient insertion/deletion
 2. **Singly linked lists** are memory efficient but only support forward traversal
 3. **Doubly linked lists** support bidirectional traversal but use more memory
 4. **Circular linked lists** are useful for round-robin algorithms
-5. **Common algorithms** include cycle detection, merging, and palindrome checking
-6. **Trade-offs** exist between arrays and linked lists for different use cases
+5. **Skip lists** provide O(log n) performance with simpler implementation than balanced trees
+6. **Common algorithms** include cycle detection, merging, and palindrome checking
+7. **Trade-offs** exist between arrays and linked lists for different use cases
 
-## 4.9 Exercises
+### 4.12 Practice Exercises
 
 1. Implement a function to find the middle element of a linked list in one pass.
 2. Write a function to remove all duplicate elements from a sorted linked list.
@@ -768,7 +1138,7 @@ unique_ptr<ListNode<int>> rotateRight(unique_ptr<ListNode<int>> head, int k) {
 4. Implement a function to add two numbers represented as linked lists.
 5. Write a function to clone a linked list with random pointers.
 
-## 4.10 Summary
+### 4.13 Summary
 
 Linked lists are fundamental data structures that offer flexibility in memory management and efficient insertion/deletion operations. While they don't provide random access like arrays, they excel in scenarios where the size is unknown beforehand or frequent insertions/deletions are required. Understanding the different types of linked lists and their associated algorithms is crucial for solving many programming problems and designing efficient data structures.
 
