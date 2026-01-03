@@ -69,9 +69,16 @@ data-structures-book/
 │   ├── 05-stacks-and-queues.md
 │   ├── 06-trees-and-binary-trees.md
 │   ├── 07-string-search-algorithms.md
-│   ├── 10-sorting-algorithms.md
-│   ├── 13-dynamic-programming.md
-│   └── 16-problem-solving-strategies.md
+│   ├── 08-modern-string-search-optimizations.md
+│   ├── 09-sorting-algorithms.md
+│   ├── 10-hash-tables-and-hashing.md
+│   ├── 11-graphs.md
+│   ├── 12-dynamic-programming.md
+│   ├── 13-searching-algorithms.md
+│   ├── 14-advanced-data-structures.md
+│   ├── 15-problem-solving-strategies.md
+│   ├── 16-greedy-algorithms.md
+│   └── 17-divide-and-conquer.md
 ├── examples/                          # Runnable code examples
 │   ├── arrays/
 │   ├── string_search/
