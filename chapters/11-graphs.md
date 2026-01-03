@@ -397,12 +397,22 @@ Visited: [A]
 Stack: [A]
 Current: A
 ```
-```
-    A*  (visited)
-   / \
-  B   C
- / \   \
-D   E   F
+
+```mermaid
+graph TD
+    A[Start: A<br/>visited] 
+    A --> B
+    A --> C
+    B --> D
+    B --> E
+    C --> F
+    
+    style A fill:#90EE90,stroke:#333,stroke-width:3px
+    style B fill:#FFE4E1,stroke:#333,stroke-width:2px
+    style C fill:#FFE4E1,stroke:#333,stroke-width:2px
+    style D fill:#E6E6FA,stroke:#333,stroke-width:2px
+    style E fill:#E6E6FA,stroke:#333,stroke-width:2px
+    style F fill:#E6E6FA,stroke:#333,stroke-width:2px
 ```
 
 **Step 2: Visit A's neighbors (B, C) - push to stack**
@@ -419,12 +429,22 @@ Visited: [A, B]
 Stack: [A, C]
 Current: B
 ```
-```
-    A*  (visited)
-   / \
-  B*  C  (B visited)
- / \   \
-D   E   F
+
+```mermaid
+graph TD
+    A[A<br/>visited] 
+    A --> B
+    A --> C
+    B --> D
+    B --> E
+    C --> F
+    
+    style A fill:#90EE90,stroke:#333,stroke-width:3px
+    style B fill:#90EE90,stroke:#333,stroke-width:3px
+    style C fill:#FFE4E1,stroke:#333,stroke-width:2px
+    style D fill:#E6E6FA,stroke:#333,stroke-width:2px
+    style E fill:#E6E6FA,stroke:#333,stroke-width:2px
+    style F fill:#E6E6FA,stroke:#333,stroke-width:2px
 ```
 
 **Step 4: Visit B's neighbors (D, E) - push to stack**
@@ -489,12 +509,22 @@ Visited: [A, B, D, E, C, F]
 Stack: [A]
 Current: F
 ```
-```
-    A*
-   / \
-  B*  C*
- / \   \
-D*  E*  F*  (F visited, no neighbors)
+
+```mermaid
+graph TD
+    A[A<br/>visited] 
+    A --> B
+    A --> C
+    B --> D
+    B --> E
+    C --> F
+    
+    style A fill:#90EE90,stroke:#333,stroke-width:3px
+    style B fill:#90EE90,stroke:#333,stroke-width:3px
+    style C fill:#90EE90,stroke:#333,stroke-width:3px
+    style D fill:#90EE90,stroke:#333,stroke-width:3px
+    style E fill:#90EE90,stroke:#333,stroke-width:3px
+    style F fill:#90EE90,stroke:#333,stroke-width:3px
 ```
 
 **Step 10: Pop A (already visited, stack empty)**
@@ -515,15 +545,40 @@ DFS Complete!
 #### Visual Comparison: DFS vs BFS
 
 **Same Graph, DFS (starting from A):**
-```
-A → B → D → (backtrack) → E → (backtrack) → C → F
-Depth-first: Goes deep into B's subtree before exploring C
+```mermaid
+graph LR
+    A[Start: A] --> B[Visit B]
+    B --> D[Visit D]
+    D -.->|backtrack| B
+    B --> E[Visit E]
+    E -.->|backtrack| B
+    B -.->|backtrack| A
+    A --> C[Visit C]
+    C --> F[Visit F]
+    
+    style A fill:#90EE90
+    style B fill:#FFB6C1
+    style C fill:#87CEEB
+    style D fill:#DDA0DD
+    style E fill:#DDA0DD
+    style F fill:#DDA0DD
 ```
 
 **Same Graph, BFS (starting from A):**
-```
-A → B, C → D, E, F
-Breadth-first: Explores all neighbors at same level first
+```mermaid
+graph TD
+    A[Level 0: A] --> B[Level 1: B]
+    A --> C[Level 1: C]
+    B --> D[Level 2: D]
+    B --> E[Level 2: E]
+    C --> F[Level 2: F]
+    
+    style A fill:#90EE90,stroke:#333,stroke-width:3px
+    style B fill:#FFB6C1,stroke:#333,stroke-width:2px
+    style C fill:#FFB6C1,stroke:#333,stroke-width:2px
+    style D fill:#87CEEB,stroke:#333,stroke-width:2px
+    style E fill:#87CEEB,stroke:#333,stroke-width:2px
+    style F fill:#87CEEB,stroke:#333,stroke-width:2px
 ```
 
 #### Recursive Implementation
@@ -629,12 +684,13 @@ vector<int> dfsIterative(int start) {
 Let's trace through BFS on the following graph, starting from vertex A:
 
 **Graph:**
-```
-    A
-   / \
-  B   C
- / \   \
-D   E   F
+```mermaid
+graph TD
+    A --> B
+    A --> C
+    B --> D
+    B --> E
+    C --> F
 ```
 
 **Step-by-Step Traversal:**
@@ -645,12 +701,21 @@ Visited: [A]
 Queue: [A]
 Current Level: 0
 ```
-```
-    A*  (visited, level 0)
-   / \
-  B   C
- / \   \
-D   E   F
+
+```mermaid
+graph TD
+    A[Start: A<br/>visited, level 0] --> B[unvisited]
+    A --> C[unvisited]
+    B --> D[unvisited]
+    B --> E[unvisited]
+    C --> F[unvisited]
+    
+    style A fill:#90EE90,stroke:#333,stroke-width:3px
+    style B fill:#FFE4E1,stroke:#333,stroke-width:2px
+    style C fill:#FFE4E1,stroke:#333,stroke-width:2px
+    style D fill:#E6E6FA,stroke:#333,stroke-width:2px
+    style E fill:#E6E6FA,stroke:#333,stroke-width:2px
+    style F fill:#E6E6FA,stroke:#333,stroke-width:2px
 ```
 
 **Step 2: Dequeue A, visit its neighbors (B, C)**

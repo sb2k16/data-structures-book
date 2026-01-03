@@ -92,7 +92,9 @@ data-structures-book/
 │   └── divide_and_conquer/
 ├── docs/                              # Documentation
 │   ├── readme.md                      # Detailed book overview
-│   └── compilation-guide.md           # C++ setup and compilation guide
+│   ├── compilation-guide.md           # C++ setup and compilation guide
+│   ├── diagram-templates.md           # Reusable Mermaid diagram templates
+│   └── diagram-tooling-setup.md       # Tools and setup for diagram generation
 └── tests/                             # Unit tests and validation
     ├── unit_tests/
     └── integration_tests/
@@ -102,11 +104,18 @@ data-structures-book/
 
 - **Comprehensive Coverage**: From basic concepts to advanced topics
 - **C++ Implementation**: All code examples in modern C++ (C++17/C++20)
-- **Visual Diagrams**: Clear illustrations of data structures and algorithms
+- **Visual Diagrams**: Clear Mermaid diagrams for data structures and algorithms (see [Diagram Templates](docs/diagram-templates.md))
 - **Practice Problems**: Exercises and coding challenges
 - **Performance Analysis**: Detailed complexity analysis for each algorithm
 - **Real-world Applications**: Practical examples and use cases
 - **Interview Preparation**: Common patterns and problem-solving strategies
+
+## 📊 Diagram Resources
+
+This book uses **Mermaid** diagrams for enhanced visualizations:
+- 📐 [Diagram Templates](docs/diagram-templates.md) - Reusable templates for trees, graphs, flowcharts, and more
+- 🛠️ [Diagram Tooling Setup](docs/diagram-tooling-setup.md) - Tools and setup instructions
+- 🔄 [Diagram Migration Guide](docs/diagram-migration-guide.md) - Converting ASCII to Mermaid
 
 ## 📖 Learning Objectives
 
