@@ -21,21 +21,17 @@ A comprehensive introduction to data structures and algorithms using C++ as the 
 - [Chapter 6: Trees and Binary Trees](chapters/06-trees-and-binary-trees.md)
 - [Chapter 7: String Search Algorithms](chapters/07-string-search-algorithms.md)
 - [Chapter 8: Modern String Search Optimizations](chapters/08-modern-string-search-optimizations.md)
+- [Chapter 9: Sorting Algorithms](chapters/09-sorting-algorithms.md)
 - [Chapter 10: Hash Tables and Hashing](chapters/10-hash-tables-and-hashing.md)
 - [Chapter 11: Graphs](chapters/11-graphs.md)
 
-### Part IV: Advanced Data Structures
-- [Chapter 9: Sorting Algorithms](chapters/09-sorting-algorithms.md)
+### Part IV: Algorithm Design Paradigms
+- [Chapter 12: Dynamic Programming](chapters/12-dynamic-programming.md)
 - [Chapter 13: Searching Algorithms](chapters/13-searching-algorithms.md)
 - [Chapter 14: Advanced Data Structures (Heaps, Tries)](chapters/14-advanced-data-structures.md)
-
-### Part V: Algorithm Design Paradigms
-- [Chapter 12: Dynamic Programming](chapters/12-dynamic-programming.md)
+- [Chapter 15: Problem Solving Strategies and Practice](chapters/15-problem-solving-strategies.md)
 - [Chapter 16: Greedy Algorithms](chapters/16-greedy-algorithms.md)
 - [Chapter 17: Divide and Conquer](chapters/17-divide-and-conquer.md)
-
-### Part VI: Practical Applications
-- [Chapter 15: Problem Solving Strategies and Practice](chapters/15-problem-solving-strategies.md)
 
 ## 🚀 Quick Start
 

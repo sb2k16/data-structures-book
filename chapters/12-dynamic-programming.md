@@ -47,7 +47,47 @@ long long fibonacciNaive(int n) {
 // Example: fibonacciNaive(40) takes several seconds
 ```
 
+#### Understanding the Problem: Recursion Tree Analysis
+
+The naive recursive approach suffers from **exponential time complexity** because it recalculates the same subproblems repeatedly. Let's visualize this with a recursion tree for `fibonacci(5)`:
+
+```
+                    fibonacci(5)
+                   /            \
+          fibonacci(4)          fibonacci(3)
+         /          \           /          \
+  fibonacci(3)  fibonacci(2)  fibonacci(2)  fibonacci(1)
+   /      \      /      \      /      \
+fib(2)  fib(1) fib(1) fib(0) fib(1) fib(0)
+ /   \
+fib(1) fib(0)
+```
+
+**Observations from the recursion tree:**
+
+1. **Redundant Calculations**: Notice that `fibonacci(3)` is calculated **2 times**, `fibonacci(2)` is calculated **3 times**, and `fibonacci(1)` is calculated **5 times**. This redundancy grows exponentially with larger inputs.
+
+2. **Exponential Growth**: For `fibonacci(n)`, the number of function calls is approximately O(2^n). This means:
+   - `fibonacci(20)` makes ~1 million calls
+   - `fibonacci(30)` makes ~1 billion calls
+   - `fibonacci(40)` makes ~1 trillion calls
+
+3. **Time Complexity**: Each function call does O(1) work, but there are exponentially many calls, resulting in O(2^n) total time complexity.
+
+4. **Space Complexity**: The maximum depth of recursion is O(n), so space complexity is O(n) for the call stack.
+
+**The Solution**: Memoization eliminates this redundancy by storing results of subproblems. With memoization, each subproblem (like `fibonacci(3)`) is calculated only **once**, and subsequent calls simply retrieve the cached result. This reduces time complexity from O(2^n) to O(n).
+
 ### Memoization Approach (Top-Down)
+
+**Why Memoization?** The naive recursive approach recalculates the same subproblems multiple times. For example, when computing `fibonacci(5)`, we calculate `fibonacci(3)` multiple times. Memoization stores the results of subproblems in a cache (memo table) so that when we encounter the same subproblem again, we can simply look up the result instead of recalculating it. This transforms the exponential time complexity O(2^n) to linear O(n) time complexity.
+
+**Key Benefits:**
+- **Eliminates Redundant Calculations**: Each subproblem is solved only once
+- **Top-Down Approach**: Starts from the problem and breaks it down (natural recursive thinking)
+- **Lazy Evaluation**: Only computes subproblems that are actually needed
+- **Easy to Implement**: Minimal changes to recursive code (just add memoization check)
+
 ```cpp
 // Memoized Fibonacci - O(n) time complexity
 long long fibonacciMemo(int n, unordered_map<int, long long>& memo) {
@@ -89,6 +129,34 @@ long long fibonacciMemoVector(int n) {
 ```
 
 ### Tabulation Approach (Bottom-Up)
+
+**Why Tabulation?** While memoization solves the redundancy problem, it still uses recursion which can lead to stack overflow for very large inputs. Tabulation (bottom-up approach) builds the solution iteratively from the base cases upward, eliminating the need for recursion entirely.
+
+**Key Advantages of Tabulation:**
+
+1. **No Recursion Overhead**: Iterative approach avoids function call overhead and potential stack overflow
+2. **Better Space Optimization**: Can often optimize space by only keeping necessary values (e.g., only last two values for Fibonacci)
+3. **Predictable Memory Access**: Iterative access patterns are more cache-friendly than recursive calls
+4. **Easier to Understand**: Some find iterative bottom-up approach more intuitive
+5. **No Function Call Stack**: Eliminates risk of stack overflow for deep recursions
+
+**Comparison: Memoization vs Tabulation**
+
+| Aspect | Memoization (Top-Down) | Tabulation (Bottom-Up) |
+|--------|----------------------|----------------------|
+| Approach | Recursive | Iterative |
+| Direction | Problem → Base Cases | Base Cases → Problem |
+| Stack Usage | Uses call stack | No call stack |
+| Space | O(n) for memo + O(n) stack | O(n) for table (can optimize) |
+| Computation | Only computes needed subproblems | Computes all subproblems |
+| Implementation | Easier to convert from recursion | Requires understanding of dependencies |
+
+**When to Use Tabulation:**
+- When recursion depth might cause stack overflow
+- When you need to optimize space further
+- When all subproblems need to be computed anyway
+- When iterative approach is more natural for the problem
+
 ```cpp
 // Tabulated Fibonacci - O(n) time, O(n) space
 long long fibonacciTab(int n) {
@@ -128,35 +196,22 @@ long long fibonacciOptimized(int n) {
 ```
 
 ### Performance Comparison
-```cpp
-void compareFibonacciApproaches() {
-    int n = 40;
-    
-    cout << "Computing Fibonacci(" << n << "):" << endl;
-    
-    // Memoization
-    auto start = chrono::high_resolution_clock::now();
-    long long result1 = fibonacciMemo(n);
-    auto end = chrono::high_resolution_clock::now();
-    auto duration1 = chrono::duration_cast<chrono::microseconds>(end - start);
-    
-    // Tabulation
-    start = chrono::high_resolution_clock::now();
-    long long result2 = fibonacciTab(n);
-    end = chrono::high_resolution_clock::now();
-    auto duration2 = chrono::duration_cast<chrono::microseconds>(end - start);
-    
-    // Space-optimized
-    start = chrono::high_resolution_clock::now();
-    long long result3 = fibonacciOptimized(n);
-    end = chrono::high_resolution_clock::now();
-    auto duration3 = chrono::duration_cast<chrono::microseconds>(end - start);
-    
-    cout << "Memoization: " << result1 << " (" << duration1.count() << " μs)" << endl;
-    cout << "Tabulation: " << result2 << " (" << duration2.count() << " μs)" << endl;
-    cout << "Space-optimized: " << result3 << " (" << duration3.count() << " μs)" << endl;
-}
+
+To see a practical comparison of all Fibonacci approaches (Naive Recursive, Memoization, Tabulation, and Space-Optimized), run the performance comparison example:
+
+```bash
+cd examples/dynamic_programming
+g++ -std=c++17 -O2 -o fibonacci_comparison fibonacci_performance_comparison.cpp
+./fibonacci_comparison
 ```
+
+This example demonstrates:
+- **Exponential time complexity** of the naive recursive approach
+- **Linear time complexity** of memoization and tabulation
+- **Space optimization** benefits
+- **Actual performance measurements** for different input sizes
+
+The code is available in `examples/dynamic_programming/fibonacci_performance_comparison.cpp`.
 
 ## 12.3 Classic DP Problems
 

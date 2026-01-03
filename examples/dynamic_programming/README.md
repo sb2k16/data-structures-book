@@ -4,6 +4,26 @@ This directory contains comprehensive examples demonstrating backtracking and me
 
 ## Files
 
+### `fibonacci_performance_comparison.cpp`
+Performance comparison of different Fibonacci implementations:
+
+- **Naive Recursive**: O(2^n) exponential time complexity
+- **Memoization (Top-Down)**: O(n) time with O(n) space
+- **Tabulation (Bottom-Up)**: O(n) time with O(n) space
+- **Space-Optimized**: O(n) time with O(1) space
+
+**Key Features:**
+- Side-by-side performance comparison
+- Timing measurements for different input sizes
+- Demonstrates exponential vs linear complexity
+- Shows space optimization benefits
+
+**Compile and Run:**
+```bash
+g++ -std=c++17 -O2 -o fibonacci_comparison fibonacci_performance_comparison.cpp
+./fibonacci_comparison
+```
+
 ### `backtracking_memoization_demo.cpp`
 Demonstrates backtracking algorithms with memoization for solving complex DP problems:
 
