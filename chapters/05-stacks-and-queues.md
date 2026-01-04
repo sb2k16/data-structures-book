@@ -737,13 +737,137 @@ rear=0 front=2, size=5 (full, wraps around)
 2. **Wasted Space**: One slot is typically left empty to distinguish full from empty
 3. **Complex Indexing**: Requires modulo arithmetic for circular wrapping
 
-#### When to Use
+#### Use Cases
 
-- **Bounded Buffers**: When you know the maximum size in advance
-- **Producer-Consumer Problems**: Fixed-size buffers for data streaming
-- **Embedded Systems**: Where memory is constrained and fixed-size is acceptable
-- **Real-time Systems**: Where predictable memory usage is critical
-- **Ring Buffers**: Logging systems, audio processing, network packet buffers
+**1. Fixed-Size Buffers**:
+- Network packet buffers with fixed capacity
+- Audio/video streaming buffers
+- Embedded systems with memory constraints
+
+**2. Producer-Consumer Scenarios**:
+- Thread-safe circular buffers for concurrent access
+- Real-time data processing pipelines
+- Event loops with bounded queues
+
+**3. Ring Buffers**:
+- Log rotation (oldest logs overwritten)
+- Performance monitoring (sliding window of metrics)
+- Command history (limited history size)
+
+**4. Embedded Systems**:
+- Microcontroller applications
+- Real-time systems with strict memory limits
+- Device drivers for hardware interfaces
+
+**Example: Audio Buffer**
+
+```cpp
+class AudioBuffer {
+private:
+    vector<int16_t> buffer;  // 16-bit audio samples
+    int front, rear, size, capacity;
+    mutex mtx;
+    
+public:
+    AudioBuffer(int cap) : capacity(cap), front(0), rear(-1), size(0) {
+        buffer.resize(capacity);
+    }
+    
+    bool addSample(int16_t sample) {
+        lock_guard<mutex> lock(mtx);
+        if (size >= capacity) {
+            // Buffer full - overwrite oldest (ring buffer behavior)
+            front = (front + 1) % capacity;
+            size--;
+        }
+        
+        rear = (rear + 1) % capacity;
+        buffer[rear] = sample;
+        size++;
+        return true;
+    }
+    
+    bool getSample(int16_t& sample) {
+        lock_guard<mutex> lock(mtx);
+        if (size == 0) return false;
+        
+        sample = buffer[front];
+        front = (front + 1) % capacity;
+        size--;
+        return true;
+    }
+    
+    int getBufferLevel() const {
+        lock_guard<mutex> lock(mtx);
+        return size;
+    }
+};
+```
+
+**Example: Command History (Ring Buffer)**
+
+```cpp
+class CommandHistory {
+private:
+    vector<string> history;
+    int front, rear, size, capacity;
+    int current;  // Current position in history
+    
+public:
+    CommandHistory(int maxCommands) 
+        : capacity(maxCommands), front(0), rear(-1), size(0), current(-1) {
+        history.resize(capacity);
+    }
+    
+    void addCommand(const string& cmd) {
+        rear = (rear + 1) % capacity;
+        history[rear] = cmd;
+        
+        if (size < capacity) {
+            size++;
+        } else {
+            // Overwrite oldest command
+            front = (front + 1) % capacity;
+        }
+        
+        current = rear;  // Reset to most recent
+    }
+    
+    string getPrevious() {
+        if (size == 0 || current == -1) return "";
+        
+        string cmd = history[current];
+        current = (current - 1 + capacity) % capacity;
+        
+        // Wrap around if needed
+        if (current == rear && size == capacity) {
+            current = front;
+        }
+        
+        return cmd;
+    }
+    
+    string getNext() {
+        if (size == 0 || current == -1) return "";
+        
+        current = (current + 1) % capacity;
+        if (current > rear) {
+            current = rear;
+        }
+        
+        return history[current];
+    }
+    
+    void displayHistory() {
+        cout << "Command History:" << endl;
+        int idx = front;
+        for (int i = 0; i < size; i++) {
+            cout << "  " << (i + 1) << ": " << history[idx] << endl;
+            idx = (idx + 1) % capacity;
+        }
+    }
+};
+```
 
 #### Alternative: Distinguishing Full from Empty
 
@@ -990,12 +1114,22 @@ bool isBalanced(const string& expression) {
 ```
 
 ### Function Call Stack Simulation
+
+The function call stack is one of the most fundamental uses of stacks in programming. Every function call pushes a new frame onto the stack, and returning pops it off.
+
+**How It Works**:
+1. When a function is called, a new stack frame is pushed
+2. The frame contains local variables, parameters, and return address
+3. When function returns, its frame is popped
+4. Stack maintains the call hierarchy (LIFO)
+
 ```cpp
 class CallStack {
 private:
     struct FunctionCall {
         string functionName;
         int lineNumber;
+        vector<string> localVars;
         
         FunctionCall(const string& name, int line) 
             : functionName(name), lineNumber(line) {}
@@ -1027,8 +1161,129 @@ public:
             cout << "  " << call.functionName << " (line " << call.lineNumber << ")" << endl;
         }
     }
+    
+    int getStackDepth() const {
+        return callStack.size();
+    }
+};
+
+// Example: Simulating recursive function calls
+void recursiveFunction(int n, CallStack& cs) {
+    cs.enterFunction("recursiveFunction", __LINE__);
+    
+    if (n <= 0) {
+        cs.exitFunction();
+        return;
+    }
+    
+    cout << "Processing: " << n << endl;
+    recursiveFunction(n - 1, cs);  // Recursive call
+    
+    cs.exitFunction();
+}
+```
+
+**Real-World Use**: 
+- Runtime stack management in all programming languages
+- Exception handling and stack traces
+- Debugging tools
+- Recursive algorithm execution
+
+### Backtracking with Stack
+
+Backtracking algorithms use stacks to explore all possible solutions by maintaining state at each decision point.
+
+**Core Idea**:
+- Push current state when making a choice
+- Explore that path
+- If path fails, pop state and try next option
+- Stack maintains the path history
+
+**Example: N-Queens Problem**
+
+```cpp
+#include <vector>
+#include <stack>
+#include <iostream>
+using namespace std;
+
+class NQueensSolver {
+private:
+    struct State {
+        int row;
+        int col;
+        vector<int> queens;  // Column positions of queens in each row
+        
+        State(int r, int c, const vector<int>& q) 
+            : row(r), col(c), queens(q) {}
+    };
+    
+    bool isValid(const vector<int>& queens, int row, int col) {
+        for (int i = 0; i < row; i++) {
+            // Check same column
+            if (queens[i] == col) return false;
+            // Check diagonals
+            if (abs(queens[i] - col) == abs(i - row)) return false;
+        }
+        return true;
+    }
+    
+public:
+    vector<vector<int>> solveNQueens(int n) {
+        vector<vector<int>> solutions;
+        stack<State> stateStack;
+        
+        // Start with first row
+        stateStack.push(State(0, 0, vector<int>()));
+        
+        while (!stateStack.empty()) {
+            State current = stateStack.top();
+            stateStack.pop();
+            
+            // If we've placed all queens, found a solution
+            if (current.row == n) {
+                solutions.push_back(current.queens);
+                continue;
+            }
+            
+            // Try placing queen in each column of current row
+            for (int col = 0; col < n; col++) {
+                if (isValid(current.queens, current.row, col)) {
+                    vector<int> newQueens = current.queens;
+                    newQueens.push_back(col);
+                    stateStack.push(State(current.row + 1, col, newQueens));
+                }
+            }
+        }
+        
+        return solutions;
+    }
+    
+    void printSolution(const vector<int>& queens) {
+        int n = queens.size();
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                if (queens[i] == j) cout << "Q ";
+                else cout << ". ";
+            }
+            cout << endl;
+        }
+        cout << endl;
+    }
 };
 ```
+
+**Key Points**:
+- Stack maintains decision history
+- Each state represents a choice point
+- Backtracking = pop state and try next option
+- Enables systematic exploration of solution space
+
+**Real-World Use**: 
+- Puzzle solvers (Sudoku, N-Queens)
+- Path finding algorithms
+- Constraint satisfaction problems
+- Game tree exploration
 
 ### 5.7 Queue Applications
 
@@ -1151,6 +1406,217 @@ void printLevelOrder(TreeNode* root) {
     }
 }
 ```
+
+### Buffering with Queue
+
+Buffering is a critical application of queues where data is temporarily stored before processing. This is essential for handling rate differences between producers and consumers.
+
+**Core Idea**:
+- Producer adds data to buffer (queue)
+- Consumer processes data from buffer
+- Queue smooths out rate differences
+- Prevents data loss and enables asynchronous processing
+
+**Example: Network Packet Buffer**
+
+```cpp
+#include <queue>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <chrono>
+#include <iostream>
+using namespace std;
+
+class PacketBuffer {
+private:
+    struct Packet {
+        int id;
+        string data;
+        chrono::system_clock::time_point timestamp;
+        
+        Packet(int i, const string& d) 
+            : id(i), data(d), timestamp(chrono::system_clock::now()) {}
+    };
+    
+    queue<Packet> buffer;
+    size_t maxSize;
+    mutex mtx;
+    condition_variable not_full;
+    condition_variable not_empty;
+    bool shutdown;
+    
+public:
+    PacketBuffer(size_t size) : maxSize(size), shutdown(false) {}
+    
+    // Producer: Add packet to buffer
+    bool enqueuePacket(int id, const string& data) {
+        unique_lock<mutex> lock(mtx);
+        
+        // Wait until space available
+        not_full.wait(lock, [this] { 
+            return buffer.size() < maxSize || shutdown; 
+        });
+        
+        if (shutdown) return false;
+        
+        buffer.push(Packet(id, data));
+        not_empty.notify_one();
+        return true;
+    }
+    
+    // Consumer: Remove packet from buffer
+    bool dequeuePacket(Packet& packet) {
+        unique_lock<mutex> lock(mtx);
+        
+        // Wait until packet available
+        not_empty.wait(lock, [this] { 
+            return !buffer.empty() || shutdown; 
+        });
+        
+        if (shutdown && buffer.empty()) return false;
+        
+        packet = buffer.front();
+        buffer.pop();
+        not_full.notify_one();
+        return true;
+    }
+    
+    size_t getBufferSize() const {
+        lock_guard<mutex> lock(mtx);
+        return buffer.size();
+    }
+    
+    void shutdownBuffer() {
+        lock_guard<mutex> lock(mtx);
+        shutdown = true;
+        not_full.notify_all();
+        not_empty.notify_all();
+    }
+};
+
+// Example: Log Buffer
+class LogBuffer {
+private:
+    struct LogEntry {
+        string level;  // INFO, WARNING, ERROR
+        string message;
+        chrono::system_clock::time_point timestamp;
+        
+        LogEntry(const string& l, const string& m) 
+            : level(l), message(m), timestamp(chrono::system_clock::now()) {}
+    };
+    
+    queue<LogEntry> logQueue;
+    mutex mtx;
+    condition_variable cv;
+    bool running;
+    thread writerThread;
+    
+    void writeLogs() {
+        ofstream logFile("app.log", ios::app);
+        
+        while (running || !logQueue.empty()) {
+            unique_lock<mutex> lock(mtx);
+            cv.wait(lock, [this] { 
+                return !logQueue.empty() || !running; 
+            });
+            
+            while (!logQueue.empty()) {
+                LogEntry entry = logQueue.front();
+                logQueue.pop();
+                lock.unlock();
+                
+                // Write to file (outside lock for better performance)
+                auto time = chrono::system_clock::to_time_t(entry.timestamp);
+                logFile << "[" << put_time(localtime(&time), "%Y-%m-%d %H:%M:%S") << "] "
+                       << "[" << entry.level << "] " << entry.message << endl;
+                
+                lock.lock();
+            }
+        }
+        
+        logFile.close();
+    }
+    
+public:
+    LogBuffer() : running(true), writerThread(&LogBuffer::writeLogs, this) {}
+    
+    void log(const string& level, const string& message) {
+        lock_guard<mutex> lock(mtx);
+        logQueue.push(LogEntry(level, message));
+        cv.notify_one();
+    }
+    
+    ~LogBuffer() {
+        running = false;
+        cv.notify_one();
+        if (writerThread.joinable()) {
+            writerThread.join();
+        }
+    }
+};
+
+// Example: Print Spooler (Queue for Print Jobs)
+class PrintSpooler {
+private:
+    struct PrintJob {
+        int jobId;
+        string document;
+        int priority;  // Higher = more urgent
+        
+        PrintJob(int id, const string& doc, int prio) 
+            : jobId(id), document(doc), priority(prio) {}
+    };
+    
+    queue<PrintJob> printQueue;
+    mutex mtx;
+    
+public:
+    void addJob(int jobId, const string& document, int priority = 0) {
+        lock_guard<mutex> lock(mtx);
+        printQueue.push(PrintJob(jobId, document, priority));
+        cout << "Job " << jobId << " added to print queue" << endl;
+    }
+    
+    void processJobs() {
+        while (true) {
+            PrintJob job;
+            {
+                lock_guard<mutex> lock(mtx);
+                if (printQueue.empty()) break;
+                job = printQueue.front();
+                printQueue.pop();
+            }
+            
+            // Simulate printing
+            cout << "Printing job " << job.jobId << ": " << job.document << endl;
+            this_thread::sleep_for(chrono::milliseconds(500));
+        }
+    }
+    
+    size_t getQueueSize() const {
+        lock_guard<mutex> lock(mtx);
+        return printQueue.size();
+    }
+};
+```
+
+**Key Points**:
+- Queue provides temporary storage
+- Smooths rate differences between producer and consumer
+- Enables asynchronous processing
+- Prevents data loss during bursts
+- Thread-safe operations for concurrent access
+
+**Real-World Use**:
+- Network packet buffering
+- Log buffering and writing
+- Print spoolers
+- Message queues (RabbitMQ, Kafka)
+- Producer-Consumer patterns
+- Stream processing
+- Event queues
 
 ## Part IV: Problem Solving
 
