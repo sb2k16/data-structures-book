@@ -519,7 +519,7 @@ private:
 - Sequence of n push_back operations: O(n) total time
 - Average time per operation: O(1)
 
-## 2.7 Practical Complexity Analysis Examples
+## 2.9 Practical Complexity Analysis Examples
 
 ### Example 1: Two Sum Problem
 ```cpp
@@ -576,7 +576,7 @@ bool containsDuplicateHash(vector<int>& nums) {
 }
 ```
 
-## 2.8 Space-Time Tradeoffs
+## 2.10 Space-Time Tradeoffs
 
 Many algorithms involve tradeoffs between time and space complexity:
 
@@ -586,7 +586,102 @@ Many algorithms involve tradeoffs between time and space complexity:
 | Fibonacci | O(n) time, O(n) space (memoization) | O(n) time, O(1) space (iterative) |
 | String matching | O(n) time, O(m) space (KMP) | O(nm) time, O(1) space (naive) |
 
-## 2.11 Key Takeaways
+## 2.11 Master Theorem Preview
+
+The **Master Theorem** provides a formula for solving recurrence relations that arise in divide-and-conquer algorithms. This is a preview; we'll see the full Master Theorem in Chapter 17 (Divide and Conquer).
+
+### What is a Recurrence Relation?
+
+A **recurrence relation** expresses the time complexity of a recursive algorithm in terms of smaller inputs:
+
+```
+T(n) = a × T(n/b) + f(n)
+```
+
+Where:
+- `T(n)` = time complexity for input of size `n`
+- `a` = number of subproblems
+- `n/b` = size of each subproblem
+- `f(n)` = cost of dividing and combining
+
+### Common Recurrence Patterns
+
+#### Pattern 1: Binary Search
+```
+T(n) = T(n/2) + O(1)
+```
+- One subproblem of half size
+- Constant work to divide/combine
+- **Solution**: T(n) = O(log n)
+
+#### Pattern 2: Merge Sort
+```
+T(n) = 2T(n/2) + O(n)
+```
+- Two subproblems of half size
+- Linear work to merge
+- **Solution**: T(n) = O(n log n)
+
+#### Pattern 3: Quick Sort (Average Case)
+```
+T(n) = 2T(n/2) + O(n)
+```
+- Two subproblems (on average)
+- Linear work to partition
+- **Solution**: T(n) = O(n log n)
+
+#### Pattern 4: Binary Tree Traversal
+```
+T(n) = 2T(n/2) + O(1)
+```
+- Two subtrees
+- Constant work per node
+- **Solution**: T(n) = O(n)
+
+### Master Theorem (Informal Preview)
+
+The Master Theorem provides three cases based on the relationship between `f(n)` and `n^(log_b(a))`:
+
+**Case 1**: If `f(n) = O(n^(log_b(a) - ε))` for some ε > 0
+- **Then**: T(n) = Θ(n^(log_b(a)))
+- **Example**: T(n) = 2T(n/2) + O(n^0.5) → T(n) = Θ(n)
+
+**Case 2**: If `f(n) = Θ(n^(log_b(a)) × log^k(n))` for some k ≥ 0
+- **Then**: T(n) = Θ(n^(log_b(a)) × log^(k+1)(n))
+- **Example**: T(n) = 2T(n/2) + O(n) → T(n) = Θ(n log n)
+
+**Case 3**: If `f(n) = Ω(n^(log_b(a) + ε))` for some ε > 0
+- **Then**: T(n) = Θ(f(n))
+- **Example**: T(n) = 2T(n/2) + O(n²) → T(n) = Θ(n²)
+
+### Why This Matters
+
+Understanding recurrence relations helps you:
+1. **Analyze recursive algorithms** quickly
+2. **Predict performance** before implementing
+3. **Compare algorithms** with similar structures
+4. **Design efficient algorithms** by choosing good divide strategies
+
+### Examples You'll See Later
+
+**Chapter 17 (Divide and Conquer)** will cover:
+- Full Master Theorem with proofs
+- More complex recurrence relations
+- Applications to sorting, searching, and other algorithms
+
+**For Now**: Recognize that divide-and-conquer algorithms often have recurrences like `T(n) = aT(n/b) + f(n)`, and the Master Theorem helps solve them.
+
+### Quick Reference
+
+| Recurrence | Solution | Algorithm |
+|------------|----------|-----------|
+| T(n) = T(n/2) + O(1) | O(log n) | Binary Search |
+| T(n) = 2T(n/2) + O(n) | O(n log n) | Merge Sort |
+| T(n) = 2T(n/2) + O(1) | O(n) | Tree Traversal |
+| T(n) = T(n-1) + O(1) | O(n) | Linear Recursion |
+| T(n) = T(n-1) + O(n) | O(n²) | Selection Sort |
+
+## 2.12 Key Takeaways
 
 1. **Big O notation** describes the upper bound of algorithm performance
 2. **Time complexity** measures how runtime scales with input size
@@ -595,7 +690,7 @@ Many algorithms involve tradeoffs between time and space complexity:
 5. **Amortized analysis** provides average performance over many operations
 6. **Space-time tradeoffs** are common in algorithm design
 
-## 2.12 Exercises
+## 2.13 Exercises
 
 1. Analyze the time and space complexity of the following function:
 ```cpp
@@ -616,7 +711,7 @@ void mystery(int n) {
 
 5. Given two algorithms: Algorithm A runs in O(n²) time with O(1) space, and Algorithm B runs in O(n) time with O(n) space. Which would you choose for a system with limited memory?
 
-## 2.11 Summary
+## 2.13 Summary
 
 Understanding complexity analysis is fundamental to becoming an effective programmer. It allows you to make informed decisions about algorithm selection, predict performance characteristics, and optimize code when necessary. The ability to analyze and compare different approaches to the same problem is a crucial skill that will serve you well in interviews, competitive programming, and real-world software development.
 
