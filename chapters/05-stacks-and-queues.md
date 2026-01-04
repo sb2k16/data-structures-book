@@ -1636,7 +1636,223 @@ public:
 
 **For Production**: Prefer `std::queue`/`std::stack` with external synchronization or thread-safe containers. See Section 3.5.10 for guidance on using libraries.
 
-### 5.13 Summary
+## 5.13 Failure Modes and Common Pitfalls
+
+Understanding common failure modes helps avoid bugs and performance issues when working with stacks and queues.
+
+### 5.13.1 Common Pitfalls
+
+#### Pitfall 1: Accessing Empty Stack/Queue
+
+**Problem**: Attempting to access top/front of empty stack/queue causes undefined behavior.
+
+```cpp
+// WRONG: No check for empty
+stack<int> st;
+int top = st.top();  // Undefined behavior if stack is empty!
+
+// CORRECT: Always check
+stack<int> st;
+if (!st.empty()) {
+    int top = st.top();
+}
+```
+
+**How to Avoid**:
+- Always check `empty()` before accessing `top()` or `front()`
+- Use exception-safe wrappers
+- Initialize with sentinel values if appropriate
+
+#### Pitfall 2: Stack Overflow (Array-Based Implementation)
+
+**Problem**: Pushing to full stack without checking capacity.
+
+```cpp
+// WRONG: No capacity check
+class Stack {
+    int arr[100];
+    int top = -1;
+public:
+    void push(int val) {
+        arr[++top] = val;  // Overflow if top >= 99!
+    }
+};
+
+// CORRECT: Check capacity
+void push(int val) {
+    if (top >= 99) {
+        throw overflow_error("Stack is full");
+    }
+    arr[++top] = val;
+}
+```
+
+**How to Avoid**:
+- Check capacity before push
+- Use dynamic arrays (vector) for automatic resizing
+- Implement proper error handling
+
+#### Pitfall 3: Memory Leaks (Pointer-Based Implementation)
+
+**Problem**: Not deallocating memory when popping from stack.
+
+```cpp
+// WRONG: Memory leak
+class Stack {
+    Node* top;
+public:
+    int pop() {
+        int val = top->data;
+        top = top->next;  // Memory leak! Old node not deleted
+        return val;
+    }
+};
+
+// CORRECT: Delete node
+int pop() {
+    if (!top) throw underflow_error("Stack is empty");
+    int val = top->data;
+    Node* temp = top;
+    top = top->next;
+    delete temp;  // Free memory
+    return val;
+}
+```
+
+**How to Avoid**:
+- Always delete/free memory when removing nodes
+- Use smart pointers (`unique_ptr`, `shared_ptr`)
+- Use RAII principles
+
+#### Pitfall 4: Iterator Invalidation
+
+**Problem**: Modifying stack/queue while iterating.
+
+```cpp
+// WRONG: Iterator invalidation
+stack<int> st = {1, 2, 3, 4, 5};
+// Can't iterate stack directly, but if using vector-based:
+vector<int> vec = {1, 2, 3};
+for (auto it = vec.begin(); it != vec.end(); ++it) {
+    vec.push_back(*it);  // Iterator may be invalidated!
+}
+```
+
+**How to Avoid**:
+- Don't modify container during iteration
+- Use indices instead of iterators if modification needed
+- Complete iteration before modifications
+
+#### Pitfall 5: Incorrect Order (Queue Implementation)
+
+**Problem**: Implementing queue incorrectly, breaking FIFO order.
+
+```cpp
+// WRONG: Using stack operations for queue
+queue<int> q;
+q.push(1);
+q.push(2);
+q.push(3);
+// If implemented incorrectly, might get LIFO instead of FIFO
+
+// CORRECT: Ensure proper FIFO implementation
+// Front points to oldest element
+// Rear points to newest element
+```
+
+**How to Avoid**:
+- Verify FIFO order with test cases
+- Use standard library implementations
+- Test with multiple enqueue/dequeue operations
+
+#### Pitfall 6: Race Conditions in Concurrent Access
+
+**Problem**: Multiple threads accessing stack/queue without synchronization.
+
+```cpp
+// WRONG: No synchronization
+stack<int> st;
+// Thread 1:
+st.push(1);
+// Thread 2:
+st.push(2);  // Race condition!
+
+// CORRECT: Use mutex
+mutex mtx;
+stack<int> st;
+// Thread 1:
+{
+    lock_guard<mutex> lock(mtx);
+    st.push(1);
+}
+```
+
+**How to Avoid**:
+- Use mutexes for thread-safe access
+- Consider lock-free implementations for high contention
+- Use thread-safe containers from libraries
+
+#### Pitfall 7: Off-by-One Errors in Circular Queue
+
+**Problem**: Incorrect index calculation in circular queue.
+
+```cpp
+// WRONG: Off-by-one in circular queue
+class CircularQueue {
+    int arr[100];
+    int front = 0, rear = 0;
+public:
+    void enqueue(int val) {
+        arr[rear] = val;
+        rear = (rear + 1) % 100;  // Might overflow if not checking full
+    }
+};
+
+// CORRECT: Proper full/empty checks
+bool isFull() {
+    return (rear + 1) % capacity == front;
+}
+```
+
+**How to Avoid**:
+- Carefully handle circular index arithmetic
+- Use separate size counter to distinguish full from empty
+- Test edge cases (full, empty, single element)
+
+### 5.13.2 What Breaks Invariants
+
+**Stack Invariants** (see Section 5.1.1):
+- **LIFO Violation**: If elements are accessed in wrong order
+- **Size Inconsistency**: If size doesn't match actual elements
+- **Top Pointer Error**: If top doesn't point to most recent element
+
+**Queue Invariants** (see Section 5.1.1):
+- **FIFO Violation**: If elements are dequeued in wrong order
+- **Size Inconsistency**: If size doesn't match actual elements
+- **Front/Rear Error**: If pointers don't correctly track queue boundaries
+
+### 5.13.3 How Operations Restore Invariants
+
+**Stack Operations**:
+- **Push**: Increments size, updates top pointer, preserves LIFO
+- **Pop**: Decrements size, updates top pointer, removes top element
+- **Top**: Returns top without modifying structure
+
+**Queue Operations**:
+- **Enqueue**: Increments size, updates rear pointer, preserves FIFO
+- **Dequeue**: Decrements size, updates front pointer, removes front element
+- **Front**: Returns front without modifying structure
+
+### 5.13.4 Best Practices
+
+1. **Always Check Empty**: Before accessing top/front
+2. **Handle Capacity**: Check bounds for array-based implementations
+3. **Memory Management**: Properly deallocate in pointer-based implementations
+4. **Thread Safety**: Use synchronization for concurrent access
+5. **Test Edge Cases**: Empty, single element, full capacity
+6. **Use Standard Library**: Prefer `std::stack` and `std::queue` when possible
+
+### 5.14 Summary
 
 Stacks and queues are fundamental abstract data types that provide specific access patterns essential for many algorithms and system operations. Understanding their implementations, trade-offs, and applications is crucial for solving problems that require LIFO or FIFO behavior. These data structures serve as building blocks for more complex algorithms and are widely used in computer science and software engineering.
 

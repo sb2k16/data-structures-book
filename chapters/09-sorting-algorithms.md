@@ -745,25 +745,117 @@ Sorting algorithms aren't just academic exercises—they're engineering decision
 - **Merge Sort**: Naturally parallelizable (divide-and-conquer)
 - **Sample Sort**: Parallel Quick Sort variant
 
-### Decision Tree
+### Comprehensive Comparison Table
 
+| Algorithm | Best Time | Average Time | Worst Time | Space | Stable | In-Place | Adaptive | Notes |
+|-----------|-----------|--------------|------------|-------|--------|----------|----------|-------|
+| **Bubble Sort** | O(n) | O(n²) | O(n²) | O(1) | Yes | Yes | Yes | Simple, educational only |
+| **Selection Sort** | O(n²) | O(n²) | O(n²) | O(1) | No | Yes | No | Always O(n²), simple |
+| **Insertion Sort** | O(n) | O(n²) | O(n²) | O(1) | Yes | Yes | Yes | Best for small/nearly sorted |
+| **Merge Sort** | O(n log n) | O(n log n) | O(n log n) | O(n) | Yes | No | No | Guaranteed O(n log n), parallelizable |
+| **Quick Sort** | O(n log n) | O(n log n) | O(n²) | O(log n) | No | Yes | No | Fast average, pivot choice matters |
+| **Heap Sort** | O(n log n) | O(n log n) | O(n log n) | O(1) | No | Yes | No | Guaranteed O(n log n), in-place |
+| **Counting Sort** | O(n + k) | O(n + k) | O(n + k) | O(k) | Yes | No | No | k = range of values |
+| **Radix Sort** | O(d × n) | O(d × n) | O(d × n) | O(n + k) | Yes | No | No | d = number of digits |
+| **Tim Sort** | O(n) | O(n log n) | O(n log n) | O(n) | Yes | No | Yes | Python/Java default, hybrid |
+
+**Key**:
+- **k**: Range of values (for Counting/Radix Sort)
+- **d**: Number of digits (for Radix Sort)
+- **Stable**: Maintains relative order of equal elements
+- **In-Place**: Uses O(1) extra space (ignoring recursion stack)
+- **Adaptive**: Performance improves with partially sorted data
+
+### Sorting Algorithm Decision Tree
+
+```mermaid
+graph TD
+    Start{Choose Sorting Algorithm} --> Size{Size < 100?}
+    
+    Size -->|Yes| Small["Insertion Sort<br/>Simple, fast for small data"]
+    
+    Size -->|No| Stability{Stability<br/>Required?}
+    
+    Stability -->|Yes| Stable{Memory<br/>Available?}
+    Stable -->|Yes| MergeStable["Merge Sort<br/>O(n log n), stable"]
+    Stable -->|No| TimStable["Tim Sort<br/>Adaptive, stable<br/>Python/Java default"]
+    
+    Stability -->|No| Memory{Memory<br/>Tight?}
+    Memory -->|Yes| QuickMem["Quick Sort<br/>In-place, fast average"]
+    Memory -->|No| DataType{Data Type?}
+    
+    DataType -->|Integers, Small Range| Counting["Counting Sort<br/>O(n + k)"]
+    DataType -->|Integers, Fixed Digits| Radix["Radix Sort<br/>O(d × n)"]
+    DataType -->|General| QuickGen["Quick Sort<br/>or<br/>Merge Sort"]
+    
+    style Start fill:#FFE5B4,stroke:#333,stroke-width:3px
+    style Small fill:#90EE90,stroke:#333,stroke-width:2px
+    style MergeStable fill:#87CEEB,stroke:#333,stroke-width:2px
+    style TimStable fill:#87CEEB,stroke:#333,stroke-width:2px
+    style QuickMem fill:#FFA500,stroke:#333,stroke-width:2px
+    style Counting fill:#FF6347,stroke:#333,stroke-width:2px
+    style Radix fill:#FF6347,stroke:#333,stroke-width:2px
+    style QuickGen fill:#FFA500,stroke:#333,stroke-width:2px
 ```
-Is dataset small (< 100)?
-├─ Yes → Insertion Sort (simple, fast enough)
-└─ No → Continue
-    │
-    Is stability required?
-    ├─ Yes → Merge Sort
-    └─ No → Continue
-        │
-        Is memory tight?
-        ├─ Yes → Quick Sort (with fallback)
-        └─ No → Quick Sort or Merge Sort
-```
 
-**Remember**: The "best" algorithm depends on your constraints. `std::sort` uses a hybrid approach for good reason—it adapts to different scenarios.
+**Remember**: The "best" algorithm depends on your constraints. `std::sort` uses a hybrid approach (Introsort) for good reason—it adapts to different scenarios.
 
-## 9.8 Key Takeaways
+## 9.9 Practical Considerations and Recommendations
+
+### When to Use Each Algorithm
+
+#### Small Arrays (< 100 elements)
+- **Insertion Sort**: Simple, fast enough, adaptive
+- **Why**: Overhead of O(n log n) algorithms not worth it for small n
+
+#### Nearly Sorted Data
+- **Insertion Sort**: O(n) best case, adaptive
+- **Tim Sort**: Excellent adaptive performance
+- **Avoid**: Quick Sort (may degrade to O(n²))
+
+#### Guaranteed O(n log n) Required
+- **Merge Sort**: Always O(n log n), stable
+- **Heap Sort**: Always O(n log n), in-place
+- **Tim Sort**: Always O(n log n), adaptive
+
+#### In-Place Requirement
+- **Quick Sort**: Fast average, in-place
+- **Heap Sort**: Guaranteed O(n log n), in-place
+- **Insertion Sort**: Simple, in-place
+
+#### Stability Required
+- **Merge Sort**: Classic stable sort
+- **Tim Sort**: Stable, adaptive
+- **Insertion Sort**: Stable, simple
+- **Counting Sort**: Stable, O(n + k)
+- **Radix Sort**: Stable, O(d × n)
+
+#### Integer Data with Small Range
+- **Counting Sort**: O(n + k) where k is range
+- **Radix Sort**: O(d × n) for fixed-width integers
+
+#### General Purpose (No Special Requirements)
+- **C++ std::sort**: Introsort (hybrid Quick/Heap/Insertion)
+- **Python/Java**: Tim Sort (default)
+- **Both**: Production-tested, optimized
+
+### Real-World Performance Tips
+
+1. **Use Library Functions**: `std::sort`, `std::stable_sort` are highly optimized
+2. **Profile First**: Don't optimize prematurely
+3. **Consider Data Characteristics**: Nearly sorted? Use adaptive algorithm
+4. **Memory Constraints**: Choose in-place algorithms if memory is tight
+5. **Stability Matters**: If equal elements must maintain order, use stable sort
+
+### Common Mistakes to Avoid
+
+1. **Reinventing the Wheel**: Use library functions unless you have specific needs
+2. **Ignoring Stability**: May cause subtle bugs if order matters
+3. **Wrong Algorithm for Data**: Don't use Quick Sort for nearly sorted data
+4. **Not Considering Range**: For small integer ranges, Counting Sort is faster
+5. **Premature Optimization**: Profile before optimizing
+
+## 9.10 Key Takeaways
 
 1. **Sorting algorithms** vary in performance characteristics and use cases
 2. **Comparison-based sorts** have O(n log n) lower bound in worst case
@@ -772,7 +864,7 @@ Is dataset small (< 100)?
 5. **Real-world performance** depends on data characteristics and implementation details
 6. **Hybrid algorithms** combine benefits of multiple sorting techniques
 
-## 9.9 Exercises
+## 9.11 Exercises
 
 1. Implement a stable version of Quick Sort.
 2. Write a function to sort an array of strings using Radix Sort.
@@ -780,7 +872,7 @@ Is dataset small (< 100)?
 4. Implement a function to find the kth smallest element using Quick Select.
 5. Write a program to sort an array of custom objects with multiple fields.
 
-## 9.10 Summary
+## 9.12 Summary
 
 Sorting algorithms are fundamental tools in computer science, each with unique characteristics and optimal use cases. Understanding the trade-offs between different sorting algorithms helps in choosing the right one for specific applications. From simple O(n²) algorithms like Bubble Sort to sophisticated O(n log n) algorithms like Merge Sort and Quick Sort, each has its place in the programmer's toolkit. Non-comparison sorting algorithms like Counting Sort and Radix Sort can achieve linear time complexity under specific conditions, making them valuable for specialized use cases.
 
