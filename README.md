@@ -72,6 +72,7 @@ data-structures-book/
 │   ├── 05-stacks-and-queues.md
 │   ├── 06-trees-and-binary-trees.md
 │   ├── 07-string-search-algorithms.md
+│   ├── 08-recursion-and-backtracking.md
 │   ├── 09-sorting-algorithms.md
 │   ├── 10-hash-tables-and-hashing.md
 │   ├── 11-graphs.md
@@ -148,6 +149,7 @@ After completing this book, readers will be able to:
 - [x] Chapter 5: Stacks and Queues
 - [x] Chapter 6: Trees and Binary Trees
 - [x] Chapter 7: String Search Algorithms
+- [x] Chapter 8: Recursion and Backtracking
 - [x] Chapter 9: Sorting Algorithms
 - [x] Chapter 10: Hash Tables and Hashing
 - [x] Chapter 11: Graphs
