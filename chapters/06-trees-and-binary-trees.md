@@ -44,11 +44,27 @@ Understanding tree invariants is essential for correct implementation and reason
    - Every node is reachable from the root
    - There exists exactly one path from root to any node
    - No isolated nodes exist
+   - **Tree Connectivity Property**: For a tree with `n` nodes, there are exactly `n-1` edges
+     - This follows from: each node (except root) has exactly one parent → exactly `n-1` parent-child relationships → exactly `n-1` edges
+     - Adding an edge creates a cycle (violates acyclicity)
+     - Removing an edge disconnects the tree
 
 4. **Parent-Child Invariant**:
    - If node B is a child of node A, then A is the parent of B
-   - Each node has at most one parent
+   - Each node has at most one parent (exactly one parent, except root which has none)
    - Parent-child relationships form a directed acyclic graph (DAG)
+   - Parent-child relationship is asymmetric: if A is parent of B, then B cannot be parent of A
+
+5. **Height and Depth Definitions**:
+   - **Depth of a node**: Number of edges from root to that node
+     - Root has depth 0
+     - Depth increases by 1 for each level down
+   - **Height of a node**: Number of edges from that node to the deepest leaf in its subtree
+     - Leaf nodes have height 0
+     - Height of a node = 1 + max(height of left child, height of right child)
+   - **Height of a tree**: Height of the root node (maximum depth of any node)
+   - **Level**: Depth + 1 (root is at level 1, not level 0)
+   - **Relationship**: For any node, `depth(node) + height(node) ≤ height(tree)`
 
 #### Why Invariants Matter
 
@@ -82,10 +98,26 @@ In addition to general tree invariants, binary trees have specific constraints:
    - No node appears as both left and right child of the same parent
    - Left and right subtrees are independent
 
-3. **Binary Search Tree Invariant** (if applicable):
-   - For any node: `left->data < node->data < right->data`
-   - All nodes in left subtree < node
-   - All nodes in right subtree > node
+3. **Binary Search Tree (BST) Invariant** (if applicable):
+   - **BST Property**: For any node with value `v`:
+     - All nodes in the **left subtree** have values **strictly less than** `v` (left < root)
+     - All nodes in the **right subtree** have values **strictly greater than** `v` (right > root)
+     - The node itself satisfies: `left->data < node->data < right->data` (if children exist)
+   - **Global BST Property**: The property holds recursively for all nodes
+   - **Inorder Traversal Property**: Inorder traversal of a BST produces values in sorted order
+   - **Uniqueness**: No duplicate values allowed (unless using multiset variant)
+   
+   **Example**:
+   ```
+        5
+       / \
+      3   7
+     / \ / \
+    2  4 6  8
+   ```
+   - Node 5: left subtree (2,3,4) < 5 < right subtree (6,7,8) ✓
+   - Node 3: left subtree (2) < 3 < right subtree (4) ✓
+   - Node 7: left subtree (6) < 7 < right subtree (8) ✓
 
 ### Binary Tree Node Structure
 ```cpp
