@@ -744,6 +744,166 @@ public:
 ```
 
 #### Double Hashing
+
+**Double hashing** is an open addressing collision resolution technique that uses two independent hash functions to determine the probe sequence. It is considered one of the best open addressing methods because it provides excellent distribution and minimizes clustering.
+
+##### How Double Hashing Works
+
+Double hashing uses two hash functions:
+1. **Primary hash function** `h₁(k)`: Determines the initial probe position
+2. **Secondary hash function** `h₂(k)`: Determines the step size for subsequent probes
+
+The probe sequence for a key `k` is:
+
+```
+h₁(k), h₁(k) + h₂(k), h₁(k) + 2·h₂(k), h₁(k) + 3·h₂(k), ..., h₁(k) + i·h₂(k) (mod m)
+```
+
+Where:
+- `h₁(k)` is the primary hash value (initial position)
+- `h₂(k)` is the secondary hash value (step size)
+- `i` is the probe number (0, 1, 2, 3, ...)
+- `m` is the table size
+
+**Example**: If a key hashes to:
+- `h₁(k) = 5` (initial position)
+- `h₂(k) = 3` (step size)
+- Table size `m = 11`
+
+The probe sequence is:
+- Probe 0: (5 + 0·3) mod 11 = 5
+- Probe 1: (5 + 1·3) mod 11 = 8
+- Probe 2: (5 + 2·3) mod 11 = 0
+- Probe 3: (5 + 3·3) mod 11 = 3
+- Probe 4: (5 + 4·3) mod 11 = 6
+- Probe 5: (5 + 5·3) mod 11 = 9
+- Probe 6: (5 + 6·3) mod 11 = 1
+- ...
+
+Notice how different keys will have different step sizes, creating unique probe sequences.
+
+##### Key Requirements for h₂(k)
+
+The secondary hash function `h₂(k)` must satisfy critical properties:
+
+1. **Non-zero step size**: `h₂(k) ≠ 0` (mod m)
+   - If `h₂(k) = 0`, the probe sequence would never advance, causing infinite loops
+   - This is why we use: `h₂(k) = 1 + (hash(k) % (m - 1))`
+   - This guarantees `h₂(k) ∈ [1, m-1]`
+
+2. **Relatively prime to table size**: `gcd(h₂(k), m) = 1`
+   - Ensures the probe sequence visits all slots in the table
+   - If `gcd(h₂(k), m) = d > 1`, the sequence will only visit `m/d` slots
+   - **Solution**: Use prime table sizes, or ensure `h₂(k)` is always odd when `m` is a power of 2
+
+3. **Independent of h₁(k)**: The two hash functions should be independent to avoid correlation
+
+##### Advantages of Double Hashing
+
+1. **Minimal Clustering**: Unlike linear and quadratic probing, double hashing creates probe sequences that are unique for each key (based on the key's value), virtually eliminating clustering.
+
+2. **Excellent Distribution**: The use of two independent hash functions provides superior distribution of keys across the table.
+
+3. **Predictable Performance**: Performance remains consistent even as the table fills up, unlike methods that suffer from clustering.
+
+4. **Theoretical Guarantees**: When implemented correctly (prime table size, proper h₂), double hashing guarantees that all slots will be probed.
+
+5. **No Secondary Clustering**: Unlike quadratic probing, keys with the same initial hash position will have different probe sequences (due to different h₂ values).
+
+##### Disadvantages and Limitations
+
+1. **More Computation**: Requires computing two hash functions instead of one, adding slight overhead.
+
+2. **Complex Implementation**: More complex than linear or quadratic probing, requiring careful attention to:
+   - Ensuring `h₂(k) ≠ 0`
+   - Maintaining relative primality with table size
+   - Handling table resizing correctly
+
+3. **Cache Performance**: Slightly worse cache locality than linear probing since probes can jump around more.
+
+4. **Table Size Constraints**: For optimal performance, table size should be prime to ensure `gcd(h₂(k), m) = 1` for all keys.
+
+##### Mathematical Properties
+
+For double hashing to probe all slots:
+
+1. **Table size must be prime**: When `m` is prime, any `h₂(k) ∈ [1, m-1]` is relatively prime to `m`, ensuring the probe sequence visits all slots.
+
+2. **Probe sequence length**: The maximum number of probes needed is at most `m` (the table size).
+
+3. **Uniform distribution**: With good hash functions, double hashing provides near-uniform distribution of keys.
+
+**Why prime table sizes?**
+- If `m` is prime and `h₂(k) ∈ [1, m-1]`, then `gcd(h₂(k), m) = 1`
+- This means the step size and table size are coprime
+- The sequence `h₁(k) + i·h₂(k) (mod m)` will cycle through all `m` values before repeating
+
+##### When to Use Double Hashing
+
+- **High-performance requirements**: When you need the best possible distribution and minimal clustering
+- **Large datasets**: Works well with large hash tables where clustering becomes a significant issue
+- **Variable key distributions**: Excellent when key distribution is unknown or non-uniform
+- **When you can control table size**: You need the ability to resize to prime numbers
+- **Production systems**: Often used in high-performance systems where predictable O(1) performance is critical
+
+##### Performance Characteristics
+
+- **Average case**: O(1) for insert, search, and delete
+- **Worst case**: O(n) only if the table becomes completely full
+- **Load factor threshold**: Can handle higher load factors (up to 0.8-0.9) than linear probing while maintaining good performance
+- **Expected probes**: Approximately `1/(1-α)` probes for successful search, where `α` is the load factor
+
+##### Implementation Considerations
+
+1. **Hash Function Design**:
+   ```cpp
+   h₁(k) = hash(k) % m
+   h₂(k) = 1 + (hash(k) % (m - 1))
+   ```
+   - The `+ 1` ensures `h₂(k) ≥ 1`
+   - The `% (m - 1)` ensures `h₂(k) ≤ m - 1`
+
+2. **Table Size**: Always use prime numbers. Common approach:
+   - Start with a prime initial size
+   - When rehashing, find the next prime ≥ 2×current_size
+
+3. **Overflow Prevention**: For large tables, be careful with integer overflow:
+   ```cpp
+   index = (index + step) % tableSize;
+   ```
+   This is safe because `step < tableSize`, so `index + step < 2*tableSize`.
+
+4. **Rehashing**: When rehashing, all keys get new `h₂` values (since `h₂` depends on table size), which redistributes them effectively.
+
+##### Comparison with Other Methods
+
+| Aspect | Linear Probing | Quadratic Probing | Double Hashing |
+|--------|---------------|-------------------|----------------|
+| Clustering | Primary clustering | Secondary clustering | Minimal clustering |
+| Probe sequence | Fixed (+1) | Fixed (quadratic) | Key-dependent |
+| Hash functions | 1 | 1 | 2 |
+| Computation cost | Lowest | Low | Moderate |
+| Distribution | Good | Better | Best |
+| Cache performance | Best | Good | Moderate |
+| Table size requirement | Any | Prime preferred | Prime required |
+| Implementation complexity | Simplest | Moderate | Most complex |
+| Worst-case performance | Degrades with clustering | Degrades with clustering | Most consistent |
+
+##### Real-World Applications
+
+Double hashing is used in:
+- **Database systems**: For hash indexes and hash joins
+- **Compiler implementations**: Symbol tables and identifier lookups
+- **High-performance libraries**: C++ `std::unordered_map` implementations often use double hashing variants
+- **Distributed systems**: Consistent hashing and sharding strategies
+
+##### Common Pitfalls to Avoid
+
+1. **Zero step size**: Always ensure `h₂(k) ≠ 0`
+2. **Non-prime table sizes**: Can cause incomplete probe sequences
+3. **Correlated hash functions**: `h₁` and `h₂` should be independent
+4. **Forgetting to update h₂ on rehash**: `h₂` depends on table size, so it changes after rehashing
+
 ```cpp
 template<typename K, typename V>
 class HashTableDoubleHashing {
