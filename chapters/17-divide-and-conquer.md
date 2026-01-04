@@ -652,6 +652,262 @@ int majorityElement(vector<int>& nums, int left, int right) {
 // Time: O(n log n), Space: O(log n) for recursion
 ```
 
+### 17.10.4 Karatsuba Multiplication
+
+**Karatsuba multiplication** is a fast multiplication algorithm that multiplies two n-digit numbers in O(n^log₂3) ≈ O(n^1.585) time, which is faster than the traditional O(n²) schoolbook method.
+
+#### The Problem
+
+Multiplying two n-digit numbers using the standard method:
+```
+   1234
+ × 5678
+--------
+   O(n²) operations
+```
+
+#### Karatsuba's Insight
+
+For two numbers `x` and `y`, split them:
+- `x = a × 10^(n/2) + b` (a = high half, b = low half)
+- `y = c × 10^(n/2) + d` (c = high half, d = low half)
+
+**Standard multiplication**:
+```
+x × y = (a × 10^(n/2) + b) × (c × 10^(n/2) + d)
+      = ac × 10^n + (ad + bc) × 10^(n/2) + bd
+```
+This requires **4 multiplications**: ac, ad, bc, bd
+
+**Karatsuba's trick**:
+```
+x × y = ac × 10^n + ((a+b)(c+d) - ac - bd) × 10^(n/2) + bd
+```
+This requires **3 multiplications**: ac, bd, (a+b)(c+d)
+
+#### Implementation
+
+```cpp
+#include <iostream>
+#include <string>
+#include <algorithm>
+using namespace std;
+
+// Helper: Add two numbers represented as strings
+string addStrings(string num1, string num2) {
+    int i = num1.length() - 1, j = num2.length() - 1;
+    int carry = 0;
+    string result = "";
+    
+    while (i >= 0 || j >= 0 || carry) {
+        int sum = carry;
+        if (i >= 0) sum += num1[i--] - '0';
+        if (j >= 0) sum += num2[j--] - '0';
+        result += (sum % 10) + '0';
+        carry = sum / 10;
+    }
+    
+    reverse(result.begin(), result.end());
+    return result;
+}
+
+// Helper: Subtract two numbers (assumes num1 >= num2)
+string subtractStrings(string num1, string num2) {
+    int i = num1.length() - 1, j = num2.length() - 1;
+    int borrow = 0;
+    string result = "";
+    
+    while (i >= 0) {
+        int diff = (num1[i] - '0') - borrow;
+        if (j >= 0) diff -= (num2[j] - '0');
+        
+        if (diff < 0) {
+            diff += 10;
+            borrow = 1;
+        } else {
+            borrow = 0;
+        }
+        
+        result += diff + '0';
+        i--; j--;
+    }
+    
+    reverse(result.begin(), result.end());
+    // Remove leading zeros
+    while (result.length() > 1 && result[0] == '0') {
+        result = result.substr(1);
+    }
+    return result;
+}
+
+// Helper: Multiply by power of 10
+string multiplyByPowerOf10(string num, int power) {
+    return num + string(power, '0');
+}
+
+// Karatsuba multiplication
+string karatsuba(string x, string y) {
+    // Make both numbers same length
+    int n = max(x.length(), y.length());
+    while (x.length() < n) x = "0" + x;
+    while (y.length() < n) y = "0" + y;
+    
+    // Base case: small numbers
+    if (n <= 2) {
+        // Use standard multiplication for small numbers
+        long long a = stoll(x);
+        long long b = stoll(y);
+        return to_string(a * b);
+    }
+    
+    int m = n / 2;
+    
+    // Split numbers
+    string a = x.substr(0, n - m);
+    string b = x.substr(n - m);
+    string c = y.substr(0, n - m);
+    string d = y.substr(n - m);
+    
+    // Three recursive multiplications
+    string ac = karatsuba(a, c);
+    string bd = karatsuba(b, d);
+    string abcd = karatsuba(addStrings(a, b), addStrings(c, d));
+    
+    // Calculate (ad + bc) = (a+b)(c+d) - ac - bd
+    string ad_plus_bc = subtractStrings(subtractStrings(abcd, ac), bd);
+    
+    // Combine: ac × 10^(2m) + (ad+bc) × 10^m + bd
+    string result = addStrings(
+        multiplyByPowerOf10(ac, 2 * m),
+        addStrings(
+            multiplyByPowerOf10(ad_plus_bc, m),
+            bd
+        )
+    );
+    
+    // Remove leading zeros
+    while (result.length() > 1 && result[0] == '0') {
+        result = result.substr(1);
+    }
+    
+    return result;
+}
+
+// Example usage
+int main() {
+    string x = "1234";
+    string y = "5678";
+    cout << karatsuba(x, y) << endl;  // Output: 7006652
+    return 0;
+}
+```
+
+#### Complexity Analysis
+
+**Recurrence Relation**: T(n) = 3T(n/2) + O(n)
+
+**Using Master Theorem**:
+- a = 3, b = 2, f(n) = O(n)
+- log_b(a) = log₂(3) ≈ 1.585
+- Since f(n) = O(n^1) < O(n^1.585), case 1 applies
+- **Time Complexity**: O(n^log₂3) ≈ O(n^1.585)
+
+**Space Complexity**: O(log n) for recursion stack
+
+#### Comparison with Standard Multiplication
+
+| Method | Time Complexity | When to Use |
+|--------|----------------|-------------|
+| **Schoolbook** | O(n²) | Small numbers, simple cases |
+| **Karatsuba** | O(n^1.585) | Large numbers (> 100 digits) |
+| **FFT-based** | O(n log n) | Very large numbers (> 1000 digits) |
+
+#### When to Use Karatsuba
+
+- **Large number multiplication**: When dealing with numbers with hundreds or thousands of digits
+- **Cryptography**: RSA, elliptic curve cryptography
+- **Arbitrary precision arithmetic**: Libraries like GMP (GNU Multiple Precision)
+- **Competitive programming**: Problems involving very large integers
+
+#### Real-World Applications
+
+- **Cryptographic systems**: RSA encryption/decryption
+- **Computer algebra systems**: Mathematica, Maple
+- **Arbitrary precision libraries**: GMP, MPFR
+- **Blockchain**: Cryptographic operations with large numbers
+
+### 17.10.5 Fast Fourier Transform (FFT) - Overview
+
+The **Fast Fourier Transform (FFT)** is an efficient algorithm for computing the Discrete Fourier Transform (DFT) and its inverse. While FFT is primarily used in signal processing, it has important applications in computer science, particularly for **polynomial multiplication**.
+
+#### Polynomial Multiplication with FFT
+
+**Problem**: Multiply two polynomials of degree n in O(n log n) time instead of O(n²).
+
+**Standard Method**:
+```
+P(x) = a₀ + a₁x + a₂x² + ... + aₙxⁿ
+Q(x) = b₀ + b₁x + b₂x² + ... + bₙxⁿ
+P(x) × Q(x) = Σᵢⱼ aᵢbⱼx^(i+j)  // O(n²) operations
+```
+
+**FFT Method**:
+1. **Evaluate** P and Q at 2n+1 points using FFT: O(n log n)
+2. **Multiply** point values: O(n)
+3. **Interpolate** to get coefficients using inverse FFT: O(n log n)
+4. **Total**: O(n log n)
+
+#### Key Insight
+
+FFT uses **divide and conquer** to evaluate polynomials at special points (roots of unity) efficiently:
+- Divide polynomial into even and odd powers
+- Recursively evaluate at half the points
+- Combine results using properties of roots of unity
+
+#### Complexity
+
+- **Time**: O(n log n) for polynomial multiplication
+- **Space**: O(n) for storing coefficients and intermediate results
+
+#### Applications
+
+1. **Polynomial Multiplication**: Fast multiplication of large polynomials
+2. **Large Integer Multiplication**: Can multiply n-digit numbers in O(n log n) using FFT
+3. **Signal Processing**: Audio, image processing, compression
+4. **Convolution**: Efficient computation of convolutions
+5. **Competitive Programming**: Problems involving polynomial operations
+
+#### When to Use FFT
+
+- **Very large polynomials**: Degree > 1000
+- **Large integer multiplication**: Numbers with > 1000 digits (faster than Karatsuba)
+- **Convolution problems**: When you need to compute many convolutions
+- **Signal processing**: Audio/image processing applications
+
+#### Implementation Note
+
+FFT implementation is complex and typically uses:
+- **Complex number arithmetic**: Roots of unity are complex numbers
+- **Iterative or recursive approach**: Both have trade-offs
+- **Optimizations**: Bit-reversal, in-place computation
+
+**For this book**: We provide an overview. Full FFT implementation is typically found in specialized libraries or advanced algorithm courses.
+
+**Example Libraries**:
+- **FFTW** (Fastest Fourier Transform in the West): C library
+- **NumPy**: Python library with FFT support
+- **Eigen**: C++ library with FFT
+
+#### Comparison: Multiplication Methods
+
+| Method | Time Complexity | Best For |
+|--------|----------------|----------|
+| **Schoolbook** | O(n²) | Small numbers (< 10 digits) |
+| **Karatsuba** | O(n^1.585) | Medium numbers (10-1000 digits) |
+| **FFT-based** | O(n log n) | Very large numbers (> 1000 digits) |
+
+**Note**: FFT has higher constant factors, so Karatsuba is often faster for practical sizes. FFT becomes advantageous for extremely large numbers.
+
 ## 17.11 Divide and Conquer Patterns
 
 ### Pattern 1: Array Problems
