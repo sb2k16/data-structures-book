@@ -914,7 +914,7 @@ string str2 = "Hello";  // Another std::string object
 
 ### Efficient String Building in C++
 
-Since C++ strings are mutable, we don't need a separate StringBuilder pattern. However, there are optimization techniques:
+Since C++ strings are mutable, we can optimize string building with several techniques:
 
 **Pattern 1: Using `reserve()`** (Recommended):
 ```cpp
