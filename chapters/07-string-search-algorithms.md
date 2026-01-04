@@ -1772,14 +1772,69 @@ public:
 | Z-Algorithm | O(n+m) | O(n+m) | Pattern preprocessing |
 | Aho-Corasick | O(n+m+z) | O(m) | Multiple patterns |
 
-### When to Use Which Algorithm
+## 7.9 Choosing the Right String Search Algorithm
 
-1. **Naive**: Simple implementations, small datasets
-2. **Rabin-Karp**: Multiple pattern search, rolling hash applications
-3. **KMP**: General-purpose single pattern search
-4. **Boyer-Moore**: Large texts, single pattern search
-5. **Z-Algorithm**: Pattern preprocessing, string analysis
-6. **Aho-Corasick**: Multiple pattern search, text mining
+Selecting the appropriate algorithm depends on your specific requirements. Here's a decision framework based on practical tradeoffs:
+
+### Decision Factors
+
+**1. Input Size**
+- **Small inputs (< 1000 characters)**: Use **Naive** search. The overhead of preprocessing doesn't pay off.
+- **Medium inputs (1K-1M characters)**: **KMP** or **Boyer-Moore** depending on pattern characteristics.
+- **Large inputs (> 1M characters)**: **Boyer-Moore** often performs best in practice due to sublinear average case.
+
+**2. Pattern Characteristics**
+- **Short patterns (< 10 characters)**: **Naive** or **KMP** (preprocessing overhead is minimal).
+- **Long patterns (> 100 characters)**: **Boyer-Moore** excels with its right-to-left comparison.
+- **Patterns with many repeated substrings**: **KMP** leverages the LPS array effectively.
+
+**3. Search Frequency**
+- **Single search**: Consider preprocessing cost. **Naive** may be fastest overall.
+- **Repeated searches with same pattern**: **KMP** or **Boyer-Moore** (preprocess once, search many times).
+- **Multiple different patterns**: **Rabin-Karp** or **Aho-Corasick** for multiple pattern search.
+
+**4. Alphabet Size**
+- **Small alphabet (DNA: 4 characters)**: **Boyer-Moore** Bad Character Rule is less effective.
+- **Large alphabet (Unicode, text)**: **Boyer-Moore** performs exceptionally well.
+
+**5. Memory Constraints**
+- **Tight memory**: **Naive** or **Rabin-Karp** (O(1) space).
+- **Memory available**: **KMP** or **Boyer-Moore** (O(m) space for preprocessing).
+
+### Practical Recommendations
+
+**Small inputs → Naive**
+- Simplest to implement and understand
+- No preprocessing overhead
+- Sufficient for most small-scale applications
+
+**Single pattern, repeated searches → KMP**
+- Consistent O(n+m) performance
+- No worst-case degradation
+- Good general-purpose choice
+
+**Large alphabet, long patterns → Boyer-Moore**
+- Often fastest in practice
+- Sublinear average case (O(n/m))
+- Used in production systems like `grep` and `ripgrep`
+
+**Multiple patterns or probabilistic tolerance → Rabin-Karp**
+- Efficient for multiple pattern search
+- Rolling hash enables streaming applications
+- Acceptable if occasional false positives are tolerable
+
+**Many patterns simultaneously → Aho-Corasick**
+- Optimal for multiple pattern search
+- Used in intrusion detection systems, virus scanners
+- Efficient when searching for hundreds or thousands of patterns
+
+### Real-World Usage
+
+**Production Systems:**
+- **`grep`/`ripgrep`**: Use Boyer-Moore variants for single pattern search
+- **Log scanning pipelines**: Often use KMP or Boyer-Moore depending on log size
+- **Search indexing**: Use Aho-Corasick for multi-keyword search
+- **Stream processing**: Rabin-Karp with rolling hash for continuous pattern matching
 
 ## 7.10 Concurrency Considerations
 
