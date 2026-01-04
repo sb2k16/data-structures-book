@@ -1,8 +1,63 @@
 # Chapter 9: Sorting Algorithms
 
-## 9.1 Introduction to Sorting
+## 9.1 Problem Statement & Motivation
+
+### What Problem Does Sorting Solve?
+
+Unordered data has limitations:
+
+- **Inefficient Search**: Linear search is O(n) in unsorted data
+- **Poor User Experience**: Users expect sorted results
+- **Inefficient Algorithms**: Many algorithms require sorted input
+- **Data Analysis**: Statistical operations need ordered data
+- **Database Performance**: Unsorted data requires full table scans
+
+**Naive Approaches and Their Limitations**:
+
+- **Manual Sorting**: Error-prone, doesn't scale
+- **No Sorting**: Accept O(n) search, poor UX
+- **Partial Sorting**: Inconsistent results
+
+**The Sorting Solution**: Sorting algorithms arrange data in order, enabling O(log n) search, better user experience, and efficient algorithms that require sorted input.
+
+### When to Use Sorting
+
+✅ **Use sorting when**:
+- Need efficient search (binary search requires sorted data)
+- User expects ordered results
+- Algorithm requires sorted input (merge, set operations)
+- Data analysis needs ordered data
+- Database indexing
+
+✅ **Real-world applications**:
+- Search engines (ranked results)
+- E-commerce (price, rating sorting)
+- Database indexes
+- File systems (alphabetical listing)
+- Data analysis and visualization
+- Operating system process scheduling
+
+### When NOT to Use Sorting
+
+❌ **Avoid sorting when**:
+- Data changes frequently (sorting cost may exceed benefit)
+- Only need to find min/max (O(n) without sorting)
+- Hash table provides O(1) lookup (no sorting needed)
+- Very small datasets (overhead not worth it)
+
+**Key Trade-off**: Sorting trades O(n log n) preprocessing time for O(log n) search and better user experience.
+
+## 9.2 Conceptual Overview
 
 **Sorting** is the process of arranging data in a particular order (ascending or descending). Sorting is one of the most fundamental operations in computer science and is used in countless applications, from organizing databases to preparing data for efficient searching.
+
+### Intuitive Explanation
+
+Think of sorting like organizing a deck of cards:
+- **Goal**: Arrange cards in order (by suit, rank, etc.)
+- **Comparison**: Compare two cards to determine order
+- **Swap**: Move cards to correct positions
+- **Result**: Ordered sequence
 
 ### Why Sorting Matters
 
@@ -20,9 +75,221 @@
 - **Comparison-based**: Uses comparisons to determine order
 - **Time Complexity**: Best, average, and worst-case performance
 
-## 9.2 Comparison-Based Sorting Algorithms
+## 9.3 Abstract Model & Invariants ⭐
 
-### 1. Bubble Sort
+Understanding sorting invariants helps reason about correctness.
+
+### Abstract Model
+
+A sorting algorithm transforms:
+- **Input**: Array/sequence of comparable elements
+- **Output**: Same elements in sorted order
+- **Comparison**: Binary relation defining order
+- **Stability**: Relative order of equal elements preserved (if stable)
+
+### Core Invariants
+
+#### 1. Ordering Invariant
+
+- After sorting, `arr[i] ≤ arr[i+1]` for all valid i (ascending)
+- Or `arr[i] ≥ arr[i+1]` for all valid i (descending)
+- All elements from original array present in result
+
+#### 2. Stability Invariant (for stable sorts)
+
+- If `arr[i] == arr[j]` and `i < j` before sorting, then `arr[i]` appears before `arr[j]` after sorting
+- Relative order of equal elements preserved
+
+#### 3. Completeness Invariant
+
+- All elements from input appear in output
+- No elements added or removed
+- Output size equals input size
+
+### How Sorting Preserves Invariants
+
+- **Comparison**: Determines correct order
+- **Swapping/Reordering**: Moves elements to correct positions
+- **Partitioning** (divide & conquer): Sorts subarrays, then combines
+- **Stability**: Maintains relative order during reordering
+
+## 9.4 Operations & Interface
+
+Sorting algorithms typically provide:
+
+| Operation | Description | Precondition | Postcondition |
+|-----------|-------------|-------------|---------------|
+| `sort(array)` | Sorts array in-place | Array is valid | Array is sorted |
+| `sort(array, comparator)` | Sorts with custom comparator | Valid comparator | Array sorted by comparator |
+| `isSorted(array)` | Checks if sorted | - | Returns true if sorted |
+
+### Behavioral Guarantees
+
+- **Correctness**: Output is sorted according to comparison function
+- **Completeness**: All input elements in output
+- **Stability**: Equal elements maintain relative order (if stable sort)
+
+## 9.5 Time & Space Complexity
+
+### Comparison-Based Sorting Complexity
+
+| Algorithm | Best | Average | Worst | Space | Stable | In-Place |
+|-----------|------|---------|-------|-------|--------|----------|
+| Bubble Sort | O(n) | O(n²) | O(n²) | O(1) | Yes | Yes |
+| Selection Sort | O(n²) | O(n²) | O(n²) | O(1) | No | Yes |
+| Insertion Sort | O(n) | O(n²) | O(n²) | O(1) | Yes | Yes |
+| Merge Sort | O(n log n) | O(n log n) | O(n log n) | O(n) | Yes | No |
+| Quick Sort | O(n log n) | O(n log n) | O(n²) | O(log n) | No | Yes |
+| Heap Sort | O(n log n) | O(n log n) | O(n log n) | O(1) | No | Yes |
+
+### Non-Comparison Sorting Complexity
+
+| Algorithm | Best | Average | Worst | Space | Stable | Notes |
+|-----------|------|---------|-------|-------|--------|-------|
+| Counting Sort | O(n + k) | O(n + k) | O(n + k) | O(k) | Yes | k = range |
+| Radix Sort | O(d(n + k)) | O(d(n + k)) | O(d(n + k)) | O(n + k) | Yes | d = digits |
+| Bucket Sort | O(n + k) | O(n + k) | O(n²) | O(n) | Yes | k = buckets |
+
+**Key Insight**: Non-comparison sorts can achieve O(n) time but have restrictions (limited range, integer keys).
+
+## 9.6 Pseudocode (Language-Neutral) ⭐
+
+This section presents sorting algorithms in language-neutral pseudocode.
+
+### Bubble Sort
+
+```
+BUBBLE_SORT(array):
+  n ← length(array)
+  
+  for i from 0 to n - 2:
+    swapped ← false
+    for j from 0 to n - i - 2:
+      if array[j] > array[j + 1]:
+        swap(array[j], array[j + 1])
+        swapped ← true
+    
+    if not swapped:
+      break  // Array is sorted
+```
+
+### Insertion Sort
+
+```
+INSERTION_SORT(array):
+  n ← length(array)
+  
+  for i from 1 to n - 1:
+    key ← array[i]
+    j ← i - 1
+    
+    while j >= 0 and array[j] > key:
+      array[j + 1] ← array[j]
+      j ← j - 1
+    
+    array[j + 1] ← key
+```
+
+### Merge Sort
+
+```
+MERGE_SORT(array, left, right):
+  if left < right:
+    mid ← (left + right) / 2
+    MERGE_SORT(array, left, mid)
+    MERGE_SORT(array, mid + 1, right)
+    MERGE(array, left, mid, right)
+
+MERGE(array, left, mid, right):
+  // Create temporary arrays
+  left_array ← array[left to mid]
+  right_array ← array[mid + 1 to right]
+  
+  i ← 0, j ← 0, k ← left
+  
+  while i < length(left_array) and j < length(right_array):
+    if left_array[i] <= right_array[j]:
+      array[k] ← left_array[i]
+      i ← i + 1
+    else:
+      array[k] ← right_array[j]
+      j ← j + 1
+    k ← k + 1
+  
+  // Copy remaining elements
+  while i < length(left_array):
+    array[k] ← left_array[i]
+    i ← i + 1
+    k ← k + 1
+  
+  while j < length(right_array):
+    array[k] ← right_array[j]
+    j ← j + 1
+    k ← k + 1
+```
+
+### Quick Sort
+
+```
+QUICK_SORT(array, left, right):
+  if left < right:
+    pivot_index ← PARTITION(array, left, right)
+    QUICK_SORT(array, left, pivot_index - 1)
+    QUICK_SORT(array, pivot_index + 1, right)
+
+PARTITION(array, left, right):
+  pivot ← array[right]
+  i ← left - 1
+  
+  for j from left to right - 1:
+    if array[j] <= pivot:
+      i ← i + 1
+      swap(array[i], array[j])
+  
+  swap(array[i + 1], array[right])
+  return i + 1
+```
+
+### Heap Sort
+
+```
+HEAP_SORT(array):
+  n ← length(array)
+  
+  // Build max heap
+  for i from n/2 - 1 down to 0:
+    HEAPIFY(array, n, i)
+  
+  // Extract elements one by one
+  for i from n - 1 down to 1:
+    swap(array[0], array[i])
+    HEAPIFY(array, i, 0)
+
+HEAPIFY(array, size, root):
+  largest ← root
+  left ← 2 * root + 1
+  right ← 2 * root + 2
+  
+  if left < size and array[left] > array[largest]:
+    largest ← left
+  
+  if right < size and array[right] > array[largest]:
+    largest ← right
+  
+  if largest ≠ root:
+    swap(array[root], array[largest])
+    HEAPIFY(array, size, largest)
+```
+
+**Note**: This pseudocode is language-agnostic. The C++ implementation in the next section maps directly to these algorithms.
+
+## 9.7 Implementation (Reference Language: C++) ⭐
+
+**Note to Reader**: This section provides concrete C++ implementations. The correctness relies on the invariants defined in Section 9.3 and the pseudocode in Section 9.6.
+
+### 9.7.1 Comparison-Based Sorting Algorithms
+
+#### 1. Bubble Sort
 
 Bubble Sort repeatedly steps through the list, compares adjacent elements, and swaps them if they are in the wrong order.
 
@@ -326,7 +593,7 @@ void heapSort(vector<int>& arr) {
 // In-place: Yes
 ```
 
-## 9.3 Non-Comparison Sorting Algorithms
+### 9.7.2 Non-Comparison Sorting Algorithms
 
 ### 1. Counting Sort
 
@@ -455,7 +722,7 @@ void bucketSort(vector<double>& arr) {
 // In-place: No
 ```
 
-## 9.4 Hybrid Sorting Algorithms
+### 9.7.3 Hybrid Sorting Algorithms
 
 ### Timsort (Used in Python and Java)
 
@@ -541,7 +808,254 @@ void timSort(vector<int>& arr) {
 }
 ```
 
-## 9.5 Performance Comparison
+## 9.8 Correctness Argument
+
+This section explains why sorting algorithms produce correct results.
+
+### Why Merge Sort Is Correct
+
+**Correctness Argument**:
+1. **Base Case**: Single element is trivially sorted ✓
+2. **Divide**: Split array into two halves ✓
+3. **Conquer**: Recursively sort both halves ✓
+4. **Combine**: Merge two sorted halves produces sorted array ✓
+5. **Induction**: If subarrays sorted, merged array sorted ✓
+
+**Edge Cases Handled**:
+- Empty array: Returns correctly ✓
+- Single element: Already sorted ✓
+- Odd length: Handled by floor division ✓
+
+### Why Quick Sort Is Correct
+
+**Correctness Argument**:
+1. **Partition**: Elements < pivot on left, > pivot on right ✓
+2. **Pivot Position**: Pivot in correct final position ✓
+3. **Recursion**: Sort left and right partitions ✓
+4. **Combination**: No merge needed (pivot separates) ✓
+
+**Edge Cases Handled**:
+- Already sorted: Degrades to O(n²) but still correct ✓
+- All equal: Partition handles correctly ✓
+- Pivot selection: Affects performance, not correctness ✓
+
+### Why Heap Sort Is Correct
+
+**Correctness Argument**:
+1. **Heap Property**: Max heap has largest at root ✓
+2. **Build Heap**: Creates valid max heap ✓
+3. **Extract**: Remove root (largest), place at end ✓
+4. **Heapify**: Restore heap property ✓
+5. **Result**: Array sorted in ascending order ✓
+
+**Edge Cases Handled**:
+- Empty array: Returns correctly ✓
+- Single element: Already sorted ✓
+
+## 9.9 Edge Cases & Failure Modes
+
+Understanding edge cases helps build defensive thinking.
+
+### Empty Array
+
+**Operations on Empty Array**:
+- Sort: Returns empty array (no-op)
+- Should handle gracefully
+
+**Example Failure**: Accessing `array[0]` without size check
+
+### Single Element Array
+
+**Operations**:
+- Already sorted
+- No operations needed
+
+**Example Failure**: Unnecessary comparisons or swaps
+
+### Already Sorted Array
+
+**Performance Impact**:
+- Bubble Sort: O(n) with optimization
+- Insertion Sort: O(n) - best case
+- Quick Sort: O(n²) worst case (poor pivot)
+
+**Example Failure**: Quick Sort with first element as pivot on sorted array → O(n²)
+
+### All Equal Elements
+
+**Operations**:
+- All algorithms should handle correctly
+- Stability matters for preserving order
+
+**Example Failure**: Unstable sort changes relative order
+
+### Very Large Arrays
+
+**Memory Issues**:
+- Merge Sort: O(n) extra space
+- Recursive algorithms: Stack overflow risk
+
+**Example Failure**: Merge Sort on very large array → out of memory
+
+### Integer Overflow
+
+**Problem**: Large array indices in calculations
+- `(left + right) / 2` may overflow
+- Should use `left + (right - left) / 2`
+
+**Example Failure**: Merge Sort with large indices → overflow
+
+## 9.10 Performance & System Considerations ⭐
+
+This section connects sorting to real machine behavior.
+
+### Memory Access Patterns
+
+**Merge Sort**:
+- Sequential access during merge
+- Good cache behavior
+- Extra memory allocation
+
+**Quick Sort**:
+- Random access during partition
+- Poor cache behavior
+- In-place (better memory)
+
+**Insertion Sort**:
+- Sequential access
+- Excellent cache behavior
+- Good for small arrays
+
+### Cache Behavior
+
+**Small Arrays (< cache size)**:
+- All algorithms cache-friendly
+- Insertion Sort often fastest
+
+**Large Arrays**:
+- Cache misses dominate
+- Merge Sort better (sequential access)
+- Quick Sort worse (random access)
+
+### When Sorting Becomes Bottleneck
+
+**Signs**:
+- Sorting takes significant time
+- Memory pressure from extra space
+- Cache misses in profiling
+
+**Solutions**:
+- Choose algorithm based on data characteristics
+- Use hybrid algorithms (Timsort)
+- Consider parallel sorting for large datasets
+
+## 9.11 Variants & Extensions
+
+### Sorting Variants
+
+- **Stable vs Unstable**: Preserve relative order of equals
+- **In-place vs Extra Space**: Memory trade-offs
+- **Adaptive**: Performance improves with partially sorted data
+- **Comparison vs Non-comparison**: Different complexity bounds
+
+### Hybrid Algorithms
+
+- **Timsort**: Merge + Insertion (Python, Java)
+- **Introsort**: Quick + Heap (C++ std::sort)
+- **Adaptive**: Choose algorithm based on data
+
+## 9.12 Real-World Implementations
+
+### C++ Standard Library: std::sort
+
+**Design Choices**:
+- Typically Introsort (Quick + Heap)
+- O(n log n) guaranteed
+- Not stable (use std::stable_sort for stability)
+
+**Use Cases**: General-purpose sorting in C++
+
+### Python: list.sort(), sorted()
+
+**Design Choices**:
+- Timsort (hybrid)
+- Stable
+- Adaptive
+
+**Use Cases**: Python's default sorting
+
+### Java: Arrays.sort()
+
+**Design Choices**:
+- Dual-pivot Quick Sort (primitives)
+- Timsort (objects)
+- Adaptive
+
+**Use Cases**: Java's default sorting
+
+## 9.13 Common Pitfalls & Interview Traps
+
+### 1. Assuming O(n log n) Is Always Best
+
+**Pitfall**: Always use O(n log n) algorithm
+
+**Reality**: O(n²) algorithms faster for small arrays
+
+**Interview Trap**: Asked to optimize, choose Quick Sort for 10 elements
+
+**Correct Approach**: Use Insertion Sort for small arrays
+
+### 2. Ignoring Stability Requirements
+
+**Pitfall**: Use unstable sort when stability needed
+
+**Reality**: Relative order of equals changed
+
+**Interview Trap**: Sort by one field, then another, expect stability
+
+**Correct Approach**: Use stable sort (Merge Sort) or sort in reverse order
+
+### 3. Quick Sort Worst Case
+
+**Pitfall**: Using Quick Sort without considering worst case
+
+**Reality**: O(n²) on sorted/reverse-sorted data
+
+**Interview Trap**: Quick Sort on already sorted array
+
+**Correct Approach**: Use randomized pivot or fallback to Heap Sort
+
+### 4. Integer Overflow in Index Calculation
+
+**Pitfall**: `(left + right) / 2` overflows
+
+**Reality**: Incorrect indices, crashes
+
+**Interview Trap**: Merge Sort with large array indices
+
+**Correct Approach**: Use `left + (right - left) / 2`
+
+### 5. Not Handling Empty/Single Element
+
+**Pitfall**: Accessing array[0] without size check
+
+**Reality**: Out of bounds, crashes
+
+**Interview Trap**: Implement sort, forget edge cases
+
+**Correct Approach**: Always check array size first
+
+### 6. Memory Issues with Merge Sort
+
+**Pitfall**: Merge Sort on very large array
+
+**Reality**: Out of memory (O(n) extra space)
+
+**Interview Trap**: Asked to sort large array, use Merge Sort
+
+**Correct Approach**: Use in-place algorithm or external sort
+
+### 9.5.1 Performance Comparison
 
 ### Time Complexity Summary
 
@@ -568,7 +1082,7 @@ void timSort(vector<int>& arr) {
 7. **Large datasets**: Merge Sort or Heap Sort
 8. **Real-world applications**: Timsort or Introsort
 
-## 9.6 Testing and Benchmarking
+### 9.5.2 Testing and Benchmarking
 
 ```cpp
 // Utility functions for testing
@@ -656,7 +1170,7 @@ void runSortingBenchmarks() {
 }
 ```
 
-## 9.7 Choosing the Right Sorting Algorithm
+## 9.14 Choosing the Right Sorting Algorithm
 
 Sorting algorithms aren't just academic exercises—they're engineering decisions. Here's how to choose:
 
@@ -800,7 +1314,7 @@ graph TD
 
 **Remember**: The "best" algorithm depends on your constraints. `std::sort` uses a hybrid approach (Introsort) for good reason—it adapts to different scenarios.
 
-## 9.9 Practical Considerations and Recommendations
+### Additional Practical Considerations
 
 ### When to Use Each Algorithm
 
@@ -855,7 +1369,62 @@ graph TD
 4. **Not Considering Range**: For small integer ranges, Counting Sort is faster
 5. **Premature Optimization**: Profile before optimizing
 
-## 9.10 Key Takeaways
+## 9.15 Exercises & Thought Questions
+
+### Conceptual Questions
+
+1. **When would you choose Merge Sort over Quick Sort?**
+   - Explain the trade-offs
+   - Give specific scenarios
+
+2. **Why is Insertion Sort faster than Quick Sort for small arrays?**
+   - Explain cache behavior
+   - When does this matter?
+
+3. **What is stability in sorting and when does it matter?**
+   - Give examples
+   - Which algorithms are stable?
+
+4. **Compare comparison-based vs non-comparison sorting:**
+   - When can you use non-comparison sorts?
+   - What are the limitations?
+
+### Implementation Tasks
+
+1. **Implement Merge Sort**
+   - Handle edge cases
+   - Optimize merge function
+   - Add stability guarantee
+
+2. **Implement Quick Sort**
+   - Use randomized pivot
+   - Handle worst case
+   - Add fallback to Heap Sort
+
+3. **Implement hybrid sort**
+   - Use Insertion Sort for small subarrays
+   - Combine with Merge/Quick Sort
+
+### Performance Reasoning
+
+1. **Analyze cache behavior:**
+   - Why is Insertion Sort cache-friendly?
+   - When does cache matter most?
+   - Compare Merge vs Quick Sort cache behavior
+
+2. **Space-time trade-offs:**
+   - When is O(n) extra space acceptable?
+   - When must you use in-place sorting?
+
+### Interview-Style Problems
+
+1. **Sort Colors** (LeetCode 75) - Counting Sort
+2. **Kth Largest Element** (LeetCode 215) - Quick Select
+3. **Merge Sorted Arrays** (LeetCode 88)
+4. **Sort an Array** (LeetCode 912) - Implement sorting
+5. **Wiggle Sort** (LeetCode 280) - Custom comparator
+
+## 9.16 Key Takeaways
 
 1. **Sorting algorithms** vary in performance characteristics and use cases
 2. **Comparison-based sorts** have O(n log n) lower bound in worst case
@@ -864,7 +1433,7 @@ graph TD
 5. **Real-world performance** depends on data characteristics and implementation details
 6. **Hybrid algorithms** combine benefits of multiple sorting techniques
 
-## 9.11 Exercises
+### Additional Exercises
 
 1. Implement a stable version of Quick Sort.
 2. Write a function to sort an array of strings using Radix Sort.
@@ -872,7 +1441,7 @@ graph TD
 4. Implement a function to find the kth smallest element using Quick Select.
 5. Write a program to sort an array of custom objects with multiple fields.
 
-## 9.12 Summary
+## 9.17 Summary
 
 Sorting algorithms are fundamental tools in computer science, each with unique characteristics and optimal use cases. Understanding the trade-offs between different sorting algorithms helps in choosing the right one for specific applications. From simple O(n²) algorithms like Bubble Sort to sophisticated O(n log n) algorithms like Merge Sort and Quick Sort, each has its place in the programmer's toolkit. Non-comparison sorting algorithms like Counting Sort and Radix Sort can achieve linear time complexity under specific conditions, making them valuable for specialized use cases.
 
