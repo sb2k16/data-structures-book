@@ -1276,18 +1276,23 @@ void insertAtTail(int value) {
 
 ## 4.13 Concurrency Considerations
 
-Linked lists are particularly challenging for concurrent access because operations modify pointer structures, creating many opportunities for race conditions.
+This section applies the concurrency fundamentals from [Chapter 3.5](03.5-concurrency-fundamentals.md) to linked lists. See Section 3.5.3 for invariant-based reasoning and Section 3.5.4 for race conditions.
 
-### Invariants Threatened by Concurrent Access
+### 4.13.1 Shared-State Invariants
 
-**Core Linked List Invariants:**
+**Core Linked List Invariants** (see Section 3.5.3):
 1. **Linkage Invariant**: "Each node's `next` pointer correctly points to the next node"
 2. **Head Invariant**: "`head` points to the first node (or is `nullptr` if empty)"
 3. **Acyclicity Invariant**: "No cycles exist in the list"
 
-### What Operations Need Atomicity
+**What Must Not Be Observed Half-Updated**:
+- Pointer updates during insertion (new node linked but not yet in chain)
+- Node deletion while another thread is traversing through it
+- Head pointer updates during insertion/deletion
 
-**Insertion Operation:**
+### 4.13.2 Operations That Must Be Atomic
+
+**Insertion Operation** (see Section 3.5.4):
 ```cpp
 void insertAfter(Node* prev, Node* new_node) {
     new_node->next = prev->next;  // Step 1: Link new node
@@ -1295,11 +1300,9 @@ void insertAfter(Node* prev, Node* new_node) {
 }
 ```
 
-**Problem**: Between Step 1 and Step 2, the invariant "next pointers form a valid chain" is violated. Another thread traversing the list may:
-- Miss the new node (if it reads `prev->next` before Step 2)
-- See an inconsistent state (new node points to next, but prev doesn't point to new node)
+**Tie to Invariants**: Between Step 1 and Step 2, the **Linkage Invariant** is violated. Another thread traversing may miss the new node or see inconsistent state.
 
-**Deletion Operation:**
+**Deletion Operation**:
 ```cpp
 void deleteNode(Node* prev, Node* to_delete) {
     prev->next = to_delete->next;  // Step 1: Bypass node
@@ -1307,13 +1310,49 @@ void deleteNode(Node* prev, Node* to_delete) {
 }
 ```
 
-**Problem**: Another thread may be traversing through `to_delete` when it's deleted, causing:
-- **Use-after-free**: Accessing freed memory
-- **Broken chain**: Traversing thread may follow invalid pointer
+**Tie to Invariants**: Between Step 1 and Step 2, another thread traversing through `to_delete` may access freed memory, breaking the **Linkage Invariant**.
 
-### Coarse vs Fine-Grained Locking
+**Operations Requiring Atomicity**:
+- **Insert**: Entire insertion (both pointer updates) must be atomic
+- **Delete**: Bypass and memory deallocation must be atomic
+- **Traverse**: Must not observe nodes in inconsistent states
 
-**Coarse-Grained (Single Lock):**
+### 4.13.3 Naïve Approaches and Why They Fail
+
+**1. Partial Updates**:
+```cpp
+// Thread 1: Inserting node B after A
+new_node->next = A->next;  // Done
+// Thread 2: Deletes A here!
+A->next = new_node;        // Writing to deleted memory!
+```
+**Why It Fails**: Insertion is not atomic. Invariant violation: **Linkage Invariant** broken.
+
+**2. Check-Then-Act Bugs**:
+```cpp
+// Thread 1: Checking if node exists
+if (node != nullptr) {     // Check
+    // Thread 2: Deletes node here!
+    process(node->data);    // Use-after-free!
+}
+```
+**Why It Fails**: Check and access are not atomic. Invariant violation: **Linkage Invariant** broken.
+
+**3. Locking Only Part of the Structure**:
+```cpp
+// Locking only the node being modified, not the list
+void insertAfter(Node* prev, Node* new_node) {
+    std::lock_guard<std::mutex> lock(prev->mtx);
+    // But another thread may be traversing!
+    new_node->next = prev->next;
+    prev->next = new_node;
+}
+```
+**Why It Fails**: Traversing threads are unprotected. Invariant violation: **Linkage Invariant** broken.
+
+### 4.13.4 Locking Strategies
+
+**Coarse-Grained Lock** (see Section 3.5.8):
 ```cpp
 class ThreadSafeList {
     Node* head;
@@ -1322,7 +1361,6 @@ class ThreadSafeList {
 public:
     void insert(int value) {
         std::lock_guard<std::mutex> lock(mtx);
-        // Entire insertion is atomic
         Node* new_node = new Node(value);
         new_node->next = head;
         head = new_node;
@@ -1332,7 +1370,7 @@ public:
 - ✅ Simple, prevents all race conditions
 - ❌ Very low parallelism (only one operation at a time)
 
-**Fine-Grained (Hand-over-Hand Locking):**
+**Fine-Grained Lock (Hand-over-Hand)**:
 ```cpp
 void insertAfter(Node* prev, Node* new_node) {
     std::lock_guard<std::mutex> lock1(prev->mtx);
@@ -1344,49 +1382,37 @@ void insertAfter(Node* prev, Node* new_node) {
 }
 ```
 - ✅ Allows concurrent operations on different parts of list
-- ❌ Complex, risk of deadlock if lock order violated
+- ❌ Complex, risk of deadlock if lock order violated (see Section 3.5.7)
 - ❌ High overhead (multiple lock acquisitions)
 
-### Common Bugs
+**Read-Write Locks** (see Section 3.5.8):
+- Less useful for linked lists (traversal modifies pointers in some implementations)
+- Consider for read-heavy workloads with immutable traversal
 
-1. **Lost Nodes**: Insertion interrupted, node becomes unreachable
-   ```cpp
-   // Thread 1: Inserting node B after A
-   new_node->next = A->next;  // Done
-   // Thread 2: Deletes A here!
-   A->next = new_node;        // Writing to deleted memory!
-   ```
+### 4.13.5 Performance and Scalability Implications
 
-2. **Broken Chain**: Deletion leaves dangling pointers
-   ```cpp
-   // Thread 1: Deleting node B
-   A->next = B->next;  // Done
-   // Thread 2: Traversing, currently at B
-   current = current->next;  // May follow invalid pointer!
-   delete B;  // Thread 1 frees B
-   ```
+**Contention** (see Section 3.5.8):
+- Coarse-grained locking: Very high contention, throughput collapses
+- Fine-grained locking: Lower contention, but deadlock risk and complexity
 
-3. **Double Deletion**: Two threads delete same node
-   ```cpp
-   // Both threads think they should delete node B
-   // Both call delete B → undefined behavior
-   ```
+**False Sharing**: Less relevant for linked lists (nodes scattered in memory)
 
-### Lock-Free Considerations
+**Throughput Collapse Under Load**:
+- With many threads, coarse-grained locking becomes severe bottleneck
+- Fine-grained locking helps but adds significant complexity
 
-Lock-free linked lists are possible but extremely complex:
-- **Compare-And-Swap (CAS)** for atomic pointer updates
-- **ABA Problem**: Pointer value A→B→A, CAS thinks nothing changed
-- **Memory Reclamation**: When to safely free deleted nodes (hazard pointers, RCU)
+### 4.13.6 When Not to Do This Yourself
 
-**Recommendation**: Use lock-based approach or proven libraries. Lock-free linked lists are rarely worth the complexity.
+**Use Library Implementations**:
+- Thread-safe linked lists from well-tested libraries
+- Consider lock-free implementations from proven libraries (see Section 3.5.9 for lock-free concepts)
 
-### Practical Recommendations
+**Avoid Premature Optimization**:
+- Start with coarse-grained locking
+- Only consider fine-grained or lock-free if profiling shows it's necessary
+- Lock-free linked lists are extremely complex (see Section 3.5.9)
 
-- **For most cases**: Use coarse-grained locking (single mutex)
-- **For high contention**: Consider lock-free alternatives from libraries
-- **For read-heavy**: Use `std::shared_mutex` (multiple readers)
-- **For production**: Prefer thread-safe containers from standard libraries or well-tested libraries
+**For Production**: Prefer thread-safe containers from standard libraries or well-tested libraries. Lock-free linked lists require deep expertise (see Section 3.5.9 warning). See Section 3.5.10 for guidance on using libraries.
 
 ### 4.14 Summary
 

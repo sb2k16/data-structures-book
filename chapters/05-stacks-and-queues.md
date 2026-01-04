@@ -1495,23 +1495,28 @@ int largestRectangleArea(vector<int>& heights) {
 
 ## 5.12 Concurrency Considerations
 
-Stacks and queues are frequently used in concurrent systems (e.g., producer-consumer patterns). Understanding how concurrent access threatens their invariants is crucial.
+This section applies the concurrency fundamentals from [Chapter 3.5](03.5-concurrency-fundamentals.md) to stacks and queues. See Section 3.5.9 for the producer-consumer problem (bounded queue).
 
-### Invariants Threatened by Concurrent Access
+### 5.12.1 Shared-State Invariants
 
-**Stack Invariants:**
+**Stack Invariants** (see Section 3.5.3):
 1. **LIFO Invariant**: "Last element pushed is first element popped"
 2. **Top Pointer Invariant**: "`top` points to most recently pushed element"
 3. **Size Invariant**: "`size` equals number of elements"
 
-**Queue Invariants:**
+**Queue Invariants**:
 1. **FIFO Invariant**: "First element enqueued is first element dequeued"
 2. **Front/Rear Invariant**: "`front` and `rear` pointers correctly track queue boundaries"
 3. **Size Invariant**: "`size` equals number of elements"
 
-### What Operations Need Atomicity
+**What Must Not Be Observed Half-Updated**:
+- Top pointer updates during push/pop
+- Front/rear pointer updates during enqueue/dequeue
+- Size changes while operations are in progress
 
-**Stack Push (Non-Atomic):**
+### 5.12.2 Operations That Must Be Atomic
+
+**Stack Push** (see Section 3.5.4):
 ```cpp
 void push(int value) {
     Node* new_node = new Node(value);
@@ -1521,11 +1526,9 @@ void push(int value) {
 }
 ```
 
-**Problem**: Between steps, another thread can:
-- Pop and get wrong element (if it reads `top` between Step 1 and 2)
-- See inconsistent size (if it reads `size` between operations)
+**Tie to Invariants**: Between steps, the **Top Pointer Invariant** and **Size Invariant** are violated.
 
-**Queue Enqueue (Non-Atomic):**
+**Queue Enqueue**:
 ```cpp
 void enqueue(int value) {
     Node* new_node = new Node(value);
@@ -1535,18 +1538,49 @@ void enqueue(int value) {
 }
 ```
 
-**Problem**: Similar race conditions as stack, plus:
-- **Empty Queue Race**: Check `isEmpty()` and dequeue not atomic
-  ```cpp
-  if (!isEmpty()) {        // Check
-      // Another thread dequeues here!
-      return dequeue();    // May dequeue from empty queue
-  }
-  ```
+**Tie to Invariants**: Similar to stack, plus **Empty Queue Race** (check-then-act bug).
 
-### Coarse vs Fine-Grained Locking
+**Operations Requiring Atomicity**:
+- **Push/Enqueue**: Entire operation (pointer updates and size change)
+- **Pop/Dequeue**: Entire operation (pointer updates, size change, element removal)
+- **Empty Check + Pop**: Must be atomic (see Section 3.5.4 for check-then-act)
 
-**Coarse-Grained (Single Lock):**
+### 5.12.3 Naïve Approaches and Why They Fail
+
+**1. Partial Updates**:
+```cpp
+// Thread 1: Pushing
+new_node->next = top;  // Done
+// Thread 2: Pops here, gets old top
+top = new_node;        // New node never becomes top
+```
+**Why It Fails**: Push is not atomic. Invariant violation: **Top Pointer Invariant** broken.
+
+**2. Check-Then-Act Bugs**:
+```cpp
+if (!isEmpty()) {     // Check
+    return pop();      // May pop from empty structure
+}
+```
+**Why It Fails**: Check and pop are not atomic. Invariant violation: **Size Invariant** broken.
+
+**3. Locking Only Part of the Structure**:
+```cpp
+// Locking only during push, not during pop
+void push(int value) {
+    std::lock_guard<std::mutex> lock(mtx);
+    // push operation
+}
+// But pop is unprotected!
+int pop() {
+    return top->data;  // Race condition!
+}
+```
+**Why It Fails**: Operations are not mutually exclusive. Invariant violation: **LIFO Invariant** broken.
+
+### 5.12.4 Locking Strategies
+
+**Coarse-Grained Lock** (see Section 3.5.8):
 ```cpp
 class ThreadSafeStack {
     std::stack<int> data;
@@ -1562,59 +1596,45 @@ public:
 - ✅ Simple, correct
 - ❌ Low parallelism (only one operation at a time)
 
-**Fine-Grained (Separate Locks for Front/Rear):**
+**Fine-Grained Lock**:
 - Not applicable for stacks (single access point)
-- Possible for queues but complex and error-prone
+- Possible for queues (separate locks for front/rear) but complex and error-prone
 - **Recommendation**: Coarse-grained is sufficient for most cases
 
-### Common Bugs
+**Read-Write Locks**: Not applicable (stacks/queues are write-heavy)
 
-1. **Lost Elements**: Push interrupted, element never added
-   ```cpp
-   // Thread 1: Pushing
-   new_node->next = top;  // Done
-   // Thread 2: Pops here, gets old top
-   top = new_node;        // New node never becomes top
-   ```
+**Lock-Free** (see Section 3.5.9):
+- Lock-free stacks are relatively straightforward using CAS
+- Lock-free queues are much more complex (Michael & Scott algorithm)
+- See Section 3.5.9 for lock-free concepts and warnings
 
-2. **Duplicate Pops**: Two threads pop same element
-   ```cpp
-   // Both threads read same top
-   value = top->data;
-   top = top->next;  // Both update top, one element popped twice
-   ```
+### 5.12.5 Performance and Scalability Implications
 
-3. **Empty Queue/Stack Access**: Check-then-act race condition
-   ```cpp
-   if (!isEmpty()) {     // Check
-       return pop();      // May pop from empty structure
-   }
-   ```
+**Contention** (see Section 3.5.8):
+- Coarse-grained locking: High contention, throughput collapses
+- Lock-free: Lower contention, but complexity increases significantly
 
-### Lock-Free Approaches
+**Throughput Collapse Under Load**:
+- With many threads, coarse-grained locking becomes bottleneck
+- Lock-free helps but requires careful implementation
 
-**Lock-free stacks** are relatively straightforward using Compare-And-Swap:
-```cpp
-void lockFreePush(Node* new_node) {
-    Node* old_top;
-    do {
-        old_top = top.load();
-        new_node->next = old_top;
-    } while (!top.compare_exchange_weak(old_top, new_node));
-}
-```
+**Producer-Consumer Pattern** (see Section 3.5.9):
+- Use `std::condition_variable` for bounded queues
+- Allows efficient blocking when queue is full/empty
 
-**Lock-free queues** are much more complex (Michael & Scott algorithm):
-- Requires two CAS operations (head and tail)
-- ABA problem handling
-- Memory reclamation challenges
+### 5.12.6 When Not to Do This Yourself
 
-### Practical Recommendations
+**Use Library Implementations**:
+- `std::queue`/`std::stack` with external synchronization
+- Thread-safe containers from well-tested libraries
+- Lock-free implementations from proven libraries (see Section 3.5.9)
 
-- **For stacks**: Lock-free is feasible and often faster
-- **For queues**: Prefer lock-based unless performance is critical
-- **For bounded queues**: Use `std::condition_variable` for producer-consumer
-- **For production**: Use `std::queue`/`std::stack` with external synchronization or thread-safe containers
+**Avoid Premature Optimization**:
+- Start with coarse-grained locking
+- Only consider lock-free if profiling shows it's necessary
+- Lock-free queues are complex (see Section 3.5.9 warning)
+
+**For Production**: Prefer `std::queue`/`std::stack` with external synchronization or thread-safe containers. See Section 3.5.10 for guidance on using libraries.
 
 ### 5.13 Summary
 

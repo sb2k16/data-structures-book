@@ -914,41 +914,73 @@ void demonstrateMemoryLayout() {
 
 ## 3.14 Concurrency Considerations
 
-When arrays are accessed by multiple threads, several invariants are threatened. Understanding these threats helps design thread-safe array operations.
+This section applies the concurrency fundamentals from [Chapter 3.5](03.5-concurrency-fundamentals.md) to arrays. See Section 3.5.3 for invariant-based reasoning and Section 3.5.5 for atomicity concepts.
 
-### Invariants Threatened by Concurrent Access
+### 3.14.1 Shared-State Invariants
 
-**Core Array Invariants:**
+**Core Array Invariants** (see Section 3.5.3):
 1. **Bounds Invariant**: All indices accessed are within `[0, size)`
 2. **Value Invariant**: Elements at each index have valid values
 3. **Size Invariant**: `size` accurately reflects the number of elements
 
-### What Operations Need Atomicity
+**What Must Not Be Observed Half-Updated**:
+- Size changes while elements are being accessed
+- Element writes that are partially complete
+- Reallocation during iteration (for dynamic arrays)
 
-**Read-Modify-Write Operations:**
+### 3.14.2 Operations That Must Be Atomic
+
+**Read-Modify-Write Operations** (see Section 3.5.4):
 ```cpp
 // Non-atomic: Three separate operations
 array[index] = array[index] + 1;  // Read, compute, write
 size++;                            // Read, compute, write
 ```
 
-**Problem**: Another thread can interleave between read and write, causing lost updates.
+**Tie to Invariants**: These operations threaten the **Value Invariant** and **Size Invariant** if not atomic.
 
-**Solution**: Use atomic operations or locks:
+**Operations Requiring Atomicity**:
+- **Element modification**: `array[i] = array[i] + 1`
+- **Size updates**: `size++`, `size--`
+- **Bounds-checked access**: Check `index < size` and access must be atomic
+- **Reallocation** (for dynamic arrays): Entire reallocation must be atomic
+
+### 3.14.3 Naïve Approaches and Why They Fail
+
+**1. Partial Updates**:
 ```cpp
-// Atomic increment
-std::atomic<int> atomic_array[100];
-atomic_array[index]++;  // Atomic
-
-// Or use mutex for critical sections
-std::mutex mtx;
-std::lock_guard<std::mutex> lock(mtx);
-array[index]++;
+// Thread 1: array[0] = array[0] + 1
+// Thread 2: array[0] = array[0] + 1
+// Both read same value, both write, one update lost
 ```
+**Why It Fails**: Read-modify-write is not atomic. Invariant violation: **Value Invariant** broken.
 
-### Coarse vs Fine-Grained Locking
+**2. Check-Then-Act Bugs**:
+```cpp
+if (index < size) {        // Check
+    // Another thread may shrink array here!
+    value = array[index];   // May be out of bounds
+}
+```
+**Why It Fails**: Check and access are not atomic. Invariant violation: **Bounds Invariant** broken.
 
-**Coarse-Grained (Single Lock):**
+**3. Locking Only Part of the Structure**:
+```cpp
+// Locking only during write, not during read
+void write(int index, int value) {
+    std::lock_guard<std::mutex> lock(mtx);
+    array[index] = value;
+}
+// But reads are unprotected!
+int read(int index) {
+    return array[index];  // Race condition!
+}
+```
+**Why It Fails**: Readers can see partial writes. Invariant violation: **Value Invariant** broken.
+
+### 3.14.4 Locking Strategies
+
+**Coarse-Grained Lock** (see Section 3.5.8):
 ```cpp
 class ThreadSafeArray {
     std::vector<int> data;
@@ -959,12 +991,17 @@ public:
         std::lock_guard<std::mutex> lock(mtx);
         data[index] = value;
     }
+    
+    int get(int index) {
+        std::lock_guard<std::mutex> lock(mtx);
+        return data[index];
+    }
 };
 ```
 - ✅ Simple, prevents all race conditions
 - ❌ Low parallelism (only one thread can access at a time)
 
-**Fine-Grained (Per-Element Locks):**
+**Fine-Grained Lock (Per-Element)**:
 ```cpp
 class FineGrainedArray {
     std::vector<int> data;
@@ -981,38 +1018,50 @@ public:
 - ❌ More complex, higher memory overhead
 - ❌ Doesn't help with operations spanning multiple elements
 
-### Common Bugs
+**Read-Write Locks** (see Section 3.5.8):
+```cpp
+std::shared_mutex mtx;  // Allows multiple readers
 
-1. **Lost Updates**: Two threads increment same element
-   ```cpp
-   // Thread 1: array[0] = array[0] + 1
-   // Thread 2: array[0] = array[0] + 1
-   // Both read same value, both write, one update lost
-   ```
+int get(int index) {
+    std::shared_lock<std::shared_mutex> lock(mtx);  // Shared lock
+    return data[index];
+}
 
-2. **Bounds Violations**: Size check and access not atomic
-   ```cpp
-   if (index < size) {        // Check
-       // Another thread may shrink array here!
-       value = array[index];   // May be out of bounds
-   }
-   ```
+void set(int index, int value) {
+    std::unique_lock<std::shared_mutex> lock(mtx);  // Exclusive lock
+    data[index] = value;
+}
+```
+- ✅ Good for read-heavy workloads
+- ⚠️ Writers still block all readers
 
-3. **Iterator Invalidation**: Iterating while another thread modifies
-   ```cpp
-   // Thread 1: Iterating
-   for (auto it = array.begin(); it != array.end(); ++it) {
-       // Thread 2: array.push_back() may reallocate!
-       process(*it);  // Invalid iterator!
-   }
-   ```
+### 3.14.5 Performance and Scalability Implications
 
-### Practical Recommendations
+**Contention** (see Section 3.5.8):
+- Coarse-grained locking: High contention under load, throughput collapses
+- Fine-grained locking: Lower contention, but overhead increases
 
-- **For read-heavy workloads**: Use `std::shared_mutex` (multiple readers, single writer)
-- **For simple counters**: Use `std::atomic<int>`
-- **For complex operations**: Use `std::mutex` with `std::lock_guard`
-- **For production**: Prefer `std::vector` with external synchronization or thread-safe containers from libraries
+**False Sharing** (light mention):
+- Elements in same cache line may cause unnecessary cache invalidation
+- Consider padding or alignment for high-performance scenarios
+
+**Throughput Collapse Under Load**:
+- With many threads, coarse-grained locking becomes a bottleneck
+- Fine-grained locking helps but adds complexity
+
+### 3.14.6 When Not to Do This Yourself
+
+**Use Library Implementations**:
+- `std::vector` with external synchronization (mutex)
+- Thread-safe containers from well-tested libraries
+- Atomic operations (`std::atomic`) for simple counters
+
+**Avoid Premature Optimization**:
+- Start with coarse-grained locking
+- Only optimize to fine-grained if profiling shows it's necessary
+- Prefer simplicity over premature optimization
+
+**For Production**: Prefer `std::vector` with external synchronization or thread-safe containers from proven libraries. See Section 3.5.10 for guidance on using libraries.
 
 ## 3.15 Summary
 
