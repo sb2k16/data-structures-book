@@ -4,6 +4,31 @@
 
 Problem-solving in computer science is both an art and a science. While technical knowledge is essential, the ability to approach problems systematically and creatively is equally important. This chapter provides a comprehensive framework for tackling algorithmic problems, from initial analysis to implementation and optimization.
 
+```mermaid
+flowchart TD
+    Start([Problem Statement]) --> Understand["1. Understand<br/>the Problem"]
+    Understand --> Pattern["2. Identify<br/>Patterns"]
+    Pattern --> Design["3. Design<br/>Algorithm"]
+    Design --> Analyze["4. Analyze<br/>Complexity"]
+    Analyze --> Implement["5. Implement<br/>Solution"]
+    Implement --> Test["6. Test &<br/>Debug"]
+    Test --> Optimize["7. Optimize<br/>if Needed"]
+    Optimize --> Verify{Correct<br/>&<br/>Efficient?}
+    Verify -->|No| Pattern
+    Verify -->|Yes| Complete([Solution Complete])
+    
+    style Start fill:#90EE90,stroke:#333,stroke-width:3px
+    style Understand fill:#E6F3FF,stroke:#333,stroke-width:2px
+    style Pattern fill:#E6F3FF,stroke:#333,stroke-width:2px
+    style Design fill:#E6F3FF,stroke:#333,stroke-width:2px
+    style Analyze fill:#E6F3FF,stroke:#333,stroke-width:2px
+    style Implement fill:#E6F3FF,stroke:#333,stroke-width:2px
+    style Test fill:#E6F3FF,stroke:#333,stroke-width:2px
+    style Optimize fill:#E6F3FF,stroke:#333,stroke-width:2px
+    style Verify fill:#FFE5B4,stroke:#333,stroke-width:2px
+    style Complete fill:#90EE90,stroke:#333,stroke-width:3px
+```
+
 ### The Problem-Solving Process
 
 1. **Understand the Problem**
@@ -14,9 +39,43 @@ Problem-solving in computer science is both an art and a science. While technica
 6. **Test and Debug**
 7. **Optimize if Necessary**
 
-## 15.2 Understanding the Problem
+## 15.2 Comprehensive Problem-Solving Framework
 
-### Key Questions to Ask
+This framework provides a systematic approach to solving any algorithmic problem.
+
+### Step-by-Step Framework
+
+```mermaid
+flowchart TD
+    Step1["Step 1: Understand<br/>- Read problem carefully<br/>- Identify input/output<br/>- Note constraints<br/>- List edge cases"]
+    Step2["Step 2: Identify Patterns<br/>- Match to known patterns<br/>- Consider data structures<br/>- Think about similar problems"]
+    Step3["Step 3: Consider Data Structures<br/>- Arrays for indexing<br/>- Hash maps for lookups<br/>- Trees for hierarchy<br/>- Graphs for relationships"]
+    Step4["Step 4: Analyze Complexity<br/>- Estimate time complexity<br/>- Estimate space complexity<br/>- Check if meets requirements"]
+    Step5["Step 5: Implement<br/>- Start with brute force<br/>- Optimize incrementally<br/>- Write clean code<br/>- Add comments"]
+    Step6["Step 6: Test Edge Cases<br/>- Empty input<br/>- Single element<br/>- Large input<br/>- Boundary values"]
+    
+    Step1 --> Step2
+    Step2 --> Step3
+    Step3 --> Step4
+    Step4 --> Step5
+    Step5 --> Step6
+    Step6 --> Verify{All Tests<br/>Pass?}
+    Verify -->|No| Step2
+    Verify -->|Yes| Done([Solution Complete])
+    
+    style Step1 fill:#E6F3FF,stroke:#333,stroke-width:2px
+    style Step2 fill:#E6F3FF,stroke:#333,stroke-width:2px
+    style Step3 fill:#E6F3FF,stroke:#333,stroke-width:2px
+    style Step4 fill:#E6F3FF,stroke:#333,stroke-width:2px
+    style Step5 fill:#E6F3FF,stroke:#333,stroke-width:2px
+    style Step6 fill:#E6F3FF,stroke:#333,stroke-width:2px
+    style Verify fill:#FFE5B4,stroke:#333,stroke-width:2px
+    style Done fill:#90EE90,stroke:#333,stroke-width:3px
+```
+
+### Step 1: Understand the Problem
+
+**Key Questions to Ask**:
 
 Before writing any code, ensure you fully understand:
 
@@ -25,6 +84,80 @@ Before writing any code, ensure you fully understand:
 3. **Constraints**: What are the size limits and value ranges?
 4. **Edge Cases**: What are the special cases to consider?
 5. **Examples**: Do the provided examples make sense?
+
+**Clarifying Questions Checklist**:
+- [ ] What is the input format? (Array, string, tree, graph?)
+- [ ] What is the expected output format?
+- [ ] What are the size constraints? (n ≤ 10³, 10⁶, etc.)
+- [ ] Are there any value constraints? (positive, negative, zero?)
+- [ ] What edge cases should I consider?
+  - [ ] Empty input
+  - [ ] Single element
+  - [ ] All same elements
+  - [ ] Already sorted/reversed
+  - [ ] Duplicates
+  - [ ] Negative numbers
+  - [ ] Zero values
+- [ ] Are there any special requirements? (in-place, no extra space, etc.)
+
+### Step 2: Identify Patterns
+
+**Pattern Recognition Checklist**:
+- [ ] Is the array sorted? → Two pointers, binary search
+- [ ] Need to find subarray/substring? → Sliding window
+- [ ] Need fast lookups? → Hash map/set
+- [ ] Matching/balancing problems? → Stack
+- [ ] Tree/graph structure? → DFS/BFS
+- [ ] Optimization with overlapping subproblems? → DP
+- [ ] Local optimal → global optimal? → Greedy
+- [ ] Need to explore all possibilities? → Backtracking
+
+### Step 3: Consider Data Structures
+
+**Data Structure Selection Guide**:
+
+| Need | Data Structure | Why |
+|------|----------------|-----|
+| Fast random access | Array/Vector | O(1) indexing |
+| Fast lookups | Hash Map/Set | O(1) average |
+| Maintain order | Ordered Map/Set | O(log n) operations |
+| LIFO operations | Stack | Natural for matching |
+| FIFO operations | Queue | Natural for BFS |
+| Priority operations | Priority Queue | Heap-based |
+| Hierarchical data | Tree | Natural structure |
+| Relationships | Graph | Adjacency list/matrix |
+
+### Step 4: Analyze Complexity
+
+**Complexity Analysis Checklist**:
+- [ ] What is the time complexity?
+- [ ] What is the space complexity?
+- [ ] Does it meet the problem constraints?
+- [ ] Can I optimize further?
+- [ ] Are there trade-offs to consider?
+
+### Step 5: Implement
+
+**Implementation Best Practices**:
+1. **Start with Brute Force**: Get a working solution first
+2. **Optimize Incrementally**: Improve step by step
+3. **Write Clean Code**: Meaningful names, clear logic
+4. **Add Comments**: Explain complex logic
+5. **Handle Edge Cases**: Check for empty/null inputs
+
+### Step 6: Test Edge Cases
+
+**Edge Case Checklist**:
+- [ ] Empty input (empty array, null pointer)
+- [ ] Single element
+- [ ] Two elements
+- [ ] All same elements
+- [ ] Already sorted (ascending/descending)
+- [ ] Large input (at constraint limits)
+- [ ] Boundary values (min/max integers)
+- [ ] Negative numbers
+- [ ] Zero values
+- [ ] Duplicates
 
 ### Example: Two Sum Problem
 
@@ -42,7 +175,248 @@ Before writing any code, ensure you fully understand:
 // - Assume exactly one solution exists
 ```
 
-## 15.3 Common Problem Patterns
+## 15.3 Comprehensive Pattern Recognition Guide
+
+Recognizing patterns is the key to efficient problem-solving. This guide helps you identify which pattern to use based on problem characteristics.
+
+### Pattern Recognition Decision Tree
+
+```mermaid
+graph TD
+    Start{Problem Type?} --> Array{Array/String?}
+    Start --> Tree{Tree?}
+    Start --> Graph{Graph?}
+    Start --> Optimization{Optimization?}
+    
+    Array --> Sorted{Sorted?}
+    Sorted -->|Yes| TwoPtr["Two Pointers<br/>- Palindromes<br/>- Pair searching<br/>- Container problems"]
+    Sorted -->|No| Subarray{Subarray/Substring?}
+    Subarray -->|Yes| Sliding["Sliding Window<br/>- Fixed size: O(n)<br/>- Variable size: O(n)"]
+    Subarray -->|No| Lookup{Need Lookup?}
+    Lookup -->|Yes| Hash["Hash Map/Set<br/>- Frequency counting<br/>- Complement search<br/>- Grouping"]
+    Lookup -->|No| Stack{Parentheses/Matching?}
+    Stack -->|Yes| StackPattern["Stack<br/>- Valid parentheses<br/>- Monotonic stack<br/>- Next greater element"]
+    
+    Tree --> Traversal{Traversal Type?}
+    Traversal -->|Level-order| BFS["BFS<br/>- Level-order<br/>- Shortest path in tree"]
+    Traversal -->|Depth-first| DFS["DFS<br/>- Pre/In/Post order<br/>- Path problems"]
+    Traversal -->|BST Property| BST["BST Properties<br/>- Inorder = sorted<br/>- Range queries"]
+    
+    Graph --> Shortest{Shortest Path?}
+    Shortest -->|Unweighted| BFSGraph["BFS<br/>- Level-order traversal<br/>- O(V + E)"]
+    Shortest -->|Weighted| Dijkstra["Dijkstra's<br/>- Priority queue<br/>- O(E log V)"]
+    Graph --> Cycle{Cycle Detection?}
+    Cycle -->|Yes| DFSGraph["DFS<br/>- Back edge detection<br/>- Topological sort"]
+    
+    Optimization --> Overlap{Overlapping<br/>Subproblems?}
+    Overlap -->|Yes| DP["Dynamic Programming<br/>- Memoization/Tabulation<br/>- State machine DP"]
+    Overlap -->|No| Greedy{Local Optimal<br/>→ Global?}
+    Greedy -->|Yes| GreedyPattern["Greedy<br/>- Activity selection<br/>- Interval scheduling"]
+    Greedy -->|No| Backtrack["Backtracking<br/>- N-Queens<br/>- Permutations<br/>- Constraint satisfaction"]
+    
+    style TwoPtr fill:#90EE90,stroke:#333,stroke-width:2px
+    style Sliding fill:#90EE90,stroke:#333,stroke-width:2px
+    style Hash fill:#90EE90,stroke:#333,stroke-width:2px
+    style StackPattern fill:#90EE90,stroke:#333,stroke-width:2px
+    style BFS fill:#87CEEB,stroke:#333,stroke-width:2px
+    style DFS fill:#87CEEB,stroke:#333,stroke-width:2px
+    style DP fill:#FFE5B4,stroke:#333,stroke-width:2px
+    style GreedyPattern fill:#FFE5B4,stroke:#333,stroke-width:2px
+    style Backtrack fill:#FFE5B4,stroke:#333,stroke-width:2px
+```
+
+### Pattern 1: Two Pointers
+
+**When to Use**:
+- Sorted arrays → Two pointers from ends
+- Palindromes → Compare characters from both ends
+- Pair searching → Find pairs that meet criteria
+- Container problems → Maximize area/volume
+
+**Key Characteristics**:
+- Array is sorted (or can be sorted)
+- Looking for pairs or triplets
+- Need to compare elements from different positions
+
+**Examples**:
+- Valid Palindrome
+- Two Sum (sorted array)
+- Container With Most Water
+- 3Sum, 4Sum
+
+### Pattern 2: Sliding Window
+
+**When to Use**:
+- Subarray/substring problems
+- Fixed window size: Maximum sum of subarray of size k
+- Variable window size: Longest substring without repeating characters
+- Need to maintain a window of elements
+
+**Key Characteristics**:
+- Working with contiguous subarrays/substrings
+- Window size is fixed or needs to be optimized
+- Need to efficiently update window as it slides
+
+**Examples**:
+- Maximum Sum Subarray of Size K
+- Longest Substring Without Repeating Characters
+- Minimum Window Substring
+- Longest Repeating Character Replacement
+
+### Pattern 3: Fast/Slow Pointers
+
+**When to Use**:
+- Cycle detection in linked lists
+- Finding middle of linked list
+- Finding kth element from end
+- Palindrome in linked list
+
+**Key Characteristics**:
+- Linked list problems
+- Need to traverse at different speeds
+- One pointer moves faster than the other
+
+**Examples**:
+- Linked List Cycle
+- Middle of Linked List
+- Remove Nth Node From End
+- Palindrome Linked List
+
+### Pattern 4: Hash Map/Set
+
+**When to Use**:
+- Frequency counting
+- Fast lookups (O(1))
+- Complement searching (Two Sum pattern)
+- Grouping/partitioning problems
+
+**Key Characteristics**:
+- Need O(1) lookups
+- Counting occurrences
+- Finding complements or pairs
+- Grouping by some property
+
+**Examples**:
+- Two Sum
+- Group Anagrams
+- Longest Consecutive Sequence
+- Subarray Sum Equals K
+
+### Pattern 5: Stack
+
+**When to Use**:
+- Matching brackets/parentheses
+- Monotonic stack problems
+- Next greater/smaller element
+- Expression evaluation
+
+**Key Characteristics**:
+- LIFO (Last In First Out) needed
+- Need to match or pair elements
+- Monotonic property (increasing/decreasing)
+
+**Examples**:
+- Valid Parentheses
+- Next Greater Element
+- Largest Rectangle in Histogram
+- Daily Temperatures
+
+### Pattern 6: DFS (Depth-First Search)
+
+**When to Use**:
+- Tree/graph traversal
+- Backtracking problems
+- Path finding
+- Connected components
+
+**Key Characteristics**:
+- Explore as deep as possible before backtracking
+- Recursive or iterative with stack
+- Natural for tree problems
+
+**Examples**:
+- Tree Traversal (Pre/In/Post order)
+- Path Sum
+- Number of Islands
+- Clone Graph
+
+### Pattern 7: BFS (Breadth-First Search)
+
+**When to Use**:
+- Shortest path in unweighted graphs
+- Level-order traversal
+- Minimum steps problems
+- Level-by-level processing
+
+**Key Characteristics**:
+- Explore level by level
+- Use queue for processing
+- Guarantees shortest path (unweighted)
+
+**Examples**:
+- Binary Tree Level Order Traversal
+- Shortest Path in Binary Matrix
+- Word Ladder
+- Rotting Oranges
+
+### Pattern 8: Binary Search
+
+**When to Use**:
+- Sorted data
+- Search space reduction
+- Optimization problems (find minimum/maximum)
+- Finding boundaries
+
+**Key Characteristics**:
+- Data is sorted (or can be sorted)
+- Need to find target or optimize value
+- Can eliminate half of search space each step
+
+**Examples**:
+- Binary Search
+- Search in Rotated Sorted Array
+- Find Peak Element
+- Search for a Range
+
+### Pattern 9: Dynamic Programming
+
+**When to Use**:
+- Overlapping subproblems
+- Optimal substructure
+- Optimization problems
+- Counting problems
+
+**Key Characteristics**:
+- Problem can be broken into subproblems
+- Subproblems overlap (same subproblem appears multiple times)
+- Need optimal solution
+
+**Examples**:
+- Fibonacci
+- Climbing Stairs
+- Longest Common Subsequence
+- Coin Change
+
+### Pattern 10: Greedy
+
+**When to Use**:
+- Local optimal choice leads to global optimum
+- Interval scheduling
+- Activity selection
+- Minimum cost problems
+
+**Key Characteristics**:
+- Make locally optimal choice at each step
+- Greedy choice property holds
+- Optimal substructure
+
+**Examples**:
+- Activity Selection
+- Minimum Number of Coins
+- Interval Scheduling
+- Fractional Knapsack
+
+## 15.4 Common Problem Patterns (Detailed Examples)
 
 ### Pattern 1: Two Pointers
 
@@ -697,31 +1071,325 @@ void runTests() {
 }
 ```
 
-## 15.7 Interview Preparation Tips
+## 15.7 Comprehensive Interview Strategies
+
+### Interview Communication Framework
+
+**The STAR Method for Algorithm Problems**:
+- **Situation**: Understand the problem context
+- **Task**: Identify what needs to be solved
+- **Action**: Design and implement the solution
+- **Result**: Verify correctness and analyze complexity
 
 ### Technical Interview Strategy
 
-1. **Clarify Requirements**: Ask questions about constraints and edge cases
-2. **Think Out Loud**: Explain your thought process
-3. **Start Simple**: Begin with brute force, then optimize
-4. **Write Clean Code**: Use meaningful variable names and comments
-5. **Test Your Solution**: Walk through examples step by step
+#### 1. Clarifying Questions (2-3 minutes)
 
-### Common Interview Patterns
+**Always Ask**:
+- "Can you clarify the input format?"
+- "What should I return if the input is empty?"
+- "Are there any constraints I should know about?"
+- "Can you walk me through the example?"
+- "Should I handle edge cases like duplicates/negatives?"
 
-1. **Array/String Manipulation**: Two pointers, sliding window, hash maps
-2. **Tree Traversal**: Recursion, BFS, DFS
-3. **Dynamic Programming**: State definition, recurrence relation
-4. **Graph Algorithms**: BFS, DFS, topological sort
-5. **System Design**: Scalability, trade-offs, data structures
+**Example Dialogue**:
+```
+Interviewer: "Find two numbers that add up to target."
+You: "Just to clarify:
+      - Should I return indices or values?
+      - Can I use the same element twice?
+      - Is the array sorted?
+      - What if no solution exists?"
+```
 
-### Time Management
+#### 2. Think Out Loud (Throughout)
 
-- **5 minutes**: Understand the problem
-- **10 minutes**: Design the algorithm
-- **20 minutes**: Implement the solution
-- **5 minutes**: Test and debug
-- **5 minutes**: Optimize if time permits
+**What to Say**:
+- "I'm thinking about using a hash map because..."
+- "The brute force would be O(n²), but I can optimize to O(n) by..."
+- "Let me trace through this example to verify..."
+- "I need to handle the edge case where..."
+
+**Why It Matters**:
+- Shows your thought process
+- Helps interviewer understand your approach
+- Allows course correction if needed
+- Demonstrates problem-solving skills
+
+#### 3. Start Simple, Then Optimize
+
+**Progression**:
+1. **Brute Force**: "The naive approach would be..."
+2. **Identify Bottleneck**: "The issue is..."
+3. **Optimize**: "I can improve this by..."
+4. **Verify**: "This reduces complexity from O(n²) to O(n)"
+
+**Example**:
+```cpp
+// Step 1: Brute Force
+// "I could check every pair - that's O(n²)"
+
+// Step 2: Optimize
+// "I can use a hash map to store seen numbers - that's O(n)"
+```
+
+#### 4. Write Clean Code
+
+**Code Quality Checklist**:
+- [ ] Meaningful variable names (`left`, `right`, not `i`, `j`)
+- [ ] Clear function names (`findTwoSum`, not `solve`)
+- [ ] Comments for complex logic
+- [ ] Consistent formatting
+- [ ] Handle edge cases explicitly
+
+#### 5. Test Your Solution
+
+**Testing Protocol**:
+1. **Walk through example**: Trace with provided example
+2. **Test edge cases**: Empty, single element, etc.
+3. **Verify correctness**: Check logic step by step
+4. **Check complexity**: Confirm time/space complexity
+
+### Interview Time Management
+
+```mermaid
+gantt
+    title 45-Minute Interview Breakdown
+    dateFormat X
+    axisFormat %M min
+    
+    section Understanding
+    Clarify Problem    :0, 3
+    section Design
+    Design Algorithm   :3, 10
+    section Implementation
+    Write Code         :13, 20
+    section Testing
+    Test & Debug       :33, 5
+    section Optimization
+    Optimize           :38, 5
+    section Discussion
+    Discuss Solution   :43, 2
+```
+
+**Recommended Time Allocation**:
+- **0-3 minutes**: Understand and clarify the problem
+- **3-10 minutes**: Design the algorithm (think, discuss, draw)
+- **10-30 minutes**: Implement the solution
+- **30-35 minutes**: Test and debug
+- **35-40 minutes**: Optimize if time permits
+- **40-45 minutes**: Discuss solution, complexity, trade-offs
+
+### Common Interview Patterns by Company
+
+**Google/Facebook/Meta**:
+- Heavy on algorithms and data structures
+- System design for senior roles
+- Focus on optimization and scalability
+
+**Amazon**:
+- Object-oriented design
+- Behavioral questions (STAR method)
+- Focus on customer obsession
+
+**Microsoft**:
+- Problem-solving approach
+- Code quality and testing
+- Focus on edge cases
+
+**Apple**:
+- Deep technical knowledge
+- System-level understanding
+- Focus on user experience
+
+### Behavioral Questions Integration
+
+**How to Connect Technical to Behavioral**:
+
+**Example**: "Tell me about a time you optimized code"
+- **Situation**: "I had a function that was too slow"
+- **Task**: "Needed to reduce time complexity"
+- **Action**: "I identified the bottleneck, applied [algorithm/DS], reduced from O(n²) to O(n)"
+- **Result**: "Performance improved by X%, learned about [concept]"
+
+## 15.8 Common Pitfalls and How to Avoid Them
+
+### Pitfall 1: Off-by-One Errors
+
+**Common Mistakes**:
+```cpp
+// WRONG: Off by one
+for (int i = 0; i <= arr.size(); i++) {  // Should be <
+    // Access arr[i] - out of bounds!
+}
+
+// CORRECT
+for (int i = 0; i < arr.size(); i++) {
+    // Safe access
+}
+```
+
+**How to Avoid**:
+- Use `i < size` not `i <= size`
+- Be careful with `size - 1` vs `size`
+- Test with small arrays (size 1, 2)
+
+### Pitfall 2: Integer Overflow
+
+**Common Mistakes**:
+```cpp
+// WRONG: Overflow for large numbers
+int sum = 0;
+for (int x : largeArray) {
+    sum += x;  // May overflow!
+}
+
+// CORRECT: Use long long
+long long sum = 0;
+for (int x : largeArray) {
+    sum += x;
+}
+```
+
+**How to Avoid**:
+- Use `long long` for sums/products
+- Check constraints before choosing data type
+- Consider `unsigned` for non-negative values
+
+### Pitfall 3: Null/Empty Input
+
+**Common Mistakes**:
+```cpp
+// WRONG: Doesn't handle empty
+int maxElement(vector<int>& arr) {
+    int max = arr[0];  // Crashes if empty!
+    // ...
+}
+
+// CORRECT: Check first
+int maxElement(vector<int>& arr) {
+    if (arr.empty()) {
+        throw invalid_argument("Array is empty");
+    }
+    int max = arr[0];
+    // ...
+}
+```
+
+**How to Avoid**:
+- Always check for empty/null inputs
+- Handle edge cases explicitly
+- Return appropriate values (null, -1, empty result)
+
+### Pitfall 4: Modifying Input When Not Allowed
+
+**Common Mistakes**:
+```cpp
+// WRONG: Modifies input
+vector<int> process(const vector<int>& nums) {
+    sort(nums.begin(), nums.end());  // Error: const!
+    // ...
+}
+
+// CORRECT: Create copy
+vector<int> process(const vector<int>& nums) {
+    vector<int> sorted = nums;
+    sort(sorted.begin(), sorted.end());
+    // ...
+}
+```
+
+**How to Avoid**:
+- Check if input is const
+- Create copies when needed
+- Use const references when possible
+
+### Pitfall 5: Forgetting to Handle Duplicates
+
+**Common Mistakes**:
+```cpp
+// WRONG: May return duplicates
+vector<vector<int>> findPairs(vector<int>& nums, int target) {
+    // Doesn't skip duplicates
+    // ...
+}
+
+// CORRECT: Skip duplicates
+vector<vector<int>> findPairs(vector<int>& nums, int target) {
+    sort(nums.begin(), nums.end());
+    // Skip duplicates explicitly
+    // ...
+}
+```
+
+**How to Avoid**:
+- Always consider duplicate handling
+- Sort and skip when needed
+- Use sets when uniqueness matters
+
+### Pitfall 6: Incorrect Base Cases in Recursion
+
+**Common Mistakes**:
+```cpp
+// WRONG: Missing or incorrect base case
+int factorial(int n) {
+    return n * factorial(n - 1);  // Infinite recursion!
+}
+
+// CORRECT: Proper base case
+int factorial(int n) {
+    if (n <= 1) return 1;  // Base case
+    return n * factorial(n - 1);
+}
+```
+
+**How to Avoid**:
+- Always define base case first
+- Test with smallest inputs (0, 1)
+- Ensure progress toward base case
+
+### Pitfall 7: Not Backtracking Properly
+
+**Common Mistakes**:
+```cpp
+// WRONG: Doesn't undo choice
+void backtrack(vector<int>& path) {
+    if (complete(path)) {
+        result.push_back(path);
+        return;
+    }
+    path.push_back(choice);
+    backtrack(path);
+    // Missing: path.pop_back();
+}
+```
+
+**How to Avoid**:
+- Always undo changes after recursive call
+- Use the backtracking template
+- Test with small examples
+
+### Pitfall 8: Wrong Data Structure Choice
+
+**Common Mistakes**:
+```cpp
+// WRONG: Using vector for frequent lookups
+vector<int> data;
+if (find(data.begin(), data.end(), target) != data.end()) {  // O(n)
+    // ...
+}
+
+// CORRECT: Use set for O(log n) or unordered_set for O(1)
+unordered_set<int> data;
+if (data.find(target) != data.end()) {  // O(1)
+    // ...
+}
+```
+
+**How to Avoid**:
+- Analyze operation frequencies
+- Choose DS based on most common operations
+- Consider time vs space trade-offs
 
 ## 15.8 Competitive Programming Tips
 

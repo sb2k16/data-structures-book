@@ -5,6 +5,33 @@
 ### Data Structures
 A **data structure** is a way of organizing and storing data in a computer so that it can be accessed and modified efficiently. Think of data structures as containers that hold data in specific arrangements, each optimized for particular types of operations.
 
+```mermaid
+graph TD
+    DS["Data Structures"]
+    DS --> Linear["Linear Structures"]
+    DS --> NonLinear["Non-Linear Structures"]
+    
+    Linear --> Array["Array<br/>Contiguous memory<br/>Fast access"]
+    Linear --> LinkedList["Linked List<br/>Non-contiguous<br/>Easy insertion"]
+    Linear --> Stack["Stack<br/>LIFO<br/>Function calls"]
+    Linear --> Queue["Queue<br/>FIFO<br/>Task scheduling"]
+    
+    NonLinear --> Tree["Tree<br/>Hierarchical<br/>Search operations"]
+    NonLinear --> Graph["Graph<br/>Relationships<br/>Networks"]
+    NonLinear --> Hash["Hash Table<br/>Key-value pairs<br/>Fast lookup"]
+    
+    style DS fill:#FFE5B4,stroke:#333,stroke-width:3px
+    style Linear fill:#E6F3FF,stroke:#333,stroke-width:2px
+    style NonLinear fill:#CCE6FF,stroke:#333,stroke-width:2px
+    style Array fill:#90EE90,stroke:#333,stroke-width:2px
+    style LinkedList fill:#90EE90,stroke:#333,stroke-width:2px
+    style Stack fill:#90EE90,stroke:#333,stroke-width:2px
+    style Queue fill:#90EE90,stroke:#333,stroke-width:2px
+    style Tree fill:#87CEEB,stroke:#333,stroke-width:2px
+    style Graph fill:#87CEEB,stroke:#333,stroke-width:2px
+    style Hash fill:#87CEEB,stroke:#333,stroke-width:2px
+```
+
 For example:
 - An **array** stores elements in contiguous memory locations, allowing fast access by index
 - A **linked list** connects elements through pointers, enabling efficient insertion and deletion
@@ -13,11 +40,52 @@ For example:
 ### Algorithms
 An **algorithm** is a step-by-step procedure or set of rules for solving a computational problem. It's a well-defined sequence of instructions that transforms input into the desired output.
 
+```mermaid
+flowchart LR
+    Input["Input<br/>Problem Data"] --> Algorithm["Algorithm<br/>Step-by-Step Process"]
+    Algorithm --> Output["Output<br/>Solution"]
+    
+    Algorithm --> Step1["Step 1"]
+    Algorithm --> Step2["Step 2"]
+    Algorithm --> Step3["Step 3"]
+    Step1 --> Step2
+    Step2 --> Step3
+    Step3 --> Output
+    
+    style Input fill:#90EE90,stroke:#333,stroke-width:2px
+    style Algorithm fill:#FFE5B4,stroke:#333,stroke-width:3px
+    style Output fill:#87CEEB,stroke:#333,stroke-width:2px
+    style Step1 fill:#E6F3FF,stroke:#333,stroke-width:2px
+    style Step2 fill:#E6F3FF,stroke:#333,stroke-width:2px
+    style Step3 fill:#E6F3FF,stroke:#333,stroke-width:2px
+```
+
 Consider searching for a name in a phone book:
 - **Linear search**: Check each name from beginning to end
 - **Binary search**: Open to the middle, eliminate half, repeat
 
 Both are algorithms, but they have different efficiency characteristics.
+
+```mermaid
+graph LR
+    subgraph Linear["Linear Search"]
+        L1["Check 1"] --> L2["Check 2"]
+        L2 --> L3["Check 3"]
+        L3 --> L4["..."]
+        L4 --> L5["Check n"]
+    end
+    
+    subgraph Binary["Binary Search"]
+        B1["Check middle"] --> B2{"Found?"}
+        B2 -->|No| B3["Eliminate half"]
+        B3 --> B4["Check new middle"]
+        B4 --> B2
+        B2 -->|Yes| B5["Found!"]
+    end
+    
+    style Linear fill:#FFB6C1,stroke:#333,stroke-width:2px
+    style Binary fill:#90EE90,stroke:#333,stroke-width:2px
+```
 
 ## 1.2 Who This Book Is For
 
@@ -138,6 +206,27 @@ graph TD
 **Key Insight**: DSA is the foundation that enables all software layers above it. Understanding DSA helps you make better decisions at every level.
 
 ## 1.3 Problem-Solving Methodology
+
+```mermaid
+flowchart TD
+    Start([Start]) --> Understand["Step 1: Understand<br/>the Problem"]
+    Understand --> Design["Step 2: Design<br/>the Algorithm"]
+    Design --> Analyze["Step 3: Analyze<br/>Complexity"]
+    Analyze --> Implement["Step 4: Implement<br/>the Solution"]
+    Implement --> Test["Step 5: Test<br/>and Optimize"]
+    Test --> Correct{Correct<br/>&<br/>Efficient?}
+    Correct -->|No| Design
+    Correct -->|Yes| End([Solution Complete])
+    
+    style Start fill:#90EE90,stroke:#333,stroke-width:3px
+    style Understand fill:#E6F3FF,stroke:#333,stroke-width:2px
+    style Design fill:#E6F3FF,stroke:#333,stroke-width:2px
+    style Analyze fill:#E6F3FF,stroke:#333,stroke-width:2px
+    style Implement fill:#E6F3FF,stroke:#333,stroke-width:2px
+    style Test fill:#E6F3FF,stroke:#333,stroke-width:2px
+    style Correct fill:#FFE5B4,stroke:#333,stroke-width:2px
+    style End fill:#90EE90,stroke:#333,stroke-width:3px
+```
 
 ### Step 1: Understand the Problem
 Before writing any code, ensure you fully understand:

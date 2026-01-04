@@ -97,6 +97,24 @@ void printPairs(const vector<int>& arr) {
 // Time Complexity: O(n²)
 ```
 
+**Visualization of Nested Loop Execution**:
+
+```mermaid
+graph LR
+    subgraph Outer["Outer Loop: i = 0 to n-1"]
+        I0["i=0"] --> J0["j=1,2,3...n-1<br/>n-1 iterations"]
+        I1["i=1"] --> J1["j=2,3,4...n-1<br/>n-2 iterations"]
+        I2["i=2"] --> J2["j=3,4,5...n-1<br/>n-3 iterations"]
+        I3["i=..."] --> J3["..."]
+        I4["i=n-1"] --> J4["j=n<br/>0 iterations"]
+    end
+    
+    Total["Total: (n-1) + (n-2) + ... + 1<br/>= n(n-1)/2 = O(n²)"]
+    
+    style Outer fill:#E6F3FF,stroke:#333,stroke-width:2px
+    style Total fill:#FFE5B4,stroke:#333,stroke-width:3px
+```
+
 #### Example 3: Logarithmic Time
 ```cpp
 int binarySearch(const vector<int>& arr, int target) {
@@ -117,6 +135,28 @@ int binarySearch(const vector<int>& arr, int target) {
     return -1;
 }
 // Time Complexity: O(log n)
+```
+
+**Visualization of Binary Search**:
+
+```mermaid
+graph TD
+    Start["Array: [1,3,5,7,9,11,13,15]<br/>Target: 7"] --> Check1["Check middle: arr[3] = 7"]
+    Check1 --> Found["Found! Return index 3"]
+    
+    Start2["Array: [1,3,5,7,9,11,13,15]<br/>Target: 5"] --> Check2["Check middle: arr[3] = 7"]
+    Check2 --> Compare1{7 > 5?}
+    Compare1 -->|Yes| Left1["Search left half<br/>[1,3,5]"]
+    Left1 --> Check3["Check middle: arr[1] = 3"]
+    Check3 --> Compare2{3 < 5?}
+    Compare2 -->|Yes| Right1["Search right half<br/>[5]"]
+    Right1 --> Check4["Check: arr[2] = 5"]
+    Check4 --> Found2["Found! Return index 2"]
+    
+    style Start fill:#E6F3FF,stroke:#333,stroke-width:2px
+    style Check1 fill:#FFE5B4,stroke:#333,stroke-width:2px
+    style Found fill:#90EE90,stroke:#333,stroke-width:3px
+    style Found2 fill:#90EE90,stroke:#333,stroke-width:3px
 ```
 
 #### Example 4: Multiple Operations

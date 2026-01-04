@@ -228,6 +228,28 @@ Vectors maintain two key properties:
 - **Size**: Number of elements currently stored
 - **Capacity**: Number of elements that can be stored without reallocation
 
+```mermaid
+graph LR
+    subgraph Growth["Vector Growth Pattern"]
+        V1["Size: 0<br/>Capacity: 0"] -->|push_back| V2["Size: 1<br/>Capacity: 1"]
+        V2 -->|push_back| V3["Size: 2<br/>Capacity: 2"]
+        V3 -->|push_back| V4["Size: 3<br/>Capacity: 4<br/>(doubled!)"]
+        V4 -->|push_back| V5["Size: 4<br/>Capacity: 4"]
+        V5 -->|push_back| V6["Size: 5<br/>Capacity: 8<br/>(doubled!)"]
+        V6 -->|push_back| V7["Size: 6<br/>Capacity: 8"]
+        V7 -->|push_back| V8["Size: 7<br/>Capacity: 8"]
+        V8 -->|push_back| V9["Size: 8<br/>Capacity: 8"]
+        V9 -->|push_back| V10["Size: 9<br/>Capacity: 16<br/>(doubled!)"]
+    end
+    
+    style V1 fill:#E6F3FF,stroke:#333,stroke-width:2px
+    style V4 fill:#FFE5B4,stroke:#333,stroke-width:3px
+    style V6 fill:#FFE5B4,stroke:#333,stroke-width:3px
+    style V10 fill:#FFE5B4,stroke:#333,stroke-width:3px
+```
+
+**Key Insight**: Capacity doubles when size exceeds capacity, ensuring O(1) amortized insertion time.
+
 ```cpp
 #include <vector>
 #include <iostream>
