@@ -17,14 +17,22 @@ A **linked list** is a linear data structure where elements (nodes) are stored i
 
 | Feature | Array | Linked List |
 |---------|-------|-------------|
-| Access Time | O(1) | O(n) |
-| Insertion at Beginning | O(n) | O(1) |
-| Insertion at End | O(1) | O(n) |
-| Deletion at Beginning | O(n) | O(1) |
-| Deletion at End | O(1) | O(n) |
-| Memory Usage | Fixed | Dynamic |
-| Cache Performance | Better | Worse |
-| Memory Overhead | None | Pointer overhead |
+| **Access Time** | O(1) - Direct indexing | O(n) - Sequential traversal |
+| **Insertion at Beginning** | O(n) - Shift all elements | O(1) - Update head pointer |
+| **Insertion at End** | O(1) - If space available | O(n) - Without tail pointer<br/>O(1) - With tail pointer |
+| **Insertion at Middle** | O(n) - Shift elements | O(n) - Traverse to position<br/>O(1) - If node pointer known |
+| **Deletion at Beginning** | O(n) - Shift all elements | O(1) - Update head pointer |
+| **Deletion at End** | O(1) - Remove last element | O(n) - Without tail pointer<br/>O(1) - With tail pointer |
+| **Deletion at Middle** | O(n) - Shift elements | O(n) - Traverse to position<br/>O(1) - If node pointer known |
+| **Memory Usage** | Fixed size (static arrays)<br/>Dynamic size (vectors) | Dynamic - grows/shrinks as needed |
+| **Memory Layout** | Contiguous memory | Non-contiguous (scattered) |
+| **Cache Performance** | Excellent - Sequential access | Poor - Random memory access |
+| **Memory Overhead** | None (arrays)<br/>Small (vectors) | Pointer overhead per node<br/>8 bytes (64-bit) per pointer |
+| **Memory Efficiency** | High - No pointer overhead | Lower - Extra memory for pointers |
+| **Random Access** | Yes - Direct indexing | No - Must traverse |
+| **Size Flexibility** | Fixed (arrays)<br/>Dynamic (vectors) | Fully dynamic |
+| **Memory Allocation** | Single block | Multiple allocations |
+| **Use Cases** | Fixed size data<br/>Random access needed<br/>Cache performance critical | Dynamic size<br/>Frequent insertions/deletions<br/>Unknown size at compile time |
 
 ### 4.2 Core Invariants
 
@@ -32,23 +40,40 @@ Understanding invariants is crucial for reasoning about linked lists correctly. 
 
 #### Core Invariants of a Singly Linked List
 
-1. **Head Invariant**: 
+1. **Head Pointer Invariant**: 
    - If the list is empty, `head == nullptr`
    - If the list is non-empty, `head` points to the first node
    - The first node has no predecessor
+   - `head` must never point to a deleted or invalid node
 
-2. **Linkage Invariant**:
+2. **Tail Pointer Invariant** (if maintained):
+   - If the list is empty, `tail == nullptr`
+   - If the list is non-empty, `tail` points to the last node
+   - The last node's `next` must be `nullptr` (unless circular)
+   - `tail->next == nullptr` (for non-circular lists)
+   - `tail` must never point to a deleted or invalid node
+
+3. **Linkage Invariant**:
    - Each node (except the last) has exactly one successor via `next`
-   - The last node has `next == nullptr`
+   - The last node has `next == nullptr` (unless circular)
    - No cycles exist (unless explicitly a circular list)
+   - All `next` pointers form a valid chain from `head` to `tail`
 
-3. **Size Invariant**:
+4. **Size Consistency Invariant**:
    - `size` equals the number of nodes in the list
    - `size == 0` if and only if `head == nullptr`
+   - `size` must be updated atomically with list modifications
+   - `size` must never be negative
 
-4. **Memory Invariant**:
+5. **Acyclicity Invariant** (for non-circular lists):
+   - No cycles exist in the list
+   - Traversing from `head` must eventually reach `nullptr`
+   - No node's `next` pointer points back to an earlier node
+
+6. **Memory Invariant**:
    - All nodes are reachable from `head` (no orphaned nodes)
    - No dangling pointers (all `next` pointers are either `nullptr` or valid)
+   - All allocated nodes are either in the list or properly deleted
 
 #### Why Invariants Matter
 
@@ -1162,35 +1187,147 @@ ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {
 
 Understanding common failure modes helps avoid bugs and performance issues.
 
-#### 1. Memory Leaks (Raw Pointers)
+#### 1. Memory Leaks (Forgetting to Delete)
+
+Memory leaks occur when nodes are allocated but never freed, causing memory consumption to grow over time.
+
 ```cpp
-// WRONG: Memory leak
-ListNode* node = new ListNode(5);
-// ... use node ...
-// Forgot to delete node;
+// WRONG: Memory leak - forgetting to delete
+void insertAtHead(int value) {
+    ListNode* newNode = new ListNode(value);
+    newNode->next = head;
+    head = newNode;
+    // If list is destroyed, newNode is never deleted!
+}
+
+// WRONG: Memory leak - losing reference
+void removeNode(int value) {
+    ListNode* current = head;
+    while (current && current->data != value) {
+        current = current->next;
+    }
+    if (current) {
+        // Lost reference to current - can't delete it!
+        // Previous node's next pointer not updated
+    }
+}
 
 // CORRECT: Use smart pointers
-unique_ptr<ListNode> node = make_unique<ListNode>(5);
-// Automatically deleted
+void insertAtHead(int value) {
+    auto newNode = make_unique<ListNode>(value);
+    newNode->next = move(head);
+    head = move(newNode);
+    // Automatically deleted when list is destroyed
+}
+
+// CORRECT: Proper deletion with raw pointers
+void removeNode(int value) {
+    if (!head) return;
+    
+    if (head->data == value) {
+        ListNode* toDelete = head;
+        head = head->next;
+        delete toDelete;  // Explicitly delete
+        return;
+    }
+    
+    ListNode* current = head;
+    while (current->next && current->next->data != value) {
+        current = current->next;
+    }
+    
+    if (current->next) {
+        ListNode* toDelete = current->next;
+        current->next = current->next->next;
+        delete toDelete;  // Explicitly delete
+    }
+}
 ```
 
-**Why it happens**: Manual memory management is error-prone
-**Impact**: Memory leaks, eventual program crash
+**Why it happens**: 
+- Manual memory management is error-prone
+- Forgetting to delete nodes when removing them
+- Losing references to nodes before deletion
+- Exception safety issues (exceptions before delete)
+
+**Impact**: 
+- Memory leaks accumulate over time
+- Eventual program crash due to out-of-memory
+- Performance degradation
+- System instability
+
+**Prevention**:
+- Use smart pointers (`unique_ptr`, `shared_ptr`)
+- Always pair `new` with `delete`
+- Use RAII (Resource Acquisition Is Initialization)
+- Consider using containers from standard library
 
 #### 2. Dangling Pointers
+
+Dangling pointers occur when a pointer references memory that has been freed or is no longer valid.
+
 ```cpp
-// WRONG: Dangling pointer
+// WRONG: Dangling pointer - using deleted memory
 ListNode* node = new ListNode(5);
 delete node;
-cout << node->data;  // Undefined behavior!
+cout << node->data;  // Undefined behavior! Accessing freed memory
+
+// WRONG: Dangling pointer - pointer to local variable
+ListNode* getLocalNode() {
+    ListNode local(5);
+    return &local;  // Returns pointer to local variable
+    // local is destroyed when function returns - dangling pointer!
+}
+
+// WRONG: Dangling pointer - iterator invalidation
+ListNode* current = head;
+while (current) {
+    if (current->data == target) {
+        delete current;  // current is now dangling
+        // Next iteration: current = current->next (undefined behavior!)
+    }
+    current = current->next;
+}
 
 // CORRECT: Set to nullptr after deletion
+ListNode* node = new ListNode(5);
 delete node;
-node = nullptr;
+node = nullptr;  // Safe to check, but won't access invalid memory
+
+// CORRECT: Save next pointer before deletion
+ListNode* current = head;
+while (current) {
+    ListNode* next = current->next;  // Save next before deletion
+    if (current->data == target) {
+        delete current;
+    }
+    current = next;  // Use saved pointer
+}
+
+// CORRECT: Use smart pointers (automatic cleanup)
+unique_ptr<ListNode> node = make_unique<ListNode>(5);
+// No dangling pointer - automatically managed
 ```
 
-**Why it happens**: Using deleted memory
-**Impact**: Undefined behavior, crashes, security vulnerabilities
+**Why it happens**: 
+- Using memory after it's been freed
+- Returning pointers to local variables
+- Modifying list while iterating
+- Not updating pointers after deletion
+
+**Impact**: 
+- Undefined behavior
+- Program crashes
+- Security vulnerabilities (use-after-free)
+- Data corruption
+- Hard-to-debug issues
+
+**Prevention**:
+- Set pointers to `nullptr` after deletion
+- Use smart pointers
+- Save necessary pointers before deletion
+- Avoid returning pointers to local variables
+- Use RAII principles
 
 #### 3. Breaking Invariants
 ```cpp
@@ -1206,23 +1343,95 @@ node2->next = node1;  // Cycle! Violates acyclicity invariant
 **Impact**: Infinite loops, broken traversal, memory leaks
 
 #### 4. Off-by-One Errors in Traversal
+
+Off-by-one errors occur when loop bounds or pointer advances are incorrect, causing access beyond the list or missing elements.
+
 ```cpp
-// WRONG: Accessing beyond list
+// WRONG: Accessing beyond list - using <= instead of <
 ListNode* current = head;
-for (int i = 0; i <= size; i++) {  // Should be <
-    current = current->next;  // May be nullptr
+for (int i = 0; i <= size; i++) {  // Should be < size
+    current = current->next;  // Last iteration: current becomes nullptr
+    // Next access: nullptr->next (crash!)
 }
 
-// CORRECT: Check for nullptr
+// WRONG: Missing last element - stopping too early
+ListNode* current = head;
+for (int i = 0; i < size - 1; i++) {  // Stops one before end
+    process(current);
+    current = current->next;
+}
+// Last element never processed!
+
+// WRONG: Accessing before checking
+ListNode* current = head;
+while (current->next != nullptr) {  // Doesn't process last node
+    process(current);
+    current = current->next;
+}
+
+// WRONG: Incorrect position calculation
+void insertAtPosition(int value, int pos) {
+    ListNode* current = head;
+    for (int i = 0; i < pos; i++) {  // Should be i < pos - 1
+        current = current->next;
+    }
+    // Inserting at wrong position!
+}
+
+// CORRECT: Check for nullptr before access
 ListNode* current = head;
 while (current != nullptr) {
-    // process current
+    process(current);
     current = current->next;
+}
+
+// CORRECT: Process all elements including last
+ListNode* current = head;
+while (current) {
+    process(current);
+    current = current->next;
+}
+
+// CORRECT: Proper position calculation
+void insertAtPosition(int value, int pos) {
+    if (pos == 0) {
+        insertAtHead(value);
+        return;
+    }
+    
+    ListNode* current = head;
+    for (int i = 0; i < pos - 1 && current; i++) {
+        current = current->next;
+    }
+    
+    if (current) {
+        // Insert after current
+        auto newNode = make_unique<ListNode>(value);
+        newNode->next = move(current->next);
+        current->next = move(newNode);
+    }
 }
 ```
 
-**Why it happens**: Confusion between size and indices
-**Impact**: Null pointer dereference, crashes
+**Why it happens**: 
+- Confusion between 0-based and 1-based indexing
+- Confusion between size and last index (size-1)
+- Not accounting for sentinel nodes
+- Incorrect loop termination conditions
+
+**Impact**: 
+- Null pointer dereference
+- Program crashes
+- Missing data processing
+- Incorrect insertions/deletions
+- Buffer overflows (in some implementations)
+
+**Prevention**:
+- Always check for `nullptr` before dereferencing
+- Use `while (current != nullptr)` instead of index-based loops
+- Be careful with boundary conditions
+- Test edge cases (empty list, single element, first/last positions)
+- Use defensive programming (check bounds)
 
 #### 5. Iterator Invalidation
 ```cpp
