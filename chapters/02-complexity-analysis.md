@@ -33,14 +33,35 @@ f(n) ≤ c × g(n) for all n ≥ n₀
 
 ### Visual Representation of Growth Rates
 
+```mermaid
+graph LR
+    subgraph Complexity["Complexity Growth Comparison"]
+        O1["O(1)<br/>Constant"]
+        OLogN["O(log n)<br/>Logarithmic"]
+        ON["O(n)<br/>Linear"]
+        ONLogN["O(n log n)<br/>Linearithmic"]
+        ON2["O(n²)<br/>Quadratic"]
+        O2N["O(2ⁿ)<br/>Exponential"]
+    end
+    
+    style O1 fill:#90EE90,stroke:#333,stroke-width:2px
+    style OLogN fill:#87CEEB,stroke:#333,stroke-width:2px
+    style ON fill:#FFE5B4,stroke:#333,stroke-width:2px
+    style ONLogN fill:#FFA500,stroke:#333,stroke-width:2px
+    style ON2 fill:#FF6347,stroke:#333,stroke-width:2px
+    style O2N fill:#DC143C,stroke:#333,stroke-width:3px
 ```
-n     | O(1) | O(log n) | O(n) | O(n log n) | O(n²) | O(2ⁿ)
-------|------|----------|------|------------|-------|-------
-1     | 1    | 0        | 1    | 0          | 1     | 2
-10    | 1    | 3.32     | 10   | 33.2       | 100   | 1024
-100   | 1    | 6.64     | 100  | 664        | 10000 | 1.27×10³⁰
-1000  | 1    | 9.97     | 1000 | 9966       | 10⁶   | Massive
-```
+
+**Growth Rate Comparison Table**:
+
+| n     | O(1) | O(log n) | O(n) | O(n log n) | O(n²) | O(2ⁿ) |
+|-------|------|----------|------|------------|-------|-------|
+| 1     | 1    | 0        | 1    | 0          | 1     | 2     |
+| 10    | 1    | 3.32     | 10   | 33.2       | 100   | 1,024 |
+| 100   | 1    | 6.64     | 100  | 664        | 10,000| 1.27×10³⁰ |
+| 1,000 | 1    | 9.97     | 1,000| 9,966      | 10⁶   | Massive |
+
+**Key Insight**: Exponential and factorial complexities become impractical very quickly. Even O(n²) can be problematic for large inputs.
 
 ## 2.3 Time Complexity Analysis
 
@@ -247,7 +268,175 @@ void quickSort(vector<int>& arr, int low, int high) {
 - **Average Case**: O(n log n) - pivot is reasonably balanced on average
 - **Worst Case**: O(n²) - pivot is always the smallest or largest element
 
-## 2.6 Amortized Analysis
+## 2.6 When Does Big-O Matter?
+
+Understanding when complexity analysis matters helps you make practical decisions.
+
+### Small Input Sizes (n < 100)
+
+**Reality**: For small inputs, Big-O often doesn't matter!
+- O(n²) vs O(n log n): Difference is milliseconds
+- Constants and implementation details dominate
+- **Example**: Sorting 50 elements - even bubble sort is fast enough
+
+**When to Care**:
+- Tight loops (millions of iterations)
+- Real-time constraints
+- Embedded systems with limited resources
+
+### Medium Input Sizes (100 < n < 10,000)
+
+**Reality**: Big-O starts to matter, but constants still important
+- O(n²) becomes noticeable but manageable
+- O(n log n) vs O(n) - measurable difference
+- **Example**: Processing 1,000 records - choose wisely
+
+**When to Care**:
+- User-facing applications (perceived performance)
+- Batch processing
+- API endpoints
+
+### Large Input Sizes (n > 10,000)
+
+**Reality**: Big-O is critical!
+- O(n²) can take seconds or minutes
+- O(2ⁿ) becomes impractical
+- **Example**: Processing 1 million records - O(n²) = hours, O(n log n) = minutes
+
+**Always Care**:
+- Large-scale systems
+- Data processing pipelines
+- Search engines, databases
+
+### Practical Example: When O(n²) is Fine
+
+```cpp
+// O(n²) is acceptable here!
+void processSmallDataset(vector<int>& data) {
+    // n is always < 100
+    for (int i = 0; i < data.size(); i++) {
+        for (int j = i + 1; j < data.size(); j++) {
+            // Process pairs - simple and clear
+            processPair(data[i], data[j]);
+        }
+    }
+}
+```
+
+**Why it's fine**: 
+- Input size is bounded and small
+- Code is simpler than O(n log n) alternative
+- Performance is acceptable
+
+### Practical Example: When O(n²) is a Problem
+
+```cpp
+// O(n²) is a PROBLEM here!
+void processLargeDataset(vector<int>& data) {
+    // n can be 1,000,000
+    for (int i = 0; i < data.size(); i++) {
+        for (int j = i + 1; j < data.size(); j++) {
+            // This will take hours!
+            processPair(data[i], data[j]);
+        }
+    }
+}
+```
+
+**Why it's a problem**:
+- Input size is large and unbounded
+- Performance degrades quadratically
+- Must optimize to O(n log n) or better
+
+## 2.7 Common Pitfalls in Complexity Analysis
+
+### Pitfall 1: Confusing O(n) with Actual Running Time
+
+**Mistake**: "O(n) means it runs in n seconds"
+
+**Reality**: 
+- O(n) means time scales linearly with input
+- Actual time depends on:
+  - Hardware speed
+  - Implementation details
+  - Constants (often ignored in Big-O)
+
+**Example**:
+```cpp
+// Both are O(n), but very different actual times
+void fastO(n)(vector<int>& arr) {
+    for (int x : arr) {
+        sum += x;  // Simple addition
+    }
+}
+
+void slowO(n)(vector<int>& arr) {
+    for (int x : arr) {
+        complexComputation(x);  // Expensive operation
+    }
+}
+```
+
+### Pitfall 2: Ignoring Constants in Production Code
+
+**Mistake**: "O(n) is always better than O(n log n)"
+
+**Reality**: Constants matter in practice!
+
+```cpp
+// O(n log n) - but very fast constant
+void quickSort(vector<int>& arr) {
+    sort(arr.begin(), arr.end());  // Highly optimized
+}
+
+// O(n) - but slow constant
+void customLinear(vector<int>& arr) {
+    // Custom implementation with overhead
+    for (int i = 0; i < arr.size(); i++) {
+        expensiveOperation(arr[i]);
+    }
+}
+```
+
+**When O(n log n) beats O(n)**:
+- O(n log n) with small constant < O(n) with large constant
+- Example: `std::sort` (O(n log n)) often faster than naive O(n) for small arrays
+
+### Pitfall 3: Missing Hidden Complexities
+
+**Mistake**: Not accounting for operations inside loops
+
+```cpp
+// Looks like O(n), but actually O(n²)!
+void hiddenComplexity(vector<string>& words) {
+    for (string word : words) {  // O(n)
+        if (find(words.begin(), words.end(), word) != words.end()) {  // O(n)!
+            // This is O(n) inside O(n) = O(n²)
+        }
+    }
+}
+```
+
+**Common Hidden Complexities**:
+- Sorting in a loop: O(n² log n) or worse
+- String operations: Concatenation can be O(n) per operation
+- Container operations: `vector::insert()` is O(n)
+
+### Pitfall 4: Worst Case vs. Average Case Confusion
+
+**Mistake**: Assuming worst case always happens
+
+**Reality**: 
+- QuickSort: O(n²) worst case, O(n log n) average
+- Hash table: O(n) worst case, O(1) average
+- **Choose based on your use case**
+
+**When to Use Each**:
+- **Worst case**: Safety-critical systems, real-time constraints
+- **Average case**: Most applications, when worst case is rare
+- **Best case**: When you can guarantee input characteristics
+
+## 2.8 Amortized Analysis
 
 Amortized analysis considers the average time per operation over a sequence of operations, even if some individual operations are expensive.
 
@@ -357,7 +546,7 @@ Many algorithms involve tradeoffs between time and space complexity:
 | Fibonacci | O(n) time, O(n) space (memoization) | O(n) time, O(1) space (iterative) |
 | String matching | O(n) time, O(m) space (KMP) | O(nm) time, O(1) space (naive) |
 
-## 2.9 Key Takeaways
+## 2.11 Key Takeaways
 
 1. **Big O notation** describes the upper bound of algorithm performance
 2. **Time complexity** measures how runtime scales with input size
@@ -366,7 +555,7 @@ Many algorithms involve tradeoffs between time and space complexity:
 5. **Amortized analysis** provides average performance over many operations
 6. **Space-time tradeoffs** are common in algorithm design
 
-## 2.10 Exercises
+## 2.12 Exercises
 
 1. Analyze the time and space complexity of the following function:
 ```cpp
