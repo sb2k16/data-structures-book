@@ -11,7 +11,50 @@ An **array** is a collection of elements of the same data type stored in contigu
 - **Random access** capability (O(1) access time)
 - **Zero-based indexing** (in most languages including C++)
 
-### 3.1.1 Memory Layout and Cache Behavior
+### 3.1.1 Core Invariants
+
+Understanding array invariants is crucial for correct implementation and reasoning about array operations.
+
+#### Core Invariants of Arrays
+
+1. **Index Bounds Invariant**:
+   - Valid indices: `0 ≤ i < size` (for zero-based indexing)
+   - Array size is fixed (static arrays) or tracked (dynamic arrays)
+   - Accessing `arr[i]` where `i < 0` or `i ≥ size` is invalid
+
+2. **Contiguous Memory Invariant**:
+   - All elements stored in consecutive memory locations
+   - Memory layout: `arr[i]` is at address `base + i × element_size`
+   - No gaps between elements
+
+3. **Type Homogeneity Invariant**:
+   - All elements are of the same type
+   - Element size is constant (enables O(1) indexing)
+
+4. **Size Consistency Invariant**:
+   - Static arrays: Size is constant (set at declaration)
+   - Dynamic arrays: Size tracked accurately, matches allocated memory
+
+#### What Breaks Invariants
+
+- **Index Out of Bounds**: Accessing `arr[-1]` or `arr[size]` → undefined behavior
+- **Memory Corruption**: Writing beyond array bounds → corrupts adjacent memory
+- **Size Mismatch**: Size variable doesn't match actual allocated memory → incorrect operations
+- **Type Violation**: Mixing types in array → breaks type safety
+
+#### How Operations Preserve Invariants
+
+- **Access**: Check bounds before accessing → preserves index bounds invariant
+- **Modification**: Ensure index is valid → preserves bounds and type invariants
+- **Iteration**: Use valid range `[0, size)` → preserves bounds invariant
+- **Resizing** (dynamic): Allocate new contiguous block → preserves contiguous memory invariant
+
+**Example**: When accessing `arr[i]`:
+1. Verify `0 ≤ i < size` (preserves index bounds invariant)
+2. Calculate address `base + i × sizeof(T)` (preserves contiguous memory invariant)
+3. Access element (preserves type homogeneity invariant)
+
+### 3.1.2 Memory Layout and Cache Behavior
 
 Understanding how arrays work at the system level is crucial for performance. This section applies the memory hierarchy concepts from [Chapter 3.6](03.6-memory-hierarchy-and-performance.md) to arrays.
 
