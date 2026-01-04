@@ -1090,6 +1090,33 @@ While a standard Binary Search Tree (BST) provides O(log n) average-case perform
 
 ### Decision Tree: Which Tree Structure to Use?
 
+```mermaid
+flowchart TD
+    Start["What are your requirements?"] --> Q1{"Need guaranteed<br/>O(log n) performance?"}
+    
+    Q1 -->|No| BST["Standard BST<br/>(if data is random)"]
+    Q1 -->|Yes| Q2{"Is data on disk?<br/>(Database/File System)"}
+    
+    Q2 -->|Yes| BTree["B-Tree<br/>- Databases (MySQL, PostgreSQL)<br/>- File systems (NTFS, ext4)<br/>- Minimizes disk I/O"]
+    
+    Q2 -->|No| Q3{"Are insertions/deletions<br/>very frequent?"}
+    
+    Q3 -->|Yes| RBTree["Red-Black Tree<br/>- C++ std::map, std::set<br/>- Java TreeMap, TreeSet<br/>- Fewer rotations than AVL"]
+    
+    Q3 -->|No| Q4{"Need shortest<br/>average path?"}
+    
+    Q4 -->|Yes| AVLTree["AVL Tree<br/>- Real-time systems<br/>- Predictable performance<br/>- More balanced"]
+    
+    Q4 -->|No| RBTree2["Red-Black Tree<br/>(More common in practice)"]
+    
+    style BST fill:#ffcccc
+    style BTree fill:#ccffcc
+    style RBTree fill:#ccccff
+    style RBTree2 fill:#ccccff
+    style AVLTree fill:#ffffcc
+```
+
+**Text Version**:
 ```
 Do you need guaranteed O(log n) performance?
 ├─ No → Standard BST (if data is random)
@@ -1098,19 +1125,34 @@ Do you need guaranteed O(log n) performance?
     │
     Is data on disk (database/file system)?
     ├─ Yes → B-Tree
+    │   └─ Use cases: MySQL, PostgreSQL, MongoDB indexes, file systems
     │
     └─ No → Continue
         │
         Are insertions/deletions frequent?
         ├─ Yes → Red-Black Tree
+        │   └─ Use cases: C++ STL, Java Collections, frequent updates
         │
         └─ No → Continue
             │
             Do you need shortest average path?
             ├─ Yes → AVL Tree
+            │   └─ Use cases: Real-time systems, predictable performance
             │
             └─ No → Red-Black Tree (more common)
+                └─ Use cases: General-purpose ordered containers
 ```
+
+**Quick Reference Table**:
+
+| Requirement | Recommended Tree | Reason |
+|------------|------------------|--------|
+| Random data, no guarantees needed | Standard BST | Simple, good average case |
+| Database/file system storage | B-Tree | Minimizes disk I/O, shallow trees |
+| Frequent insertions/deletions | Red-Black Tree | Fewer rotations, standard library |
+| Predictable performance, real-time | AVL Tree | More balanced, guaranteed height |
+| General-purpose ordered container | Red-Black Tree | Balanced performance, widely used |
+| Memory-constrained, very large | Consider B-Tree | Better cache locality |
 
 ### Implementation Note
 
@@ -1272,16 +1314,96 @@ vector<vector<int>> levelOrder(TreeNode* root) {
 
 **Morris Traversal** allows inorder traversal with O(1) extra space (no stack, no recursion).
 
-**Key Idea**: Use threaded binary tree concept - temporarily modify tree structure, then restore.
+**Key Idea**: Use threaded binary tree concept - temporarily modify tree structure by creating links to predecessors, then restore.
+
+**How It Works**:
+1. For each node, find its inorder predecessor (rightmost node in left subtree)
+2. If predecessor's right pointer is null, set it to current node (create thread)
+3. If predecessor's right pointer points to current node, we've visited left subtree → restore and process current
+4. Move to right subtree
+
+**Inorder Morris Traversal Implementation**:
+```cpp
+vector<int> morrisInorder(TreeNode* root) {
+    vector<int> result;
+    TreeNode* current = root;
+    
+    while (current) {
+        if (!current->left) {
+            // No left subtree, process current and go right
+            result.push_back(current->val);
+            current = current->right;
+        } else {
+            // Find inorder predecessor
+            TreeNode* predecessor = current->left;
+            while (predecessor->right && predecessor->right != current) {
+                predecessor = predecessor->right;
+            }
+            
+            if (!predecessor->right) {
+                // Create thread
+                predecessor->right = current;
+                current = current->left;
+            } else {
+                // Thread exists, restore and process
+                predecessor->right = nullptr;
+                result.push_back(current->val);
+                current = current->right;
+            }
+        }
+    }
+    return result;
+}
+```
+
+**Preorder Morris Traversal**:
+```cpp
+vector<int> morrisPreorder(TreeNode* root) {
+    vector<int> result;
+    TreeNode* current = root;
+    
+    while (current) {
+        if (!current->left) {
+            result.push_back(current->val);
+            current = current->right;
+        } else {
+            TreeNode* predecessor = current->left;
+            while (predecessor->right && predecessor->right != current) {
+                predecessor = predecessor->right;
+            }
+            
+            if (!predecessor->right) {
+                result.push_back(current->val);  // Process before going left
+                predecessor->right = current;
+                current = current->left;
+            } else {
+                predecessor->right = nullptr;
+                current = current->right;
+            }
+        }
+    }
+    return result;
+}
+```
 
 **When to Use**:
 - Memory-constrained environments
-- Very large trees
-- When O(1) space is required
+- Very large trees (millions of nodes)
+- When O(1) space is explicitly required
+- Embedded systems with limited stack space
 
-**Complexity**: O(n) time, O(1) space
+**Complexity**: 
+- **Time**: O(n) - each edge is traversed at most twice
+- **Space**: O(1) - only uses a few pointers, no stack/recursion
 
-**Note**: Advanced technique, rarely needed in interviews but impressive to know.
+**Trade-offs**:
+- ✅ O(1) space complexity
+- ✅ No stack overflow risk
+- ❌ Modifies tree structure temporarily (must restore)
+- ❌ More complex to understand and implement
+- ❌ Slightly slower due to extra pointer operations
+
+**Note**: Advanced technique, rarely needed in interviews but impressive to know. Most interview problems can be solved with recursive/iterative approaches.
 
 ### Traversal Pattern Decision Guide
 
