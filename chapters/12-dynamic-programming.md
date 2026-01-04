@@ -1011,9 +1011,452 @@ private:
 };
 ```
 
-## 12.6 DP Patterns and Techniques
+## 12.6 Comprehensive DP Patterns Taxonomy
 
-### Pattern 1: 0/1 Knapsack
+Understanding DP patterns helps recognize when to apply dynamic programming and which approach to use.
+
+### DP Patterns Overview
+
+```mermaid
+graph TD
+    DP["Dynamic Programming Patterns"]
+    DP --> Linear["1. Linear DP<br/>- 1D state<br/>- Sequential processing<br/>- Examples: Fibonacci, Climbing Stairs"]
+    DP --> Grid2D["2. 2D Grid DP<br/>- 2D state space<br/>- Grid traversal<br/>- Examples: Unique Paths, Min Path Sum"]
+    DP --> Subseq["3. Subsequence DP<br/>- String/Array subsequences<br/>- Matching problems<br/>- Examples: LCS, LIS, Edit Distance"]
+    DP --> Partition["4. Partition DP<br/>- Split into subproblems<br/>- Optimization over partitions<br/>- Examples: Coin Change, Palindrome Partitioning"]
+    DP --> Interval["5. Interval DP<br/>- Process intervals<br/>- Combine subintervals<br/>- Examples: Matrix Chain, Burst Balloons"]
+    DP --> StateMachine["6. State Machine DP<br/>- Multiple states<br/>- State transitions<br/>- Examples: Buy/Sell Stock, String Matching"]
+    
+    style DP fill:#FFE5B4,stroke:#333,stroke-width:3px
+    style Linear fill:#E6F3FF,stroke:#333,stroke-width:2px
+    style Grid2D fill:#E6F3FF,stroke:#333,stroke-width:2px
+    style Subseq fill:#E6F3FF,stroke:#333,stroke-width:2px
+    style Partition fill:#E6F3FF,stroke:#333,stroke-width:2px
+    style Interval fill:#E6F3FF,stroke:#333,stroke-width:2px
+    style StateMachine fill:#E6F3FF,stroke:#333,stroke-width:2px
+```
+
+### Pattern 1: Linear DP
+
+**Characteristics**:
+- 1D state space: `dp[i]` represents solution up to position `i`
+- Sequential processing: Process elements one by one
+- Simple recurrence: Usually depends on previous 1-2 states
+
+**Examples**: Fibonacci, Climbing Stairs, House Robber
+
+```cpp
+// Example: Climbing Stairs
+int climbStairs(int n) {
+    if (n <= 2) return n;
+    
+    int prev2 = 1;  // dp[0]
+    int prev1 = 2;  // dp[1]
+    
+    for (int i = 3; i <= n; i++) {
+        int current = prev1 + prev2;  // dp[i] = dp[i-1] + dp[i-2]
+        prev2 = prev1;
+        prev1 = current;
+    }
+    
+    return prev1;
+}
+```
+
+### Pattern 2: 2D Grid DP
+
+**Characteristics**:
+- 2D state space: `dp[i][j]` represents solution at grid position `(i, j)`
+- Grid traversal: Fill grid row by row or column by column
+- Adjacent dependencies: Usually depends on top and left cells
+
+**Examples**: Unique Paths, Minimum Path Sum, Maximal Square
+
+```cpp
+// Example: Unique Paths (already covered in 12.4)
+// dp[i][j] = number of ways to reach (i, j)
+// dp[i][j] = dp[i-1][j] + dp[i][j-1]
+```
+
+### Pattern 3: Subsequence DP
+
+**Characteristics**:
+- String/Array subsequences: Work with subsequences (not necessarily contiguous)
+- Matching problems: Compare two sequences
+- Two pointers: Usually `dp[i][j]` compares positions `i` and `j`
+
+**Examples**: LCS, LIS, Edit Distance, Longest Palindromic Subsequence
+
+```cpp
+// Example: Longest Common Subsequence (already covered)
+// dp[i][j] = LCS of s1[0..i-1] and s2[0..j-1]
+```
+
+### Pattern 4: Partition DP
+
+**Characteristics**:
+- Split into subproblems: Divide problem into partitions
+- Optimization: Find optimal way to partition
+- Multiple choices: Try different partition points
+
+**Examples**: Coin Change, Palindrome Partitioning, Word Break
+
+```cpp
+// Example: Coin Change
+int coinChange(vector<int>& coins, int amount) {
+    vector<int> dp(amount + 1, amount + 1);
+    dp[0] = 0;
+    
+    for (int i = 1; i <= amount; i++) {
+        for (int coin : coins) {
+            if (coin <= i) {
+                dp[i] = min(dp[i], dp[i - coin] + 1);
+            }
+        }
+    }
+    
+    return dp[amount] > amount ? -1 : dp[amount];
+}
+```
+
+### Pattern 5: Interval DP
+
+**Characteristics**:
+- Process intervals: Work with ranges `[i, j]`
+- Combine subintervals: Combine solutions from smaller intervals
+- Length-based: Usually iterate by interval length
+
+**Examples**: Matrix Chain Multiplication, Burst Balloons, Palindrome Partitioning II
+
+```cpp
+// Example: Matrix Chain Multiplication
+int matrixChainOrder(vector<int>& p) {
+    int n = p.size() - 1;
+    vector<vector<int>> dp(n, vector<int>(n, 0));
+    
+    // l is chain length
+    for (int l = 2; l <= n; l++) {
+        for (int i = 0; i < n - l + 1; i++) {
+            int j = i + l - 1;
+            dp[i][j] = INT_MAX;
+            
+            for (int k = i; k < j; k++) {
+                int cost = dp[i][k] + dp[k+1][j] + p[i]*p[k+1]*p[j+1];
+                dp[i][j] = min(dp[i][j], cost);
+            }
+        }
+    }
+    
+    return dp[0][n-1];
+}
+```
+
+### Pattern 6: State Machine DP
+
+**Characteristics**:
+- Multiple states: Problem has distinct states (e.g., holding stock, not holding)
+- State transitions: Move between states based on actions
+- State tracking: `dp[i][state]` = solution at position `i` in state `state`
+
+**Examples**: Best Time to Buy/Sell Stock, House Robber II, Decode Ways
+
+```cpp
+// Example: Best Time to Buy and Sell Stock with Cooldown
+int maxProfit(vector<int>& prices) {
+    int n = prices.size();
+    if (n <= 1) return 0;
+    
+    // States: 0 = hold, 1 = sold (cooldown), 2 = can buy
+    vector<vector<int>> dp(n, vector<int>(3, 0));
+    
+    dp[0][0] = -prices[0];  // Hold: bought on day 0
+    dp[0][1] = 0;            // Sold: can't sell on day 0
+    dp[0][2] = 0;            // Can buy: no action on day 0
+    
+    for (int i = 1; i < n; i++) {
+        // Hold: max of (continue holding, buy today)
+        dp[i][0] = max(dp[i-1][0], dp[i-1][2] - prices[i]);
+        
+        // Sold: sold today (was holding)
+        dp[i][1] = dp[i-1][0] + prices[i];
+        
+        // Can buy: max of (continue can buy, end cooldown)
+        dp[i][2] = max(dp[i-1][2], dp[i-1][1]);
+    }
+    
+    return max({dp[n-1][0], dp[n-1][1], dp[n-1][2]});
+}
+```
+
+## 12.7 DP vs Recursion vs Greedy
+
+### When to Use Each Approach
+
+```mermaid
+graph TD
+    Problem{Problem Type?} --> OptSub{Optimal<br/>Substructure?}
+    
+    OptSub -->|No| Brute["Brute Force<br/>or<br/>Backtracking"]
+    
+    OptSub -->|Yes| Overlap{Overlapping<br/>Subproblems?}
+    
+    Overlap -->|No| Greedy{Local Optimal<br/>→ Global?}
+    Greedy -->|Yes| GreedyAlgo["Greedy Algorithm<br/>- Make locally optimal choice<br/>- Examples: Activity Selection,<br/>  Minimum Coins (greedy)"]
+    Greedy -->|No| DP["Dynamic Programming<br/>- Store subproblem results<br/>- Examples: Coin Change (DP),<br/>  Longest Path"]
+    
+    Overlap -->|Yes| DP
+    
+    style Problem fill:#FFE5B4,stroke:#333,stroke-width:3px
+    style Brute fill:#FFB6C1,stroke:#333,stroke-width:2px
+    style GreedyAlgo fill:#90EE90,stroke:#333,stroke-width:2px
+    style DP fill:#87CEEB,stroke:#333,stroke-width:2px
+```
+
+### Comparison Table
+
+| Approach | When to Use | Time Complexity | Space Complexity | Examples |
+|----------|-------------|----------------|------------------|----------|
+| **Recursion** | Clear recursive structure, no overlapping subproblems | Exponential | O(n) stack | Tree traversal, factorial |
+| **Memoization** | Overlapping subproblems, top-down thinking | Polynomial | O(n) + O(n) memo | Fibonacci, LCS (memoized) |
+| **Tabulation** | Overlapping subproblems, bottom-up approach | Polynomial | O(n) or O(n²) | Fibonacci, LCS (tabulated) |
+| **Greedy** | Local optimal → global optimal, no overlapping | Polynomial | O(1) to O(n) | Activity Selection, Dijkstra |
+| **DP** | Overlapping subproblems, optimal substructure | Polynomial | O(n) to O(n²) | Coin Change, LIS, Knapsack |
+
+### Key Differences
+
+**Recursion vs DP**:
+- **Recursion**: Solves subproblems independently, may recalculate
+- **DP**: Stores results, avoids recalculation
+
+**Greedy vs DP**:
+- **Greedy**: Makes locally optimal choice, doesn't reconsider
+- **DP**: Explores all possibilities, finds globally optimal
+
+**Example: Coin Change**
+- **Greedy**: Works for some coin systems (e.g., US coins), fails for others
+- **DP**: Always finds optimal solution for any coin system
+
+## 12.8 Space Optimization Techniques
+
+### Technique 1: Rolling Array
+
+**Concept**: For 2D DP where current row only depends on previous row, use 1D array.
+
+```cpp
+// Before: O(m×n) space
+vector<vector<int>> dp(m, vector<int>(n));
+
+// After: O(n) space (rolling array)
+vector<int> prev(n);
+vector<int> curr(n);
+
+for (int i = 0; i < m; i++) {
+    for (int j = 0; j < n; j++) {
+        // Calculate curr[j] using prev
+    }
+    prev = curr;  // Roll over
+}
+```
+
+**Example: Unique Paths**
+```cpp
+// Space-optimized from O(m×n) to O(n)
+int uniquePathsOptimized(int m, int n) {
+    vector<int> prev(n, 1);
+    
+    for (int i = 1; i < m; i++) {
+        vector<int> curr(n, 1);
+        for (int j = 1; j < n; j++) {
+            curr[j] = prev[j] + curr[j - 1];
+        }
+        prev = curr;
+    }
+    
+    return prev[n - 1];
+}
+```
+
+### Technique 2: State Compression
+
+**Concept**: Use bit masks to represent states, reducing space from O(2^n) to O(2^n) but with better constants.
+
+```cpp
+// Example: Traveling Salesman Problem (TSP)
+int tsp(vector<vector<int>>& dist) {
+    int n = dist.size();
+    int maskLimit = 1 << n;
+    
+    // dp[mask][last] = min cost to visit cities in mask, ending at last
+    vector<vector<int>> dp(maskLimit, vector<int>(n, INT_MAX));
+    
+    // Base case: starting from city 0
+    dp[1][0] = 0;
+    
+    for (int mask = 1; mask < maskLimit; mask++) {
+        for (int last = 0; last < n; last++) {
+            if (!(mask & (1 << last))) continue;  // last not in mask
+            if (dp[mask][last] == INT_MAX) continue;
+            
+            for (int next = 0; next < n; next++) {
+                if (mask & (1 << next)) continue;  // already visited
+                
+                int newMask = mask | (1 << next);
+                dp[newMask][next] = min(dp[newMask][next], 
+                                       dp[mask][last] + dist[last][next]);
+            }
+        }
+    }
+    
+    // Return to starting city
+    int result = INT_MAX;
+    int fullMask = maskLimit - 1;
+    for (int last = 1; last < n; last++) {
+        result = min(result, dp[fullMask][last] + dist[last][0]);
+    }
+    
+    return result;
+}
+```
+
+### Technique 3: Variable Optimization
+
+**Concept**: For linear DP, only keep necessary previous states.
+
+```cpp
+// Fibonacci: Only need last 2 values
+// Before: O(n) space
+vector<long long> dp(n + 1);
+
+// After: O(1) space
+long long prev2 = 0, prev1 = 1;
+for (int i = 2; i <= n; i++) {
+    long long curr = prev1 + prev2;
+    prev2 = prev1;
+    prev1 = curr;
+}
+```
+
+### Technique 4: Sliding Window for Intervals
+
+**Concept**: For interval DP, process by length and reuse arrays.
+
+```cpp
+// Matrix Chain: Process by chain length
+// Only need current length, can reuse previous
+```
+
+## 12.9 Classic DP Problems
+
+### Problem 1: Edit Distance (Levenshtein Distance)
+
+**Already covered in section 12.3.4**
+
+### Problem 2: Longest Palindromic Subsequence
+
+**Problem**: Find the length of the longest palindromic subsequence in a string.
+
+```cpp
+int longestPalindromeSubseq(string s) {
+    int n = s.length();
+    vector<vector<int>> dp(n, vector<int>(n, 0));
+    
+    // Base case: single character is palindrome of length 1
+    for (int i = 0; i < n; i++) {
+        dp[i][i] = 1;
+    }
+    
+    // Fill for lengths 2 to n
+    for (int len = 2; len <= n; len++) {
+        for (int i = 0; i <= n - len; i++) {
+            int j = i + len - 1;
+            
+            if (s[i] == s[j]) {
+                // Characters match: add 2 to inner subsequence
+                dp[i][j] = 2 + (len > 2 ? dp[i + 1][j - 1] : 0);
+            } else {
+                // Characters don't match: take max of excluding either
+                dp[i][j] = max(dp[i + 1][j], dp[i][j - 1]);
+            }
+        }
+    }
+    
+    return dp[0][n - 1];
+}
+
+// Space-optimized version
+int longestPalindromeSubseqOptimized(string s) {
+    int n = s.length();
+    vector<int> prev(n, 0);
+    vector<int> curr(n, 0);
+    
+    for (int i = n - 1; i >= 0; i--) {
+        curr[i] = 1;  // Single character
+        for (int j = i + 1; j < n; j++) {
+            if (s[i] == s[j]) {
+                curr[j] = 2 + prev[j - 1];
+            } else {
+                curr[j] = max(prev[j], curr[j - 1]);
+            }
+        }
+        prev = curr;
+    }
+    
+    return curr[n - 1];
+}
+```
+
+### Problem 3: Word Break
+
+**Problem**: Determine if a string can be segmented into space-separated words from a dictionary.
+
+```cpp
+bool wordBreak(string s, vector<string>& wordDict) {
+    int n = s.length();
+    unordered_set<string> wordSet(wordDict.begin(), wordDict.end());
+    
+    // dp[i] = can s[0..i-1] be segmented?
+    vector<bool> dp(n + 1, false);
+    dp[0] = true;  // Empty string can always be segmented
+    
+    for (int i = 1; i <= n; i++) {
+        for (int j = 0; j < i; j++) {
+            // Check if s[0..j-1] can be segmented (dp[j])
+            // and s[j..i-1] is in dictionary
+            if (dp[j] && wordSet.find(s.substr(j, i - j)) != wordSet.end()) {
+                dp[i] = true;
+                break;
+            }
+        }
+    }
+    
+    return dp[n];
+}
+
+// Optimized: Check word lengths instead of all positions
+bool wordBreakOptimized(string s, vector<string>& wordDict) {
+    int n = s.length();
+    unordered_set<string> wordSet(wordDict.begin(), wordDict.end());
+    vector<bool> dp(n + 1, false);
+    dp[0] = true;
+    
+    for (int i = 1; i <= n; i++) {
+        for (const string& word : wordDict) {
+            int len = word.length();
+            if (i >= len && dp[i - len] && 
+                s.substr(i - len, len) == word) {
+                dp[i] = true;
+                break;
+            }
+        }
+    }
+    
+    return dp[n];
+}
+```
+
+## 12.10 DP Patterns and Techniques (Continued)
+
+### Pattern 7: 0/1 Knapsack
 
 **Problem**: Maximize value with weight constraint.
 
@@ -1116,7 +1559,7 @@ bool subsetSum(vector<int>& nums, int target) {
 3. **Memoization vs Tabulation**: Choose based on problem characteristics
 4. **Bottom-up vs Top-down**: Consider recursion depth and memory usage
 
-## 12.7 Key Takeaways
+## 12.12 Key Takeaways
 
 1. **Dynamic Programming** solves complex problems by breaking them into simpler subproblems
 2. **Memoization** stores results to avoid redundant calculations
@@ -1125,7 +1568,7 @@ bool subsetSum(vector<int>& nums, int target) {
 5. **Space optimization** can significantly reduce memory usage
 6. **Pattern recognition** helps identify DP problems quickly
 
-## 12.8 Practice Problems
+## 12.13 Practice Problems
 
 ### Easy Level Problems
 
