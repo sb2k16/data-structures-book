@@ -29,10 +29,12 @@ Understanding invariants ensures correct stack and queue implementations.
    - Elements maintain insertion order in reverse
    - `top()` always returns most recently pushed element
 
-2. **Size Invariant**:
+2. **Size Consistency Invariant**:
    - `size == 0` if and only if stack is empty
-   - Size equals number of elements in stack
+   - Size equals the number of elements in stack
    - Size increases by 1 on push, decreases by 1 on pop
+   - Size must never be negative
+   - Size must be updated atomically with push/pop operations
 
 3. **Access Invariant**:
    - Only top element is accessible
@@ -46,10 +48,13 @@ Understanding invariants ensures correct stack and queue implementations.
    - Elements maintain insertion order
    - `front()` always returns oldest element
 
-2. **Size Invariant**:
+2. **Size Consistency Invariant**:
    - `size == 0` if and only if queue is empty
-   - Size equals number of elements in queue
+   - Size equals the number of elements in queue
    - Size increases by 1 on enqueue, decreases by 1 on dequeue
+   - Size must never be negative
+   - Size must be updated atomically with enqueue/dequeue operations
+   - For circular queues: `size <= capacity` (size cannot exceed capacity)
 
 3. **Access Invariant**:
    - Only front and rear elements are directly accessible
@@ -1746,14 +1751,18 @@ vector<int> maxSlidingWindow(vector<int>& nums, int k) {
 **Time Complexity**: O(n) - each element is added and removed at most once
 **Space Complexity**: O(k) - deque stores at most k elements
 
-### 5.9.4 Monotonic Stack and Queue Patterns
+### 5.9.4 Monotonic Stack and Queue Patterns ⭐ (Important for Interviews)
 
-Monotonic stacks and queues are powerful techniques for solving problems involving:
+Monotonic stacks and queues are **essential interview patterns** that solve many problems efficiently. They maintain elements in sorted order while processing, enabling O(n) solutions to problems that might seem O(n²) or O(n log n).
+
+**Common Interview Problems**:
 - Next/Previous Greater/Smaller Element
 - Sliding Window Maximum/Minimum
 - Largest Rectangle in Histogram
 - Trapping Rain Water
 - Stock Span Problem
+- Daily Temperatures
+- Maximum Width Ramp
 
 #### What is a Monotonic Stack/Queue?
 
@@ -1774,15 +1783,18 @@ The monotonic property allows us to:
 
 #### Monotonic Stack Pattern
 
+**Key Insight**: Maintain a stack where elements are in monotonic order. When processing a new element, pop all elements that violate the monotonic property.
+
 **Template for "Next Greater Element"**:
 ```cpp
 vector<int> nextGreater(vector<int>& nums) {
     int n = nums.size();
     vector<int> result(n, -1);
-    stack<int> st;  // Monotonic decreasing stack
+    stack<int> st;  // Monotonic decreasing stack (stores indices)
     
     for (int i = 0; i < n; i++) {
         // Process elements smaller than current
+        // Their "next greater" is nums[i]
         while (!st.empty() && nums[st.top()] < nums[i]) {
             result[st.top()] = nums[i];
             st.pop();
@@ -1793,18 +1805,101 @@ vector<int> nextGreater(vector<int>& nums) {
 }
 ```
 
-**When to Use**:
+**Example: Daily Temperatures (LeetCode 739)**
+
+```cpp
+vector<int> dailyTemperatures(vector<int>& temperatures) {
+    int n = temperatures.size();
+    vector<int> result(n, 0);
+    stack<int> st;  // Monotonic decreasing stack
+    
+    for (int i = 0; i < n; i++) {
+        // Pop all days with lower temperature
+        // Their answer is (i - their index)
+        while (!st.empty() && temperatures[st.top()] < temperatures[i]) {
+            int prevDay = st.top();
+            st.pop();
+            result[prevDay] = i - prevDay;
+        }
+        st.push(i);
+    }
+    return result;
+}
+```
+
+**Example: Largest Rectangle in Histogram (LeetCode 84)**
+
+```cpp
+int largestRectangleArea(vector<int>& heights) {
+    stack<int> st;  // Monotonic increasing stack
+    int maxArea = 0;
+    int n = heights.size();
+    
+    for (int i = 0; i <= n; i++) {
+        int h = (i == n) ? 0 : heights[i];
+        
+        // Pop while current height is less than stack top
+        // Calculate area for each popped bar
+        while (!st.empty() && heights[st.top()] > h) {
+            int height = heights[st.top()];
+            st.pop();
+            int width = st.empty() ? i : i - st.top() - 1;
+            maxArea = max(maxArea, height * width);
+        }
+        st.push(i);
+    }
+    
+    return maxArea;
+}
+```
+
+**When to Use Monotonic Stack**:
 - Finding next/previous greater/smaller element
 - Largest rectangle in histogram
 - Trapping rain water
 - Stock span problem
+- Daily temperatures
+- Maximum width ramp
+- Problems requiring "next/previous element" queries
 
 #### Monotonic Queue Pattern
+
+**Key Insight**: Use a deque to maintain elements in monotonic order. Front element is always the optimal value for the current window.
 
 **Template for "Sliding Window Maximum"**:
 ```cpp
 vector<int> slidingWindowMax(vector<int>& nums, int k) {
-    deque<int> dq;  // Monotonic decreasing queue
+    deque<int> dq;  // Monotonic decreasing queue (stores indices)
+    vector<int> result;
+    
+    for (int i = 0; i < nums.size(); i++) {
+        // Remove out-of-window elements from front
+        while (!dq.empty() && dq.front() <= i - k) {
+            dq.pop_front();
+        }
+        
+        // Maintain decreasing order from back
+        // Remove elements smaller than current (they can't be max)
+        while (!dq.empty() && nums[dq.back()] < nums[i]) {
+            dq.pop_back();
+        }
+        
+        dq.push_back(i);
+        
+        // Window is complete, add maximum to result
+        if (i >= k - 1) {
+            result.push_back(nums[dq.front()]);
+        }
+    }
+    return result;
+}
+```
+
+**Example: Sliding Window Minimum**
+
+```cpp
+vector<int> slidingWindowMin(vector<int>& nums, int k) {
+    deque<int> dq;  // Monotonic increasing queue
     vector<int> result;
     
     for (int i = 0; i < nums.size(); i++) {
@@ -1813,8 +1908,8 @@ vector<int> slidingWindowMax(vector<int>& nums, int k) {
             dq.pop_front();
         }
         
-        // Maintain decreasing order
-        while (!dq.empty() && nums[dq.back()] < nums[i]) {
+        // Maintain increasing order (for minimum)
+        while (!dq.empty() && nums[dq.back()] > nums[i]) {
             dq.pop_back();
         }
         
@@ -1828,10 +1923,40 @@ vector<int> slidingWindowMax(vector<int>& nums, int k) {
 }
 ```
 
-**When to Use**:
+**Example: Maximum of All Subarrays of Size K**
+
+```cpp
+vector<int> maxOfSubarrays(vector<int>& arr, int k) {
+    deque<int> dq;  // Stores indices
+    vector<int> result;
+    
+    for (int i = 0; i < arr.size(); i++) {
+        // Remove elements outside current window
+        while (!dq.empty() && dq.front() <= i - k) {
+            dq.pop_front();
+        }
+        
+        // Remove elements smaller than current
+        while (!dq.empty() && arr[dq.back()] <= arr[i]) {
+            dq.pop_back();
+        }
+        
+        dq.push_back(i);
+        
+        if (i >= k - 1) {
+            result.push_back(arr[dq.front()]);
+        }
+    }
+    return result;
+}
+```
+
+**When to Use Monotonic Queue**:
 - Sliding window maximum/minimum
 - Range maximum/minimum queries
 - Problems requiring efficient window operations
+- Fixed-size window problems
+- Problems where you need to track optimal element in a window
 
 #### Common Variations
 
