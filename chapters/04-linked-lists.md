@@ -157,7 +157,330 @@ These invariants must **always** hold for a linked list to be correct:
 
 If any step fails, invariants are violated and the list becomes invalid.
 
-### 4.3 Basic Singly Linked List Implementation
+## 4.4 Operations & Interface
+
+**Purpose**: Define what operations are supported.
+
+Linked lists support the following core operations:
+
+| Operation | Description | Precondition | Postcondition |
+|-----------|-------------|--------------|---------------|
+| `insertAtHead(value)` | Insert element at beginning | Value is valid | New node is first, size increases by 1 |
+| `insertAtTail(value)` | Insert element at end | Value is valid | New node is last, size increases by 1 |
+| `insertAtPosition(value, pos)` | Insert element at position | `0 ≤ pos ≤ size` | New node at position, size increases by 1 |
+| `deleteAtHead()` | Remove first element | List is non-empty | First node removed, size decreases by 1 |
+| `deleteAtTail()` | Remove last element | List is non-empty | Last node removed, size decreases by 1 |
+| `deleteAtPosition(pos)` | Remove element at position | `0 ≤ pos < size` | Node at position removed, size decreases by 1 |
+| `search(value)` | Find element in list | Value is valid | Returns position if found, -1 otherwise |
+| `getValueAt(pos)` | Get value at position | `0 ≤ pos < size` | Returns value at position |
+| `isEmpty()` | Check if list is empty | None | Returns true if size == 0 |
+| `getSize()` | Get number of elements | None | Returns current size |
+| `traverse()` | Visit all elements | None | Processes each element in order |
+
+### Behavioral Guarantees
+
+1. **Insertion Guarantees**:
+   - Insertion preserves list order
+   - All existing nodes remain accessible
+   - Size is updated atomically with insertion
+
+2. **Deletion Guarantees**:
+   - Deletion doesn't affect other nodes
+   - Memory is properly deallocated
+   - Size is updated atomically with deletion
+
+3. **Traversal Guarantees**:
+   - Traversal visits nodes in order from head to tail
+   - Each node is visited exactly once
+   - Traversal terminates at tail (nullptr)
+
+4. **Search Guarantees**:
+   - Search returns first occurrence if duplicates exist
+   - Search is complete (checks all nodes)
+   - Returns -1 if element not found
+
+## 4.5 Time & Space Complexity
+
+**Purpose**: Make trade-offs explicit.
+
+### Time Complexity
+
+| Operation | Singly Linked List | Doubly Linked List | Notes |
+|-----------|-------------------|-------------------|-------|
+| **Access by Index** | O(n) | O(n) | Must traverse from head |
+| **Search** | O(n) | O(n) | Linear search required |
+| **Insert at Head** | O(1) | O(1) | Direct head update |
+| **Insert at Tail** | O(n) | O(1) | With tail pointer: O(1) |
+| **Insert at Position** | O(n) | O(n) | Must traverse to position |
+| **Delete at Head** | O(1) | O(1) | Direct head update |
+| **Delete at Tail** | O(n) | O(1) | With tail pointer: O(1) |
+| **Delete at Position** | O(n) | O(n) | Must traverse to position |
+| **Delete by Value** | O(n) | O(n) | Search + delete |
+
+### Space Complexity
+
+| Aspect | Space Complexity | Notes |
+|--------|------------------|-------|
+| **Storage per Node** | O(1) | Fixed size per node |
+| **Total Space** | O(n) | n nodes for n elements |
+| **Overhead per Node** | O(1) | One pointer (singly) or two (doubly) |
+| **Auxiliary Space** | O(1) | Operations use constant extra space |
+
+### Detailed Analysis
+
+#### Singly Linked List
+
+**Memory per Node**:
+- Data: sizeof(T) bytes
+- Next pointer: 8 bytes (64-bit system)
+- **Total**: sizeof(T) + 8 bytes per node
+
+**Example**: For `int` (4 bytes):
+- Per node: 4 + 8 = 12 bytes
+- For 1000 nodes: 12,000 bytes ≈ 12 KB
+
+#### Doubly Linked List
+
+**Memory per Node**:
+- Data: sizeof(T) bytes
+- Next pointer: 8 bytes
+- Previous pointer: 8 bytes
+- **Total**: sizeof(T) + 16 bytes per node
+
+**Example**: For `int` (4 bytes):
+- Per node: 4 + 16 = 20 bytes
+- For 1000 nodes: 20,000 bytes ≈ 20 KB
+
+### Comparison with Arrays
+
+| Operation | Array | Linked List | Winner |
+|-----------|-------|-------------|--------|
+| Random Access | O(1) | O(n) | Array |
+| Insert at Beginning | O(n) | O(1) | Linked List |
+| Insert at End | O(1) amortized | O(1) with tail | Tie |
+| Delete at Beginning | O(n) | O(1) | Linked List |
+| Memory Overhead | O(1) | O(n) pointers | Array |
+
+## 4.6 Pseudocode (Language-Neutral) ⭐ (Mandatory)
+
+**Purpose**: Bridge theory → implementation.
+
+**Rules**: No language syntax, no pointers/templates, focus on logic only.
+
+### Node Structure (Abstract)
+
+```
+NODE:
+  data: value of type T
+  next: reference to next node (or null)
+```
+
+### Singly Linked List Operations
+
+#### Insert at Head
+
+```
+FUNCTION insertAtHead(list, value):
+  new_node ← create node with value
+  new_node.next ← list.head
+  list.head ← new_node
+  list.size ← list.size + 1
+END FUNCTION
+```
+
+#### Insert at Tail
+
+```
+FUNCTION insertAtTail(list, value):
+  new_node ← create node with value
+  new_node.next ← null
+  
+  IF list.head is null:
+    list.head ← new_node
+  ELSE:
+    current ← list.head
+    WHILE current.next is not null:
+      current ← current.next
+    current.next ← new_node
+  END IF
+  
+  list.size ← list.size + 1
+END FUNCTION
+```
+
+#### Insert at Position
+
+```
+FUNCTION insertAtPosition(list, value, position):
+  IF position > list.size:
+    ERROR "Position out of bounds"
+  END IF
+  
+  IF position = 0:
+    insertAtHead(list, value)
+    RETURN
+  END IF
+  
+  new_node ← create node with value
+  current ← list.head
+  
+  FOR i FROM 0 TO position - 2:
+    current ← current.next
+  END FOR
+  
+  new_node.next ← current.next
+  current.next ← new_node
+  list.size ← list.size + 1
+END FUNCTION
+```
+
+#### Delete at Head
+
+```
+FUNCTION deleteAtHead(list):
+  IF list.head is null:
+    RETURN false
+  END IF
+  
+  old_head ← list.head
+  list.head ← list.head.next
+  delete old_head
+  list.size ← list.size - 1
+  RETURN true
+END FUNCTION
+```
+
+#### Delete at Tail
+
+```
+FUNCTION deleteAtTail(list):
+  IF list.head is null:
+    RETURN false
+  END IF
+  
+  IF list.head.next is null:
+    delete list.head
+    list.head ← null
+  ELSE:
+    current ← list.head
+    WHILE current.next.next is not null:
+      current ← current.next
+    delete current.next
+    current.next ← null
+  END IF
+  
+  list.size ← list.size - 1
+  RETURN true
+END FUNCTION
+```
+
+#### Search
+
+```
+FUNCTION search(list, value):
+  current ← list.head
+  position ← 0
+  
+  WHILE current is not null:
+    IF current.data = value:
+      RETURN position
+    END IF
+    current ← current.next
+    position ← position + 1
+  END WHILE
+  
+  RETURN -1
+END FUNCTION
+```
+
+#### Traverse
+
+```
+FUNCTION traverse(list, process_function):
+  current ← list.head
+  
+  WHILE current is not null:
+    process_function(current.data)
+    current ← current.next
+  END WHILE
+END FUNCTION
+```
+
+#### Get Value at Position
+
+```
+FUNCTION getValueAt(list, position):
+  IF position < 0 OR position >= list.size:
+    ERROR "Position out of bounds"
+  END IF
+  
+  current ← list.head
+  FOR i FROM 0 TO position - 1:
+    current ← current.next
+  END FOR
+  
+  RETURN current.data
+END FUNCTION
+```
+
+### Doubly Linked List Operations
+
+#### Insert at Head (Doubly Linked)
+
+```
+FUNCTION insertAtHeadDoubly(list, value):
+  new_node ← create node with value
+  new_node.next ← list.head
+  new_node.prev ← null
+  
+  IF list.head is not null:
+    list.head.prev ← new_node
+  ELSE:
+    list.tail ← new_node
+  END IF
+  
+  list.head ← new_node
+  list.size ← list.size + 1
+END FUNCTION
+```
+
+#### Delete at Position (Doubly Linked)
+
+```
+FUNCTION deleteAtPositionDoubly(list, position):
+  IF position < 0 OR position >= list.size:
+    ERROR "Position out of bounds"
+  END IF
+  
+  current ← list.head
+  FOR i FROM 0 TO position - 1:
+    current ← current.next
+  END FOR
+  
+  IF current.prev is not null:
+    current.prev.next ← current.next
+  ELSE:
+    list.head ← current.next
+  END IF
+  
+  IF current.next is not null:
+    current.next.prev ← current.prev
+  ELSE:
+    list.tail ← current.prev
+  END IF
+  
+  delete current
+  list.size ← list.size - 1
+END FUNCTION
+```
+
+This pseudocode should be readable by any engineer, regardless of their programming language background.
+
+## 4.7 Implementation (Reference Language: C++) ⭐
+
+**Note to Reader**: This section provides concrete C++ implementations. The correctness relies on the invariants defined in Section 4.3 and the pseudocode in Section 4.6.
+
+### 4.7.1 Basic Singly Linked List Implementation
 
 ### Node Structure
 ```cpp
@@ -1229,9 +1552,450 @@ ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {
 }
 ```
 
+## 4.8 Correctness Argument
+
+**Purpose**: Explain why the implementation works.
+
+### Invariant Preservation
+
+The linked list implementations preserve the core invariants defined in Section 4.3:
+
+#### 1. Head Pointer Invariant
+
+**For Insertion at Head**:
+- New node is created with `next = current head`
+- Head is updated to point to new node
+- If list was empty, new node becomes both head and tail
+- **Preserves**: Head always points to first node (or null if empty)
+
+**For Deletion at Head**:
+- Head is updated to `head->next`
+- Old head is deleted
+- If list becomes empty, head becomes null
+- **Preserves**: Head is null if and only if list is empty
+
+#### 2. Linkage Invariant
+
+**For Insertion**:
+- New node's `next` is set before updating previous node's `next`
+- Chain remains unbroken: `... → prev → new → next → ...`
+- **Preserves**: All nodes form valid chain from head to tail
+
+**For Deletion**:
+- Previous node's `next` is updated to skip deleted node
+- Deleted node is removed from chain
+- **Preserves**: Chain remains valid, no broken links
+
+#### 3. Size Consistency Invariant
+
+**For All Operations**:
+- Size is incremented atomically with insertion
+- Size is decremented atomically with deletion
+- Size is checked before operations that require non-empty list
+- **Preserves**: Size always equals number of nodes
+
+#### 4. Acyclicity Invariant
+
+**For Non-Circular Lists**:
+- Last node's `next` is always null
+- No node's `next` points back to earlier node
+- Traversal from head eventually reaches null
+- **Preserves**: No cycles exist (unless circular list)
+
+### Edge Case Handling
+
+#### Empty List
+
+**Insertion**:
+- `insertAtHead`: Creates first node, head and tail point to it
+- `insertAtTail`: Same as insertAtHead for empty list
+- **Correct**: Empty list becomes non-empty correctly
+
+**Deletion**:
+- All delete operations check `if (head == nullptr)` first
+- Return false or throw exception if empty
+- **Correct**: No operations on empty list
+
+#### Single Element List
+
+**Deletion**:
+- `deleteAtHead`: Sets head to null, list becomes empty
+- `deleteAtTail`: Same as deleteAtHead for single element
+- **Correct**: Single element list handled correctly
+
+#### Boundary Conditions
+
+**Position Validation**:
+- `insertAtPosition`: Checks `position > size` before insertion
+- `deleteAtPosition`: Checks `position >= size` before deletion
+- **Correct**: Out-of-bounds positions are caught
+
+### Termination Guarantee
+
+**Why operations terminate**:
+
+1. **Traversal Operations**: 
+   - Loop condition: `current != nullptr`
+   - Progress: `current = current->next` moves forward
+   - Termination: Eventually reaches null (last node)
+
+2. **Search Operations**:
+   - Same as traversal, terminates when element found or list exhausted
+
+3. **Position-based Operations**:
+   - Loop bounded by position index
+   - Terminates when position reached
+
+### Informal Proof Sketch
+
+**For Insertion**:
+1. **Precondition**: Valid position and value
+2. **Create Node**: New node created with correct data
+3. **Link Node**: New node linked into chain correctly
+4. **Update Pointers**: Head/tail updated if necessary
+5. **Update Size**: Size incremented
+6. **Postcondition**: List contains new node, all invariants preserved
+
+**For Deletion**:
+1. **Precondition**: List non-empty, valid position
+2. **Find Node**: Traverse to node to delete
+3. **Unlink Node**: Remove from chain
+4. **Update Pointers**: Head/tail updated if necessary
+5. **Delete Node**: Free memory
+6. **Update Size**: Size decremented
+7. **Postcondition**: Node removed, all invariants preserved
+
+This correctness argument provides engineers with confidence that their linked list implementations work correctly.
+
+## 4.9 Edge Cases & Failure Modes
+
+**Purpose**: Build defensive thinking.
+
+### Empty List Cases
+
+#### Operations on Empty List
+
+**Problem**: Many operations assume non-empty list.
+
+**Edge Cases**:
+- `deleteAtHead()` on empty list
+- `deleteAtTail()` on empty list
+- `getValueAt(0)` on empty list
+- `search(value)` on empty list
+
+**Handling**:
+```cpp
+// Check before operations
+if (head == nullptr) {
+    throw runtime_error("List is empty");
+    // or return false/error code
+}
+```
+
+**Failure Mode**: Accessing `head->next` when `head` is null causes null pointer dereference.
+
+#### Single Element List
+
+**Problem**: Special case where head == tail.
+
+**Edge Cases**:
+- Deleting from single-element list
+- Inserting into single-element list
+- Operations that assume multiple elements
+
+**Handling**:
+```cpp
+// Special case for single element
+if (head == tail) {
+    // Handle single element case
+    delete head;
+    head = tail = nullptr;
+}
+```
+
+**Failure Mode**: Not handling single element case can leave dangling pointers.
+
+### Position Out of Bounds
+
+#### Invalid Position Values
+
+**Problem**: Position may be negative or exceed list size.
+
+**Edge Cases**:
+- `insertAtPosition(value, -1)` - negative position
+- `insertAtPosition(value, size + 1)` - beyond end
+- `deleteAtPosition(size)` - beyond last element
+
+**Handling**:
+```cpp
+if (position < 0 || position > size) {
+    throw out_of_range("Position out of bounds");
+}
+```
+
+**Failure Mode**: Accessing beyond list bounds causes undefined behavior or crash.
+
+### Memory Issues
+
+#### Memory Leaks
+
+**Problem**: Nodes not properly deleted.
+
+**Edge Cases**:
+- Deleting node without freeing memory
+- Losing reference to node before deletion
+- Exception thrown during operation
+
+**Handling**:
+```cpp
+// Use smart pointers (unique_ptr)
+// Or ensure manual deletion
+ListNode* toDelete = current->next;
+current->next = current->next->next;
+delete toDelete;  // Must delete before losing reference
+```
+
+**Failure Mode**: Memory leak causes program to consume increasing memory.
+
+#### Dangling Pointers
+
+**Problem**: Pointer points to deleted memory.
+
+**Edge Cases**:
+- Accessing node after deletion
+- Using pointer after list is destroyed
+- Concurrent access (see Section 4.13)
+
+**Handling**:
+```cpp
+// Set pointers to null after deletion
+delete node;
+node = nullptr;  // Prevents reuse
+
+// Or use smart pointers that handle this automatically
+```
+
+**Failure Mode**: Dangling pointer access causes undefined behavior or crash.
+
+### Cycle Detection
+
+#### Accidental Cycles
+
+**Problem**: Creating cycles in non-circular list.
+
+**Edge Cases**:
+- Setting `node->next` to earlier node
+- Circular reference during insertion
+- Broken invariant: cycle exists
+
+**Handling**:
+```cpp
+// Validate no cycles (for non-circular lists)
+bool hasCycle(ListNode* head) {
+    ListNode* slow = head;
+    ListNode* fast = head;
+    
+    while (fast && fast->next) {
+        slow = slow->next;
+        fast = fast->next->next;
+        if (slow == fast) return true;
+    }
+    return false;
+}
+```
+
+**Failure Mode**: Infinite loop during traversal, stack overflow.
+
+### Integer Overflow
+
+**Problem**: Size counter may overflow.
+
+**Edge Cases**:
+- Very large number of insertions
+- Size exceeds `size_t` maximum
+- Size becomes negative (if using signed type)
+
+**Handling**:
+```cpp
+// Check before incrementing
+if (size == SIZE_MAX) {
+    throw overflow_error("List size limit reached");
+}
+size++;  // Safe increment
+```
+
+**Failure Mode**: Size overflow causes incorrect size tracking.
+
+### Common Failure Patterns
+
+1. **Off-by-One Errors**: Accessing `position + 1` instead of `position`
+2. **Null Pointer Dereference**: Not checking `head == nullptr`
+3. **Lost Nodes**: Not updating pointers correctly during deletion
+4. **Memory Leaks**: Forgetting to delete nodes
+5. **Double Deletion**: Deleting same node twice
+6. **Broken Chain**: Not updating `next` pointer correctly
+
+This section maps directly to production bugs and helps engineers write robust linked list code.
+
+## 4.10 Performance & System Considerations ⭐ (Differentiator)
+
+**Purpose**: Connect algorithms to real machines.
+
+### Cache Locality
+
+#### Linked Lists vs Arrays
+
+**Arrays**:
+- **Excellent Cache Locality**: Contiguous memory, sequential access
+- **Prefetching Friendly**: CPU can prefetch next elements
+- **Cache Hits**: Sequential access → many cache hits
+
+**Linked Lists**:
+- **Poor Cache Locality**: Nodes scattered in memory
+- **Random Memory Access**: Each node access likely cache miss
+- **Cache Misses**: Traversing list → many cache misses
+
+**Performance Impact**:
+- Array traversal: ~1-2 cycles per element (cache hit)
+- Linked list traversal: ~100-300 cycles per element (cache miss)
+- **10-100x slower** for sequential access patterns
+
+#### When Cache Matters Most
+
+**High Impact**:
+- Frequent traversals
+- Large lists (many cache misses)
+- Sequential access patterns
+- Performance-critical code paths
+
+**Low Impact**:
+- Infrequent access
+- Small lists (fit in cache)
+- Random access patterns
+- Non-performance-critical code
+
+### Memory Allocation
+
+#### Heap Fragmentation
+
+**Problem**: Many small allocations fragment heap.
+
+**Linked Lists**:
+- Each node allocated separately
+- Nodes scattered across heap
+- Fragmentation increases over time
+
+**Impact**:
+- Slower allocation (must find free block)
+- Increased memory usage (fragmentation overhead)
+- Potential allocation failures
+
+**Mitigation**:
+- Use memory pools for frequent allocations
+- Pre-allocate nodes in batches
+- Consider array-based alternatives for performance-critical code
+
+#### Allocation Overhead
+
+**Per Node Allocation**:
+- System call overhead
+- Heap management overhead
+- Alignment requirements
+
+**Example**: For `int` (4 bytes):
+- Actual data: 4 bytes
+- Pointer: 8 bytes
+- Allocation overhead: ~16-32 bytes
+- **Total**: ~28-44 bytes per node (7-11x data size!)
+
+### Branch Prediction
+
+#### Conditional Branches in Loops
+
+**Problem**: `while (current != nullptr)` creates branch.
+
+**Impact**:
+- Well-predicted branch: ~1 cycle
+- Mispredicted branch: ~10-20 cycles
+- Traversal has many branches
+
+**Optimization**:
+- Use sentinel nodes to eliminate null checks
+- Unroll loops for small, fixed-size lists
+- Use array-based structure when possible
+
+### Pointer Chasing
+
+#### Memory Access Pattern
+
+**Linked Lists**:
+- Each access requires following pointer
+- Cannot prefetch next node (address unknown)
+- Memory latency dominates performance
+
+**Arrays**:
+- Sequential access pattern
+- Prefetching works well
+- CPU can pipeline accesses
+
+**Performance**:
+- Pointer chasing: ~100-300 cycles per node
+- Array access: ~1-2 cycles per element
+- **50-300x difference** in access time
+
+### Concurrency Implications
+
+#### Thread Safety
+
+**Problem**: Linked lists are not thread-safe by default.
+
+**Issues**:
+- Concurrent insertions can corrupt structure
+- Race conditions on head/tail pointers
+- Lost updates during concurrent modifications
+
+**Solutions**:
+- Use locks (see Section 4.13)
+- Lock-free data structures (complex)
+- Thread-local lists, merge periodically
+
+**Performance Trade-off**:
+- Locking adds overhead
+- Lock contention reduces parallelism
+- Lock-free requires careful design
+
+### NUMA Considerations (Advanced)
+
+**Problem**: On NUMA systems, memory access time depends on location.
+
+**Impact**:
+- Local memory: ~100 ns
+- Remote memory: ~200-300 ns
+
+**Linked Lists**:
+- Nodes may be allocated on different NUMA nodes
+- Traversal crosses NUMA boundaries
+- Performance degrades on multi-socket systems
+
+**Mitigation**:
+- Allocate nodes on local NUMA node
+- Use NUMA-aware allocators
+- Consider array-based alternatives for NUMA systems
+
+### Practical Recommendations
+
+1. **Use Arrays When Possible**: Better cache performance, simpler code
+2. **Use Linked Lists for Dynamic Size**: When size changes frequently
+3. **Consider Memory Pools**: For frequent allocations
+4. **Profile Before Optimizing**: Measure actual performance
+5. **Use Smart Pointers**: Prevent memory leaks
+6. **Consider Hybrid Approaches**: Array of linked lists for some use cases
+
+This section connects linked list algorithms to real system performance, making the book valuable for engineers working on production systems.
+
 ## Part V: Summary
 
-### 4.10 Performance Analysis
+### 4.11 Performance Analysis
 
 #### Time Complexity Comparison
 
@@ -1251,7 +2015,7 @@ ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {
 - **Doubly Linked List**: O(1) extra space per operation
 - **Overall Space**: O(n) where n is the number of elements
 
-### 4.11 Failure Modes and Common Pitfalls
+### 4.12 Failure Modes and Common Pitfalls
 
 Understanding common failure modes helps avoid bugs and performance issues.
 
@@ -1533,7 +2297,7 @@ void insertAtTail(int value) {
 **Why it happens**: Not maintaining auxiliary pointers
 **Impact**: Degraded performance, O(n) instead of O(1)
 
-### 4.12 Key Takeaways
+### 4.13 Key Takeaways
 
 1. **Linked lists** provide dynamic sizing and efficient insertion/deletion
 2. **Singly linked lists** are memory efficient but only support forward traversal
@@ -1543,7 +2307,7 @@ void insertAtTail(int value) {
 6. **Common algorithms** include cycle detection, merging, and palindrome checking
 7. **Trade-offs** exist between arrays and linked lists for different use cases
 
-### 4.13 Practice Exercises
+### 4.14 Practice Exercises
 
 1. Implement a function to find the middle element of a linked list in one pass.
 2. Write a function to remove all duplicate elements from a sorted linked list.
@@ -1551,11 +2315,11 @@ void insertAtTail(int value) {
 4. Implement a function to add two numbers represented as linked lists.
 5. Write a function to clone a linked list with random pointers.
 
-## 4.13 Concurrency Considerations
+## 4.15 Concurrency Considerations
 
 This section applies the concurrency fundamentals from [Chapter 3.5](03.5-concurrency-fundamentals.md) to linked lists. See Section 3.5.3 for invariant-based reasoning and Section 3.5.4 for race conditions.
 
-### 4.13.1 Shared-State Invariants
+### 4.15.1 Shared-State Invariants
 
 **Core Linked List Invariants** (see Section 3.5.3):
 1. **Linkage Invariant**: "Each node's `next` pointer correctly points to the next node"
@@ -1567,7 +2331,7 @@ This section applies the concurrency fundamentals from [Chapter 3.5](03.5-concur
 - Node deletion while another thread is traversing through it
 - Head pointer updates during insertion/deletion
 
-### 4.13.2 Operations That Must Be Atomic
+### 4.15.2 Operations That Must Be Atomic
 
 **Insertion Operation** (see Section 3.5.4):
 ```cpp
@@ -1594,7 +2358,7 @@ void deleteNode(Node* prev, Node* to_delete) {
 - **Delete**: Bypass and memory deallocation must be atomic
 - **Traverse**: Must not observe nodes in inconsistent states
 
-### 4.13.3 Naïve Approaches and Why They Fail
+### 4.15.3 Naïve Approaches and Why They Fail
 
 **1. Partial Updates**:
 ```cpp
@@ -1627,7 +2391,7 @@ void insertAfter(Node* prev, Node* new_node) {
 ```
 **Why It Fails**: Traversing threads are unprotected. Invariant violation: **Linkage Invariant** broken.
 
-### 4.13.4 Locking Strategies
+### 4.15.4 Locking Strategies
 
 **Coarse-Grained Lock** (see Section 3.5.8):
 ```cpp
@@ -1666,7 +2430,7 @@ void insertAfter(Node* prev, Node* new_node) {
 - Less useful for linked lists (traversal modifies pointers in some implementations)
 - Consider for read-heavy workloads with immutable traversal
 
-### 4.13.5 Performance and Scalability Implications
+### 4.15.5 Performance and Scalability Implications
 
 **Contention** (see Section 3.5.8):
 - Coarse-grained locking: Very high contention, throughput collapses
@@ -1678,7 +2442,7 @@ void insertAfter(Node* prev, Node* new_node) {
 - With many threads, coarse-grained locking becomes severe bottleneck
 - Fine-grained locking helps but adds significant complexity
 
-### 4.13.6 When Not to Do This Yourself
+### 4.15.6 When Not to Do This Yourself
 
 **Use Library Implementations**:
 - Thread-safe linked lists from well-tested libraries
@@ -1691,11 +2455,11 @@ void insertAfter(Node* prev, Node* new_node) {
 
 **For Production**: Prefer thread-safe containers from standard libraries or well-tested libraries. Lock-free linked lists require deep expertise (see Section 3.5.9 warning). See Section 3.5.10 for guidance on using libraries.
 
-## 4.14 Practical Applications
+## 4.16 Practical Applications
 
 Linked lists are fundamental building blocks for many real-world applications. Understanding these applications helps see why linked lists matter beyond academic exercises.
 
-### 4.14.1 LRU Cache Implementation (Preview)
+### 4.16.1 LRU Cache Implementation (Preview)
 
 A **Least Recently Used (LRU) Cache** uses a doubly linked list to maintain access order efficiently.
 
@@ -1803,7 +2567,7 @@ public:
 
 **Real-World Use**: Web browser caches, database query caches, operating system page replacement
 
-### 4.14.2 Undo/Redo Systems
+### 4.16.2 Undo/Redo Systems
 
 Text editors, graphics applications, and many software use linked lists to implement undo/redo functionality.
 
@@ -1902,7 +2666,7 @@ public:
 
 **Real-World Use**: Text editors (Vim, Emacs), graphics software (Photoshop), IDEs, word processors
 
-### 4.14.3 Browser History
+### 4.16.3 Browser History
 
 Web browsers maintain a history of visited pages using a linked list structure.
 
@@ -2011,7 +2775,7 @@ public:
 
 **Real-World Use**: All web browsers (Chrome, Firefox, Safari), mobile browsers, web view components
 
-### 4.14.4 Other Applications
+### 4.16.4 Other Applications
 
 **1. Polynomial Representation**:
 - Each node stores coefficient and exponent
@@ -2038,7 +2802,133 @@ public:
 - Efficient for sparse graphs
 - Used in graph algorithms (see Chapter 11)
 
-### 4.15 Summary
+## 4.11 Variants & Extensions
+
+**Purpose**: Show evolution and alternatives.
+
+### Linked List Variants
+
+#### Singly Linked List
+- **Characteristics**: Each node has one pointer (next)
+- **Memory**: sizeof(T) + 8 bytes per node
+- **Use Case**: Simple dynamic lists, stacks
+- **Limitation**: Only forward traversal
+
+#### Doubly Linked List
+- **Characteristics**: Each node has two pointers (next, prev)
+- **Memory**: sizeof(T) + 16 bytes per node
+- **Use Case**: Need bidirectional traversal, efficient tail operations
+- **Advantage**: Can traverse backwards, O(1) deletion at tail
+
+#### Circular Linked List
+- **Characteristics**: Last node points back to first
+- **Use Case**: Round-robin algorithms, circular buffers
+- **Advantage**: No null termination, continuous traversal
+
+#### Skip List
+- **Characteristics**: Multi-level linked list with shortcuts
+- **Performance**: O(log n) search, insert, delete
+- **Use Case**: Alternative to balanced trees, simpler implementation
+- **Trade-off**: Probabilistic structure, uses more memory
+
+### When to Choose Which Variant
+
+| Requirement | Recommended Variant | Why |
+|-------------|-------------------|-----|
+| Simple dynamic list | Singly Linked List | Minimal memory, simple implementation |
+| Need backward traversal | Doubly Linked List | Bidirectional access |
+| Frequent tail operations | Doubly Linked List | O(1) tail operations |
+| Round-robin algorithms | Circular Linked List | Natural circular structure |
+| Need O(log n) operations | Skip List | Better than O(n) search |
+| Memory constrained | Singly Linked List | Least overhead |
+| Need to maintain order | Any (all preserve order) | All variants maintain insertion order |
+
+### Extensions
+
+#### Sorted Linked List
+- Maintains elements in sorted order
+- Insertion: O(n) to find position
+- Use case: When order matters and insertions are infrequent
+
+#### Self-Organizing List
+- Moves accessed elements toward front
+- Use case: When access patterns are non-uniform
+- Variants: Move-to-front, transpose, frequency count
+
+#### Unrolled Linked List
+- Each node contains multiple elements (array)
+- Reduces pointer overhead
+- Use case: Balance between arrays and linked lists
+
+## 4.12 Real-World Implementations
+
+**Purpose**: Ground theory in practice.
+
+### Standard Library Equivalents
+
+#### C++ Standard Library
+
+**`std::list`**:
+- Doubly linked list implementation
+- Bidirectional iterators
+- O(1) insertion/deletion at any position
+- **Design Choice**: Uses doubly linked structure for flexibility
+
+**`std::forward_list`**:
+- Singly linked list implementation
+- Forward-only iterators
+- O(1) insertion/deletion (if iterator available)
+- **Design Choice**: Minimal memory overhead, forward-only access
+
+**Trade-offs**:
+- `std::list`: More memory, bidirectional access
+- `std::forward_list`: Less memory, forward-only access
+
+#### Java Collections
+
+**`java.util.LinkedList`**:
+- Doubly linked list
+- Implements both List and Deque interfaces
+- **Design Choice**: Flexibility over memory efficiency
+
+**`java.util.ArrayList`**:
+- Array-based (not linked list, but alternative)
+- Better performance for random access
+- **Design Choice**: Performance over flexibility
+
+#### Python
+
+**`collections.deque`**:
+- Double-ended queue (can use linked list internally)
+- O(1) operations at both ends
+- **Design Choice**: Optimized for queue operations
+
+### Notable Trade-offs in Real Systems
+
+1. **Memory vs Performance**: Singly linked uses less memory but slower tail operations
+2. **Simplicity vs Features**: Doubly linked more complex but more flexible
+3. **Cache Performance**: All linked lists suffer from poor cache locality
+4. **Thread Safety**: Standard library implementations are not thread-safe by default
+5. **Iterator Invalidation**: Insertions/deletions can invalidate iterators
+
+### When Real Systems Use Linked Lists
+
+**Use Linked Lists**:
+- Undo/Redo systems (browser history, text editors)
+- LRU Cache implementation
+- Symbol tables in compilers
+- Polynomial representation
+- Sparse matrix representation
+
+**Avoid Linked Lists**:
+- High-performance code (use arrays)
+- Cache-critical applications
+- Random access needed frequently
+- Memory-constrained systems
+
+This section shows how linked list concepts appear in production systems, making the theory immediately applicable.
+
+### 4.17 Summary
 
 Linked lists are fundamental data structures that offer flexibility in memory management and efficient insertion/deletion operations. While they don't provide random access like arrays, they excel in scenarios where the size is unknown beforehand or frequent insertions/deletions are required. Understanding the different types of linked lists and their associated algorithms is crucial for solving many programming problems and designing efficient data structures.
 
