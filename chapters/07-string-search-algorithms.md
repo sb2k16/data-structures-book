@@ -2012,9 +2012,20 @@ public:
 ```
 
 ### Time and Space Complexity
-- **Time Complexity**: O(n + m + z) where z is the number of matches
-- **Space Complexity**: O(m) where m is the total length of all patterns
-- **Preprocessing Time**: O(m)
+
+**Preprocessing** (based on [cp-algorithms.com](https://cp-algorithms.com/string/aho_corasick.html)):
+- **Trie Construction**: O(m) where m is total length of all patterns
+- **Failure Link Construction**: O(m × k) where k is alphabet size, or O(m) with memoization
+- **BFS-based Construction**: O(n × k) where n is number of nodes, or O(n log k) with persistent arrays
+
+**Searching**:
+- **Time Complexity**: O(n + m + z) where:
+  - n = text length
+  - m = total pattern length
+  - z = number of matches found
+- **Space Complexity**: O(m) for the automaton
+
+**Key Insight**: The algorithm processes the text in a single pass, and with proper output link optimization, each match is found in O(1) time, leading to the O(n + m + z) complexity.
 
 ## 7.8 Performance Comparison
 
