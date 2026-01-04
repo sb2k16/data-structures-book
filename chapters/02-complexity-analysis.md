@@ -139,25 +139,71 @@ int binarySearch(const vector<int>& arr, int target) {
 
 **Visualization of Binary Search**:
 
+Binary search can be visualized as a decision tree where each node represents checking the middle element and branching left or right:
+
 ```mermaid
 graph TD
-    Start["Array: [1,3,5,7,9,11,13,15]<br/>Target: 7"] --> Check1["Check middle: arr[3] = 7"]
-    Check1 --> Found["Found! Return index 3"]
+    Root["Array: [1,3,5,7,9,11,13,15]<br/>Check: arr[3] = 7<br/>Index: 3"]
     
-    Start2["Array: [1,3,5,7,9,11,13,15]<br/>Target: 5"] --> Check2["Check middle: arr[3] = 7"]
-    Check2 --> Compare1{7 > 5?}
-    Compare1 -->|Yes| Left1["Search left half<br/>[1,3,5]"]
-    Left1 --> Check3["Check middle: arr[1] = 3"]
-    Check3 --> Compare2{3 < 5?}
-    Compare2 -->|Yes| Right1["Search right half<br/>[5]"]
-    Right1 --> Check4["Check: arr[2] = 5"]
-    Check4 --> Found2["Found! Return index 2"]
+    Root -->|Target < 7| Left1["Left: [1,3,5]<br/>Check: arr[1] = 3<br/>Index: 1"]
+    Root -->|Target = 7| Found1["✓ Found at index 3"]
+    Root -->|Target > 7| Right1["Right: [9,11,13,15]<br/>Check: arr[5] = 11<br/>Index: 5"]
     
-    style Start fill:#E6F3FF,stroke:#333,stroke-width:2px
-    style Check1 fill:#FFE5B4,stroke:#333,stroke-width:2px
-    style Found fill:#90EE90,stroke:#333,stroke-width:3px
+    Left1 -->|Target < 3| Left2["Left: [1]<br/>Check: arr[0] = 1<br/>Index: 0"]
+    Left1 -->|Target = 3| Found2["✓ Found at index 1"]
+    Left1 -->|Target > 3| Right2["Right: [5]<br/>Check: arr[2] = 5<br/>Index: 2"]
+    
+    Right1 -->|Target < 11| Left3["Left: [9]<br/>Check: arr[4] = 9<br/>Index: 4"]
+    Right1 -->|Target = 11| Found3["✓ Found at index 5"]
+    Right1 -->|Target > 11| Right3["Right: [13,15]<br/>Check: arr[6] = 13<br/>Index: 6"]
+    
+    Left2 -->|Target = 1| Found4["✓ Found at index 0"]
+    Left2 -->|Target ≠ 1| NotFound1["✗ Not found"]
+    
+    Right2 -->|Target = 5| Found5["✓ Found at index 2"]
+    Right2 -->|Target ≠ 5| NotFound2["✗ Not found"]
+    
+    Left3 -->|Target = 9| Found6["✓ Found at index 4"]
+    Left3 -->|Target ≠ 9| NotFound3["✗ Not found"]
+    
+    Right3 -->|Target < 13| NotFound4["✗ Not found"]
+    Right3 -->|Target = 13| Found7["✓ Found at index 6"]
+    Right3 -->|Target > 13| Right4["Right: [15]<br/>Check: arr[7] = 15<br/>Index: 7"]
+    
+    Right4 -->|Target = 15| Found8["✓ Found at index 7"]
+    Right4 -->|Target ≠ 15| NotFound5["✗ Not found"]
+    
+    style Root fill:#FFE5B4,stroke:#333,stroke-width:3px
+    style Found1 fill:#90EE90,stroke:#333,stroke-width:3px
     style Found2 fill:#90EE90,stroke:#333,stroke-width:3px
+    style Found3 fill:#90EE90,stroke:#333,stroke-width:3px
+    style Found4 fill:#90EE90,stroke:#333,stroke-width:3px
+    style Found5 fill:#90EE90,stroke:#333,stroke-width:3px
+    style Found6 fill:#90EE90,stroke:#333,stroke-width:3px
+    style Found7 fill:#90EE90,stroke:#333,stroke-width:3px
+    style Found8 fill:#90EE90,stroke:#333,stroke-width:3px
+    style NotFound1 fill:#FFB6C1,stroke:#333,stroke-width:2px
+    style NotFound2 fill:#FFB6C1,stroke:#333,stroke-width:2px
+    style NotFound3 fill:#FFB6C1,stroke:#333,stroke-width:2px
+    style NotFound4 fill:#FFB6C1,stroke:#333,stroke-width:2px
+    style NotFound5 fill:#FFB6C1,stroke:#333,stroke-width:2px
 ```
+
+**Tree Structure Explanation**:
+- **Root**: Initial array, check middle element
+- **Left Branch**: Target is smaller, search left half
+- **Right Branch**: Target is larger, search right half
+- **Leaf Nodes**: Either found (✓) or not found (✗)
+- **Height**: O(log n) - maximum depth of the tree
+- **Nodes Visited**: At most log₂(n) + 1 nodes for array of size n
+
+**Example Search Paths**:
+- **Searching for 7**: Root → Found (1 comparison)
+- **Searching for 5**: Root → Left1 → Right2 → Found (3 comparisons)
+- **Searching for 15**: Root → Right1 → Right3 → Right4 → Found (4 comparisons)
+- **Searching for 4**: Root → Left1 → Right2 → Not Found (3 comparisons)
+
+**Key Insight**: The tree has height O(log n), meaning we need at most O(log n) comparisons to find any element or determine it doesn't exist.
 
 #### Example 4: Multiple Operations
 ```cpp
