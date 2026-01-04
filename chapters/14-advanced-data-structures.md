@@ -15,6 +15,9 @@ This chapter covers advanced data structures that are essential for solving comp
 7. **Skip Lists**: Probabilistic alternative to balanced trees
 8. **Bloom Filters**: Space-efficient probabilistic membership testing
 9. **Count-Min Sketch**: Probabilistic frequency counting for data streams
+10. **Fibonacci Heap**: Advanced heap with O(1) amortized decrease-key
+11. **Suffix Array/Tree**: Efficient string operations and pattern matching
+12. **Persistent Data Structures**: Maintain all versions of data structure
 
 ## 14.2 Heaps
 
