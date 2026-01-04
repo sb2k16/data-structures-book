@@ -72,7 +72,11 @@ Think of DP like solving a jigsaw puzzle:
 | Memoization | Reduced | O(n) | Top-down approach |
 | Tabulation | Reduced | O(n) | Bottom-up approach |
 
-## 12.2 Fibonacci Sequence - The Classic Example
+## 12.7 Implementation (Reference Language: C++) ⭐
+
+**Note to Reader**: This section provides concrete C++ implementations. The correctness relies on the invariants defined in Section 12.3 and the pseudocode in Section 12.6.
+
+### 12.7.1 Fibonacci Sequence - The Classic Example
 
 ### Naive Recursive Approach
 ```cpp
