@@ -1,8 +1,72 @@
 # Chapter 14: Advanced Data Structures
 
-## 14.1 Introduction
+## 14.1 Problem Statement & Motivation
 
-This chapter covers advanced data structures that are essential for solving complex problems efficiently. These structures provide specialized operations beyond basic arrays, lists, and trees.
+### What Problems Do Advanced Data Structures Solve?
+
+Basic data structures (arrays, linked lists, trees) have limitations for specialized operations:
+
+- **Range Queries**: Need O(1) or O(log n) range sum/min/max queries
+- **Prefix Operations**: Need efficient prefix sum queries
+- **Priority Operations**: Need efficient min/max extraction with updates
+- **String Operations**: Need efficient prefix matching, substring search
+- **Probabilistic Membership**: Need space-efficient approximate membership testing
+- **Version History**: Need to maintain multiple versions of data structure
+
+**Naive Approaches and Their Limitations**:
+
+- **Arrays for Range Queries**: O(n) time per query
+- **Linear Search for Priority**: O(n) time for min/max
+- **Brute Force String Search**: O(n×m) for pattern matching
+- **Exact Membership Testing**: Requires O(n) space for n elements
+
+**The Advanced Data Structures Solution**: Specialized structures optimize for specific operations - heaps for priority queues, segment trees for range queries, tries for string operations, probabilistic structures for space efficiency.
+
+### When to Use Advanced Data Structures
+
+✅ **Use advanced structures when**:
+- Need specialized operations (range queries, prefix operations)
+- Performance is critical for specific operations
+- Space efficiency matters (probabilistic structures)
+- Problem requires maintaining multiple versions
+- Standard structures don't provide needed operations efficiently
+
+✅ **Real-world applications**:
+- Priority queues (task scheduling, Dijkstra's algorithm)
+- Range queries (database systems, analytics)
+- String operations (autocomplete, spell checkers)
+- Probabilistic structures (distributed systems, caching)
+- Version control (functional programming, time-travel queries)
+
+### When NOT to Use Advanced Data Structures
+
+❌ **Avoid when**:
+- Simple structures suffice
+- Overhead not worth it for problem size
+- Operations don't match structure's strengths
+- Complexity not justified
+
+**Key Trade-off**: Advanced structures trade general-purpose flexibility for specialized performance.
+
+## 14.2 Conceptual Overview
+
+**Advanced Data Structures** are specialized structures optimized for specific operations beyond what basic structures provide efficiently.
+
+### Intuitive Explanation
+
+Think of advanced data structures like specialized tools:
+- **Heaps**: Like a priority queue at a hospital (most urgent first)
+- **Segment Trees**: Like a building directory (quickly find info for any floor range)
+- **Tries**: Like a phone book organized by prefix
+- **Bloom Filters**: Like a membership card (might say "maybe member" but never wrong when says "not member")
+
+### Key Categories
+
+1. **Priority Structures**: Heaps, Fibonacci Heaps
+2. **Range Query Structures**: Segment Trees, Fenwick Trees, Sparse Tables
+3. **String Structures**: Tries, Suffix Trees/Arrays
+4. **Probabilistic Structures**: Bloom Filters, Count-Min Sketch
+5. **Specialized Structures**: Skip Lists, Persistent Structures
 
 ### Data Structures Covered
 
@@ -19,7 +83,507 @@ This chapter covers advanced data structures that are essential for solving comp
 11. **Suffix Array/Tree**: Efficient string operations and pattern matching
 12. **Persistent Data Structures**: Maintain all versions of data structure
 
-## 14.2 Heaps
+## 14.3 Abstract Model & Invariants ⭐ (Mandatory)
+
+**Purpose**: Define correctness independent of implementation.
+
+### Abstract Model
+
+Advanced data structures can be abstracted as:
+
+1. **State**: Current configuration of the structure
+2. **Operations**: Supported operations (insert, query, update, etc.)
+3. **Invariants**: Properties that must always hold
+4. **Representation**: How structure is stored (array, tree, etc.)
+
+### Core Invariants (Unified)
+
+While each structure has specific invariants, common patterns include:
+
+#### 1. Structural Invariant
+
+```
+Structure maintains its shape property:
+  - Heap: Complete binary tree shape
+  - Trie: Tree structure with character edges
+  - Segment Tree: Balanced binary tree
+```
+
+#### 2. Ordering Invariant
+
+```
+Elements maintain ordering property:
+  - Heap: Parent-child ordering (heap property)
+  - Segment Tree: Range partitioning
+  - Fenwick Tree: Prefix sum ordering
+```
+
+#### 3. Completeness Invariant
+
+```
+Structure is complete and consistent:
+  - All nodes properly linked
+  - No orphaned nodes
+  - Representation matches abstract structure
+```
+
+### Structure-Specific Invariants
+
+#### Heap Invariants
+
+1. **Heap Property**: Parent ≥ children (max-heap) or Parent ≤ children (min-heap)
+2. **Complete Tree**: All levels filled except last, last level left-to-right
+3. **Array Representation**: `parent(i) = (i-1)/2`, `left(i) = 2i+1`, `right(i) = 2i+2`
+
+#### Segment Tree Invariants
+
+1. **Range Partitioning**: Each node covers a range [l, r]
+2. **Tree Structure**: Balanced binary tree
+3. **Query Invariance**: Query result combines child results correctly
+
+#### Trie Invariants
+
+1. **Prefix Property**: Path from root to node represents prefix
+2. **Character Edges**: Each edge labeled with character
+3. **Termination**: Markers indicate word endings
+
+### Assumptions
+
+1. **Finite Data**: Structures handle finite datasets
+2. **Comparable Elements**: Elements can be compared/ordered
+3. **Valid Operations**: Operations called with valid parameters
+4. **Memory Available**: Sufficient memory for structure
+
+This abstract model provides the intellectual backbone for understanding advanced data structure correctness.
+
+## 14.4 Operations & Interface
+
+**Purpose**: Define what operations are supported.
+
+Advanced data structures support specialized operations:
+
+### Heap Operations
+
+| Operation | Description | Precondition | Postcondition |
+|-----------|-------------|--------------|---------------|
+| `insert(value)` | Add element | Value is valid | Element added, heap property maintained |
+| `extractMin()/extractMax()` | Remove min/max | Heap is non-empty | Min/max removed, heap property maintained |
+| `peek()` | Get min/max without removal | Heap is non-empty | Returns min/max value |
+| `decreaseKey(index, newValue)` | Update element | Index valid, newValue < current | Element updated, heap property maintained |
+
+### Range Query Operations (Segment Tree, Fenwick Tree)
+
+| Operation | Description | Precondition | Postcondition |
+|-----------|-------------|--------------|---------------|
+| `query(l, r)` | Query range [l, r] | 0 ≤ l ≤ r < n | Returns aggregate (sum/min/max) for range |
+| `update(index, value)` | Update element at index | Index valid | Element updated, structure maintained |
+| `rangeUpdate(l, r, value)` | Update range [l, r] | Valid range | All elements in range updated |
+
+### Trie Operations
+
+| Operation | Description | Precondition | Postcondition |
+|-----------|-------------|--------------|---------------|
+| `insert(word)` | Add word to trie | Word is valid | Word added, trie structure maintained |
+| `search(word)` | Check if word exists | Word is valid | Returns true if word exists |
+| `startsWith(prefix)` | Find words with prefix | Prefix is valid | Returns all words with prefix |
+
+### Behavioral Guarantees
+
+1. **Correctness**: Operations return correct results
+2. **Invariant Preservation**: All operations maintain structure invariants
+3. **Efficiency**: Operations meet complexity guarantees
+4. **Consistency**: Structure remains consistent after operations
+
+## 14.5 Time & Space Complexity
+
+**Purpose**: Make trade-offs explicit.
+
+### Time Complexity Summary
+
+| Structure | Insert | Delete | Search | Query | Update | Notes |
+|----------|--------|--------|--------|-------|--------|-------|
+| **Heap** | O(log n) | O(log n) | O(n) | O(1) peek | O(log n) | Priority queue |
+| **Trie** | O(m) | O(m) | O(m) | O(m) prefix | O(m) | m = word length |
+| **Segment Tree** | O(log n) | O(log n) | O(log n) | O(log n) range | O(log n) | Range queries |
+| **Fenwick Tree** | O(log n) | O(log n) | O(log n) | O(log n) prefix | O(log n) | Prefix sums |
+| **Sparse Table** | O(n log n) build | N/A | O(1) | O(1) range | N/A | Static arrays |
+| **Skip List** | O(log n) | O(log n) | O(log n) | O(log n) | O(log n) | Probabilistic |
+| **Bloom Filter** | O(k) | N/A | O(k) | O(1) | N/A | Probabilistic |
+
+### Space Complexity
+
+| Structure | Space Complexity | Notes |
+|-----------|------------------|-------|
+| **Heap** | O(n) | Array representation |
+| **Trie** | O(ALPHABET_SIZE × N × M) | N words, M avg length |
+| **Segment Tree** | O(n) | 4n nodes typically |
+| **Fenwick Tree** | O(n) | Array of size n+1 |
+| **Sparse Table** | O(n log n) | Precomputed table |
+| **Skip List** | O(n) expected | Probabilistic structure |
+| **Bloom Filter** | O(m) | m bits, independent of n |
+
+### Trade-offs
+
+**Heap**: Fast priority operations, but no efficient search
+**Segment Tree**: Fast range queries, but O(n) space and build time
+**Trie**: Fast string operations, but high space usage
+**Bloom Filter**: Space-efficient, but probabilistic (false positives)
+
+## 14.6 Pseudocode (Language-Neutral) ⭐ (Mandatory)
+
+**Purpose**: Bridge theory → implementation.
+
+**Rules**: No language syntax, no pointers/templates, focus on logic only.
+
+### Heap Operations
+
+#### Insert into Heap
+
+```
+FUNCTION heapInsert(heap, value):
+  heap.append(value)
+  index ← heap.size() - 1
+  
+  WHILE index > 0 AND heap[parent(index)] < heap[index]:  // For max-heap
+    swap(heap[parent(index)], heap[index])
+    index ← parent(index)
+  END WHILE
+END FUNCTION
+```
+
+#### Extract Max from Heap
+
+```
+FUNCTION heapExtractMax(heap):
+  IF heap is empty:
+    ERROR "Heap is empty"
+  END IF
+  
+  max_value ← heap[0]
+  heap[0] ← heap[heap.size() - 1]
+  heap.removeLast()
+  
+  IF heap is not empty:
+    heapifyDown(heap, 0)
+  END IF
+  
+  RETURN max_value
+END FUNCTION
+
+FUNCTION heapifyDown(heap, index):
+  largest ← index
+  
+  left ← 2 * index + 1
+  right ← 2 * index + 2
+  
+  IF left < heap.size() AND heap[left] > heap[largest]:
+    largest ← left
+  END IF
+  
+  IF right < heap.size() AND heap[right] > heap[largest]:
+    largest ← right
+  END IF
+  
+  IF largest ≠ index:
+    swap(heap[index], heap[largest])
+    heapifyDown(heap, largest)
+  END IF
+END FUNCTION
+```
+
+### Segment Tree Operations
+
+#### Build Segment Tree
+
+```
+FUNCTION buildSegmentTree(array, tree, node, start, end):
+  IF start = end:
+    tree[node] ← array[start]
+    RETURN
+  END IF
+  
+  mid ← (start + end) / 2
+  buildSegmentTree(array, tree, 2*node+1, start, mid)
+  buildSegmentTree(array, tree, 2*node+2, mid+1, end)
+  tree[node] ← combine(tree[2*node+1], tree[2*node+2])
+END FUNCTION
+```
+
+#### Query Segment Tree
+
+```
+FUNCTION querySegmentTree(tree, node, start, end, l, r):
+  IF r < start OR l > end:
+    RETURN identity_element  // Outside range
+  END IF
+  
+  IF l ≤ start AND end ≤ r:
+    RETURN tree[node]  // Completely inside range
+  END IF
+  
+  mid ← (start + end) / 2
+  left_result ← querySegmentTree(tree, 2*node+1, start, mid, l, r)
+  right_result ← querySegmentTree(tree, 2*node+2, mid+1, end, l, r)
+  
+  RETURN combine(left_result, right_result)
+END FUNCTION
+```
+
+### Trie Operations
+
+#### Insert into Trie
+
+```
+FUNCTION trieInsert(root, word):
+  current ← root
+  
+  FOR EACH character IN word:
+    IF current.children[character] does not exist:
+      current.children[character] ← new TrieNode()
+    END IF
+    current ← current.children[character]
+  END FOR
+  
+  current.isEndOfWord ← true
+END FUNCTION
+```
+
+#### Search in Trie
+
+```
+FUNCTION trieSearch(root, word):
+  current ← root
+  
+  FOR EACH character IN word:
+    IF current.children[character] does not exist:
+      RETURN false
+    END IF
+    current ← current.children[character]
+  END FOR
+  
+  RETURN current.isEndOfWord
+END FUNCTION
+```
+
+### Fenwick Tree Operations
+
+#### Update Fenwick Tree
+
+```
+FUNCTION fenwickUpdate(tree, index, delta):
+  index ← index + 1  // Convert to 1-based
+  
+  WHILE index ≤ tree.size():
+    tree[index] ← tree[index] + delta
+    index ← index + (index AND -index)  // Add lowest set bit
+  END WHILE
+END FUNCTION
+```
+
+#### Query Fenwick Tree (Prefix Sum)
+
+```
+FUNCTION fenwickQuery(tree, index):
+  index ← index + 1  // Convert to 1-based
+  sum ← 0
+  
+  WHILE index > 0:
+    sum ← sum + tree[index]
+    index ← index - (index AND -index)  // Remove lowest set bit
+  END WHILE
+  
+  RETURN sum
+END FUNCTION
+```
+
+This pseudocode should be readable by any engineer, regardless of their programming language background.
+
+## 14.7 Implementation (Reference Language: C++) ⭐
+
+**Note to Reader**: This section provides concrete C++ implementations. The correctness relies on the invariants defined in Section 14.3 and the pseudocode in Section 14.6.
+
+Detailed C++ implementations for each advanced data structure are provided in the following sections:
+- Section 14.9: Heap Implementation
+- Section 14.10: Trie Implementation
+- Section 14.11: Segment Tree Implementation
+- Section 14.12: Fenwick Tree Implementation
+- And other structures in subsequent sections
+
+## 14.8 Correctness Argument
+
+**Purpose**: Explain why the implementations work.
+
+### Invariant Preservation
+
+Advanced data structure implementations preserve their core invariants:
+
+#### Heap Invariant Preservation
+
+**For Insert**:
+- New element added at end (preserves complete tree)
+- Bubble up maintains heap property
+- **Preserves**: Heap property and complete tree structure
+
+**For Extract**:
+- Root replaced with last element (preserves complete tree)
+- Heapify down maintains heap property
+- **Preserves**: Heap property and complete tree structure
+
+#### Segment Tree Invariant Preservation
+
+**For Build**:
+- Tree built bottom-up
+- Each node combines children correctly
+- **Preserves**: Range partitioning and query correctness
+
+**For Query**:
+- Range decomposed into tree nodes
+- Results combined correctly
+- **Preserves**: Query returns correct aggregate
+
+#### Trie Invariant Preservation
+
+**For Insert**:
+- Path created character by character
+- End marker set at word end
+- **Preserves**: Prefix property and word representation
+
+**For Search**:
+- Path followed character by character
+- End marker checked at word end
+- **Preserves**: Correct word detection
+
+### Informal Proof Sketch
+
+**For Heap**:
+1. **Base Case**: Single element heap satisfies heap property
+2. **Inductive Step**: Insert/extract maintain heap property
+3. **Conclusion**: Heap operations preserve invariants
+
+**For Segment Tree**:
+1. **Base Case**: Leaf nodes contain array elements
+2. **Inductive Step**: Internal nodes combine children correctly
+3. **Conclusion**: Queries return correct results
+
+This correctness argument provides engineers with confidence that advanced data structure implementations work correctly.
+
+## 14.9 Edge Cases & Failure Modes
+
+**Purpose**: Build defensive thinking.
+
+### Heap Edge Cases
+
+#### Empty Heap Operations
+
+**Problem**: Operations on empty heap.
+
+**Edge Cases**:
+- `extractMax()` on empty heap
+- `peek()` on empty heap
+
+**Handling**:
+```cpp
+if (heap.empty()) {
+    throw runtime_error("Heap is empty");
+}
+```
+
+**Failure Mode**: Accessing `heap[0]` when empty causes crash.
+
+#### Heap Property Violation
+
+**Problem**: Operations break heap property.
+
+**Edge Cases**:
+- Incorrect bubble up/down
+- Wrong comparison in heapify
+
+**Handling**: Carefully implement heapify operations, test with examples.
+
+### Segment Tree Edge Cases
+
+#### Invalid Range Queries
+
+**Problem**: Query range outside array bounds.
+
+**Edge Cases**:
+- `query(-1, 5)` - negative start
+- `query(0, n)` - end beyond array
+- `query(5, 3)` - start > end
+
+**Handling**:
+```cpp
+if (l < 0 || r >= n || l > r) {
+    throw invalid_argument("Invalid range");
+}
+```
+
+### Trie Edge Cases
+
+#### Empty String
+
+**Problem**: Inserting or searching empty string.
+
+**Edge Cases**:
+- `insert("")` - empty string
+- `search("")` - empty string
+
+**Handling**: Define behavior (empty string as valid word or not).
+
+### Common Failure Patterns
+
+1. **Index Out of Bounds**: Accessing array elements beyond size
+2. **Heap Property Violation**: Not maintaining parent-child ordering
+3. **Range Errors**: Invalid range in segment tree queries
+4. **Memory Leaks**: Not freeing nodes in tree structures
+5. **Off-by-One Errors**: Incorrect index calculations
+
+This section maps directly to production bugs and helps engineers write robust code.
+
+## 14.10 Performance & System Considerations ⭐ (Differentiator)
+
+**Purpose**: Connect algorithms to real machines.
+
+### Cache Locality
+
+#### Array-Based Structures (Heap, Segment Tree)
+
+**Advantages**:
+- Contiguous memory layout
+- Good cache locality
+- Prefetching works well
+
+**Performance**: Array-based structures are cache-friendly.
+
+#### Tree-Based Structures (Trie, Segment Tree nodes)
+
+**Disadvantages**:
+- Nodes allocated separately
+- Random memory access
+- Cache misses
+
+**Mitigation**: Use array-based representation when possible (heaps use arrays).
+
+### Memory Allocation
+
+#### Frequent Allocations (Trie, Skip List)
+
+**Problem**: Many small allocations fragment heap.
+
+**Impact**: Slower allocation, increased memory usage.
+
+**Mitigation**: Use memory pools, pre-allocate nodes.
+
+### Practical Recommendations
+
+1. **Use Array-Based When Possible**: Better cache performance
+2. **Consider Memory Pools**: For frequent allocations
+3. **Profile Before Optimizing**: Measure actual performance
+4. **Choose Right Structure**: Match structure to operation needs
+
+This section connects advanced data structures to real system performance.
+
+## 14.11 Heaps
 
 A **heap** is a complete binary tree that satisfies the heap property. In a max-heap, parent nodes are greater than or equal to their children. In a min-heap, parent nodes are less than or equal to their children.
 
@@ -412,7 +976,7 @@ void heapSort(vector<int>& arr) {
 | Build Heap | O(n) |
 | Heap Sort | O(n log n) |
 
-## 14.3 Tries (Prefix Trees)
+## 14.12 Tries (Prefix Trees)
 
 A **trie** (prefix tree) is a tree-like data structure for storing strings. It's particularly efficient for prefix-based searches.
 
@@ -583,7 +1147,7 @@ public:
 - Prefix matching
 - String dictionary
 
-## 14.4 Segment Trees
+## 14.13 Segment Trees
 
 A **segment tree** is a data structure for range queries and updates.
 
@@ -718,7 +1282,7 @@ public:
 - **Update**: O(log n)
 - **Space**: O(n)
 
-## 14.5 Fenwick Trees (Binary Indexed Trees)
+## 14.14 Fenwick Trees (Binary Indexed Trees)
 
 A **Fenwick Tree** (Binary Indexed Tree) is efficient for prefix sum queries and point updates.
 
@@ -788,7 +1352,7 @@ public:
 - Faster in practice
 - Better cache performance
 
-## 14.6 Sparse Table
+## 14.15 Sparse Table
 
 A **Sparse Table** is a data structure that allows range minimum/maximum queries (RMQ) on a static array in O(1) time after O(n log n) preprocessing. It's particularly useful when the array doesn't change.
 
@@ -895,7 +1459,7 @@ public:
 - Only works for idempotent operations
 - Higher memory usage than segment trees
 
-## 14.7 Sqrt Decomposition
+## 14.16 Sqrt Decomposition
 
 **Sqrt Decomposition** is a simple technique that divides an array into √n blocks, allowing range queries and updates in O(√n) time.
 
@@ -1120,7 +1684,7 @@ public:
 | Fenwick Tree | O(log n) | O(log n) | O(n) | Prefix/point |
 | Sqrt Decomp | O(√n) | O(√n) | O(n) | Simple |
 
-## 14.8 Skip Lists
+## 14.17 Skip Lists
 
 A **skip list** is a probabilistic data structure that provides O(log n) average-case performance for search, insertion, and deletion operations. It's simpler to implement than balanced trees (Chapter 6) while offering similar performance characteristics.
 
@@ -1310,7 +1874,7 @@ public:
 - **Concurrent Data Structures**: Easier to make thread-safe than trees
 - **Alternative to Balanced Trees**: When simplicity matters
 
-## 14.9 Bloom Filters
+## 14.18 Bloom Filters
 
 A **Bloom filter** is a space-efficient probabilistic data structure that tests whether an element is a member of a set. It can have false positives but never false negatives.
 
@@ -1485,7 +2049,7 @@ public:
 };
 ```
 
-## 14.10 Count-Min Sketch
+## 14.19 Count-Min Sketch
 
 A **Count-Min Sketch** is a probabilistic data structure that provides approximate frequency counts for elements in a stream. It's space-efficient and uses multiple hash functions, similar to Bloom Filters (Section 14.9), but designed for counting rather than membership testing.
 
@@ -1723,7 +2287,7 @@ Tracks frequencies at multiple time scales (recent, hourly, daily).
 **3. Conservative Update**
 Only updates minimum cells, reducing overestimation.
 
-## 14.11 Fibonacci Heap
+## 14.20 Fibonacci Heap
 
 **Fibonacci Heap** is an advanced heap data structure that provides better amortized time complexity for decrease-key and merge operations compared to binary heaps. It's particularly useful for algorithms like Dijkstra's shortest path.
 
@@ -1941,7 +2505,7 @@ public:
 
 **Key Insight**: Fibonacci heaps shine when decrease-key operations dominate, as in Dijkstra's algorithm on dense graphs. For most applications, binary heaps are simpler and sufficient.
 
-## 14.12 Suffix Array and Suffix Tree
+## 14.21 Suffix Array and Suffix Tree
 
 **Suffix Array** and **Suffix Tree** are advanced data structures for efficient string operations, particularly substring search and pattern matching.
 
@@ -2121,7 +2685,7 @@ A **suffix tree** is a compressed trie containing all suffixes of a string. It e
 - Text is small
 - Simplicity is important
 
-## 14.13 Persistent Data Structures
+## 14.22 Persistent Data Structures
 
 **Persistent data structures** maintain all previous versions when modified. They're essential for functional programming and time-travel queries.
 
@@ -2232,7 +2796,7 @@ public:
 - Memory is constrained
 - Simplicity is important
 
-## 14.14 Failure Modes and Common Pitfalls
+## 14.23 Failure Modes and Common Pitfalls
 
 Understanding common failure modes helps avoid bugs and performance issues.
 
@@ -2369,7 +2933,7 @@ int query(int index) {
 **Why it happens**: Fenwick trees use 1-based indexing internally
 **Impact**: Incorrect prefix sums, wrong query results
 
-## 14.15 Key Takeaways
+## 14.24 Key Takeaways
 
 1. **Heaps** provide efficient priority queue operations
 2. **Tries** excel at prefix-based string operations
@@ -2379,7 +2943,7 @@ int query(int index) {
 6. **Sqrt Decomposition** offers simple O(√n) queries and updates
 7. Choose the right structure based on operation requirements and constraints
 
-## 14.16 Exercises
+## 14.25 Exercises
 
 1. Implement a k-way merge using a min-heap.
 
@@ -2409,7 +2973,7 @@ int query(int index) {
 
 14. Implement a Sqrt Decomposition that supports range minimum and range sum queries.
 
-## 14.17 Concurrency Considerations
+## 14.26 Concurrency Considerations
 
 This section applies the concurrency fundamentals from [Chapter 3.5](03.5-concurrency-fundamentals.md) to heaps and priority queues. See Section 3.5.3 for invariant-based reasoning and Section 3.5.9 for producer-consumer patterns.
 
@@ -2552,7 +3116,7 @@ public:
 
 **For Production**: Prefer `std::priority_queue` with external synchronization or thread-safe priority queues from proven libraries. See Section 3.5.10 for guidance on using libraries.
 
-## 14.18 Summary
+## 14.27 Summary
 
 Advanced data structures provide specialized operations for specific use cases. Understanding when and how to use heaps, tries, segment trees, and Fenwick trees is essential for solving complex problems efficiently.
 
