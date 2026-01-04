@@ -706,7 +706,8 @@ Let's trace through the KMP algorithm with a concrete example:
 
 **Step 1: Initialize**
 ```
-Text:    A B A B D A B A C D A B A B C A B A B
+Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
+Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
 Pattern: A B A B C A B A B
 LPS:     0 0 1 2 0 1 2 3 4
 i=0, j=0
@@ -714,7 +715,8 @@ i=0, j=0
 
 **Step 2: First Character Match**
 ```
-Text:    A B A B D A B A C D A B A B C A B A B
+Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
+Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
 Pattern: A B A B C A B A B
          ↑
 i=0, j=0: A=A ✓
@@ -723,7 +725,8 @@ i=1, j=1
 
 **Step 3: Second Character Match**
 ```
-Text:    A B A B D A B A C D A B A B C A B A B
+Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
+Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
 Pattern: A B A B C A B A B
            ↑
 i=1, j=1: B=B ✓
@@ -732,7 +735,8 @@ i=2, j=2
 
 **Step 4: Third Character Match**
 ```
-Text:    A B A B D A B A C D A B A B C A B A B
+Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
+Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
 Pattern: A B A B C A B A B
              ↑
 i=2, j=2: A=A ✓
@@ -741,7 +745,8 @@ i=3, j=3
 
 **Step 5: Fourth Character Match**
 ```
-Text:    A B A B D A B A C D A B A B C A B A B
+Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
+Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
 Pattern: A B A B C A B A B
                ↑
 i=3, j=3: B=B ✓
@@ -750,7 +755,8 @@ i=4, j=4
 
 **Step 6: Mismatch - Use LPS Array**
 ```
-Text:    A B A B D A B A C D A B A B C A B A B
+Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
+Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
 Pattern: A B A B C A B A B
                  ↑
 i=4, j=4: D≠C ✗
@@ -762,7 +768,8 @@ j = LPS[3] = 2
 
 **Step 7: Continue from j=2**
 ```
-Text:    A B A B D A B A C D A B A B C A B A B
+Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
+Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
 Pattern:     A B A B C A B A B
                ↑
 i=4, j=2: D≠A ✗
@@ -773,7 +780,8 @@ j = LPS[1] = 0
 
 **Step 8: Continue from j=0**
 ```
-Text:    A B A B D A B A C D A B A B C A B A B
+Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
+Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
 Pattern:       A B A B C A B A B
                ↑
 i=4, j=0: D≠A ✗
@@ -784,7 +792,8 @@ i=5, j=0
 
 **Step 9: New Starting Position**
 ```
-Text:    A B A B D A B A C D A B A B C A B A B
+Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
+Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
 Pattern:         A B A B C A B A B
                  ↑
 i=5, j=0: A=A ✓
@@ -793,7 +802,8 @@ i=6, j=1
 
 **Step 10: Continue Matching**
 ```
-Text:    A B A B D A B A C D A B A B C A B A B
+Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
+Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
 Pattern:         A B A B C A B A B
                    ↑
 i=6, j=1: B=B ✓
@@ -802,7 +812,8 @@ i=7, j=2
 
 **Step 11: Continue Matching**
 ```
-Text:    A B A B D A B A C D A B A B C A B A B
+Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
+Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
 Pattern:         A B A B C A B A B
                      ↑
 i=7, j=2: A=A ✓
@@ -811,7 +822,8 @@ i=8, j=3
 
 **Step 12: Continue Matching**
 ```
-Text:    A B A B D A B A C D A B A B C A B A B
+Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
+Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
 Pattern:         A B A B C A B A B
                        ↑
 i=8, j=3: C≠B ✗
@@ -822,7 +834,8 @@ j = LPS[2] = 1
 
 **Step 13: Continue from j=1**
 ```
-Text:    A B A B D A B A C D A B A B C A B A B
+Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
+Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
 Pattern:         A B A B C A B A B
                      ↑
 i=8, j=1: C≠B ✗
@@ -833,7 +846,8 @@ j = LPS[0] = 0
 
 **Step 14: Continue from j=0**
 ```
-Text:    A B A B D A B A C D A B A B C A B A B
+Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
+Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
 Pattern:         A B A B C A B A B
                        ↑
 i=8, j=0: C≠A ✗
@@ -844,7 +858,8 @@ i=9, j=0
 
 **Step 15: New Starting Position**
 ```
-Text:    A B A B D A B A C D A B A B C A B A B
+Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
+Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
 Pattern:           A B A B C A B A B
                    ↑
 i=9, j=0: D≠A ✗
@@ -855,7 +870,8 @@ i=10, j=0
 
 **Step 16: New Starting Position**
 ```
-Text:    A B A B D A B A C D A B A B C A B A B
+Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
+Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
 Pattern:             A B A B C A B A B
                      ↑
 i=10, j=0: A=A ✓
@@ -864,7 +880,8 @@ i=11, j=1
 
 **Step 17: Continue Matching**
 ```
-Text:    A B A B D A B A C D A B A B C A B A B
+Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
+Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
 Pattern:             A B A B C A B A B
                        ↑
 i=11, j=1: B=B ✓
@@ -873,7 +890,8 @@ i=12, j=2
 
 **Step 18: Continue Matching**
 ```
-Text:    A B A B D A B A C D A B A B C A B A B
+Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
+Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
 Pattern:             A B A B C A B A B
                          ↑
 i=12, j=2: A=A ✓
@@ -882,7 +900,8 @@ i=13, j=3
 
 **Step 19: Continue Matching**
 ```
-Text:    A B A B D A B A C D A B A B C A B A B
+Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
+Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
 Pattern:             A B A B C A B A B
                            ↑
 i=13, j=3: B=B ✓
@@ -891,7 +910,8 @@ i=14, j=4
 
 **Step 20: Continue Matching**
 ```
-Text:    A B A B D A B A C D A B A B C A B A B
+Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
+Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
 Pattern:             A B A B C A B A B
                              ↑
 i=14, j=4: C=C ✓
@@ -900,7 +920,8 @@ i=15, j=5
 
 **Step 21: Continue Matching**
 ```
-Text:    A B A B D A B A C D A B A B C A B A B
+Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
+Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
 Pattern:             A B A B C A B A B
                                ↑
 i=15, j=5: A=A ✓
@@ -909,7 +930,8 @@ i=16, j=6
 
 **Step 22: Continue Matching**
 ```
-Text:    A B A B D A B A C D A B A B C A B A B
+Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
+Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
 Pattern:             A B A B C A B A B
                                  ↑
 i=16, j=6: B=B ✓
@@ -918,7 +940,8 @@ i=17, j=7
 
 **Step 23: Continue Matching**
 ```
-Text:    A B A B D A B A C D A B A B C A B A B
+Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
+Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
 Pattern:             A B A B C A B A B
                                    ↑
 i=17, j=7: A=A ✓
@@ -927,7 +950,8 @@ i=18, j=8
 
 **Step 24: Continue Matching**
 ```
-Text:    A B A B D A B A C D A B A B C A B A B
+Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
+Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
 Pattern:             A B A B C A B A B
                                      ↑
 i=18, j=8: B=B ✓
