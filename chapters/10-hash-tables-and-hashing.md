@@ -542,7 +542,7 @@ namespace std {
 }
 ```
 
-## 10.3 Collision Resolution Strategies
+## 10.8.2 Collision Resolution Strategies (Conceptual)
 
 When two or more keys hash to the same index, we have a **collision**. There are several strategies to handle collisions:
 
@@ -1410,7 +1410,7 @@ public:
 | Quadratic Probing | Reduces primary clustering | Secondary clustering, complex deletion |
 | Double Hashing | Best distribution, no clustering | More computation, must ensure hash2 ≠ 0 |
 
-## 10.4 Complete Hash Table Implementation
+### 10.8.3 Complete Hash Table Implementation
 
 Here's a complete, production-ready hash table implementation:
 
@@ -1669,7 +1669,9 @@ public:
 };
 ```
 
-## 10.5 C++ Standard Library Hash Tables
+## 10.11 Real-World Implementations
+
+### C++ Standard Library Hash Tables
 
 C++ provides hash table implementations in the Standard Template Library:
 
@@ -2156,7 +2158,7 @@ void rehashExample() {
 }
 ```
 
-## 10.7 Applications of Hash Tables
+## 10.14 Applications of Hash Tables
 
 ### 1. Database Indexing
 Hash tables are used to create indexes for fast lookups in databases.
@@ -2306,7 +2308,7 @@ vector<int> twoSum(const vector<int>& nums, int target) {
 }
 ```
 
-## 10.8 Performance Analysis
+### Additional Performance Analysis
 
 ### Time Complexity
 
@@ -2363,7 +2365,7 @@ void benchmarkHashTable() {
 }
 ```
 
-## 10.9 Common Hash Table Problems
+## 10.16 Common Hash Table Problems
 
 ### Problem 1: Design a Hash Set
 ```cpp
@@ -2461,7 +2463,7 @@ int longestConsecutive(const vector<int>& nums) {
 }
 ```
 
-## 10.10 Best Practices and Tips
+### Additional Best Practices
 
 ### 1. Choose the Right Hash Function
 - Use built-in `std::hash` when possible
@@ -2560,7 +2562,7 @@ See Section 10.16 for solutions to these problems.
 6. **C++ STL** provides `unordered_map` and `unordered_set` for hash table needs
 7. **Applications** are vast - caching, indexing, frequency counting, and more
 
-## 10.12 Exercises
+### Additional Exercises
 
 1. Implement a hash table with separate chaining using a balanced BST instead of a linked list for each bucket.
 
@@ -2582,7 +2584,7 @@ See Section 10.16 for solutions to these problems.
 
 10. Create a hash table with statistics tracking (hit rate, collision count, etc.).
 
-## 10.13 Concurrency Considerations
+## 10.19 Concurrency Considerations
 
 This section applies the concurrency fundamentals from [Chapter 3.5](03.5-concurrency-fundamentals.md) to hash tables. See Section 3.5.3 for invariant-based reasoning and Section 3.5.8 for lock granularity tradeoffs.
 
@@ -2739,7 +2741,7 @@ int lock_index = hash(key) % 16;
 
 **For Production**: Prefer `std::unordered_map` with external synchronization or thread-safe hash tables from proven libraries. See Section 3.5.10 for guidance on using libraries.
 
-## 10.14 Advanced Hashing Techniques
+## 10.20 Advanced Hashing Techniques
 
 ### 10.14.1 Consistent Hashing
 
@@ -3092,7 +3094,7 @@ int tokenId = keywordHash.get("if");  // Returns 1
 
 Both techniques extend standard hashing for specialized use cases where standard hashing is insufficient.
 
-## 10.15 Summary
+## 10.21 Summary
 
 Hash tables are one of the most important and widely used data structures in computer science. They provide excellent average-case performance for key-value operations, making them ideal for many applications including databases, caches, symbol tables, and more.
 
