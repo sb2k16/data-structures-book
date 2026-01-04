@@ -1654,12 +1654,243 @@ public:
 
 ## 7.7 Aho-Corasick Algorithm
 
-The Aho-Corasick algorithm efficiently searches for multiple patterns simultaneously using a finite automaton.
+The Aho-Corasick algorithm efficiently searches for multiple patterns simultaneously using a finite automaton (trie with failure links). It processes the text in a single pass, finding all occurrences of all patterns in O(n + m + z) time, where n is text length, m is total pattern length, and z is the number of matches.
+
+**Reference**: Based on the algorithm described in [cp-algorithms.com](https://cp-algorithms.com/string/aho_corasick.html).
 
 ### Algorithm Description
-1. Build a trie from all patterns
-2. Add failure links to create an automaton
-3. Traverse the automaton while reading the text
+1. **Build a trie** from all patterns
+2. **Add failure links** (suffix links) to create an automaton
+3. **Traverse the automaton** while reading the text character by character
+
+### Understanding the Trie Construction
+
+First, we build a trie containing all patterns. Each node represents a prefix of one or more patterns.
+
+**Example**: Patterns = {"he", "she", "his", "hers"}
+
+```mermaid
+graph TD
+    R[Root] -->|h| H1[h]
+    R -->|s| S1[s]
+    H1 -->|e| HE1[he ✓]
+    H1 -->|i| HI1[i]
+    HI1 -->|s| HIS1[his ✓]
+    S1 -->|h| SH1[sh]
+    SH1 -->|e| SHE1[she ✓]
+    HE1 -->|r| HER1[her]
+    HER1 -->|s| HERS1[hers ✓]
+    
+    style R fill:#E6E6FA,stroke:#333,stroke-width:2px
+    style HE1 fill:#90EE90,stroke:#333,stroke-width:2px
+    style SHE1 fill:#90EE90,stroke:#333,stroke-width:2px
+    style HIS1 fill:#90EE90,stroke:#333,stroke-width:2px
+    style HERS1 fill:#90EE90,stroke:#333,stroke-width:2px
+```
+
+**Trie Structure**:
+- Root node (empty string)
+- Each edge represents a character
+- Nodes marked with ✓ indicate complete patterns
+- Path from root to a node represents a prefix
+
+### Understanding Failure Links (Suffix Links)
+
+Failure links allow the automaton to efficiently handle mismatches. For a node representing string `s`, the failure link points to the longest proper suffix of `s` that is also a prefix of some pattern.
+
+**Key Properties**:
+- Failure link of root is root itself
+- Failure links form a tree structure
+- Following failure links never increases the matched length
+- All failure links eventually lead to root
+
+**Example**: Building failure links for patterns {"he", "she", "his", "hers"}
+
+```mermaid
+graph TD
+    R[Root] -->|h| H1[h]
+    R -->|s| S1[s]
+    H1 -->|e| HE1[he ✓]
+    H1 -->|i| HI1[i]
+    HI1 -->|s| HIS1[his ✓]
+    S1 -->|h| SH1[sh]
+    SH1 -->|e| SHE1[she ✓]
+    HE1 -->|r| HER1[her]
+    HER1 -->|s| HERS1[hers ✓]
+    
+    H1 -.->|failure| R
+    S1 -.->|failure| R
+    HE1 -.->|failure| R
+    HI1 -.->|failure| R
+    HIS1 -.->|failure| R
+    SH1 -.->|failure| H1
+    SHE1 -.->|failure| HE1
+    HER1 -.->|failure| R
+    HERS1 -.->|failure| R
+    
+    style R fill:#E6E6FA,stroke:#333,stroke-width:2px
+    style HE1 fill:#90EE90,stroke:#333,stroke-width:2px
+    style SHE1 fill:#90EE90,stroke:#333,stroke-width:2px
+    style HIS1 fill:#90EE90,stroke:#333,stroke-width:2px
+    style HERS1 fill:#90EE90,stroke:#333,stroke-width:2px
+```
+
+**Failure Link Rules** (following [cp-algorithms.com](https://cp-algorithms.com/string/aho_corasick.html)):
+1. **Root's children**: Failure link points to root
+2. **Other nodes**: For node `v` with parent `p` and character `c`:
+   - Follow parent's failure link to find longest suffix
+   - If that node has an edge labeled `c`, use it
+   - Otherwise, continue following failure links until root
+   - Set `failure[v] = go(failure[p], c)`
+
+**Step-by-Step Failure Link Construction**:
+
+**Step 1: First level (depth 1)**
+- Node 'h': failure → root (no proper suffix)
+- Node 's': failure → root (no proper suffix)
+
+**Step 2: Second level (depth 2)**
+- Node 'he': parent='h', char='e'
+  - failure['h'] = root
+  - root has no 'e' edge → failure['he'] = root
+- Node 'hi': parent='h', char='i'
+  - failure['h'] = root
+  - root has no 'i' edge → failure['hi'] = root
+- Node 'sh': parent='s', char='h'
+  - failure['s'] = root
+  - root has 'h' edge → failure['sh'] = node 'h'
+
+**Step 3: Third level (depth 3)**
+- Node 'she': parent='sh', char='e'
+  - failure['sh'] = 'h'
+  - 'h' has 'e' edge → failure['she'] = node 'he'
+- Node 'his': parent='hi', char='s'
+  - failure['hi'] = root
+  - root has no 's' edge → failure['his'] = root
+- Node 'her': parent='he', char='r'
+  - failure['he'] = root
+  - root has no 'r' edge → failure['her'] = root
+
+**Step 4: Fourth level (depth 4)**
+- Node 'hers': parent='her', char='s'
+  - failure['her'] = root
+  - root has no 's' edge → failure['hers'] = root
+
+### Complete Automaton with Failure Links
+
+The final automaton combines the trie with failure links, enabling efficient pattern matching:
+
+```mermaid
+graph TD
+    R[Root] -->|h| H1[h]
+    R -->|s| S1[s]
+    H1 -->|e| HE1[he ✓]
+    H1 -->|i| HI1[i]
+    HI1 -->|s| HIS1[his ✓]
+    S1 -->|h| SH1[sh]
+    SH1 -->|e| SHE1[she ✓]
+    HE1 -->|r| HER1[her]
+    HER1 -->|s| HERS1[hers ✓]
+    
+    H1 -.->|fail| R
+    S1 -.->|fail| R
+    HE1 -.->|fail| R
+    HI1 -.->|fail| R
+    HIS1 -.->|fail| R
+    SH1 -.->|fail| H1
+    SHE1 -.->|fail| HE1
+    HER1 -.->|fail| R
+    HERS1 -.->|fail| R
+    
+    style R fill:#E6E6FA,stroke:#333,stroke-width:3px
+    style HE1 fill:#90EE90,stroke:#333,stroke-width:2px
+    style SHE1 fill:#90EE90,stroke:#333,stroke-width:2px
+    style HIS1 fill:#90EE90,stroke:#333,stroke-width:2px
+    style HERS1 fill:#90EE90,stroke:#333,stroke-width:2px
+```
+
+**Key Insight**: Failure links allow the automaton to continue matching even after a mismatch, by following the longest suffix that matches a prefix of some pattern. This is similar to the LPS array in KMP, but extended to multiple patterns.
+
+### 7.7.1 Core Invariants
+
+**Core Invariants of Aho-Corasick:**
+
+1. **Trie Invariant**:
+   - All patterns are stored in the trie with paths from root to leaf nodes
+   - Each node represents a unique prefix of one or more patterns
+   - Output nodes mark the end of complete patterns
+
+2. **Failure Link Invariant**:
+   - For any node `v` representing string `s`, `failure[v]` points to the longest proper suffix of `s` that is also a prefix of some pattern
+   - Failure links form a tree structure (all paths lead to root)
+   - Following failure links never increases the matched length
+
+3. **Automaton Transition Invariant**:
+   - From any state `v` and character `c`, the transition `go(v, c)` either:
+     - Follows a direct edge if it exists in the trie
+     - Follows failure links until finding a valid transition or reaching root
+   - This ensures we always find the longest matching prefix
+
+4. **Output Invariant**:
+   - Each node stores all patterns that end at that node (via direct match or failure links)
+   - Output sets are merged during failure link construction
+   - All matches are found by checking the output set at each state
+
+### Step-by-Step Example: Searching Text "shers"
+
+Let's trace through searching for patterns {"he", "she", "his", "hers"} in text "shers":
+
+**Initial State**: current = root, i = 0
+
+**Step 1: Process 's' (i=0)**
+```
+Text: shers
+      ↑
+Current: root → go(root, 's') = node 's'
+Output: none
+```
+
+**Step 2: Process 'h' (i=1)**
+```
+Text: shers
+       ↑
+Current: 's' → go('s', 'h') = node 'sh'
+Output: none
+```
+
+**Step 3: Process 'e' (i=2)**
+```
+Text: shers
+        ↑
+Current: 'sh' → go('sh', 'e') = node 'she'
+Output: {'she'} ✓ (found at position 0)
+```
+
+**Step 4: Process 'r' (i=3)**
+```
+Text: shers
+         ↑
+Current: 'she' → go('she', 'r')
+  - 'she' has no 'r' edge
+  - Follow failure: failure['she'] = 'he'
+  - 'he' has no 'r' edge
+  - Follow failure: failure['he'] = root
+  - root has no 'r' edge
+  - Current = root
+Output: none
+```
+
+**Step 5: Process 's' (i=4)**
+```
+Text: shers
+          ↑
+Current: root → go(root, 's') = node 's'
+Output: none
+```
+
+**Result**: Found "she" at position 0.
+
+### Implementation
 
 ```cpp
 #include <queue>
