@@ -762,9 +762,9 @@ int longestCommonSubsequence(const string& text1, const string& text2) {
 }
 ```
 
-### String Immutability: C++ vs Java vs Python
+### C++ String Characteristics
 
-Understanding how strings are handled in different languages is crucial for performance and correctness.
+Understanding how C++ strings work is crucial for performance and correctness.
 
 #### C++ Strings: Mutable
 
@@ -785,28 +785,19 @@ str.insert(5, ",");  // ✅ Allowed: modifies in place
 - **Performance**: Efficient for modifications
 - **Memory**: String owns its buffer, can grow/shrink
 
-#### Java Strings: Immutable
+#### Performance Characteristics
 
-In Java, `String` objects are **immutable** (cannot be modified after creation):
+**Efficient Concatenation**:
 
-```java
-String str = "Hello";
-// str[0] = 'h';     // ❌ Compile error: Strings are immutable
-str = str + " World"; // Creates NEW string object, old one becomes garbage
-
-// Memory: Each operation creates a new String object
+```cpp
+// Efficient: Modifies in place
+string result = "Hello";
+for (int i = 0; i < 1000; i++) {
+    result += " World";  // May reallocate, but modifies existing buffer
+}
+// Time: O(n) amortized where n is final length
 ```
 
-**Characteristics**:
-- **Immutable**: Cannot modify after creation
-- **String Pool**: String literals are interned (shared)
-- **Performance**: Concatenation creates new objects (can be slow)
-- **Memory**: Old strings become garbage (GC collects them)
-
-**Why Immutable?**:
-- **Thread Safety**: Immutable objects are naturally thread-safe
-- **Security**: Prevents accidental modification
-- **Hash Code Stability**: Hash code doesn't change
 
 #### Python Strings: Immutable
 
@@ -882,43 +873,18 @@ str2 = "Hello"  → Memory address: 0x1000 (same object!)
 str1 == str2    → true (same object)
 ```
 
-#### Language Support
+#### String Literals vs std::string
 
-**Java**:
-```java
-String s1 = "Hello";           // Interned (string literal)
-String s2 = "Hello";           // Interned (same object)
-String s3 = new String("Hello"); // NOT interned (new object)
+**String Literals** (C-style):
+```cpp
+const char* s1 = "Hello";  // String literal (read-only, stored in program memory)
+const char* s2 = "Hello";  // May point to same memory (implementation-defined)
 
-System.out.println(s1 == s2);  // true (same object)
-System.out.println(s1 == s3);  // false (different objects)
-System.out.println(s1.equals(s3)); // true (same content)
-
-// Manual interning
-String s4 = s3.intern();       // Returns interned version
-System.out.println(s1 == s4);  // true (now same object)
+// String literals are immutable and stored in read-only memory
+// s1[0] = 'h';  // ❌ Compile error: cannot modify string literal
 ```
 
-**Python**:
-```python
-# Small strings and literals are automatically interned
-s1 = "Hello"
-s2 = "Hello"
-print(s1 is s2)  # True (same object for small strings)
-
-# Large strings are NOT interned
-s3 = "Hello" * 100
-s4 = "Hello" * 100
-print(s3 is s4)  # False (different objects)
-
-# Manual interning (Python 3.7+)
-import sys
-s5 = sys.intern("Hello" * 100)
-s6 = sys.intern("Hello" * 100)
-print(s5 is s6)  # True (manually interned)
-```
-
-**C++**:
+**std::string Objects**:
 ```cpp
 // C++ does NOT have automatic string interning
 // String literals are stored in read-only memory, but
@@ -929,141 +895,77 @@ const char* s2 = "Hello";  // May point to same memory (implementation-defined)
 std::string s3 = "Hello";  // New std::string object
 std::string s4 = "Hello";  // Another std::string object
 
-// s3 and s4 are different objects (no interning)
+// s3 and s4 are different objects (no automatic interning)
+s3[0] = 'h';  // ✅ Allowed: modifies s3's buffer
+// s4 remains "Hello" (unchanged)
 ```
 
-#### Benefits of Interning
+**Key Difference**:
+- **String literals**: Immutable, may be shared by compiler optimization
+- **std::string**: Mutable, each object has its own buffer
 
-1. **Memory Savings**: Multiple references to same string share memory
-2. **Fast Comparison**: `==` comparison is O(1) pointer comparison
-3. **Hash Code Efficiency**: Same string has same hash code (cached)
+#### String Interning in C++
 
-#### When Interning Happens
+**C++ does NOT have automatic string interning** for `std::string` objects. However:
 
-- **Java**: String literals are automatically interned
-- **Python**: Small strings (< 20 chars) and identifiers are interned
-- **C++**: No automatic interning (string literals may be optimized by compiler)
-
-### StringBuilder Pattern
-
-The **StringBuilder pattern** is used in languages with immutable strings to efficiently build strings by concatenation.
-
-#### The Problem with Immutable Strings
-
-**Inefficient Concatenation** (Java/Python):
-```java
-// BAD: Creates many temporary String objects
-String result = "";
-for (int i = 0; i < 1000; i++) {
-    result += " " + i;  // Creates new String each iteration!
-}
-// Time: O(n²), Memory: O(n²) temporary objects
-```
-
-#### Solution: StringBuilder (Java)
-
-**Java `StringBuilder`**:
-```java
-// GOOD: Uses mutable buffer internally
-StringBuilder sb = new StringBuilder();
-for (int i = 0; i < 1000; i++) {
-    sb.append(" ").append(i);  // Modifies internal buffer
-}
-String result = sb.toString();  // Create String only once
-// Time: O(n), Memory: O(n)
-```
-
-**Key Methods**:
-- `append()`: Add to buffer
-- `insert()`: Insert at position
-- `delete()`: Remove characters
-- `toString()`: Convert to immutable String
+1. **String Literals**: The compiler may optimize identical string literals to share memory (implementation-defined)
+2. **std::string Objects**: Each `std::string` object has its own buffer, even if the content is identical
 
 **Example**:
-```java
-StringBuilder sb = new StringBuilder("Hello");
-sb.append(" World");           // "Hello World"
-sb.insert(5, ",");             // "Hello, World"
-sb.delete(5, 6);               // "Hello World"
-sb.replace(0, 5, "Hi");        // "Hi World"
-String result = sb.toString(); // Convert to String
-```
-
-#### Solution: List + Join (Python)
-
-**Python Pattern**:
-```python
-# BAD: Creates many temporary strings
-result = ""
-for i in range(1000):
-    result += " " + str(i)  # Creates new string each time
-# Time: O(n²)
-
-# GOOD: Use list and join
-parts = []
-for i in range(1000):
-    parts.append(" " + str(i))
-result = "".join(parts)  # Single join operation
-# Time: O(n)
-```
-
-**Even Better**:
-```python
-# Most efficient: List comprehension + join
-result = "".join([" " + str(i) for i in range(1000)])
-```
-
-#### C++ Equivalent
-
-In C++, `std::string` is already mutable, but you can optimize with `reserve()`:
-
 ```cpp
-// GOOD: Reserve space to avoid reallocations
+const char* lit1 = "Hello";  // String literal
+const char* lit2 = "Hello";  // May point to same memory (compiler optimization)
+// lit1 == lit2 might be true (same pointer) - implementation-defined
+
+string str1 = "Hello";  // New std::string object
+string str2 = "Hello";  // Another std::string object
+// str1 == str2 is true (content comparison), but &str1 != &str2 (different objects)
+```
+
+**Why No Interning?**:
+- C++ prioritizes performance and control over memory optimization
+- Mutable strings make interning complex (what if one is modified?)
+- Explicit memory management gives programmers control
+
+### Efficient String Building in C++
+
+Since C++ strings are mutable, we don't need a separate StringBuilder pattern. However, there are optimization techniques:
+
+**Pattern 1: Using `reserve()`** (Recommended):
+```cpp
 string result;
-result.reserve(10000);  // Pre-allocate space
-for (int i = 0; i < 1000; i++) {
-    result += " " + to_string(i);  // Efficient (may still reallocate if needed)
+result.reserve(expected_size);  // Pre-allocate if size is known
+for (int i = 0; i < n; i++) {
+    result += some_string;  // Efficient: no reallocation needed
 }
 ```
 
-**Or use `ostringstream`** (similar to StringBuilder):
+**Pattern 2: Using `ostringstream`** (For complex formatting):
 ```cpp
-#include <sstream>
 ostringstream oss;
-for (int i = 0; i < 1000; i++) {
-    oss << " " << i;
+for (int i = 0; i < n; i++) {
+    oss << some_value << " ";  // Stream-based building
 }
 string result = oss.str();
 ```
 
-#### Performance Comparison
+**Pattern 3: Direct Concatenation** (For small operations):
+```cpp
+string result = str1 + " " + str2;  // Fine for few concatenations
+```
 
-| Method | Time Complexity | Space Complexity | Language |
-|--------|----------------|------------------|----------|
-| **String concatenation** | O(n²) | O(n²) | Java/Python |
-| **StringBuilder/List+join** | O(n) | O(n) | Java/Python |
-| **std::string (mutable)** | O(n) amortized | O(n) | C++ |
-| **ostringstream** | O(n) | O(n) | C++ |
-
-#### When to Use StringBuilder Pattern
-
-**Use StringBuilder/List+join when**:
-- Building strings in loops
-- Concatenating many strings
-- Performance is critical
-- Working with immutable strings (Java/Python)
-
-**Don't use when**:
-- Concatenating few strings (< 5)
-- Code clarity is more important
-- Using C++ (std::string is already efficient)
+**When to Use Each**:
+- **`reserve()` + `+=`**: When you know approximate size, building in loops
+- **`ostringstream`**: When formatting is complex, or building from various types
+- **Direct `+`**: When concatenating few strings (< 5), code clarity matters
 
 #### Best Practices
 
-1. **Java**: Use `StringBuilder` for building strings in loops
-2. **Python**: Use list + `join()` for building strings
-3. **C++**: Use `std::string` with `reserve()` if size is known
-4. **All Languages**: Avoid repeated concatenation in tight loops
+1. **Use `reserve()`** when building strings in loops if you know approximate size
+2. **Use `ostringstream`** for complex string building with formatting
+3. **Avoid repeated concatenation** in tight loops without `reserve()`
+4. **Prefer `std::string`** over C-style strings for safety and convenience
+5. **Remember**: `std::string` is mutable, so be careful with concurrent access
 
 ## 3.9 Advanced Array Techniques
 
