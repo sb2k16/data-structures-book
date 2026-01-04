@@ -1897,7 +1897,133 @@ int query(int index) {
 
 14. Implement a Sqrt Decomposition that supports range minimum and range sum queries.
 
-## 14.14 Summary
+## 14.14 Concurrency Considerations
+
+Heaps and priority queues are frequently used in concurrent systems (task schedulers, event systems). Understanding concurrent access patterns is crucial for thread-safe implementations.
+
+### Invariants Threatened by Concurrent Access
+
+**Core Heap Invariants:**
+1. **Heap Property Invariant**: "Parent >= all children (max-heap) or Parent <= all children (min-heap)"
+2. **Complete Tree Invariant**: "Tree is complete (all levels filled except possibly last, left-to-right)"
+3. **Size Invariant**: "`size` equals number of elements"
+
+### What Operations Need Atomicity
+
+**Insert Operation (Bubble Up):**
+```cpp
+void insert(int value) {
+    heap[size] = value;        // Step 1: Add to end
+    size++;                     // Step 2: Update size
+    bubbleUp(size - 1);         // Step 3: Restore heap property
+}
+```
+
+**Problem**: Between steps, another thread can:
+- Read incorrect size
+- See heap in inconsistent state (element added but heap property not restored)
+- During bubble up: parent-child comparisons may see inconsistent values
+
+**Extract Operation (Bubble Down):**
+```cpp
+int extractMax() {
+    int max = heap[0];          // Step 1: Get root
+    heap[0] = heap[size - 1];   // Step 2: Move last to root
+    size--;                      // Step 3: Decrease size
+    bubbleDown(0);              // Step 4: Restore heap property
+    return max;
+}
+```
+
+**Problem**: Similar race conditions, plus:
+- Two threads may extract same element if check-then-act not atomic
+- Bubble down may see inconsistent parent-child relationships
+
+### Coarse vs Fine-Grained Locking
+
+**Coarse-Grained (Single Lock):**
+```cpp
+class ThreadSafeHeap {
+    std::vector<int> heap;
+    std::mutex mtx;
+    
+public:
+    void insert(int value) {
+        std::lock_guard<std::mutex> lock(mtx);
+        // Entire operation atomic
+    }
+};
+```
+- ✅ Simple, prevents all race conditions
+- ❌ Very low parallelism (only one operation at a time)
+
+**Fine-Grained (Per-Node Locks):**
+- Not practical for heaps (operations traverse tree, need multiple locks)
+- High overhead, complex deadlock avoidance
+- **Not recommended**
+
+### Lock-Free Approaches
+
+**Lock-free heaps** are extremely complex:
+- **Lock-free skip lists**: Can be used to implement priority queues
+- **Lock-free binomial heaps**: Research-level implementations
+- **CAS-based operations**: Complex due to tree structure modifications
+
+**Recommendation**: Use lock-based approach. Lock-free heaps are rarely worth the complexity.
+
+### Common Bugs
+
+1. **Heap Property Violation**: Concurrent inserts break heap property
+   ```cpp
+   // Thread 1: Inserting 10, bubble up
+   // Thread 2: Inserting 20, bubble up
+   // Both may see inconsistent parent values during bubble up
+   ```
+
+2. **Duplicate Extraction**: Two threads extract same element
+   ```cpp
+   // Both threads check size > 0
+   // Both extract root
+   // One gets valid element, one gets garbage
+   ```
+
+3. **Size Inconsistency**: Size updated but element not yet in correct position
+   ```cpp
+   size++;              // Thread 1: Size updated
+   // Thread 2: Reads size, expects element at heap[size-1]
+   bubbleUp(...);       // Thread 1: Element not yet bubbled up!
+   ```
+
+### Practical Recommendations
+
+- **For most cases**: Use coarse-grained locking (single mutex)
+- **For high contention**: Consider multiple heaps (thread-local heaps, merge periodically)
+- **For read-heavy**: Use `std::shared_mutex` (multiple readers, single writer)
+- **For production**: Use `std::priority_queue` with external synchronization or thread-safe priority queues from libraries
+
+### Priority Queue Specific Considerations
+
+**Producer-Consumer Pattern:**
+```cpp
+// Multiple producers, multiple consumers
+// Use condition variable for blocking when empty
+std::condition_variable cv;
+std::mutex mtx;
+
+void consumer() {
+    std::unique_lock<std::mutex> lock(mtx);
+    cv.wait(lock, []{ return !pq.empty(); });  // Wait until not empty
+    int value = pq.top();
+    pq.pop();
+}
+```
+
+**Key Points:**
+- Use `std::condition_variable` for efficient waiting
+- Always check condition in loop (spurious wakeups)
+- Lock must be held when checking condition and when modifying
+
+## 14.15 Summary
 
 Advanced data structures provide specialized operations for specific use cases. Understanding when and how to use heaps, tries, segment trees, and Fenwick trees is essential for solving complex problems efficiently.
 
@@ -1907,6 +2033,7 @@ Advanced data structures provide specialized operations for specific use cases. 
 - Segment Trees and Fenwick Trees support efficient range queries
 - Sparse Table and Sqrt Decomposition offer alternative approaches for range queries
 - Common pitfalls: heap property violations, index calculation errors, memory leaks
+- Concurrency considerations for thread-safe implementations
 
 **Why the Next Chapter Follows:**
 Now that we've covered advanced data structures, we'll explore **greedy algorithms** in Chapter 16. These algorithms make locally optimal choices at each step, and many greedy algorithms (like Huffman coding) rely on heaps and other advanced structures we've just learned.

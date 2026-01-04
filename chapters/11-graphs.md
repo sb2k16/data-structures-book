@@ -3441,7 +3441,147 @@ bool isBipartite(const vector<list<int>>& graph) {
 
 10. Create a graph visualization tool that can display small graphs.
 
-## 11.16 Summary
+## 11.16 Concurrency Considerations
+
+Graph traversal algorithms (BFS/DFS) are often parallelized for performance. Understanding how concurrent access affects graph operations is important for parallel graph processing.
+
+### Invariants Threatened by Concurrent Access
+
+**Graph Structure Invariants:**
+1. **Adjacency Invariant**: "Adjacency lists/matrix correctly represent edges"
+2. **Visited State Invariant**: "Visited flags accurately track traversal state"
+3. **Distance Invariant**: "Distance values correctly represent shortest paths (for BFS/Dijkstra)"
+
+### Concurrent Graph Traversal
+
+**Parallel BFS/DFS** can be achieved by:
+- **Level-by-level parallelization (BFS)**: Process all vertices at level `i` in parallel
+- **Component-based parallelization**: Process different connected components in parallel
+- **Edge-based parallelization**: Process edges in parallel (for algorithms like MST)
+
+### What Operations Need Atomicity
+
+**BFS Traversal:**
+```cpp
+void bfs(int start) {
+    queue<int> q;
+    vector<bool> visited(numVertices, false);
+    q.push(start);
+    visited[start] = true;  // Step 1: Mark visited
+    
+    while (!q.empty()) {
+        int u = q.front();
+        q.pop();
+        
+        for (int v : adj[u]) {
+            if (!visited[v]) {        // Step 2: Check
+                visited[v] = true;     // Step 3: Mark
+                q.push(v);            // Step 4: Enqueue
+            }
+        }
+    }
+}
+```
+
+**Problem**: Check-then-act race condition:
+- Thread 1: Checks `!visited[v]` → true
+- Thread 2: Checks `!visited[v]` → true (same vertex)
+- Both mark and enqueue → vertex processed twice
+
+**Solution**: Use atomic operations for visited flags:
+```cpp
+std::vector<std::atomic<bool>> visited(numVertices);
+// Use compare_exchange to atomically check and set
+if (!visited[v].exchange(true)) {  // Atomic check-and-set
+    q.push(v);
+}
+```
+
+### Concurrent Graph Modification
+
+**Problem**: Graph structure modified during traversal
+```cpp
+// Thread 1: Traversing graph
+for (int v : adj[u]) {  // Reading adjacency list
+    // Thread 2: Adding edge here!
+    process(v);
+}
+```
+
+**Invariant Threatened**: "Adjacency list represents current graph state"
+
+**Solutions:**
+1. **Read-only traversal**: Graph is immutable during traversal
+2. **Copy-on-write**: Create snapshot of graph for traversal
+3. **Fine-grained locking**: Lock individual vertices/edges
+4. **Version numbers**: Track graph versions, detect modifications
+
+### Coarse vs Fine-Grained Locking
+
+**Coarse-Grained (Single Lock):**
+```cpp
+class ThreadSafeGraph {
+    std::vector<std::vector<int>> adj;
+    std::mutex mtx;
+    
+public:
+    void addEdge(int u, int v) {
+        std::lock_guard<std::mutex> lock(mtx);
+        adj[u].push_back(v);
+    }
+};
+```
+- ✅ Simple, prevents all race conditions
+- ❌ Very low parallelism
+
+**Fine-Grained (Per-Vertex Locks):**
+```cpp
+std::vector<std::mutex> vertex_locks(numVertices);
+
+void addEdge(int u, int v) {
+    // Lock both vertices (always in same order to avoid deadlock)
+    std::lock(vertex_locks[u], vertex_locks[v]);
+    std::lock_guard<std::mutex> lock1(vertex_locks[u], std::adopt_lock);
+    std::lock_guard<std::mutex> lock2(vertex_locks[v], std::adopt_lock);
+    adj[u].push_back(v);
+    adj[v].push_back(u);  // For undirected graph
+}
+```
+- ✅ Higher parallelism
+- ❌ Complex, risk of deadlock if lock order violated
+- ❌ High memory overhead
+
+### Common Bugs
+
+1. **Duplicate Processing**: Vertex visited by multiple threads
+   ```cpp
+   // Both threads see visited[v] = false
+   // Both process vertex v
+   ```
+
+2. **Inconsistent Distance**: Distance updated by multiple threads
+   ```cpp
+   // Thread 1: distance[v] = distance[u] + 1
+   // Thread 2: distance[v] = distance[u] + 1 (different u)
+   // Race condition on distance[v]
+   ```
+
+3. **Iterator Invalidation**: Adjacency list modified during iteration
+   ```cpp
+   for (int v : adj[u]) {  // Iterating
+       // Another thread adds edge to adj[u]
+       // Iterator may become invalid
+   }
+   ```
+
+### Practical Recommendations
+
+- **For read-only traversal**: No synchronization needed (if graph is immutable)
+- **For parallel BFS**: Use atomic operations for visited flags, lock-free queues
+- **For graph modification**: Use coarse-grained locking or copy-on-write
+- **For production**: Consider graph processing frameworks (e.g., GraphX, Pregel) that handle concurrency
+
+## 11.17 Summary
 
 Graphs are fundamental data structures that model relationships and connections. Understanding graph representations, traversal algorithms, shortest path algorithms, and minimum spanning tree algorithms is essential for solving many computational problems. The choice of representation and algorithm depends on the specific problem requirements, graph characteristics, and performance constraints.
 

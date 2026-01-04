@@ -912,7 +912,109 @@ void demonstrateMemoryLayout() {
 7. **Custom Vector Implementation**: Implement a simplified version of `std::vector` with dynamic growth capabilities, including `push_back()`, `reserve()`, and `shrink_to_fit()` methods.
 8. **Memory Optimization**: Create a function that efficiently processes a large dataset by minimizing vector reallocations using appropriate reserve strategies.
 
-## 3.14 Summary
+## 3.14 Concurrency Considerations
+
+When arrays are accessed by multiple threads, several invariants are threatened. Understanding these threats helps design thread-safe array operations.
+
+### Invariants Threatened by Concurrent Access
+
+**Core Array Invariants:**
+1. **Bounds Invariant**: All indices accessed are within `[0, size)`
+2. **Value Invariant**: Elements at each index have valid values
+3. **Size Invariant**: `size` accurately reflects the number of elements
+
+### What Operations Need Atomicity
+
+**Read-Modify-Write Operations:**
+```cpp
+// Non-atomic: Three separate operations
+array[index] = array[index] + 1;  // Read, compute, write
+size++;                            // Read, compute, write
+```
+
+**Problem**: Another thread can interleave between read and write, causing lost updates.
+
+**Solution**: Use atomic operations or locks:
+```cpp
+// Atomic increment
+std::atomic<int> atomic_array[100];
+atomic_array[index]++;  // Atomic
+
+// Or use mutex for critical sections
+std::mutex mtx;
+std::lock_guard<std::mutex> lock(mtx);
+array[index]++;
+```
+
+### Coarse vs Fine-Grained Locking
+
+**Coarse-Grained (Single Lock):**
+```cpp
+class ThreadSafeArray {
+    std::vector<int> data;
+    std::mutex mtx;  // Single lock for entire array
+    
+public:
+    void set(int index, int value) {
+        std::lock_guard<std::mutex> lock(mtx);
+        data[index] = value;
+    }
+};
+```
+- ✅ Simple, prevents all race conditions
+- ❌ Low parallelism (only one thread can access at a time)
+
+**Fine-Grained (Per-Element Locks):**
+```cpp
+class FineGrainedArray {
+    std::vector<int> data;
+    std::vector<std::mutex> locks;  // One lock per element
+    
+public:
+    void set(int index, int value) {
+        std::lock_guard<std::mutex> lock(locks[index]);
+        data[index] = value;
+    }
+};
+```
+- ✅ Higher parallelism (different threads can access different elements)
+- ❌ More complex, higher memory overhead
+- ❌ Doesn't help with operations spanning multiple elements
+
+### Common Bugs
+
+1. **Lost Updates**: Two threads increment same element
+   ```cpp
+   // Thread 1: array[0] = array[0] + 1
+   // Thread 2: array[0] = array[0] + 1
+   // Both read same value, both write, one update lost
+   ```
+
+2. **Bounds Violations**: Size check and access not atomic
+   ```cpp
+   if (index < size) {        // Check
+       // Another thread may shrink array here!
+       value = array[index];   // May be out of bounds
+   }
+   ```
+
+3. **Iterator Invalidation**: Iterating while another thread modifies
+   ```cpp
+   // Thread 1: Iterating
+   for (auto it = array.begin(); it != array.end(); ++it) {
+       // Thread 2: array.push_back() may reallocate!
+       process(*it);  // Invalid iterator!
+   }
+   ```
+
+### Practical Recommendations
+
+- **For read-heavy workloads**: Use `std::shared_mutex` (multiple readers, single writer)
+- **For simple counters**: Use `std::atomic<int>`
+- **For complex operations**: Use `std::mutex` with `std::lock_guard`
+- **For production**: Prefer `std::vector` with external synchronization or thread-safe containers from libraries
+
+## 3.15 Summary
 
 Arrays and strings are fundamental data structures that form the building blocks of more complex algorithms and data structures. Understanding their properties, operations, and common algorithms is essential for any programmer. The techniques learned in this chapter—such as two pointers, sliding window, and prefix sums—are widely applicable in solving various algorithmic problems.
 
@@ -921,6 +1023,7 @@ Arrays and strings are fundamental data structures that form the building blocks
 - Cache behavior significantly impacts performance
 - Common pitfalls like off-by-one errors and iterator invalidation
 - Memory management best practices for production code
+- Concurrency considerations and thread-safety patterns
 
 **Why the Next Chapter Follows:**
 Now that we understand linear, contiguous data structures, we'll explore **linked lists** in Chapter 4, which trade random access for dynamic sizing and efficient insertion/deletion. This contrast between arrays and linked lists illustrates a fundamental trade-off in data structure design: memory locality vs. flexibility.

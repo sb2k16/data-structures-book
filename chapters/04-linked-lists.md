@@ -1274,6 +1274,120 @@ void insertAtTail(int value) {
 4. Implement a function to add two numbers represented as linked lists.
 5. Write a function to clone a linked list with random pointers.
 
+## 4.13 Concurrency Considerations
+
+Linked lists are particularly challenging for concurrent access because operations modify pointer structures, creating many opportunities for race conditions.
+
+### Invariants Threatened by Concurrent Access
+
+**Core Linked List Invariants:**
+1. **Linkage Invariant**: "Each node's `next` pointer correctly points to the next node"
+2. **Head Invariant**: "`head` points to the first node (or is `nullptr` if empty)"
+3. **Acyclicity Invariant**: "No cycles exist in the list"
+
+### What Operations Need Atomicity
+
+**Insertion Operation:**
+```cpp
+void insertAfter(Node* prev, Node* new_node) {
+    new_node->next = prev->next;  // Step 1: Link new node
+    prev->next = new_node;        // Step 2: Update previous node
+}
+```
+
+**Problem**: Between Step 1 and Step 2, the invariant "next pointers form a valid chain" is violated. Another thread traversing the list may:
+- Miss the new node (if it reads `prev->next` before Step 2)
+- See an inconsistent state (new node points to next, but prev doesn't point to new node)
+
+**Deletion Operation:**
+```cpp
+void deleteNode(Node* prev, Node* to_delete) {
+    prev->next = to_delete->next;  // Step 1: Bypass node
+    delete to_delete;               // Step 2: Free memory
+}
+```
+
+**Problem**: Another thread may be traversing through `to_delete` when it's deleted, causing:
+- **Use-after-free**: Accessing freed memory
+- **Broken chain**: Traversing thread may follow invalid pointer
+
+### Coarse vs Fine-Grained Locking
+
+**Coarse-Grained (Single Lock):**
+```cpp
+class ThreadSafeList {
+    Node* head;
+    std::mutex mtx;
+    
+public:
+    void insert(int value) {
+        std::lock_guard<std::mutex> lock(mtx);
+        // Entire insertion is atomic
+        Node* new_node = new Node(value);
+        new_node->next = head;
+        head = new_node;
+    }
+};
+```
+- ✅ Simple, prevents all race conditions
+- ❌ Very low parallelism (only one operation at a time)
+
+**Fine-Grained (Hand-over-Hand Locking):**
+```cpp
+void insertAfter(Node* prev, Node* new_node) {
+    std::lock_guard<std::mutex> lock1(prev->mtx);
+    if (prev->next) {
+        std::lock_guard<std::mutex> lock2(prev->next->mtx);
+        new_node->next = prev->next;
+        prev->next = new_node;
+    }
+}
+```
+- ✅ Allows concurrent operations on different parts of list
+- ❌ Complex, risk of deadlock if lock order violated
+- ❌ High overhead (multiple lock acquisitions)
+
+### Common Bugs
+
+1. **Lost Nodes**: Insertion interrupted, node becomes unreachable
+   ```cpp
+   // Thread 1: Inserting node B after A
+   new_node->next = A->next;  // Done
+   // Thread 2: Deletes A here!
+   A->next = new_node;        // Writing to deleted memory!
+   ```
+
+2. **Broken Chain**: Deletion leaves dangling pointers
+   ```cpp
+   // Thread 1: Deleting node B
+   A->next = B->next;  // Done
+   // Thread 2: Traversing, currently at B
+   current = current->next;  // May follow invalid pointer!
+   delete B;  // Thread 1 frees B
+   ```
+
+3. **Double Deletion**: Two threads delete same node
+   ```cpp
+   // Both threads think they should delete node B
+   // Both call delete B → undefined behavior
+   ```
+
+### Lock-Free Considerations
+
+Lock-free linked lists are possible but extremely complex:
+- **Compare-And-Swap (CAS)** for atomic pointer updates
+- **ABA Problem**: Pointer value A→B→A, CAS thinks nothing changed
+- **Memory Reclamation**: When to safely free deleted nodes (hazard pointers, RCU)
+
+**Recommendation**: Use lock-based approach or proven libraries. Lock-free linked lists are rarely worth the complexity.
+
+### Practical Recommendations
+
+- **For most cases**: Use coarse-grained locking (single mutex)
+- **For high contention**: Consider lock-free alternatives from libraries
+- **For read-heavy**: Use `std::shared_mutex` (multiple readers)
+- **For production**: Prefer thread-safe containers from standard libraries or well-tested libraries
+
 ### 4.14 Summary
 
 Linked lists are fundamental data structures that offer flexibility in memory management and efficient insertion/deletion operations. While they don't provide random access like arrays, they excel in scenarios where the size is unknown beforehand or frequent insertions/deletions are required. Understanding the different types of linked lists and their associated algorithms is crucial for solving many programming problems and designing efficient data structures.

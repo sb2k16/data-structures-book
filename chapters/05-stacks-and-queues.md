@@ -1493,6 +1493,129 @@ int largestRectangleArea(vector<int>& heights) {
 4. Create a function to check if a string is a palindrome using a stack.
 5. Implement a sliding window maximum using a deque.
 
+## 5.12 Concurrency Considerations
+
+Stacks and queues are frequently used in concurrent systems (e.g., producer-consumer patterns). Understanding how concurrent access threatens their invariants is crucial.
+
+### Invariants Threatened by Concurrent Access
+
+**Stack Invariants:**
+1. **LIFO Invariant**: "Last element pushed is first element popped"
+2. **Top Pointer Invariant**: "`top` points to most recently pushed element"
+3. **Size Invariant**: "`size` equals number of elements"
+
+**Queue Invariants:**
+1. **FIFO Invariant**: "First element enqueued is first element dequeued"
+2. **Front/Rear Invariant**: "`front` and `rear` pointers correctly track queue boundaries"
+3. **Size Invariant**: "`size` equals number of elements"
+
+### What Operations Need Atomicity
+
+**Stack Push (Non-Atomic):**
+```cpp
+void push(int value) {
+    Node* new_node = new Node(value);
+    new_node->next = top;  // Step 1
+    top = new_node;         // Step 2
+    size++;                 // Step 3
+}
+```
+
+**Problem**: Between steps, another thread can:
+- Pop and get wrong element (if it reads `top` between Step 1 and 2)
+- See inconsistent size (if it reads `size` between operations)
+
+**Queue Enqueue (Non-Atomic):**
+```cpp
+void enqueue(int value) {
+    Node* new_node = new Node(value);
+    rear->next = new_node;  // Step 1
+    rear = new_node;        // Step 2
+    size++;                 // Step 3
+}
+```
+
+**Problem**: Similar race conditions as stack, plus:
+- **Empty Queue Race**: Check `isEmpty()` and dequeue not atomic
+  ```cpp
+  if (!isEmpty()) {        // Check
+      // Another thread dequeues here!
+      return dequeue();    // May dequeue from empty queue
+  }
+  ```
+
+### Coarse vs Fine-Grained Locking
+
+**Coarse-Grained (Single Lock):**
+```cpp
+class ThreadSafeStack {
+    std::stack<int> data;
+    std::mutex mtx;
+    
+public:
+    void push(int value) {
+        std::lock_guard<std::mutex> lock(mtx);
+        data.push(value);
+    }
+};
+```
+- ✅ Simple, correct
+- ❌ Low parallelism (only one operation at a time)
+
+**Fine-Grained (Separate Locks for Front/Rear):**
+- Not applicable for stacks (single access point)
+- Possible for queues but complex and error-prone
+- **Recommendation**: Coarse-grained is sufficient for most cases
+
+### Common Bugs
+
+1. **Lost Elements**: Push interrupted, element never added
+   ```cpp
+   // Thread 1: Pushing
+   new_node->next = top;  // Done
+   // Thread 2: Pops here, gets old top
+   top = new_node;        // New node never becomes top
+   ```
+
+2. **Duplicate Pops**: Two threads pop same element
+   ```cpp
+   // Both threads read same top
+   value = top->data;
+   top = top->next;  // Both update top, one element popped twice
+   ```
+
+3. **Empty Queue/Stack Access**: Check-then-act race condition
+   ```cpp
+   if (!isEmpty()) {     // Check
+       return pop();      // May pop from empty structure
+   }
+   ```
+
+### Lock-Free Approaches
+
+**Lock-free stacks** are relatively straightforward using Compare-And-Swap:
+```cpp
+void lockFreePush(Node* new_node) {
+    Node* old_top;
+    do {
+        old_top = top.load();
+        new_node->next = old_top;
+    } while (!top.compare_exchange_weak(old_top, new_node));
+}
+```
+
+**Lock-free queues** are much more complex (Michael & Scott algorithm):
+- Requires two CAS operations (head and tail)
+- ABA problem handling
+- Memory reclamation challenges
+
+### Practical Recommendations
+
+- **For stacks**: Lock-free is feasible and often faster
+- **For queues**: Prefer lock-based unless performance is critical
+- **For bounded queues**: Use `std::condition_variable` for producer-consumer
+- **For production**: Use `std::queue`/`std::stack` with external synchronization or thread-safe containers
+
 ### 5.13 Summary
 
 Stacks and queues are fundamental abstract data types that provide specific access patterns essential for many algorithms and system operations. Understanding their implementations, trade-offs, and applications is crucial for solving problems that require LIFO or FIFO behavior. These data structures serve as building blocks for more complex algorithms and are widely used in computer science and software engineering.

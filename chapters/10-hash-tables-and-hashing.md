@@ -1423,7 +1423,138 @@ int longestConsecutive(const vector<int>& nums) {
 
 10. Create a hash table with statistics tracking (hit rate, collision count, etc.).
 
-## 10.13 Summary
+## 10.13 Concurrency Considerations
+
+Hash tables are frequently used in concurrent systems (caches, symbol tables, shared data stores). Understanding concurrent access patterns is essential for thread-safe implementations.
+
+### Invariants Threatened by Concurrent Access
+
+**Core Hash Table Invariants:**
+1. **Bucket Invariant**: "Each key maps to exactly one bucket"
+2. **Collision Chain Invariant**: "Keys in same bucket form valid chain (chaining) or valid probe sequence (open addressing)"
+3. **Load Factor Invariant**: "Load factor = size/capacity (used for rehashing decisions)"
+
+### What Operations Need Atomicity
+
+**Insert Operation (Chaining):**
+```cpp
+void insert(int key, int value) {
+    int bucket = hash(key) % capacity;
+    Node* new_node = new Node(key, value);
+    new_node->next = table[bucket];  // Step 1
+    table[bucket] = new_node;         // Step 2
+    size++;                            // Step 3
+}
+```
+
+**Problem**: Between steps, another thread can:
+- Read inconsistent bucket state
+- See incorrect size
+- During rehashing: access old and new table simultaneously
+
+**Rehashing Operation:**
+```cpp
+void rehash() {
+    // Create new table
+    // Migrate all elements  // Step 1: Copying
+    // Update table pointer  // Step 2: Switching
+    // Delete old table      // Step 3: Cleanup
+}
+```
+
+**Problem**: Rehashing is a long operation. Other threads may:
+- Access old table while migration is happening
+- Access new table before migration completes
+- See inconsistent state during transition
+
+### Coarse vs Fine-Grained Locking
+
+**Coarse-Grained (Single Lock):**
+```cpp
+class ThreadSafeHashTable {
+    std::vector<Bucket> table;
+    std::mutex mtx;
+    
+public:
+    void insert(int key, int value) {
+        std::lock_guard<std::mutex> lock(mtx);
+        // Entire operation atomic
+    }
+};
+```
+- ✅ Simple, prevents all race conditions
+- ❌ Very low parallelism (only one operation at a time)
+
+**Fine-Grained (Per-Bucket Locks):**
+```cpp
+class FineGrainedHashTable {
+    std::vector<Bucket> table;
+    std::vector<std::mutex> bucket_locks;
+    
+public:
+    void insert(int key, int value) {
+        int bucket = hash(key) % capacity;
+        std::lock_guard<std::mutex> lock(bucket_locks[bucket]);
+        // Only this bucket is locked
+    }
+};
+```
+- ✅ High parallelism (different buckets can be accessed concurrently)
+- ❌ Rehashing becomes complex (need to lock all buckets)
+- ❌ Memory overhead (one mutex per bucket)
+
+**Striped Locking (Compromise):**
+```cpp
+// Fewer locks than buckets, hash to lock index
+std::vector<std::mutex> stripe_locks(16);  // 16 locks for many buckets
+int lock_index = hash(key) % 16;
+```
+- ✅ Good parallelism with lower overhead
+- ✅ Easier rehashing than fine-grained
+- ⚠️ Some false contention (different buckets may share lock)
+
+### Common Bugs
+
+1. **Lost Updates**: Two threads insert same key
+   ```cpp
+   // Thread 1: Insert (key=5, value=10)
+   // Thread 2: Insert (key=5, value=20)
+   // Both read "key not found", both insert
+   // One value overwrites the other
+   ```
+
+2. **Inconsistent Reads During Rehashing**: Reading while table is being rehashed
+   ```cpp
+   // Thread 1: Rehashing (migrating elements)
+   // Thread 2: Reading key
+   // Thread 2 may access old table (partially migrated)
+   // or new table (not fully populated)
+   ```
+
+3. **Size Inconsistency**: Size updated but element not yet visible
+   ```cpp
+   size++;              // Thread 1: Size updated
+   // Thread 2: Reads size, expects element to exist
+   table[bucket] = ...;  // Thread 1: Element not yet in table!
+   ```
+
+### Lock-Free Considerations
+
+Lock-free hash tables are extremely complex:
+- **Read-Copy-Update (RCU)**: For read-heavy workloads
+- **Lock-free chaining**: Each bucket is a lock-free linked list
+- **Concurrent rehashing**: Major challenge (requires coordination)
+
+**Recommendation**: Use lock-based approach or proven libraries. Lock-free hash tables are research-level implementations.
+
+### Practical Recommendations
+
+- **For read-heavy**: Use `std::shared_mutex` (multiple readers, single writer)
+- **For high parallelism**: Use striped locking (compromise between coarse and fine-grained)
+- **For production**: Use `std::unordered_map` with external synchronization or thread-safe hash tables from libraries
+- **For distributed systems**: Consider consistent hashing to minimize rehashing impact
+
+## 10.14 Summary
 
 Hash tables are one of the most important and widely used data structures in computer science. They provide excellent average-case performance for key-value operations, making them ideal for many applications including databases, caches, symbol tables, and more.
 
