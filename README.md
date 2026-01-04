@@ -15,6 +15,7 @@ A comprehensive introduction to data structures and algorithms using C++ as the 
 ### Part II: Linear Data Structures
 - [Chapter 3: Basic Data Structures (Arrays and Strings)](chapters/03-basic-data-structures.md)
 - [Chapter 3.5: Concurrency Fundamentals for Data Structures](chapters/03.5-concurrency-fundamentals.md)
+- [Chapter 3.6: Memory Hierarchy and Performance](chapters/03.6-memory-hierarchy-and-performance.md)
 - [Chapter 4: Linked Lists](chapters/04-linked-lists.md)
 - [Chapter 5: Stacks and Queues](chapters/05-stacks-and-queues.md)
 
@@ -64,6 +65,8 @@ data-structures-book/
 │   ├── 01-introduction.md
 │   ├── 02-complexity-analysis.md
 │   ├── 03-basic-data-structures.md
+│   ├── 03.5-concurrency-fundamentals.md
+│   ├── 03.6-memory-hierarchy-and-performance.md
 │   ├── 04-linked-lists.md
 │   ├── 05-stacks-and-queues.md
 │   ├── 06-trees-and-binary-trees.md

@@ -1461,11 +1461,13 @@ Load Factor = Number of Elements / Number of Buckets
 
 ### 10.6.1 Systems Perspective: Memory Hierarchy and Performance
 
-Understanding hash table behavior at the system level reveals critical performance considerations. Modern computers have a complex memory hierarchy that dramatically affects hash table performance.
+Understanding hash table behavior at the system level reveals critical performance considerations. This section applies the memory hierarchy concepts from [Chapter 3.6](03.6-memory-hierarchy-and-performance.md) to hash tables.
 
-#### The Memory Hierarchy
+For comprehensive coverage of memory hierarchy, cache behavior, CPU cycles, and performance optimization, see Chapter 3.6. Here we focus on hash table-specific implications.
 
-Modern computer systems have multiple levels of memory, each with different characteristics:
+#### Memory Hierarchy Impact on Hash Tables
+
+The memory hierarchy (registers → L1 → L2 → L3 → RAM → disk) dramatically affects hash table performance. See Section 3.6.2 for details on the memory pyramid.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -1516,52 +1518,20 @@ Modern computer systems have multiple levels of memory, each with different char
 └─────────────────────────────────────────────────────────┘
 ```
 
-**Key Insight**: Each level is 10-100x slower than the previous level, but also 10-100x larger. The goal is to keep frequently accessed data in faster levels.
+**Key Insight**: Each level is 10-100x slower than the previous level, but also 10-100x larger. The goal is to keep frequently accessed data in faster levels. See Section 3.6.2 for the complete memory hierarchy.
 
-#### Cache Lines and Cache Misses
+#### Cache Behavior in Hash Tables
 
-**Cache Line**: The smallest unit of data that can be transferred between cache levels. Typically 64 bytes on modern x86-64 systems.
+Cache lines (64 bytes) and cache misses significantly impact hash table performance. See Section 3.6.3 for details on cache hits, misses, and miss types.
 
-**Cache Hit**: When requested data is found in cache. This is fast:
-- L1 hit: ~1-2 ns (3-5 cycles)
-- L2 hit: ~3-7 ns (10-20 cycles)
-- L3 hit: ~10-20 ns (40-75 cycles)
+**Key Points for Hash Tables**:
+- Cache hit: ~5-20 cycles
+- Cache miss: ~100-300 cycles (10-30x slower!)
+- Hash table operations are dominated by memory access patterns
 
-**Cache Miss**: When requested data is not in cache. This triggers a fetch from the next level:
-- L1 miss → L2: ~10-20 cycles
-- L2 miss → L3: ~40-75 cycles
-- L3 miss → RAM: ~100-300 cycles (cache miss penalty)
-- RAM miss → Disk: ~10,000-10,000,000 cycles (page fault)
+#### Sequential vs. Random Access in Hash Tables
 
-**Cache Miss Types**:
-1. **Compulsory Miss (Cold Miss)**: First access to a memory location
-2. **Capacity Miss**: Cache is too small to hold all needed data
-3. **Conflict Miss**: Multiple memory locations map to the same cache line
-4. **Coherence Miss**: Cache line invalidated by another CPU core (multi-threaded)
-
-#### Sequential vs. Random Memory Access
-
-**Sequential Access** (Cache-Friendly):
-```
-Access pattern: [0] → [1] → [2] → [3] → [4] → ...
-```
-- **Prefetching**: CPU predicts next access and loads cache lines ahead
-- **Cache efficiency**: ~90-95% hit rate
-- **Bandwidth**: Can saturate memory bandwidth (~20-50 GB/s)
-- **Example**: Linear probing with good distribution, array iteration
-
-**Random Access** (Cache-Unfriendly):
-```
-Access pattern: [42] → [17] → [99] → [3] → [78] → ...
-```
-- **No prefetching**: CPU cannot predict next access
-- **Cache efficiency**: ~50-70% hit rate (depends on working set size)
-- **Bandwidth**: Limited by cache miss latency (~5-10 GB/s effective)
-- **Example**: Hash table with poor distribution, pointer chasing in chaining
-
-**Performance Impact**:
-- Sequential access: ~5-10 cycles per element
-- Random access: ~50-200 cycles per element (depends on cache level)
+Sequential access (see Section 3.6.4) provides 10-40x better performance than random access:
 
 #### Memory Layout and Cache Behavior
 
@@ -1623,13 +1593,9 @@ L1 cache hit rate  | ~60-70%           | ~90-95%
 Effective bandwidth| ~5-10 GB/s        | ~20-40 GB/s
 ```
 
-#### CPU Cycles and Real Performance
+#### CPU Cycles and Performance
 
-**Understanding CPU Cycles**:
-- Modern CPU: ~3-4 GHz = 3-4 billion cycles per second
-- 1 cycle = ~0.25-0.33 ns
-- Cache miss to RAM: ~100-300 cycles = ~25-100 ns
-- This is why cache misses are so expensive!
+Understanding CPU cycles is crucial for performance analysis. See Section 3.6.5 for details on CPU cycles and operation breakdowns.
 
 **Hash Table Operation Breakdown** (Linear Probing, cache hit):
 ```
@@ -1655,30 +1621,15 @@ Total (cache hit):        ~26-50 cycles ≈ 7-15 ns
 Total (2 cache misses):   ~328-955 cycles ≈ 80-240 ns
 ```
 
-**Key Insight**: A single cache miss can cost 100-300 cycles, making it 10-30x slower than a cache hit!
+**Key Insight**: A single cache miss can cost 100-300 cycles, making it 10-30x slower than a cache hit! See Section 3.6.5 for detailed CPU cycle analysis.
 
-#### False Sharing and Cache Coherency
+#### False Sharing in Hash Tables
 
-**False Sharing**: When multiple CPU cores modify different variables that happen to be on the same cache line (64 bytes). This causes cache line invalidation and performance degradation.
+False sharing (see Section 3.6.7) can severely impact concurrent hash table performance. When multiple threads access different hash tables on the same cache line, cache coherency protocols cause performance degradation.
 
-**Example with Hash Tables**:
+**Solution**: Use cache line alignment for thread-local hash tables:
 ```cpp
-// Two hash tables on same cache line (bad!)
-struct HashTablePair {
-    HashTable table1;  // 32 bytes
-    HashTable table2;  // 32 bytes
-};  // Total: 64 bytes = 1 cache line
-```
-
-If two threads modify `table1` and `table2` simultaneously:
-- Thread 1 modifies `table1` → invalidates cache line
-- Thread 2's cache line becomes invalid → must refetch from L3/RAM
-- **Performance penalty**: ~100-300 cycles per false sharing event
-
-**Solution**: Align structures to cache line boundaries:
-```cpp
-alignas(64) HashTable table1;  // 64-byte alignment
-alignas(64) HashTable table2;  // Separate cache lines
+alignas(64) HashTable threadLocalTable;  // 64-byte alignment
 ```
 
 #### Memory Access Patterns in Hash Tables
@@ -1711,6 +1662,8 @@ Performance: ~10-50 cycles per probe
 
 #### Practical Implications
 
+The size of your hash table relative to cache sizes determines performance characteristics. See Section 3.6.9 for general guidelines on data structure sizes:
+
 1. **Small Hash Tables (< 1 MB)**: Fit in L3 cache
    - Open addressing: Excellent performance (~5-20 cycles/op)
    - Chaining: Moderate performance (~50-200 cycles/op)
@@ -1722,6 +1675,8 @@ Performance: ~10-50 cycles per probe
 3. **Large Hash Tables (> 32 MB)**: May cause page faults
    - Both methods: Degraded performance
    - Consider: Sharding, distributed hash tables, or disk-based structures
+
+For optimization strategies applicable to hash tables, see Section 3.6.8.
 
 #### Rehashing: The Hidden Cost
 
