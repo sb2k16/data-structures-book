@@ -1623,7 +1623,354 @@ void insertAfter(Node* prev, Node* new_node) {
 
 **For Production**: Prefer thread-safe containers from standard libraries or well-tested libraries. Lock-free linked lists require deep expertise (see Section 3.5.9 warning). See Section 3.5.10 for guidance on using libraries.
 
-### 4.14 Summary
+## 4.14 Practical Applications
+
+Linked lists are fundamental building blocks for many real-world applications. Understanding these applications helps see why linked lists matter beyond academic exercises.
+
+### 4.14.1 LRU Cache Implementation (Preview)
+
+A **Least Recently Used (LRU) Cache** uses a doubly linked list to maintain access order efficiently.
+
+**Core Idea**:
+- Use a hash map for O(1) lookup
+- Use a doubly linked list to maintain access order
+- When an item is accessed, move it to the front
+- When cache is full, remove the least recently used (tail)
+
+**Why Linked List?**:
+- O(1) insertion at head (most recently used)
+- O(1) deletion from any position (with node pointer)
+- O(1) movement of nodes (remove + insert at head)
+- Maintains order efficiently
+
+```cpp
+#include <unordered_map>
+#include <memory>
+
+template<typename Key, typename Value>
+class LRUCache {
+private:
+    struct Node {
+        Key key;
+        Value value;
+        Node* prev;
+        Node* next;
+        
+        Node(Key k, Value v) : key(k), value(v), prev(nullptr), next(nullptr) {}
+    };
+    
+    int capacity;
+    Node* head;  // Most recently used
+    Node* tail;  // Least recently used
+    std::unordered_map<Key, Node*> cache;
+    
+    void moveToHead(Node* node) {
+        // Remove from current position
+        if (node->prev) node->prev->next = node->next;
+        if (node->next) node->next->prev = node->prev;
+        if (node == tail) tail = node->prev;
+        
+        // Move to head
+        node->next = head;
+        node->prev = nullptr;
+        if (head) head->prev = node;
+        head = node;
+        if (!tail) tail = head;
+    }
+    
+    void removeTail() {
+        if (!tail) return;
+        
+        cache.erase(tail->key);
+        Node* toRemove = tail;
+        tail = tail->prev;
+        if (tail) tail->next = nullptr;
+        else head = nullptr;
+        
+        delete toRemove;
+    }
+    
+public:
+    LRUCache(int cap) : capacity(cap), head(nullptr), tail(nullptr) {}
+    
+    Value get(Key key) {
+        if (cache.find(key) == cache.end()) {
+            return Value{};  // Not found
+        }
+        
+        Node* node = cache[key];
+        moveToHead(node);  // Mark as recently used
+        return node->value;
+    }
+    
+    void put(Key key, Value value) {
+        if (cache.find(key) != cache.end()) {
+            // Update existing
+            cache[key]->value = value;
+            moveToHead(cache[key]);
+            return;
+        }
+        
+        // Add new
+        if (cache.size() >= capacity) {
+            removeTail();  // Remove least recently used
+        }
+        
+        Node* newNode = new Node(key, value);
+        cache[key] = newNode;
+        
+        newNode->next = head;
+        if (head) head->prev = newNode;
+        head = newNode;
+        if (!tail) tail = head;
+    }
+};
+```
+
+**Key Points**:
+- Doubly linked list enables O(1) node movement
+- Hash map provides O(1) lookup
+- Combination gives O(1) get/put operations
+- Linked list maintains temporal ordering
+
+**Real-World Use**: Web browser caches, database query caches, operating system page replacement
+
+### 4.14.2 Undo/Redo Systems
+
+Text editors, graphics applications, and many software use linked lists to implement undo/redo functionality.
+
+**Core Idea**:
+- Maintain a list of operations (commands)
+- Current position in history
+- Undo: move backward, redo: move forward
+- New operation clears redo history
+
+**Why Linked List?**:
+- Dynamic history size
+- Easy insertion at current position
+- Efficient traversal forward/backward
+- Can implement with doubly linked list
+
+```cpp
+#include <string>
+#include <memory>
+
+class Command {
+public:
+    virtual ~Command() = default;
+    virtual void execute() = 0;
+    virtual void undo() = 0;
+};
+
+class TextEditor {
+private:
+    struct HistoryNode {
+        std::unique_ptr<Command> command;
+        HistoryNode* prev;
+        HistoryNode* next;
+        
+        HistoryNode(std::unique_ptr<Command> cmd) 
+            : command(std::move(cmd)), prev(nullptr), next(nullptr) {}
+    };
+    
+    std::string text;
+    HistoryNode* current;  // Current position in history
+    HistoryNode* historyHead;
+    
+    void clearRedoHistory() {
+        // Clear all nodes after current
+        while (current && current->next) {
+            HistoryNode* toDelete = current->next;
+            current->next = toDelete->next;
+            if (toDelete->next) toDelete->next->prev = current;
+            delete toDelete;
+        }
+    }
+    
+public:
+    TextEditor() : text(""), current(nullptr), historyHead(nullptr) {}
+    
+    void executeCommand(std::unique_ptr<Command> cmd) {
+        cmd->execute();
+        
+        // Clear redo history
+        clearRedoHistory();
+        
+        // Add to history
+        HistoryNode* newNode = new HistoryNode(std::move(cmd));
+        if (!historyHead) {
+            historyHead = newNode;
+            current = newNode;
+        } else {
+            newNode->prev = current;
+            if (current) current->next = newNode;
+            current = newNode;
+        }
+    }
+    
+    void undo() {
+        if (current && current->command) {
+            current->command->undo();
+            if (current->prev) {
+                current = current->prev;
+            }
+        }
+    }
+    
+    void redo() {
+        if (current && current->next && current->next->command) {
+            current = current->next;
+            current->command->execute();
+        }
+    }
+};
+```
+
+**Key Points**:
+- Doubly linked list for bidirectional traversal
+- Current pointer marks position in history
+- New operations clear future (redo) history
+- Each node stores a command object
+
+**Real-World Use**: Text editors (Vim, Emacs), graphics software (Photoshop), IDEs, word processors
+
+### 4.14.3 Browser History
+
+Web browsers maintain a history of visited pages using a linked list structure.
+
+**Core Idea**:
+- Maintain forward and backward history
+- Current page in the middle
+- Back button: move to previous
+- Forward button: move to next
+- New navigation: clear forward history
+
+**Why Linked List?**:
+- Dynamic history size
+- Efficient forward/backward navigation
+- Easy insertion and deletion
+- Can implement with doubly linked list
+
+```cpp
+#include <string>
+#include <memory>
+
+class BrowserHistory {
+private:
+    struct HistoryNode {
+        std::string url;
+        std::string title;
+        HistoryNode* prev;
+        HistoryNode* next;
+        
+        HistoryNode(const std::string& u, const std::string& t) 
+            : url(u), title(t), prev(nullptr), next(nullptr) {}
+    };
+    
+    HistoryNode* current;
+    HistoryNode* head;
+    HistoryNode* tail;
+    
+    void clearForwardHistory() {
+        // Clear all nodes after current
+        while (current && current->next) {
+            HistoryNode* toDelete = current->next;
+            current->next = toDelete->next;
+            if (toDelete->next) {
+                toDelete->next->prev = current;
+            } else {
+                tail = current;
+            }
+            delete toDelete;
+        }
+    }
+    
+public:
+    BrowserHistory() : current(nullptr), head(nullptr), tail(nullptr) {}
+    
+    void navigate(const std::string& url, const std::string& title) {
+        // Clear forward history
+        clearForwardHistory();
+        
+        // Create new node
+        HistoryNode* newNode = new HistoryNode(url, title);
+        
+        if (!head) {
+            head = tail = current = newNode;
+        } else {
+            newNode->prev = current;
+            if (current) current->next = newNode;
+            current = newNode;
+            tail = newNode;
+        }
+    }
+    
+    bool canGoBack() const {
+        return current && current->prev != nullptr;
+    }
+    
+    bool canGoForward() const {
+        return current && current->next != nullptr;
+    }
+    
+    std::string goBack() {
+        if (canGoBack()) {
+            current = current->prev;
+            return current->url;
+        }
+        return "";
+    }
+    
+    std::string goForward() {
+        if (canGoForward()) {
+            current = current->next;
+            return current->url;
+        }
+        return "";
+    }
+    
+    std::string getCurrentUrl() const {
+        return current ? current->url : "";
+    }
+};
+```
+
+**Key Points**:
+- Doubly linked list for bidirectional navigation
+- Current pointer marks current page
+- New navigation clears forward history
+- Efficient O(1) back/forward operations
+
+**Real-World Use**: All web browsers (Chrome, Firefox, Safari), mobile browsers, web view components
+
+### 4.14.4 Other Applications
+
+**1. Polynomial Representation**:
+- Each node stores coefficient and exponent
+- Efficient addition, multiplication of polynomials
+- Sparse polynomials (many zero coefficients) are memory efficient
+
+**2. Sparse Matrix Representation**:
+- Each node represents a non-zero element
+- Saves memory for matrices with many zeros
+- Efficient matrix operations
+
+**3. Music Playlist**:
+- Each node is a song
+- Easy insertion/deletion
+- Can implement shuffle, repeat modes
+
+**4. Symbol Table in Compilers**:
+- Maintain identifiers and their attributes
+- Dynamic insertion as code is parsed
+- Efficient lookup and scope management
+
+**5. Graph Representation (Adjacency List)**:
+- Each node's list contains connected vertices
+- Efficient for sparse graphs
+- Used in graph algorithms (see Chapter 11)
+
+### 4.15 Summary
 
 Linked lists are fundamental data structures that offer flexibility in memory management and efficient insertion/deletion operations. While they don't provide random access like arrays, they excel in scenarios where the size is unknown beforehand or frequent insertions/deletions are required. Understanding the different types of linked lists and their associated algorithms is crucial for solving many programming problems and designing efficient data structures.
 
