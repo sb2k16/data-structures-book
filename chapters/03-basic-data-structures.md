@@ -799,9 +799,27 @@ for (int i = 0; i < 1000; i++) {
 ```
 
 
-#### Python Strings: Immutable
+**Optimization with `reserve()`**:
 
-In Python, strings are **immutable** (similar to Java):
+```cpp
+// Even better: Reserve space to avoid reallocations
+string result;
+result.reserve(10000);  // Pre-allocate space
+for (int i = 0; i < 1000; i++) {
+    result += " " + to_string(i);  // Efficient (no reallocation needed)
+}
+// Time: O(n), avoids multiple reallocations
+```
+
+**Using `ostringstream` for Complex Building**:
+```cpp
+#include <sstream>
+ostringstream oss;
+for (int i = 0; i < 1000; i++) {
+    oss << " " << i;  // Efficient stream-based building
+}
+string result = oss.str();  // Convert to string once
+```
 
 ```python
 str = "Hello"
