@@ -837,39 +837,6 @@ str = str + " World"  # Creates NEW string object
 
 #### Comparison Table
 
-| Aspect | C++ `std::string` | Java `String` | Python `str` |
-|--------|-------------------|---------------|--------------|
-| **Mutability** | Mutable | Immutable | Immutable |
-| **Modification** | In-place | Creates new object | Creates new object |
-| **Performance (modify)** | Fast (O(1) for single char) | Slow (O(n) creates new) | Slow (O(n) creates new) |
-| **Memory** | Single buffer | Multiple objects | Multiple objects |
-| **Thread Safety** | Not thread-safe | Thread-safe (immutable) | Thread-safe (immutable) |
-| **String Pool** | No | Yes (literals) | Yes (small strings) |
-
-#### Performance Implications
-
-**C++ (Mutable)**:
-```cpp
-// Efficient: Modifies in place
-string result = "Hello";
-for (int i = 0; i < 1000; i++) {
-    result += " World";  // May reallocate, but modifies existing buffer
-}
-// Time: O(n) where n is final length
-```
-
-**Java/Python (Immutable)**:
-```java
-// Inefficient: Creates many temporary objects
-String result = "Hello";
-for (int i = 0; i < 1000; i++) {
-    result = result + " World";  // Creates new String each time!
-}
-// Time: O(n²) - creates 1000 temporary strings
-```
-
-**Solution for Java**: Use `StringBuilder` (see below)
-**Solution for Python**: Use list and `join()`
 
 ### String Interning
 
