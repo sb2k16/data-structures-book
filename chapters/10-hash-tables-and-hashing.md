@@ -1,8 +1,61 @@
 # Chapter 10: Hash Tables and Hashing
 
-## 10.1 Introduction to Hash Tables
+## 10.1 Problem Statement & Motivation
 
-A **hash table** (also called a hash map) is a data structure that implements an associative array, a structure that can map keys to values. It uses a hash function to compute an index into an array of buckets or slots, from which the desired value can be found.
+### What Problem Do Hash Tables Solve?
+
+Many applications require fast lookup by key:
+
+- Finding a user by ID in a database
+- Checking if an element exists in a set
+- Mapping names to values (dictionaries)
+- Counting frequencies of items
+
+**Naive Approaches and Their Limitations**:
+
+- **Linear Search**: O(n) time - too slow for large datasets
+- **Sorted Array + Binary Search**: O(log n) time - better, but still logarithmic
+- **Balanced Trees**: O(log n) time - good, but requires ordering
+
+**The Hash Table Solution**: Hash tables aim for **O(1) average-time** operations by using a hash function to map keys directly to array indices, bypassing the need for ordering or sequential search.
+
+### When to Use Hash Tables
+
+✅ **Use hash tables when**:
+- Frequent lookups by key are required
+- No need for ordered traversal
+- Acceptable memory overhead
+- Average-case performance is acceptable
+
+✅ **Real-world applications**:
+- Database indexing (fast record lookup)
+- Caching systems (LRU, LFU caches)
+- Symbol tables in compilers
+- Counting frequencies
+- Deduplication
+- Language dictionaries (`std::unordered_map`, Python `dict`, Java `HashMap`)
+
+### When NOT to Use Hash Tables
+
+❌ **Avoid hash tables when**:
+- Ordered traversal is required (use `std::map` or BST)
+- Worst-case latency must be tightly bounded (hash tables can degrade to O(n))
+- Very memory-constrained environments (overhead for buckets/pointers)
+- Need to find min/max or range queries (use sorted structures)
+
+**Key Trade-off**: Hash tables trade **predictability and ordering** for **speed**.
+
+## 10.2 Conceptual Overview
+
+A **hash table** (also called a hash map) is a data structure that implements an associative array, mapping keys to values using a hash function to compute array indices.
+
+### Intuitive Explanation
+
+Think of a hash table like a library catalog system:
+- **Keys** are book titles
+- **Hash function** determines which shelf (bucket) to check
+- **Values** are the actual books
+- **Collisions** occur when multiple books map to the same shelf (handled by chaining or probing)
 
 ### Key Characteristics
 
@@ -11,13 +64,6 @@ A **hash table** (also called a hash map) is a data structure that implements an
 - **Hash function**: Maps keys to array indices
 - **Collision handling**: Manages cases where multiple keys map to the same index
 - **Dynamic resizing**: Grows and shrinks as needed
-
-### Why Hash Tables Matter
-
-1. **Performance**: Average O(1) operations make them extremely fast
-2. **Versatility**: Used in countless applications (databases, caches, symbol tables)
-3. **Real-world usage**: Foundation of many programming language features
-4. **Interview importance**: Frequently asked in technical interviews
 
 ### Comparison with Other Data Structures
 
@@ -28,45 +74,67 @@ A **hash table** (also called a hash map) is a data structure that implements an
 | Delete | O(1) avg | O(n) | O(log n) | O(n) |
 | Space | O(n) | O(n) | O(n) | O(n) |
 | Ordered | No | Yes | Yes | Yes |
+| Worst-case | O(n) | O(1) | O(log n) | O(n) |
 
-### 10.1.1 Core Invariants
+## 10.3 Abstract Model & Invariants ⭐
 
-Understanding hash table invariants is crucial for correct implementation and reasoning.
+Understanding hash table invariants is crucial for correct implementation and reasoning. This section defines correctness **independent of any implementation**.
 
-#### Core Invariants of a Hash Table
+### Abstract Model
 
-1. **Hash Function Invariant**:
-   - Same key always maps to same bucket (deterministic)
-   - Hash function distributes keys uniformly across buckets
-   - Hash computation is O(1) time
+A hash table consists of:
 
-2. **Key-Value Mapping Invariant**:
-   - Each key maps to at most one value
-   - Inserting same key updates existing value (or handles collision)
-   - No duplicate keys exist in the table
+1. **A fixed-size array of buckets** (or slots)
+2. **A hash function** `h: Key → [0, m-1]` mapping keys to bucket indices
+3. **A collision resolution strategy** for handling keys that map to the same bucket
 
-3. **Load Factor Invariant**:
-   - Load factor = number of elements / table size
-   - Must stay below threshold (typically 0.75) to maintain O(1) performance
-   - When exceeded, rehashing must occur
+We define the abstract operation:
 
-4. **Collision Resolution Invariant**:
-   - All keys that hash to same bucket are stored correctly
-   - Collision resolution method (chaining/probing) is consistently applied
-   - Search/insert/delete operations handle collisions correctly
+```
+index = hash(key) mod table_size
+```
 
-#### What Breaks Invariants
+### Core Invariants
 
-- **Non-deterministic hash function**: Same key produces different hashes → breaks mapping
-- **Load factor too high**: Degrades to O(n) performance → breaks performance guarantee
-- **Incorrect collision handling**: Keys lost or overwritten → breaks key-value mapping
-- **Hash function with poor distribution**: Clustering causes performance degradation
+These invariants must **always** hold for a hash table to be correct:
 
-#### How Operations Restore Invariants
+#### 1. Hash Function Invariant
 
-- **Insert**: Compute hash → handle collision → update load factor → rehash if needed
+- **Determinism**: Same key always maps to same bucket: `hash(k₁) = hash(k₂) ⟹ k₁ = k₂` (for hash equality)
+- **Distribution**: Hash function distributes keys uniformly across buckets
+- **Efficiency**: Hash computation is O(1) time
+
+**What breaks it**: Non-deterministic hash function, poor distribution causing clustering
+
+#### 2. Key-Value Mapping Invariant
+
+- **Uniqueness**: Each key maps to at most one value
+- **Update semantics**: Inserting same key updates existing value (or handles collision correctly)
+- **No duplicates**: No duplicate keys exist in the table
+
+**What breaks it**: Incorrect collision handling, keys lost or overwritten
+
+#### 3. Load Factor Invariant
+
+- **Definition**: Load factor `α = n / m` where `n` = number of elements, `m` = table size
+- **Threshold**: Must stay below threshold (typically 0.75) to maintain O(1) performance
+- **Rehashing**: When exceeded, rehashing must occur to restore performance
+
+**What breaks it**: Load factor too high degrades to O(n) performance
+
+#### 4. Collision Resolution Invariant
+
+- **Correctness**: All keys that hash to same bucket are stored correctly
+- **Consistency**: Collision resolution method (chaining/probing) is consistently applied
+- **Completeness**: Search/insert/delete operations handle collisions correctly
+
+**What breaks it**: Inconsistent collision handling, keys not found due to incorrect probing
+
+### How Operations Preserve Invariants
+
+- **Insert**: Compute hash (preserves hash function invariant) → handle collision (preserves collision resolution invariant) → update load factor (preserves load factor invariant) → rehash if needed (restores load factor invariant)
 - **Delete**: Compute hash → locate key → remove → update load factor
-- **Rehash**: Create larger table → recompute all hashes → redistribute keys → restores load factor
+- **Rehash**: Create larger table → recompute all hashes → redistribute keys → restores load factor invariant
 
 **Example**: When inserting a key-value pair:
 1. Compute hash (preserves hash function invariant)
@@ -74,9 +142,276 @@ Understanding hash table invariants is crucial for correct implementation and re
 3. Check load factor (preserves load factor invariant)
 4. Rehash if necessary (restores load factor invariant)
 
-Note: This builds on the **array representation** concepts from Chapter 3, but hash tables add the complexity of hash functions and collision resolution.
+**Note**: This builds on the **array representation** concepts from Chapter 3, but hash tables add the complexity of hash functions and collision resolution.
 
-## 10.2 Understanding Hash Functions
+## 10.4 Operations & Interface
+
+A hash table supports the following core operations:
+
+| Operation | Description | Precondition | Postcondition |
+|-----------|-------------|-------------|---------------|
+| `insert(key, value)` | Adds or updates key-value pair | Key is valid | Key maps to value, load factor updated |
+| `search(key)` | Finds value for given key | Key is valid | Returns value if found, error/None if not |
+| `delete(key)` | Removes key-value pair | Key exists in table | Key removed, load factor updated |
+| `size()` | Returns number of elements | - | Returns current count |
+| `empty()` | Checks if table is empty | - | Returns true if no elements |
+| `loadFactor()` | Returns current load factor | - | Returns α = n/m |
+
+### Behavioral Guarantees
+
+- **Insert**: If key exists, updates value; otherwise adds new entry. May trigger rehashing.
+- **Search**: Returns value if key exists; otherwise indicates not found.
+- **Delete**: Removes key if present; otherwise no-op. May trigger rehashing.
+- **Load Factor**: Always reflects current occupancy. Rehashing occurs when threshold exceeded.
+
+### Interface Contract
+
+**Preconditions**:
+- Keys must be hashable (support hash function)
+- Keys must support equality comparison
+- Table must have sufficient capacity (or support dynamic resizing)
+
+**Postconditions**:
+- All invariants preserved after each operation
+- Load factor maintained below threshold
+- No duplicate keys exist
+
+## 10.5 Time & Space Complexity
+
+### Time Complexity
+
+| Operation | Average Case | Worst Case | Amortized |
+|-----------|--------------|------------|-----------|
+| Insert | O(1) | O(n) | O(1) |
+| Search | O(1) | O(n) | O(1) |
+| Delete | O(1) | O(n) | O(1) |
+| Rehash | O(n) | O(n) | O(1) per insert |
+
+**Important Notes**:
+- **O(1) is expected, not guaranteed**: Worst case occurs with poor hash function or adversarial input
+- **Amortized O(1)**: Rehashing cost amortized across all inserts
+- **Worst case O(n)**: All keys hash to same bucket (extremely rare with good hash function)
+
+### Space Complexity
+
+- **Space**: O(n) where n is the number of elements
+- **Overhead**: 
+  - Separate Chaining: O(n) for pointers + O(m) for buckets
+  - Open Addressing: O(m) for table slots (m ≥ n)
+- **Load Factor Impact**: Higher load factor = less wasted space but more collisions
+
+### Factors Affecting Performance
+
+1. **Hash Function Quality**: Poor hash functions cause clustering → O(n) worst case
+2. **Load Factor**: High load factors increase collisions → degraded performance
+3. **Collision Resolution**: Different methods have different characteristics
+4. **Data Distribution**: Skewed data can degrade performance
+
+## 10.6 Pseudocode (Language-Neutral) ⭐
+
+This section presents the algorithms in language-neutral pseudocode. The logic is independent of any programming language.
+
+### Hash Function (Abstract)
+
+```
+HASH(key, table_size):
+  return hash_value(key) mod table_size
+```
+
+### Separate Chaining
+
+#### Insert with Separate Chaining
+
+```
+INSERT(key, value):
+  index ← HASH(key, table_size)
+  
+  // Check if key already exists in bucket
+  for each entry in bucket[index]:
+    if entry.key == key:
+      entry.value ← value  // Update existing
+      return
+  
+  // Add new entry
+  add (key, value) to bucket[index]
+  num_elements ← num_elements + 1
+  
+  // Check load factor
+  if num_elements / table_size > LOAD_FACTOR_THRESHOLD:
+    REHASH()
+```
+
+#### Search with Separate Chaining
+
+```
+SEARCH(key):
+  index ← HASH(key, table_size)
+  
+  for each entry in bucket[index]:
+    if entry.key == key:
+      return entry.value
+  
+  return NOT_FOUND
+```
+
+#### Delete with Separate Chaining
+
+```
+DELETE(key):
+  index ← HASH(key, table_size)
+  
+  for each entry in bucket[index]:
+    if entry.key == key:
+      remove entry from bucket[index]
+      num_elements ← num_elements - 1
+      return true
+  
+  return false  // Key not found
+```
+
+### Open Addressing (Linear Probing)
+
+#### Insert with Linear Probing
+
+```
+INSERT(key, value):
+  index ← HASH(key, table_size)
+  probe_count ← 0
+  
+  while probe_count < table_size:
+    if table[index] is EMPTY or DELETED:
+      table[index] ← (key, value, OCCUPIED)
+      num_elements ← num_elements + 1
+      
+      if num_elements / table_size > LOAD_FACTOR_THRESHOLD:
+        REHASH()
+      return
+    
+    if table[index].key == key:
+      table[index].value ← value  // Update existing
+      return
+    
+    // Collision: probe next slot
+    index ← (index + 1) mod table_size
+    probe_count ← probe_count + 1
+  
+  error "Table full"
+```
+
+#### Search with Linear Probing
+
+```
+SEARCH(key):
+  index ← HASH(key, table_size)
+  probe_count ← 0
+  
+  while probe_count < table_size:
+    if table[index] is EMPTY:
+      return NOT_FOUND
+    
+    if table[index] is OCCUPIED and table[index].key == key:
+      return table[index].value
+    
+    // Continue probing
+    index ← (index + 1) mod table_size
+    probe_count ← probe_count + 1
+  
+  return NOT_FOUND
+```
+
+#### Delete with Linear Probing
+
+```
+DELETE(key):
+  index ← HASH(key, table_size)
+  probe_count ← 0
+  
+  while probe_count < table_size:
+    if table[index] is EMPTY:
+      return false  // Key not found
+    
+    if table[index] is OCCUPIED and table[index].key == key:
+      table[index].status ← DELETED  // Mark as deleted
+      num_elements ← num_elements - 1
+      return true
+    
+    index ← (index + 1) mod table_size
+    probe_count ← probe_count + 1
+  
+  return false
+```
+
+### Rehashing
+
+```
+REHASH():
+  old_table ← table
+  old_size ← table_size
+  
+  table_size ← table_size * 2
+  table ← new array of size table_size
+  num_elements ← 0
+  
+  // Reinsert all elements
+  for each entry in old_table:
+    if entry is OCCUPIED:
+      INSERT(entry.key, entry.value)
+  
+  // Note: This INSERT uses new table_size for hashing
+```
+
+### Quadratic Probing
+
+```
+INSERT_QUADRATIC(key, value):
+  index ← HASH(key, table_size)
+  probe_count ← 0
+  
+  while probe_count < table_size:
+    probe_index ← (index + probe_count * probe_count) mod table_size
+    
+    if table[probe_index] is EMPTY or DELETED:
+      table[probe_index] ← (key, value, OCCUPIED)
+      num_elements ← num_elements + 1
+      return
+    
+    if table[probe_index].key == key:
+      table[probe_index].value ← value
+      return
+    
+    probe_count ← probe_count + 1
+  
+  error "Table full"
+```
+
+### Double Hashing
+
+```
+INSERT_DOUBLE_HASH(key, value):
+  index1 ← HASH1(key, table_size)
+  index2 ← HASH2(key, table_size)
+  probe_count ← 0
+  
+  while probe_count < table_size:
+    probe_index ← (index1 + probe_count * index2) mod table_size
+    
+    if table[probe_index] is EMPTY or DELETED:
+      table[probe_index] ← (key, value, OCCUPIED)
+      num_elements ← num_elements + 1
+      return
+    
+    if table[probe_index].key == key:
+      table[probe_index].value ← value
+      return
+    
+    probe_count ← probe_count + 1
+  
+  error "Table full"
+```
+
+**Note**: This pseudocode is language-agnostic and focuses on the logic. The C++ implementation in the next section maps directly to these algorithms.
+
+## 10.7 Understanding Hash Functions
 
 A **hash function** is any function that can be used to map data of arbitrary size to fixed-size values. The values returned by a hash function are called hash values, hash codes, digests, or simply hashes.
 
@@ -2153,7 +2488,69 @@ int longestConsecutive(const vector<int>& nums) {
 - Consider lock-free hash tables for high-performance scenarios
 - Use `std::shared_mutex` for read-heavy workloads
 
-## 10.11 Key Takeaways
+## 10.17 Exercises & Thought Questions
+
+### Conceptual Questions
+
+1. **Why is the worst-case time complexity of hash tables O(n)?**
+   - Explain the scenario that causes worst-case performance
+   - How can this be mitigated?
+
+2. **What is the relationship between load factor and performance?**
+   - Why does performance degrade as load factor increases?
+   - What is an optimal load factor threshold?
+
+3. **Compare separate chaining and open addressing:**
+   - When would you choose each?
+   - What are the trade-offs?
+
+4. **Explain why rehashing is necessary:**
+   - What happens if we never rehash?
+   - How does rehashing maintain amortized O(1) performance?
+
+### Implementation Tasks
+
+1. **Implement a hash table with separate chaining**
+   - Support insert, search, delete operations
+   - Implement automatic rehashing
+   - Handle edge cases (empty table, duplicate keys)
+
+2. **Implement a hash table with linear probing**
+   - Support insert, search, delete operations
+   - Handle deleted slots correctly
+   - Implement rehashing
+
+3. **Design a hash function for strings**
+   - Use polynomial rolling hash
+   - Ensure good distribution
+   - Handle edge cases (empty string, very long strings)
+
+### Performance Reasoning
+
+1. **Analyze cache behavior:**
+   - Why is open addressing more cache-friendly than separate chaining?
+   - How many cache misses occur in a chain of length 10?
+   - How does this affect real-world performance?
+
+2. **Amortized analysis:**
+   - Prove that insert is amortized O(1) with rehashing
+   - What is the amortized cost per operation?
+
+3. **Hash function quality:**
+   - Design an adversarial input that causes worst-case performance
+   - How can universal hashing prevent this?
+
+### Interview-Style Problems
+
+1. **Design a Hash Set** (LeetCode 705)
+2. **First Unique Character** (LeetCode 387)
+3. **Group Anagrams** (LeetCode 49)
+4. **Longest Consecutive Sequence** (LeetCode 128)
+5. **Two Sum** (LeetCode 1)
+
+See Section 10.16 for solutions to these problems.
+
+## 10.18 Key Takeaways
 
 1. **Hash tables** provide average O(1) operations for insert, search, and delete
 2. **Hash functions** must be deterministic, fast, and provide uniform distribution
