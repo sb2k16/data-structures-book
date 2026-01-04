@@ -1,18 +1,71 @@
 # Chapter 11: Graphs
 
-## 11.1 Introduction to Graphs
+## 11.1 Problem Statement & Motivation
+
+### What Problem Do Graphs Solve?
+
+Many real-world problems involve **relationships** and **connections**:
+
+- **Social Networks**: Friends, followers, connections
+- **Transportation**: Roads, flights, routes between cities
+- **Dependencies**: Task scheduling, build systems, prerequisites
+- **Web Structure**: Links between web pages
+- **Communication Networks**: Network topology, routing
+
+**Naive Approaches and Their Limitations**:
+
+- **Lists/Arrays**: Can't represent relationships efficiently
+- **Trees**: Too restrictive (no cycles, single parent)
+- **Multiple Arrays**: Hard to maintain consistency, inefficient queries
+
+**The Graph Solution**: Graphs provide a flexible structure to model any relationship pattern - directed/undirected, weighted/unweighted, cyclic/acyclic - enabling efficient algorithms for traversal, shortest paths, and connectivity analysis.
+
+### When to Use Graphs
+
+✅ **Use graphs when**:
+- Modeling relationships between entities
+- Need to find paths or connections
+- Representing networks (social, computer, transportation)
+- Dependency analysis (topological sort)
+- Route optimization (shortest path)
+
+✅ **Real-world applications**:
+- Social media (friend networks)
+- GPS navigation (road networks)
+- Web crawling (page links)
+- Task scheduling (dependencies)
+- Network routing (internet topology)
+- Recommendation systems (user-item graphs)
+
+### When NOT to Use Graphs
+
+❌ **Avoid graphs when**:
+- Data is hierarchical (use trees)
+- No relationships to model (use arrays/lists)
+- Simple key-value mapping (use hash tables)
+- Ordered sequences (use arrays/linked lists)
+
+**Key Trade-off**: Graphs provide flexibility but require more complex algorithms than simpler structures.
+
+## 11.2 Conceptual Overview
 
 A **graph** is a collection of vertices (nodes) connected by edges. Unlike trees (Chapter 6), graphs can have cycles and multiple paths between vertices, making them ideal for modeling complex relationships.
+
+### Intuitive Explanation
+
+Think of a graph like a map:
+- **Vertices** are cities
+- **Edges** are roads connecting cities
+- **Directed edges** are one-way streets
+- **Weighted edges** are distances or travel times
+- **Paths** are routes from one city to another
 
 ### Key Characteristics
 
 - **Vertices (Nodes)**: The fundamental units
 - **Edges**: Connections between vertices (can be directed/undirected, weighted/unweighted)
 - **Cyclic/Acyclic**: Can contain cycles (unlike trees from Chapter 6)
-
-### Why Graphs Matter
-
-Graphs model real-world relationships (networks, dependencies, maps) and are fundamental to many algorithms. They're essential for system design (routing, scheduling) and frequently appear in technical interviews.
+- **Connected/Disconnected**: May have isolated components
 
 ### Graph vs. Trees
 
@@ -69,7 +122,261 @@ Understanding graph invariants helps reason about graph algorithms and represent
 
 Note: This builds on the **connectivity invariant** we established in Chapter 6 (Trees), but graphs relax the acyclicity constraint. Unlike trees, graphs can have cycles and multiple paths between vertices, which requires different representation strategies (adjacency matrix vs. list) as we'll see next.
 
-## 11.2 Graph Terminology
+## 11.3 Abstract Model & Invariants ⭐
+
+Understanding graph invariants helps reason about graph algorithms and representations. This section defines correctness **independent of any implementation**.
+
+### Abstract Model
+
+A graph G = (V, E) consists of:
+- **Set of vertices V**: The nodes
+- **Set of edges E**: The connections between vertices
+- **Edge representation**: (u, v) for undirected, (u→v) for directed
+- **Weight function** (optional): w: E → ℝ for weighted graphs
+
+### Core Invariants
+
+These invariants must **always** hold for a graph to be correct:
+
+#### 1. Edge Consistency Invariant
+
+- **Undirected graphs**: If edge (u, v) exists, then (v, u) must be represented
+- **Directed graphs**: If edge (u→v) exists, (v→u) may or may not exist
+- **Representation**: Edge representation matches graph type (directed/undirected)
+
+**What breaks it**: Inconsistent edge representation, missing reverse edges in undirected graphs
+
+#### 2. Vertex-Edge Relationship Invariant
+
+- Every edge connects exactly two vertices (or one vertex to itself for self-loops)
+- Vertices referenced by edges must exist in the graph
+- No dangling edges (edges pointing to non-existent vertices)
+
+**What breaks it**: Dangling references, edges to deleted vertices
+
+#### 3. Representation Consistency Invariant
+
+- Adjacency list/matrix accurately reflects all edges
+- No duplicate edges (unless multigraph)
+- Graph representation matches graph structure
+
+**What breaks it**: Stale adjacency data, vertex deleted but edges remain
+
+#### 4. Weight Invariant (for weighted graphs)
+
+- All edges have valid weights
+- Weight values are consistent with graph semantics (distances, costs, etc.)
+
+**What breaks it**: Invalid weights, negative weights in distance graphs
+
+### How Operations Preserve Invariants
+
+- **Add edge**: Update both vertices' adjacency lists/matrix → preserves edge consistency
+- **Remove vertex**: Remove all incident edges first → preserves vertex-edge relationship
+- **Update representation**: Rebuild adjacency structure → restores representation consistency
+
+**Example**: When adding an edge (u, v) to an undirected graph:
+1. Add v to u's adjacency list (preserves edge consistency)
+2. Add u to v's adjacency list (preserves edge consistency for undirected graph)
+3. Update adjacency matrix if used (preserves representation consistency)
+
+## 11.4 Operations & Interface
+
+A graph supports the following core operations:
+
+| Operation | Description | Precondition | Postcondition |
+|-----------|-------------|-------------|---------------|
+| `addVertex(v)` | Adds vertex v to graph | v is valid | Vertex v exists in graph |
+| `addEdge(u, v)` | Adds edge between u and v | u, v exist | Edge (u, v) exists |
+| `removeVertex(v)` | Removes vertex v | v exists | v and all incident edges removed |
+| `removeEdge(u, v)` | Removes edge (u, v) | Edge exists | Edge removed |
+| `hasEdge(u, v)` | Checks if edge exists | u, v exist | Returns true if edge exists |
+| `getNeighbors(v)` | Returns neighbors of v | v exists | Returns list of adjacent vertices |
+| `getDegree(v)` | Returns degree of v | v exists | Returns number of incident edges |
+
+### Behavioral Guarantees
+
+- **Add Vertex**: Vertex is added, no edges initially
+- **Add Edge**: Edge is added, both vertices updated (for undirected)
+- **Remove Vertex**: All incident edges are removed first
+- **Graph Queries**: All operations respect graph invariants
+
+## 11.5 Time & Space Complexity
+
+### Graph Representation Complexity
+
+| Operation | Adjacency Matrix | Adjacency List |
+|-----------|-----------------|----------------|
+| Space | O(V²) | O(V + E) |
+| Check Edge | O(1) | O(degree) |
+| Add Edge | O(1) | O(1) |
+| Remove Edge | O(1) | O(degree) |
+| Iterate Neighbors | O(V) | O(degree) |
+| Best For | Dense graphs | Sparse graphs |
+
+### Graph Algorithm Complexity
+
+| Algorithm | Time Complexity | Space Complexity | Notes |
+|-----------|----------------|-------------------|-------|
+| DFS | O(V + E) | O(V) | Stack/recursion |
+| BFS | O(V + E) | O(V) | Queue |
+| Dijkstra's | O((V + E) log V) | O(V) | With binary heap |
+| Bellman-Ford | O(VE) | O(V) | Negative edges OK |
+| Floyd-Warshall | O(V³) | O(V²) | All pairs shortest path |
+| Kruskal's MST | O(E log E) | O(V) | With union-find |
+| Prim's MST | O((V + E) log V) | O(V) | With binary heap |
+| Topological Sort | O(V + E) | O(V) | DFS or Kahn's |
+
+**Key Insight**: Most graph algorithms are O(V + E) for sparse graphs, but representation choice affects constant factors significantly.
+
+## 11.6 Pseudocode (Language-Neutral) ⭐
+
+This section presents graph algorithms in language-neutral pseudocode. The logic is independent of any programming language.
+
+### Graph Representation (Abstract)
+
+```
+GRAPH:
+  vertices: set of vertices
+  edges: set of edges
+  For each vertex v: neighbors(v) = {u | (v, u) ∈ edges}
+```
+
+### Depth-First Search (DFS)
+
+```
+DFS(graph, start_vertex):
+  visited ← empty set
+  stack ← empty stack
+  stack.push(start_vertex)
+  
+  while stack is not empty:
+    current ← stack.pop()
+    
+    if current not in visited:
+      visited.add(current)
+      process(current)  // Visit vertex
+      
+      for each neighbor in graph.neighbors(current):
+        if neighbor not in visited:
+          stack.push(neighbor)
+  
+  return visited
+```
+
+**Recursive DFS**:
+```
+DFS_RECURSIVE(graph, vertex, visited):
+  visited.add(vertex)
+  process(vertex)
+  
+  for each neighbor in graph.neighbors(vertex):
+    if neighbor not in visited:
+      DFS_RECURSIVE(graph, neighbor, visited)
+```
+
+### Breadth-First Search (BFS)
+
+```
+BFS(graph, start_vertex):
+  visited ← empty set
+  queue ← empty queue
+  queue.enqueue(start_vertex)
+  visited.add(start_vertex)
+  
+  while queue is not empty:
+    current ← queue.dequeue()
+    process(current)  // Visit vertex
+    
+    for each neighbor in graph.neighbors(current):
+      if neighbor not in visited:
+        visited.add(neighbor)
+        queue.enqueue(neighbor)
+  
+  return visited
+```
+
+### Dijkstra's Shortest Path
+
+```
+DIJKSTRA(graph, start):
+  dist ← map: vertex → distance (all ∞ except start = 0)
+  prev ← map: vertex → previous vertex (all null)
+  unvisited ← set of all vertices
+  priority_queue ← empty min-heap
+  priority_queue.insert(start, 0)
+  
+  while unvisited is not empty:
+    current ← priority_queue.extract_min()
+    
+    if current not in unvisited:
+      continue
+    
+    unvisited.remove(current)
+    
+    for each neighbor in graph.neighbors(current):
+      edge_weight ← graph.weight(current, neighbor)
+      new_dist ← dist[current] + edge_weight
+      
+      if new_dist < dist[neighbor]:
+        dist[neighbor] ← new_dist
+        prev[neighbor] ← current
+        priority_queue.insert(neighbor, new_dist)
+  
+  return dist, prev
+```
+
+### Kruskal's MST
+
+```
+KRUSKAL(graph):
+  mst ← empty set of edges
+  sort all edges by weight
+  union_find ← new UnionFind(graph.vertices)
+  
+  for each edge (u, v, weight) in sorted_edges:
+    if union_find.find(u) ≠ union_find.find(v):
+      mst.add(edge)
+      union_find.union(u, v)
+      
+      if mst.size() == graph.vertices.size() - 1:
+        break  // MST complete
+  
+  return mst
+```
+
+### Topological Sort (Kahn's Algorithm)
+
+```
+TOPOLOGICAL_SORT(graph):
+  in_degree ← map: vertex → in-degree count
+  queue ← empty queue
+  result ← empty list
+  
+  // Initialize in-degrees
+  for each vertex v in graph.vertices:
+    in_degree[v] ← count of incoming edges to v
+    if in_degree[v] == 0:
+      queue.enqueue(v)
+  
+  while queue is not empty:
+    current ← queue.dequeue()
+    result.append(current)
+    
+    for each neighbor in graph.neighbors(current):
+      in_degree[neighbor] ← in_degree[neighbor] - 1
+      if in_degree[neighbor] == 0:
+        queue.enqueue(neighbor)
+  
+  if result.size() < graph.vertices.size():
+    error "Cycle detected - not a DAG"
+  
+  return result
+```
+
+**Note**: This pseudocode is language-agnostic and focuses on the logic. The C++ implementation in the next section maps directly to these algorithms.
+
+## 11.7 Graph Terminology and Types
 
 ### Basic Terms
 
@@ -3601,7 +3908,7 @@ public:
 - Unweighted graph
 - Need shortest path in terms of edges
 
-## 11.15 Network Flow Algorithms
+#### Network Flow Algorithms
 
 **Network flow** problems involve finding the maximum flow or minimum cut in a flow network. These are fundamental in optimization and graph theory.
 
@@ -3718,7 +4025,7 @@ public:
 - **Edmonds-Karp**: O(V × E²) - uses BFS for augmenting paths
 - **Dinic's Algorithm**: O(V² × E) - more efficient in practice
 
-## 11.16 Graph Coloring
+#### Graph Coloring
 
 **Graph coloring** is the problem of assigning colors to vertices such that no two adjacent vertices have the same color. The minimum number of colors needed is the **chromatic number**.
 
@@ -3876,7 +4183,7 @@ vector<int> graphColoringBacktracking(vector<vector<int>>& graph, int maxColors)
 - Graph is small
 - Exact chromatic number required
 
-## 11.17 Concurrency Considerations
+## 11.18 Concurrency Considerations
 
 This section applies the concurrency fundamentals from [Chapter 3.5](03.5-concurrency-fundamentals.md) to graph traversal (BFS/DFS). See Section 3.5.3 for invariant-based reasoning and Section 3.5.4 for race conditions.
 
@@ -4046,7 +4353,7 @@ if (!visited[v].exchange(true)) {  // Atomic check-and-set
 
 **For Production**: Consider graph processing frameworks that handle concurrency, or use immutable graphs for read-heavy workloads. See Section 3.5.10 for guidance on using libraries.
 
-## 11.18 Summary
+## 11.19 Summary
 
 Graphs are fundamental data structures that model relationships and connections. Understanding graph representations, traversal algorithms, shortest path algorithms, and minimum spanning tree algorithms is essential for solving many computational problems. The choice of representation and algorithm depends on the specific problem requirements, graph characteristics, and performance constraints.
 
