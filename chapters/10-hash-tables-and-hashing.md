@@ -656,12 +656,30 @@ public:
 template<typename K, typename V>
 class HashTableDoubleHashing {
 private:
+    struct Slot {
+        K key;
+        V value;
+        SlotStatus status;
+        
+        Slot() : status(SlotStatus::EMPTY) {}
+    };
+    
+    vector<Slot> table;
+    size_t tableSize;
+    size_t numElements;
+    const double LOAD_FACTOR_THRESHOLD = 0.7;
+    
+    // First hash function: primary hash
     size_t hashFunction1(const K& key) const {
         return hash<K>{}(key) % tableSize;
     }
     
+    // Second hash function: step size for probing
+    // Must be relatively prime to tableSize to ensure all slots are probed
+    // Returns a value in [1, tableSize-1] to avoid step size of 0
     size_t hashFunction2(const K& key) const {
-        // Must be relatively prime to tableSize
+        // Ensure step size is at least 1 and less than tableSize
+        // Using (tableSize - 1) ensures step is in [1, tableSize-1]
         return 1 + (hash<K>{}(key) % (tableSize - 1));
     }
     
@@ -676,14 +694,124 @@ private:
                  table[index].key == key)) {
                 return index;
             }
+            // Double hashing: use second hash as step size
             index = (index + step) % tableSize;
             probeCount++;
         }
         
-        return tableSize;
+        return tableSize; // Table full
     }
     
-    // Rest of implementation similar
+    void rehash() {
+        size_t oldSize = tableSize;
+        vector<Slot> oldTable = move(table);
+        
+        // For double hashing, table size should be prime for best distribution
+        // Here we double the size; in practice, find next prime >= 2*tableSize
+        tableSize *= 2;
+        
+        table.clear();
+        table.resize(tableSize);
+        numElements = 0;
+        
+        // Reinsert all occupied slots
+        // Note: hashFunction2 will be recalculated with new tableSize
+        for (const auto& slot : oldTable) {
+            if (slot.status == SlotStatus::OCCUPIED) {
+                insert(slot.key, slot.value);
+            }
+        }
+    }
+    
+public:
+    HashTableDoubleHashing(size_t initialSize = 16) 
+        : tableSize(initialSize), numElements(0) {
+        // Ensure tableSize is at least 2 for hashFunction2 to work correctly
+        if (tableSize < 2) {
+            tableSize = 2;
+        }
+        table.resize(tableSize);
+    }
+    
+    void insert(const K& key, const V& value) {
+        if (static_cast<double>(numElements) / tableSize > LOAD_FACTOR_THRESHOLD) {
+            rehash();
+        }
+        
+        size_t index = hashFunction1(key);
+        size_t slot = probe(key, index);
+        
+        if (slot == tableSize) {
+            throw runtime_error("Hash table is full");
+        }
+        
+        if (table[slot].status != SlotStatus::OCCUPIED) {
+            numElements++;
+        }
+        
+        table[slot].key = key;
+        table[slot].value = value;
+        table[slot].status = SlotStatus::OCCUPIED;
+    }
+    
+    bool find(const K& key, V& value) const {
+        size_t index = hashFunction1(key);
+        size_t step = hashFunction2(key);
+        size_t probeCount = 0;
+        
+        while (probeCount < tableSize) {
+            if (table[index].status == SlotStatus::EMPTY) {
+                return false;
+            }
+            
+            if (table[index].status == SlotStatus::OCCUPIED && 
+                table[index].key == key) {
+                value = table[index].value;
+                return true;
+            }
+            
+            index = (index + step) % tableSize;
+            probeCount++;
+        }
+        
+        return false;
+    }
+    
+    bool remove(const K& key) {
+        size_t index = hashFunction1(key);
+        size_t step = hashFunction2(key);
+        size_t probeCount = 0;
+        
+        while (probeCount < tableSize) {
+            if (table[index].status == SlotStatus::EMPTY) {
+                return false;
+            }
+            
+            if (table[index].status == SlotStatus::OCCUPIED && 
+                table[index].key == key) {
+                table[index].status = SlotStatus::DELETED;
+                numElements--;
+                return true;
+            }
+            
+            index = (index + step) % tableSize;
+            probeCount++;
+        }
+        
+        return false;
+    }
+    
+    size_t size() const {
+        return numElements;
+    }
+    
+    bool empty() const {
+        return numElements == 0;
+    }
+    
+    double loadFactor() const {
+        return static_cast<double>(numElements) / tableSize;
+    }
 };
 ```
 
