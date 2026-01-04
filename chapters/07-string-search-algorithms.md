@@ -830,26 +830,28 @@ i=8, j=3: C≠B ✗
 
 Mismatch at j=3, LPS[3-1] = LPS[2] = 1
 j = LPS[2] = 1
+Pattern shifts: pattern[1] now aligns with text[8]
 ```
 
 **Step 13: Continue from j=1**
 ```
 Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
 Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern:         A B A B C A B A B
+Pattern:           A B A B C A B A B
                      ↑
 i=8, j=1: C≠B ✗
 
 Mismatch at j=1, LPS[1-1] = LPS[0] = 0
 j = LPS[0] = 0
+Pattern shifts: pattern[0] now aligns with text[8]
 ```
 
 **Step 14: Continue from j=0**
 ```
 Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
 Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern:         A B A B C A B A B
-                       ↑
+Pattern:             A B A B C A B A B
+                     ↑
 i=8, j=0: C≠A ✗
 
 j=0, so move to next character in text
@@ -860,8 +862,8 @@ i=9, j=0
 ```
 Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
 Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern:           A B A B C A B A B
-                   ↑
+Pattern:             A B A B C A B A B
+                     ↑
 i=9, j=0: D≠A ✗
 
 j=0, so move to next character in text
