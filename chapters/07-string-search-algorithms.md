@@ -874,8 +874,8 @@ i=10, j=0
 ```
 Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
 Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern:               A  B  A  B  C  A  B  A  B
-                       ↑
+Pattern:                      A  B  A  B  C  A  B  A  B
+                              ↑
 i=10, j=0: A=A ✓
 i=11, j=1
 ```
@@ -884,8 +884,8 @@ i=11, j=1
 ```
 Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
 Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern:               A  B  A  B  C  A  B  A  B
-                         ↑
+Pattern:                      A  B  A  B  C  A  B  A  B
+                                ↑
 i=11, j=1: B=B ✓
 i=12, j=2
 ```
@@ -894,8 +894,8 @@ i=12, j=2
 ```
 Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
 Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern:               A  B  A  B  C  A  B  A  B
-                           ↑
+Pattern:                      A  B  A  B  C  A  B  A  B
+                                  ↑
 i=12, j=2: A=A ✓
 i=13, j=3
 ```
@@ -904,8 +904,8 @@ i=13, j=3
 ```
 Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
 Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern:               A  B  A  B  C  A  B  A  B
-                             ↑
+Pattern:                      A  B  A  B  C  A  B  A  B
+                                    ↑
 i=13, j=3: B=B ✓
 i=14, j=4
 ```
@@ -914,8 +914,8 @@ i=14, j=4
 ```
 Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
 Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern:               A  B  A  B  C  A  B  A  B
-                               ↑
+Pattern:                      A  B  A  B  C  A  B  A  B
+                                      ↑
 i=14, j=4: C=C ✓
 i=15, j=5
 ```
@@ -924,8 +924,8 @@ i=15, j=5
 ```
 Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
 Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern:               A  B  A  B  C  A  B  A  B
-                                 ↑
+Pattern:                      A  B  A  B  C  A  B  A  B
+                                        ↑
 i=15, j=5: A=A ✓
 i=16, j=6
 ```
@@ -934,8 +934,8 @@ i=16, j=6
 ```
 Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
 Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern:               A  B  A  B  C  A  B  A  B
-                                   ↑
+Pattern:                      A  B  A  B  C  A  B  A  B
+                                          ↑
 i=16, j=6: B=B ✓
 i=17, j=7
 ```
@@ -944,8 +944,8 @@ i=17, j=7
 ```
 Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
 Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern:               A  B  A  B  C  A  B  A  B
-                                     ↑
+Pattern:                      A  B  A  B  C  A  B  A  B
+                                            ↑
 i=17, j=7: A=A ✓
 i=18, j=8
 ```
@@ -954,8 +954,8 @@ i=18, j=8
 ```
 Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
 Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern:               A  B  A  B  C  A  B  A  B
-                                       ↑
+Pattern:                      A  B  A  B  C  A  B  A  B
+                                              ↑
 i=18, j=8: B=B ✓
 j=8 (pattern length), so we found a match!
 ```
