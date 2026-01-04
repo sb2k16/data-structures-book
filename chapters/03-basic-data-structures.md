@@ -821,10 +821,6 @@ for (int i = 0; i < 1000; i++) {
 string result = oss.str();  // Convert to string once
 ```
 
-```python
-str = "Hello"
-# str[0] = 'h'      # ❌ TypeError: 'str' object does not support item assignment
-str = str + " World"  # Creates NEW string object
 
 # Memory: Each operation creates a new string object
 ```
