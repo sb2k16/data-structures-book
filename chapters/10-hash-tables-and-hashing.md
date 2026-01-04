@@ -507,6 +507,98 @@ public:
 ```
 
 #### Quadratic Probing
+
+**Quadratic probing** is an open addressing collision resolution technique that uses a quadratic function to determine the probe sequence. Instead of checking consecutive slots like linear probing, it checks slots at positions that increase quadratically: h(k), h(k) + 1², h(k) + 2², h(k) + 3², ...
+
+##### How Quadratic Probing Works
+
+The probe sequence for a key `k` with initial hash `h(k)` is:
+
+```
+h(k), h(k) + 1², h(k) + 2², h(k) + 3², ..., h(k) + i² (mod m)
+```
+
+Where:
+- `h(k)` is the initial hash value
+- `i` is the probe number (0, 1, 2, 3, ...)
+- `m` is the table size
+
+**Example**: If a key hashes to index 5 in a table of size 11, the probe sequence is:
+- Probe 0: (5 + 0²) mod 11 = 5
+- Probe 1: (5 + 1²) mod 11 = 6
+- Probe 2: (5 + 2²) mod 11 = 9
+- Probe 3: (5 + 3²) mod 11 = 3
+- Probe 4: (5 + 4²) mod 11 = 10
+- Probe 5: (5 + 5²) mod 11 = 8
+- Probe 6: (5 + 6²) mod 11 = 8 (collision with probe 5)
+- ...
+
+##### Advantages of Quadratic Probing
+
+1. **Reduces Primary Clustering**: Unlike linear probing, quadratic probing spreads out collisions more evenly, reducing the formation of long clusters of occupied slots.
+
+2. **Better Distribution**: The quadratic sequence provides better distribution than linear probing, especially when the table is not too full.
+
+3. **Cache-Friendly**: Still maintains good cache locality since it accesses nearby memory locations (though not as sequential as linear probing).
+
+##### Disadvantages and Limitations
+
+1. **Secondary Clustering**: Keys that hash to the same initial position will follow the same probe sequence, creating "secondary clusters." However, this is less severe than primary clustering in linear probing.
+
+2. **Table Size Requirements**: For quadratic probing to work correctly and probe all slots, the table size must be:
+   - A prime number, OR
+   - A power of 2 (with certain constraints)
+   
+   If the table size doesn't meet these requirements, the probe sequence may not visit all slots, leading to failed insertions even when empty slots exist.
+
+3. **Complex Deletion**: Like all open addressing methods, deletion requires marking slots as "DELETED" rather than truly empty, which can affect search performance.
+
+4. **No Guarantee of Finding Empty Slot**: Unlike linear probing (which guarantees finding an empty slot if one exists, given enough probes), quadratic probing may cycle through the same indices without finding an empty slot if the table size is not prime.
+
+##### Mathematical Properties
+
+For quadratic probing to probe all slots in the table:
+- The table size `m` should be a **prime number**
+- The probe sequence `(h(k) + i²) mod m` will visit all slots if `m` is prime
+
+**Why prime numbers?** When `m` is prime, the quadratic residues (i² mod m) form a complete set, ensuring the probe sequence can reach all table positions.
+
+##### When to Use Quadratic Probing
+
+- **Moderate load factors**: Works well when load factor stays below 0.7
+- **When primary clustering is a concern**: Better than linear probing for avoiding long chains
+- **When you can control table size**: You need the ability to resize to prime numbers
+- **Memory-constrained environments**: Like all open addressing, uses less memory than chaining
+
+##### Performance Characteristics
+
+- **Average case**: O(1) for insert, search, and delete
+- **Worst case**: O(n) if the table becomes full or if clustering occurs
+- **Load factor threshold**: Typically kept below 0.7 to maintain good performance
+
+##### Implementation Considerations
+
+1. **Table Size**: Always use prime numbers for table size, or implement a prime-finding function during rehashing.
+
+2. **Probe Sequence**: The formula `(startIndex + probeCount * probeCount) % tableSize` can cause integer overflow for large tables. Consider using:
+   ```cpp
+   currentIndex = (startIndex + (probeCount * probeCount) % tableSize) % tableSize;
+   ```
+
+3. **Rehashing**: When rehashing, ensure the new table size is prime. Common approach:
+   - Double the current size
+   - Find the next prime number ≥ 2×current_size
+
+##### Comparison with Other Methods
+
+| Aspect | Linear Probing | Quadratic Probing | Double Hashing |
+|--------|---------------|-------------------|----------------|
+| Clustering | Primary clustering | Secondary clustering | Minimal clustering |
+| Probe sequence | Sequential | Quadratic | Hash-dependent |
+| Cache performance | Best | Good | Moderate |
+| Table size requirement | Any | Prime preferred | Prime preferred |
+| Implementation complexity | Simplest | Moderate | Most complex |
+
 ```cpp
 template<typename K, typename V>
 class HashTableQuadraticProbing {
