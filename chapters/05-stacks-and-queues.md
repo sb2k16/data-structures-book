@@ -1,10 +1,86 @@
 # Chapter 5: Stacks and Queues
 
-## Part I: Fundamentals
+## 5.1 Problem Statement & Motivation
 
-### 5.1 Introduction to Stacks and Queues
+### What Problem Do Stacks and Queues Solve?
+
+Many algorithms and systems need **restricted access patterns**:
+
+- **Function Calls**: Need to return to most recent caller (LIFO)
+- **Expression Evaluation**: Process operators in correct order
+- **Undo Operations**: Reverse most recent actions first
+- **Task Scheduling**: Process tasks in order received (FIFO)
+- **Breadth-First Search**: Explore level by level (FIFO)
+- **Buffering**: Process data in arrival order
+
+**Naive Approaches and Their Limitations**:
+
+- **Arrays with Index Management**: Error-prone, manual tracking
+- **Lists with Full Access**: Can violate access patterns
+- **No Structure**: Hard to reason about order
+
+**The Stack/Queue Solution**: These ADTs enforce specific access patterns (LIFO/FIFO) through restricted interfaces, making algorithms easier to reason about and implement correctly.
+
+### When to Use Stacks
+
+✅ **Use stacks when**:
+- Need LIFO (Last-In-First-Out) behavior
+- Function call management
+- Expression evaluation
+- Undo/Redo operations
+- Backtracking algorithms
+- Matching parentheses/brackets
+
+✅ **Real-world applications**:
+- Function call stack (program execution)
+- Expression parsers (infix to postfix)
+- Undo systems
+- Backtracking (N-Queens, maze solving)
+- Browser back button
+
+### When to Use Queues
+
+✅ **Use queues when**:
+- Need FIFO (First-In-First-Out) behavior
+- Task scheduling
+- BFS traversal
+- Request processing
+- Message buffering
+- Print spooling
+
+✅ **Real-world applications**:
+- Task schedulers
+- BFS graph traversal
+- Print queues
+- Message queues
+- Request handling (web servers)
+
+### When NOT to Use Stacks/Queues
+
+❌ **Avoid when**:
+- Need random access (use arrays)
+- Need to access middle elements (use lists)
+- Need both ends frequently (use deque)
+
+**Key Trade-off**: Stacks/Queues trade flexibility for correctness and simplicity.
+
+## 5.2 Conceptual Overview
 
 **Stacks** and **Queues** are fundamental linear data structures that follow specific access patterns. They are abstract data types that define how elements are added, removed, and accessed.
+
+### Intuitive Explanation
+
+**Stack** (LIFO): Think of a stack of plates:
+- Add plate: Place on top
+- Remove plate: Take from top
+- Can only access the top plate
+- Last plate added is first removed
+
+**Queue** (FIFO): Think of a line at a store:
+- Join line: Go to the back (rear)
+- Get served: From the front
+- First person in line is first served
+- Maintains arrival order
 
 ### Stack
 A **stack** follows the **Last-In-First-Out (LIFO)** principle:
@@ -18,9 +94,13 @@ A **queue** follows the **First-In-First-Out (FIFO)** principle:
 - The first element added is the first to be removed
 - Operations: `enqueue()` (add), `dequeue()` (remove), `front()` (view front element), `isEmpty()`
 
-### 5.1.1 Core Invariants
+## 5.3 Abstract Model & Invariants ⭐
 
-Understanding invariants ensures correct stack and queue implementations.
+Understanding invariants ensures correct stack and queue implementations. This section defines correctness **independent of any implementation**.
+
+### Core Invariants
+
+These invariants must **always** hold for stacks and queues to be correct:
 
 #### Core Invariants of a Stack
 
@@ -74,9 +154,7 @@ Understanding invariants ensures correct stack and queue implementations.
 - **Queue enqueue**: Add to rear → preserves FIFO, increments size
 - **Queue dequeue**: Remove from front → preserves FIFO, decrements size
 
-### 5.2 Basic Stack Implementation
-
-### Array-Based Stack
+### 5.7.1 Array-Based Stack
 ```cpp
 #include <iostream>
 #include <vector>
@@ -247,9 +325,9 @@ void demonstrateStack() {
 }
 ```
 
-### 5.3 Basic Queue Implementation
+### 5.7.2 Basic Queue Implementation
 
-### Array-Based Queue
+#### Array-Based Queue
 ```cpp
 template<typename T>
 class ArrayQueue {
@@ -971,7 +1049,7 @@ public:
 };
 ```
 
-### 5.5 Implementation Trade-offs and Analysis
+### 5.7.4 Implementation Trade-offs and Analysis
 
 #### Time Complexity Comparison
 
@@ -1004,7 +1082,234 @@ public:
 
 ## Part III: Applications
 
-### 5.6 Stack Applications
+## 5.8 Correctness Argument
+
+This section explains why stack and queue operations preserve invariants.
+
+### Why Stack Push Is Correct
+
+**Correctness Argument**:
+1. Element added to top position ✓
+2. Top pointer/index updated ✓
+3. Size incremented ✓
+4. LIFO invariant preserved: new element is now top ✓
+5. Access invariant preserved: only top accessible ✓
+
+**Edge Cases Handled**:
+- Empty stack: First element becomes top ✓
+- Full stack: Should check capacity (precondition) ✓
+
+### Why Stack Pop Is Correct
+
+**Correctness Argument**:
+1. Check stack not empty ✓
+2. Retrieve top element ✓
+3. Update top pointer/index ✓
+4. Size decremented ✓
+5. LIFO invariant preserved: next element becomes top ✓
+
+**Edge Cases Handled**:
+- Empty stack: Returns error (precondition violation) ✓
+- Single element: Stack becomes empty after pop ✓
+
+### Why Queue Enqueue Is Correct
+
+**Correctness Argument**:
+1. Element added to rear position ✓
+2. Rear pointer/index updated ✓
+3. Size incremented ✓
+4. FIFO invariant preserved: element joins queue at end ✓
+5. Access invariant preserved: front unchanged ✓
+
+**Edge Cases Handled**:
+- Empty queue: Element becomes both front and rear ✓
+- Full queue: Should check capacity (precondition) ✓
+
+### Why Queue Dequeue Is Correct
+
+**Correctness Argument**:
+1. Check queue not empty ✓
+2. Retrieve front element ✓
+3. Update front pointer/index ✓
+4. Size decremented ✓
+5. FIFO invariant preserved: next element becomes front ✓
+
+**Edge Cases Handled**:
+- Empty queue: Returns error (precondition violation) ✓
+- Single element: Queue becomes empty after dequeue ✓
+
+## 5.9 Edge Cases & Failure Modes
+
+Understanding edge cases helps build defensive thinking.
+
+### Empty Stack/Queue Operations
+
+**Operations on Empty Structure**:
+- Pop/Dequeue: Must return error or no-op
+- Top/Front: Must check before accessing
+- Search: Returns not found
+
+**Example Failure**: Accessing `stack.top()` without checking if empty → undefined behavior
+
+### Full Stack/Queue (Array-Based)
+
+**Operations on Full Structure**:
+- Push/Enqueue: Must check capacity
+- Should either reject or resize
+
+**Example Failure**: Pushing to full stack without check → buffer overflow
+
+### Circular Queue Edge Cases
+
+**Full vs Empty Distinction**:
+- Both states have `front == rear`
+- Must use size counter or sentinel
+- Off-by-one errors common
+
+**Example Failure**: Not distinguishing full from empty → incorrect behavior
+
+### Memory Issues
+
+**Linked List Implementation**:
+- Memory leaks if nodes not freed
+- Dangling pointers if accessed after deletion
+
+**Example Failure**: Pop operation doesn't delete node → memory leak
+
+## 5.10 Performance & System Considerations ⭐
+
+This section connects stacks/queues to real machine behavior.
+
+### Memory Layout Impact
+
+**Array-Based**:
+- Contiguous memory → excellent cache locality
+- Sequential access → cache hits
+- Good for performance
+
+**Linked List-Based**:
+- Non-contiguous memory → cache misses
+- Pointer chasing → poor locality
+- Slower but more flexible
+
+### Cache Behavior
+
+**Array Stack/Queue**:
+- Elements in same cache line
+- Sequential access pattern
+- Excellent cache performance
+
+**Linked Stack/Queue**:
+- Each node may be in different cache line
+- Random memory access
+- Poor cache performance
+
+**Performance Implication**: Array-based can be 2-3x faster due to cache effects.
+
+### When Stacks/Queues Become Bottlenecks
+
+**Signs**:
+- Frequent resize operations (array-based)
+- Many cache misses (linked list-based)
+- Memory fragmentation (linked list-based)
+
+**Solutions**:
+- Pre-allocate capacity if size known
+- Use array-based for performance
+- Consider memory pools for linked lists
+
+## 5.11 Variants & Extensions
+
+### Stack Variants
+
+- **Min Stack**: O(1) minimum retrieval
+- **Max Stack**: O(1) maximum retrieval
+- **Monotonic Stack**: Maintains monotonic property
+
+### Queue Variants
+
+- **Circular Queue**: Efficient use of fixed-size array
+- **Priority Queue**: Elements ordered by priority
+- **Deque**: Double-ended queue
+- **Monotonic Queue**: Maintains monotonic property
+
+### Specialized Structures
+
+- **Deque**: Combines stack and queue
+- **Priority Queue**: Heap-based (see Chapter 14)
+
+## 5.12 Real-World Implementations
+
+### C++ Standard Library
+
+**std::stack**:
+- Container adapter (default: deque)
+- LIFO operations
+- Simple interface
+
+**std::queue**:
+- Container adapter (default: deque)
+- FIFO operations
+- Simple interface
+
+**std::deque**:
+- Double-ended queue
+- Random access
+- Efficient operations at both ends
+
+## 5.13 Common Pitfalls & Interview Traps
+
+### 1. Accessing Empty Stack/Queue
+
+**Pitfall**: Calling `top()` or `front()` without checking
+
+**Reality**: Undefined behavior, crashes
+
+**Interview Trap**: Asked to implement, forget empty check
+
+**Correct Approach**: Always check `isEmpty()` before access
+
+### 2. Stack Overflow
+
+**Pitfall**: Pushing to full array-based stack
+
+**Reality**: Buffer overflow, undefined behavior
+
+**Interview Trap**: Fixed-size stack, no capacity check
+
+**Correct Approach**: Check capacity or use dynamic resizing
+
+### 3. Memory Leaks
+
+**Pitfall**: Not deleting nodes in linked implementation
+
+**Reality**: Memory leak accumulates
+
+**Interview Trap**: Pop operation doesn't free memory
+
+**Correct Approach**: Always `delete` node after removal
+
+### 4. Circular Queue Full/Empty Confusion
+
+**Pitfall**: Can't distinguish full from empty
+
+**Reality**: Incorrect behavior, lost elements
+
+**Interview Trap**: Implement circular queue, same condition for full/empty
+
+**Correct Approach**: Use size counter or sentinel value
+
+### 5. Incorrect Order
+
+**Pitfall**: Queue implementation violates FIFO
+
+**Reality**: Wrong element dequeued
+
+**Interview Trap**: Enqueue/dequeue from wrong end
+
+**Correct Approach**: Enqueue at rear, dequeue from front
+
+### 5.13.1 Stack Applications
 
 ### Expression Evaluation
 ```cpp
@@ -1285,7 +1590,7 @@ public:
 - Constraint satisfaction problems
 - Game tree exploration
 
-### 5.7 Queue Applications
+### 5.13.2 Queue Applications
 
 ### BFS (Breadth-First Search) Implementation
 ```cpp
@@ -1620,7 +1925,7 @@ public:
 
 ## Part IV: Problem Solving
 
-### 5.8 Advanced Stack Problems
+### 5.13.3 Advanced Stack Problems
 
 ### Min Stack Implementation
 
@@ -2064,7 +2369,7 @@ public:
    - Financial applications for tracking price ranges
    - Priority-based task management systems
 
-### 5.9 Common Interview Problems
+### 5.13.4 Common Interview Problems
 
 #### Problem 1: Valid Parentheses
 **Problem**: Given a string containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid.
@@ -2449,7 +2754,7 @@ vector<int> maxOfSubarrays(vector<int>& arr, int k) {
 
 ## Part V: Summary
 
-### 5.10 Performance Analysis
+### Additional Performance Analysis
 
 #### Time Complexity
 
@@ -2464,7 +2769,59 @@ vector<int> maxOfSubarrays(vector<int>& arr, int k) {
 - **Array-based**: O(n) where n is the maximum number of elements
 - **Linked list-based**: O(n) where n is the current number of elements
 
-### 5.11 Key Takeaways
+## 5.14 Exercises & Thought Questions
+
+### Conceptual Questions
+
+1. **When would you choose a stack over a queue?**
+   - Explain the access pattern differences
+   - Give specific use cases
+
+2. **Why are array-based stacks/queues cache-friendly?**
+   - Explain memory layout
+   - Compare to linked list implementation
+
+3. **What is a circular queue and when is it useful?**
+   - Explain the full/empty problem
+   - When is it better than regular queue?
+
+4. **Explain monotonic stack/queue:**
+   - What problem does it solve?
+   - When would you use it?
+
+### Implementation Tasks
+
+1. **Implement a stack with O(1) min operation**
+   - Use auxiliary stack
+   - Handle edge cases
+
+2. **Implement a circular queue**
+   - Distinguish full from empty
+   - Handle wrap-around
+
+3. **Implement expression evaluator**
+   - Use stack for operators
+   - Handle parentheses
+
+### Performance Reasoning
+
+1. **Analyze cache behavior:**
+   - Compare array vs linked list stack
+   - When does cache matter most?
+
+2. **Space-time trade-offs:**
+   - Array vs linked list
+   - When is each better?
+
+### Interview-Style Problems
+
+1. **Valid Parentheses** (LeetCode 20)
+2. **Daily Temperatures** (LeetCode 739)
+3. **Largest Rectangle in Histogram** (LeetCode 84)
+4. **Sliding Window Maximum** (LeetCode 239)
+5. **Design Circular Queue** (LeetCode 622)
+
+## 5.15 Key Takeaways
 
 1. **Stacks** follow LIFO principle and are useful for function calls, expression evaluation, and undo operations
 2. **Queues** follow FIFO principle and are essential for BFS, task scheduling, and buffering
@@ -2473,7 +2830,7 @@ vector<int> maxOfSubarrays(vector<int>& arr, int k) {
 5. **Specialized variants** like deque and priority queue extend basic functionality
 6. **Applications** are numerous in system programming, algorithms, and user interfaces
 
-### 5.12 Practice Exercises
+### Additional Practice Exercises
 
 1. Implement a stack that can return the minimum element in O(1) time.
 2. Design a queue using two stacks.
@@ -2481,7 +2838,7 @@ vector<int> maxOfSubarrays(vector<int>& arr, int k) {
 4. Create a function to check if a string is a palindrome using a stack.
 5. Implement a sliding window maximum using a deque.
 
-## 5.12 Concurrency Considerations
+## 5.16 Concurrency Considerations
 
 This section applies the concurrency fundamentals from [Chapter 3.5](03.5-concurrency-fundamentals.md) to stacks and queues. See Section 3.5.9 for the producer-consumer problem (bounded queue).
 
@@ -2624,7 +2981,7 @@ public:
 
 **For Production**: Prefer `std::queue`/`std::stack` with external synchronization or thread-safe containers. See Section 3.5.10 for guidance on using libraries.
 
-## 5.13 Failure Modes and Common Pitfalls
+### Additional Failure Modes
 
 Understanding common failure modes helps avoid bugs and performance issues when working with stacks and queues.
 
@@ -2840,7 +3197,7 @@ bool isFull() {
 5. **Test Edge Cases**: Empty, single element, full capacity
 6. **Use Standard Library**: Prefer `std::stack` and `std::queue` when possible
 
-### 5.14 Summary
+## 5.17 Summary
 
 Stacks and queues are fundamental abstract data types that provide specific access patterns essential for many algorithms and system operations. Understanding their implementations, trade-offs, and applications is crucial for solving problems that require LIFO or FIFO behavior. These data structures serve as building blocks for more complex algorithms and are widely used in computer science and software engineering.
 
