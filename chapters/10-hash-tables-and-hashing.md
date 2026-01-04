@@ -2342,7 +2342,360 @@ int lock_index = hash(key) % 16;
 
 **For Production**: Prefer `std::unordered_map` with external synchronization or thread-safe hash tables from proven libraries. See Section 3.5.10 for guidance on using libraries.
 
-## 10.14 Summary
+## 10.14 Advanced Hashing Techniques
+
+### 10.14.1 Consistent Hashing
+
+**Consistent Hashing** is a special hashing technique used in distributed systems to minimize the number of keys that need to be remapped when hash table slots (servers/nodes) are added or removed.
+
+#### The Problem with Standard Hashing
+
+In a distributed system with multiple servers, standard hashing has a critical flaw:
+
+```cpp
+// Standard hashing: server_index = hash(key) % num_servers
+int server_index = hash(key) % 3;  // 3 servers
+
+// Problem: If we add a 4th server, most keys need remapping!
+// Before: key "user123" → server 1
+// After:  key "user123" → server 2 (different server!)
+```
+
+**Impact**: When servers are added or removed, **most keys** (approximately `(n-1)/n` where n is the number of servers) need to be remapped to different servers. This causes:
+- Massive data migration
+- Cache invalidation
+- Service disruption
+
+#### How Consistent Hashing Works
+
+**Key Idea**: Map both keys and servers to a **circular hash space** (often visualized as a circle or ring).
+
+```cpp
+#include <map>
+#include <string>
+#include <vector>
+#include <functional>
+
+class ConsistentHash {
+private:
+    // Hash ring: maps hash values to server names
+    map<uint32_t, string> hashRing;
+    hash<string> hasher;
+    int numReplicas;  // Virtual nodes per server
+    
+public:
+    ConsistentHash(int replicas = 3) : numReplicas(replicas) {}
+    
+    // Add a server to the hash ring
+    void addServer(const string& serverName) {
+        for (int i = 0; i < numReplicas; i++) {
+            // Create virtual nodes
+            string virtualNode = serverName + "#" + to_string(i);
+            uint32_t hashValue = hashString(virtualNode);
+            hashRing[hashValue] = serverName;
+        }
+    }
+    
+    // Remove a server from the hash ring
+    void removeServer(const string& serverName) {
+        for (int i = 0; i < numReplicas; i++) {
+            string virtualNode = serverName + "#" + to_string(i);
+            uint32_t hashValue = hashString(virtualNode);
+            hashRing.erase(hashValue);
+        }
+    }
+    
+    // Get the server for a given key
+    string getServer(const string& key) {
+        if (hashRing.empty()) {
+            return "";
+        }
+        
+        uint32_t keyHash = hashString(key);
+        
+        // Find the first server with hash >= keyHash
+        auto it = hashRing.lower_bound(keyHash);
+        
+        // If no server found, wrap around to the first server
+        if (it == hashRing.end()) {
+            it = hashRing.begin();
+        }
+        
+        return it->second;
+    }
+    
+private:
+    uint32_t hashString(const string& str) {
+        // Simple hash function (in practice, use better hash like MD5, SHA-1)
+        size_t hash = hasher(str);
+        return static_cast<uint32_t>(hash);
+    }
+};
+```
+
+#### Visual Representation
+
+```
+Hash Ring (0 to 2^32-1):
+
+        Server A
+           |
+           v
+     [Key1]---[Key2]---[Key3]
+        |       |       |
+        v       v       v
+     Server B  Server C  Server A
+     
+When Server B is removed:
+- Only keys between Server A and Server C need remapping
+- Keys on Server A and Server C remain unchanged
+```
+
+#### Virtual Nodes (Replicas)
+
+**Problem**: Without virtual nodes, servers may be unevenly distributed on the ring.
+
+**Solution**: Create multiple **virtual nodes** (replicas) for each physical server.
+
+```cpp
+// Physical server: "server1"
+// Virtual nodes: "server1#0", "server1#1", "server1#2"
+// Each virtual node maps to the same physical server
+```
+
+**Benefits**:
+- More even distribution of keys
+- Better load balancing
+- Smoother redistribution when servers are added/removed
+
+#### Properties of Consistent Hashing
+
+1. **Minimal Remapping**: Only `k/n` keys need remapping when a server is added/removed (where k is the number of keys, n is the number of servers)
+2. **Load Balancing**: Keys are distributed evenly across servers
+3. **Scalability**: Easy to add or remove servers
+4. **Fault Tolerance**: When a server fails, only its keys are remapped
+
+#### Real-World Applications
+
+**Distributed Caching**:
+- **Memcached**: Distributed in-memory cache
+- **Redis Cluster**: Distributed key-value store
+- **CDN (Content Delivery Networks)**: Routing requests to nearest edge server
+
+**Load Balancing**:
+- **Request Routing**: Route requests to backend servers
+- **Database Sharding**: Distribute data across database shards
+- **Microservices**: Route requests to service instances
+
+**Example: Distributed Cache**
+```cpp
+ConsistentHash cacheHash(100);  // 100 virtual nodes per server
+
+// Add cache servers
+cacheHash.addServer("cache-server-1");
+cacheHash.addServer("cache-server-2");
+cacheHash.addServer("cache-server-3");
+
+// Route key to appropriate server
+string key = "user:12345";
+string server = cacheHash.getServer(key);
+// Store in: cache-server-2
+
+// Add new server (minimal remapping)
+cacheHash.addServer("cache-server-4");
+// Only ~25% of keys need remapping (1/4 servers)
+```
+
+#### Complexity Analysis
+
+- **Add Server**: O(v) where v is the number of virtual nodes
+- **Remove Server**: O(v)
+- **Get Server**: O(log n) where n is the total number of virtual nodes
+- **Space**: O(n*v) where n is the number of servers, v is virtual nodes per server
+
+#### Advantages
+
+- ✅ Minimal key remapping when servers change
+- ✅ Good load distribution
+- ✅ Scalable and fault-tolerant
+- ✅ Simple to understand and implement
+
+#### Disadvantages
+
+- ❌ Not perfectly uniform (depends on hash function quality)
+- ❌ Requires virtual nodes for good distribution
+- ❌ More complex than standard hashing
+
+### 10.14.2 Perfect Hashing
+
+**Perfect Hashing** is a hashing technique that guarantees **O(1) worst-case lookup time** with **no collisions** when the set of keys is known in advance and static.
+
+#### When Perfect Hashing is Possible
+
+Perfect hashing works when:
+1. **Keys are known in advance** (static key set)
+2. **Keys don't change** (or change infrequently)
+3. **O(1) worst-case lookup** is required
+4. **Space is available** for a larger hash table
+
+#### Two-Level Perfect Hashing
+
+The most common approach uses **two levels of hashing**:
+
+```cpp
+class PerfectHash {
+private:
+    vector<vector<pair<string, int>>> table;  // Two-level table
+    hash<string> hasher;
+    int primarySize;
+    vector<int> secondarySizes;
+    vector<int> hashParams;  // Hash function parameters
+    
+public:
+    PerfectHash(const vector<string>& keys, const vector<int>& values) {
+        // Level 1: Hash to primary bucket
+        primarySize = keys.size();
+        table.resize(primarySize);
+        secondarySizes.resize(primarySize, 0);
+        
+        // Group keys by primary hash
+        vector<vector<string>> buckets(primarySize);
+        for (const string& key : keys) {
+            int bucket = hasher(key) % primarySize;
+            buckets[bucket].push_back(key);
+        }
+        
+        // Level 2: Perfect hash for each bucket
+        for (int i = 0; i < primarySize; i++) {
+            if (buckets[i].empty()) continue;
+            
+            // Find perfect hash function for this bucket
+            int size = buckets[i].size();
+            secondarySizes[i] = size * size;  // Square the size for perfect hashing
+            
+            table[i].resize(secondarySizes[i]);
+            
+            // Simple perfect hash: use a different hash parameter
+            for (const string& key : buckets[i]) {
+                int idx = findValue(keys, key);
+                int hash2 = (hasher(key) * 17 + 31) % secondarySizes[i];
+                table[i][hash2] = {key, values[idx]};
+            }
+        }
+    }
+    
+    int get(const string& key) {
+        int bucket = hasher(key) % primarySize;
+        if (table[bucket].empty()) return -1;
+        
+        int hash2 = (hasher(key) * 17 + 31) % secondarySizes[bucket];
+        if (table[bucket][hash2].first == key) {
+            return table[bucket][hash2].second;
+        }
+        return -1;
+    }
+    
+private:
+    int findValue(const vector<string>& keys, const string& key) {
+        for (int i = 0; i < keys.size(); i++) {
+            if (keys[i] == key) return i;
+        }
+        return -1;
+    }
+};
+```
+
+#### How It Works
+
+1. **Level 1 (Primary Hash)**: Hash keys to primary buckets
+2. **Level 2 (Secondary Hash)**: For each bucket with `k` keys, use a hash table of size `k²` to guarantee no collisions
+
+**Why k² works**: With `k` keys and a table of size `k²`, the probability of no collisions is high. If collisions occur, try different hash function parameters.
+
+#### Complexity Analysis
+
+- **Construction**: O(n) average case, O(n²) worst case (finding perfect hash)
+- **Lookup**: O(1) worst-case guaranteed
+- **Space**: O(n²) worst case (but often much better in practice)
+
+#### Real-World Applications
+
+**Compilers**:
+- **Symbol Tables**: Reserved keywords, built-in functions
+- **Static Analysis**: Known function names, variable names
+
+**Databases**:
+- **Static Lookup Tables**: Country codes, currency codes
+- **Enumeration Values**: Predefined sets of values
+
+**Network Protocols**:
+- **HTTP Status Codes**: Known set of status codes
+- **Protocol Headers**: Fixed set of header names
+
+**Example: Compiler Symbol Table**
+```cpp
+// Known keywords in a programming language
+vector<string> keywords = {"if", "else", "for", "while", "return", "int", "string"};
+vector<int> tokenIds = {1, 2, 3, 4, 5, 6, 7};
+
+PerfectHash keywordHash(keywords, tokenIds);
+
+// O(1) lookup for keywords
+int tokenId = keywordHash.get("if");  // Returns 1
+```
+
+#### Advantages
+
+- ✅ **O(1) worst-case lookup** (no collisions)
+- ✅ **Predictable performance** (no worst-case degradation)
+- ✅ **No collision resolution needed**
+
+#### Disadvantages
+
+- ❌ **Keys must be known in advance** (static set)
+- ❌ **Higher space complexity** (O(n²) worst case)
+- ❌ **Complex construction** (finding perfect hash function)
+- ❌ **Not suitable for dynamic key sets**
+
+#### When to Use Perfect Hashing
+
+**Use When**:
+- Key set is static and known at compile time
+- O(1) worst-case lookup is critical
+- Space is not a major constraint
+- Keys are frequently accessed
+
+**Don't Use When**:
+- Keys are dynamic (added/removed frequently)
+- Space is severely constrained
+- Key set is very large (construction becomes expensive)
+
+#### Comparison with Standard Hashing
+
+| Aspect | Standard Hashing | Perfect Hashing |
+|--------|------------------|-----------------|
+| **Worst-case lookup** | O(n) with collisions | O(1) guaranteed |
+| **Average-case lookup** | O(1) | O(1) |
+| **Space** | O(n) | O(n²) worst case |
+| **Construction** | O(n) | O(n²) worst case |
+| **Dynamic keys** | Yes | No |
+| **Use case** | General purpose | Static key sets |
+
+### 10.14.3 Summary of Advanced Techniques
+
+**Consistent Hashing**:
+- Use for distributed systems with dynamic server sets
+- Minimizes key remapping when servers are added/removed
+- Essential for distributed caches, load balancers, CDNs
+
+**Perfect Hashing**:
+- Use for static key sets requiring O(1) worst-case lookup
+- Common in compilers, symbol tables, static lookup tables
+- Trade space for guaranteed performance
+
+Both techniques extend standard hashing for specialized use cases where standard hashing is insufficient.
+
+## 10.15 Summary
 
 Hash tables are one of the most important and widely used data structures in computer science. They provide excellent average-case performance for key-value operations, making them ideal for many applications including databases, caches, symbol tables, and more.
 

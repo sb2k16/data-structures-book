@@ -551,6 +551,219 @@ public:
 };
 ```
 
+### Circular Queue
+
+A **circular queue** (also called a ring buffer) is a queue implementation that uses a fixed-size array and treats it as if it were connected end-to-end. This allows efficient use of space by reusing array positions.
+
+#### Key Characteristics
+
+1. **Fixed Size**: Array has a fixed capacity
+2. **Circular Wrapping**: When rear reaches the end, it wraps to the beginning
+3. **Efficient Space Usage**: Reuses array positions after dequeue
+4. **O(1) Operations**: All operations are O(1) time
+
+#### Implementation
+
+```cpp
+#include <iostream>
+#include <vector>
+using namespace std;
+
+template<typename T>
+class CircularQueue {
+private:
+    vector<T> data;
+    int front;
+    int rear;
+    int size;
+    int capacity;
+    
+public:
+    CircularQueue(int cap) : capacity(cap), front(0), rear(-1), size(0) {
+        data.resize(capacity);
+    }
+    
+    // Check if queue is full
+    bool isFull() const {
+        return size == capacity;
+    }
+    
+    // Check if queue is empty
+    bool isEmpty() const {
+        return size == 0;
+    }
+    
+    // Enqueue: Add element to rear
+    bool enqueue(T value) {
+        if (isFull()) {
+            cout << "Queue is full!" << endl;
+            return false;
+        }
+        
+        // Circular increment of rear
+        rear = (rear + 1) % capacity;
+        data[rear] = value;
+        size++;
+        return true;
+    }
+    
+    // Dequeue: Remove element from front
+    bool dequeue() {
+        if (isEmpty()) {
+            cout << "Queue is empty!" << endl;
+            return false;
+        }
+        
+        // Circular increment of front
+        front = (front + 1) % capacity;
+        size--;
+        return true;
+    }
+    
+    // Get front element
+    T getFront() const {
+        if (isEmpty()) {
+            throw runtime_error("Queue is empty!");
+        }
+        return data[front];
+    }
+    
+    // Get rear element
+    T getRear() const {
+        if (isEmpty()) {
+            throw runtime_error("Queue is empty!");
+        }
+        return data[rear];
+    }
+    
+    // Get current size
+    int getSize() const {
+        return size;
+    }
+    
+    // Display queue
+    void display() const {
+        if (isEmpty()) {
+            cout << "Queue is empty" << endl;
+            return;
+        }
+        
+        cout << "Queue (front to rear): ";
+        int count = 0;
+        int index = front;
+        
+        while (count < size) {
+            cout << data[index] << " ";
+            index = (index + 1) % capacity;
+            count++;
+        }
+        cout << endl;
+    }
+};
+```
+
+#### Example Usage
+
+```cpp
+void demonstrateCircularQueue() {
+    CircularQueue<int> cq(5);
+    
+    // Enqueue elements
+    cq.enqueue(10);
+    cq.enqueue(20);
+    cq.enqueue(30);
+    cq.enqueue(40);
+    cq.enqueue(50);
+    cq.display();  // Queue (front to rear): 10 20 30 40 50
+    
+    // Try to enqueue when full
+    cq.enqueue(60);  // Queue is full!
+    
+    // Dequeue elements
+    cq.dequeue();
+    cq.dequeue();
+    cq.display();  // Queue (front to rear): 30 40 50
+    
+    // Enqueue after dequeue (wraps around)
+    cq.enqueue(60);
+    cq.enqueue(70);
+    cq.display();  // Queue (front to rear): 30 40 50 60 70
+    
+    cout << "Front: " << cq.getFront() << endl;  // 30
+    cout << "Rear: " << cq.getRear() << endl;    // 70
+    cout << "Size: " << cq.getSize() << endl;    // 5
+}
+```
+
+#### Visual Representation
+
+```
+Initial state (capacity = 5):
+[ ][ ][ ][ ][ ]
+ ↑
+front = 0, rear = -1, size = 0
+
+After enqueue(10), enqueue(20), enqueue(30):
+[10][20][30][ ][ ]
+ ↑           ↑
+front=0    rear=2, size=3
+
+After dequeue() twice:
+[10][20][30][ ][ ]
+         ↑
+    front=2, rear=2, size=1
+
+After enqueue(40), enqueue(50), enqueue(60):
+[60][20][30][40][50]
+ ↑   ↑
+rear=0 front=2, size=5 (full, wraps around)
+```
+
+#### Advantages
+
+1. **Efficient Memory Usage**: Reuses array positions, no need for dynamic resizing
+2. **O(1) Operations**: All operations are constant time
+3. **Fixed Memory Footprint**: Predictable memory usage
+4. **Cache-Friendly**: Contiguous memory layout (when not wrapping)
+
+#### Disadvantages
+
+1. **Fixed Size**: Cannot grow beyond initial capacity
+2. **Wasted Space**: One slot is typically left empty to distinguish full from empty
+3. **Complex Indexing**: Requires modulo arithmetic for circular wrapping
+
+#### When to Use
+
+- **Bounded Buffers**: When you know the maximum size in advance
+- **Producer-Consumer Problems**: Fixed-size buffers for data streaming
+- **Embedded Systems**: Where memory is constrained and fixed-size is acceptable
+- **Real-time Systems**: Where predictable memory usage is critical
+- **Ring Buffers**: Logging systems, audio processing, network packet buffers
+
+#### Alternative: Distinguishing Full from Empty
+
+There are two common approaches to distinguish a full queue from an empty one:
+
+**Method 1: Leave one slot empty** (shown above)
+- Full when: `(rear + 1) % capacity == front`
+- Empty when: `size == 0` or `front == (rear + 1) % capacity`
+
+**Method 2: Use a size counter** (shown in implementation)
+- Full when: `size == capacity`
+- Empty when: `size == 0`
+
+The size counter method is simpler and more intuitive.
+
+#### Comparison with Regular Queue
+
+| Aspect | Regular Queue | Circular Queue |
+|--------|---------------|----------------|
+| Memory | Dynamic allocation | Fixed-size array |
+| Resizing | Can grow/shrink | Fixed capacity |
+| Space Efficiency | May waste space | Reuses positions |
+| Complexity | O(1) amortized | O(1) worst-case |
+| Use Case | Unknown size | Known max size |
+
 ### Priority Queue
 ```cpp
 template<typename T>
@@ -1458,6 +1671,190 @@ int largestRectangleArea(vector<int>& heights) {
     return maxArea;
 }
 ```
+
+#### Problem 4: Next Greater Element
+**Problem**: Given an array, find the next greater element for each element. The next greater element is the first element to the right that is greater than the current element.
+
+**Solution Approach**: Use a monotonic decreasing stack to track elements waiting for their next greater element.
+
+```cpp
+vector<int> nextGreaterElement(vector<int>& nums) {
+    int n = nums.size();
+    vector<int> result(n, -1);  // -1 means no greater element found
+    stack<int> st;  // Store indices, maintaining decreasing order
+    
+    for (int i = 0; i < n; i++) {
+        // While current element is greater than stack top
+        while (!st.empty() && nums[i] > nums[st.top()]) {
+            result[st.top()] = nums[i];  // Found next greater for stack top
+            st.pop();
+        }
+        st.push(i);  // Current element waits for its next greater
+    }
+    
+    return result;
+}
+```
+
+**Example**:
+```
+Input:  [4, 5, 2, 10, 8]
+Output: [5, 10, 10, -1, -1]
+
+Explanation:
+- 4 → next greater is 5
+- 5 → next greater is 10
+- 2 → next greater is 10
+- 10 → no greater element
+- 8 → no greater element
+```
+
+#### Problem 5: Sliding Window Maximum (Monotonic Queue)
+**Problem**: Given an array and a window size k, find the maximum element in every window of size k.
+
+**Solution Approach**: Use a deque to maintain a monotonic decreasing sequence of indices.
+
+```cpp
+vector<int> maxSlidingWindow(vector<int>& nums, int k) {
+    deque<int> dq;  // Store indices, maintaining decreasing values
+    vector<int> result;
+    
+    for (int i = 0; i < nums.size(); i++) {
+        // Remove indices outside current window
+        while (!dq.empty() && dq.front() <= i - k) {
+            dq.pop_front();
+        }
+        
+        // Remove indices with values smaller than current
+        // (they can never be maximum in any window containing current)
+        while (!dq.empty() && nums[dq.back()] <= nums[i]) {
+            dq.pop_back();
+        }
+        
+        dq.push_back(i);
+        
+        // Window of size k is complete
+        if (i >= k - 1) {
+            result.push_back(nums[dq.front()]);
+        }
+    }
+    
+    return result;
+}
+```
+
+**Time Complexity**: O(n) - each element is added and removed at most once
+**Space Complexity**: O(k) - deque stores at most k elements
+
+### 5.9.4 Monotonic Stack and Queue Patterns
+
+Monotonic stacks and queues are powerful techniques for solving problems involving:
+- Next/Previous Greater/Smaller Element
+- Sliding Window Maximum/Minimum
+- Largest Rectangle in Histogram
+- Trapping Rain Water
+- Stock Span Problem
+
+#### What is a Monotonic Stack/Queue?
+
+A **monotonic stack** maintains elements in either:
+- **Monotonically increasing order** (smallest at bottom)
+- **Monotonically decreasing order** (largest at bottom)
+
+A **monotonic queue** (typically implemented with deque) maintains:
+- **Monotonically decreasing order** for maximum queries
+- **Monotonically increasing order** for minimum queries
+
+#### Key Insight
+
+The monotonic property allows us to:
+1. **Efficiently find next/previous greater/smaller elements** in O(n) time
+2. **Maintain sliding window maximum/minimum** in O(n) time
+3. **Process elements in order** while maintaining useful information
+
+#### Monotonic Stack Pattern
+
+**Template for "Next Greater Element"**:
+```cpp
+vector<int> nextGreater(vector<int>& nums) {
+    int n = nums.size();
+    vector<int> result(n, -1);
+    stack<int> st;  // Monotonic decreasing stack
+    
+    for (int i = 0; i < n; i++) {
+        // Process elements smaller than current
+        while (!st.empty() && nums[st.top()] < nums[i]) {
+            result[st.top()] = nums[i];
+            st.pop();
+        }
+        st.push(i);
+    }
+    return result;
+}
+```
+
+**When to Use**:
+- Finding next/previous greater/smaller element
+- Largest rectangle in histogram
+- Trapping rain water
+- Stock span problem
+
+#### Monotonic Queue Pattern
+
+**Template for "Sliding Window Maximum"**:
+```cpp
+vector<int> slidingWindowMax(vector<int>& nums, int k) {
+    deque<int> dq;  // Monotonic decreasing queue
+    vector<int> result;
+    
+    for (int i = 0; i < nums.size(); i++) {
+        // Remove out-of-window elements
+        while (!dq.empty() && dq.front() <= i - k) {
+            dq.pop_front();
+        }
+        
+        // Maintain decreasing order
+        while (!dq.empty() && nums[dq.back()] < nums[i]) {
+            dq.pop_back();
+        }
+        
+        dq.push_back(i);
+        
+        if (i >= k - 1) {
+            result.push_back(nums[dq.front()]);
+        }
+    }
+    return result;
+}
+```
+
+**When to Use**:
+- Sliding window maximum/minimum
+- Range maximum/minimum queries
+- Problems requiring efficient window operations
+
+#### Common Variations
+
+1. **Next Smaller Element**: Change `<` to `>` in comparison
+2. **Previous Greater Element**: Iterate from right to left
+3. **Circular Array**: Process array twice or use modulo indexing
+4. **Index-based vs Value-based**: Store indices for range queries, values for simple lookups
+
+#### Complexity Analysis
+
+- **Time**: O(n) - each element is pushed and popped at most once
+- **Space**: O(n) - stack/queue stores at most n elements
+
+#### Practice Problems
+
+1. **Next Greater Element I** (LeetCode 496)
+2. **Next Greater Element II** (Circular array, LeetCode 503)
+3. **Daily Temperatures** (LeetCode 739)
+4. **Largest Rectangle in Histogram** (LeetCode 84)
+5. **Trapping Rain Water** (LeetCode 42)
+6. **Sliding Window Maximum** (LeetCode 239)
+7. **Stock Span Problem** (GeeksforGeeks)
+8. **Sum of Subarray Minimums** (LeetCode 907)
 
 ## Part V: Summary
 

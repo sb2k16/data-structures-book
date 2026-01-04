@@ -1891,16 +1891,81 @@ public:
 
 ## 7.8 Performance Comparison
 
-### Algorithm Comparison Table
+### Comprehensive Algorithm Comparison Table
 
-| Algorithm | Time Complexity | Space Complexity | Best Use Case |
-|-----------|----------------|------------------|---------------|
-| Naive | O(n*m) | O(1) | Simple cases, small patterns |
-| Rabin-Karp | O(n+m) avg, O(n*m) worst | O(1) | Multiple pattern search |
-| KMP | O(n+m) | O(m) | Single pattern, general purpose |
-| Boyer-Moore | O(n/m) best, O(n*m) worst | O(m) | Large texts, single pattern |
-| Z-Algorithm | O(n+m) | O(n+m) | Pattern preprocessing |
-| Aho-Corasick | O(n+m+z) | O(m) | Multiple patterns |
+| Algorithm | Best Case | Average Case | Worst Case | Space Complexity | Preprocessing | When to Use |
+|-----------|-----------|--------------|------------|------------------|--------------|-------------|
+| **Naive** | O(n) | O(n*m) | O(n*m) | O(1) | None | • Small inputs (< 1000 chars)<br>• Short patterns (< 10 chars)<br>• Single search<br>• Teaching/learning |
+| **Rabin-Karp** | O(n+m) | O(n+m) | O(n*m) | O(1) | O(m) | • Multiple pattern search<br>• Streaming/online search<br>• Plagiarism detection<br>• When hash collisions are acceptable |
+| **KMP** | O(n+m) | O(n+m) | O(n+m) | O(m) | O(m) | • Single pattern, repeated searches<br>• General-purpose search<br>• DNA sequence matching<br>• Text editors (Ctrl+F) |
+| **Boyer-Moore** | O(n/m) | O(n) | O(n*m) | O(m) | O(m) | • Large texts (> 1M chars)<br>• Long patterns (> 100 chars)<br>• Large alphabet (text, Unicode)<br>• Production systems (grep, ripgrep) |
+| **Z-Algorithm** | O(n+m) | O(n+m) | O(n+m) | O(n+m) | O(m) | • Pattern preprocessing<br>• Finding all occurrences<br>• String periodicity<br>• When Z-array is needed |
+| **Aho-Corasick** | O(n+m+z) | O(n+m+z) | O(n+m+z) | O(m) | O(m) | • Multiple patterns simultaneously<br>• Intrusion detection systems<br>• Virus scanners<br>• Keyword filtering<br>• Hundreds/thousands of patterns |
+
+**Legend**:
+- `n` = text length
+- `m` = pattern length
+- `z` = total number of pattern occurrences
+
+### Detailed Complexity Analysis
+
+#### Time Complexity Breakdown
+
+**Naive Algorithm**:
+- **Best Case**: O(n) - Pattern not found, first character mismatch at each position
+- **Average Case**: O(n*m) - Random text and pattern
+- **Worst Case**: O(n*m) - Pattern like "AAA" in text "AAAAA...A"
+
+**Rabin-Karp Algorithm**:
+- **Best Case**: O(n+m) - No hash collisions, pattern found early
+- **Average Case**: O(n+m) - Good hash function, few collisions
+- **Worst Case**: O(n*m) - Many hash collisions requiring character-by-character verification
+
+**KMP Algorithm**:
+- **Best Case**: O(n+m) - Pattern found early
+- **Average Case**: O(n+m) - Consistent performance
+- **Worst Case**: O(n+m) - Guaranteed, no degradation
+
+**Boyer-Moore Algorithm**:
+- **Best Case**: O(n/m) - Large skips, pattern not found or found at end
+- **Average Case**: O(n) - Sublinear in practice for large alphabets
+- **Worst Case**: O(n*m) - Pattern like "AAA" in text "AAAAA...A" (bad character rule ineffective)
+
+**Z-Algorithm**:
+- **Best Case**: O(n+m) - Pattern found early
+- **Average Case**: O(n+m) - Consistent performance
+- **Worst Case**: O(n+m) - Guaranteed
+
+**Aho-Corasick Algorithm**:
+- **Best Case**: O(n+m+z) - Few matches
+- **Average Case**: O(n+m+z) - Moderate matches
+- **Worst Case**: O(n+m+z) - Many matches (z can be large)
+
+#### Space Complexity Breakdown
+
+- **Naive**: O(1) - No extra space beyond input
+- **Rabin-Karp**: O(1) - Only hash values stored
+- **KMP**: O(m) - LPS array of size m
+- **Boyer-Moore**: O(m) - Bad character table and good suffix table
+- **Z-Algorithm**: O(n+m) - Z-array for text and pattern
+- **Aho-Corasick**: O(m) - Trie structure, where m is total pattern length
+
+### Performance Characteristics Summary
+
+**Fastest in Practice**:
+1. **Boyer-Moore** - Often fastest for large texts with large alphabets
+2. **KMP** - Consistent and reliable
+3. **Aho-Corasick** - Best for multiple patterns
+
+**Most Memory Efficient**:
+1. **Naive** - O(1) space
+2. **Rabin-Karp** - O(1) space
+3. **KMP/Boyer-Moore** - O(m) space
+
+**Most Reliable**:
+1. **KMP** - Guaranteed O(n+m), no worst-case degradation
+2. **Z-Algorithm** - Guaranteed O(n+m)
+3. **Aho-Corasick** - Guaranteed O(n+m+z)
 
 ## 7.9 Choosing the Right String Search Algorithm
 
@@ -2098,7 +2163,152 @@ void processChunks(const string& text, const string& pattern,
 
 **For Production**: Most string search algorithms are naturally parallelizable. Use thread pools to process text chunks concurrently. See Section 3.5.10 for guidance on using libraries.
 
-## 7.11 Practical Applications
+## 7.11 Practical Applications and Use Cases
+
+### Detailed Use Cases by Algorithm
+
+#### Naive String Search
+
+**When to Use**:
+- **Teaching and Learning**: Simplest algorithm to understand string search concepts
+- **Small Inputs**: When text length < 1000 characters and pattern < 10 characters
+- **Single Search**: When you only need to search once (preprocessing overhead not worth it)
+- **Prototyping**: Quick implementation for testing
+
+**Real-World Examples**:
+- Simple text editors for small documents
+- Basic search functionality in small applications
+- Educational purposes and algorithm demonstrations
+
+**Limitations**:
+- Not suitable for large texts or repeated searches
+- Performance degrades significantly with longer patterns
+
+#### Rabin-Karp Algorithm
+
+**When to Use**:
+- **Multiple Pattern Search**: Searching for multiple patterns simultaneously
+- **Streaming/Online Search**: When text arrives in chunks or streams
+- **Plagiarism Detection**: Comparing documents for similar content
+- **Rolling Hash Applications**: When you need to compute hashes for sliding windows
+
+**Real-World Examples**:
+- **Plagiarism Detection Systems**: Compare documents for similar passages
+- **File Deduplication**: Find duplicate files by content hashing
+- **Network Packet Inspection**: Search for patterns in network traffic
+- **DNA Sequence Comparison**: Find similar subsequences in genetic data
+
+**Advantages**:
+- Efficient for multiple patterns
+- Can handle streaming input
+- Simple to implement
+- Good average-case performance
+
+**Limitations**:
+- Hash collisions can degrade to O(n*m)
+- Requires good hash function
+- Not as fast as Boyer-Moore for single pattern
+
+#### KMP (Knuth-Morris-Pratt) Algorithm
+
+**When to Use**:
+- **Single Pattern, Repeated Searches**: Preprocess once, search many times
+- **General-Purpose Search**: Reliable performance for most cases
+- **DNA Sequence Matching**: Finding patterns in genetic sequences
+- **Text Editors**: Search functionality (Ctrl+F)
+
+**Real-World Examples**:
+- **Text Editors**: Sublime Text, VS Code search functionality
+- **DNA Sequence Analysis**: Finding gene sequences in genomes
+- **Log Analysis**: Searching log files for specific patterns
+- **Code Search**: Finding function/class names in codebases (GitHub, Sourcegraph)
+
+**Advantages**:
+- Guaranteed O(n+m) worst-case performance
+- No performance degradation
+- Good for repeated searches
+- Works well with patterns containing repeated substrings
+
+**Limitations**:
+- Requires O(m) preprocessing space
+- Not as fast as Boyer-Moore for large alphabets
+- More complex than Naive algorithm
+
+#### Boyer-Moore Algorithm
+
+**When to Use**:
+- **Large Texts**: Text length > 1 million characters
+- **Long Patterns**: Pattern length > 100 characters
+- **Large Alphabets**: Text with many distinct characters (Unicode, natural language)
+- **Production Systems**: High-performance search requirements
+
+**Real-World Examples**:
+- **`grep` and `ripgrep`**: Command-line text search tools
+- **Search Engines**: Indexing and searching large document collections
+- **Database Systems**: Full-text search in databases
+- **Code Search Tools**: `ag` (The Silver Searcher), `rg` (ripgrep)
+- **Text Processing Pipelines**: Log analysis, data mining
+
+**Advantages**:
+- Often fastest in practice (sublinear average case)
+- Excellent for large alphabets
+- Used in production systems
+- Can skip many characters in best case
+
+**Limitations**:
+- Worst case can degrade to O(n*m) for small alphabets
+- More complex implementation
+- Requires O(m) preprocessing space
+
+#### Z-Algorithm
+
+**When to Use**:
+- **Pattern Preprocessing**: When you need the Z-array for other operations
+- **Finding All Occurrences**: Efficiently finding all pattern matches
+- **String Periodicity**: Detecting periodic patterns in strings
+- **Prefix Matching**: Finding longest common prefix
+
+**Real-World Examples**:
+- **String Matching Libraries**: Used internally in some search libraries
+- **Pattern Analysis**: Analyzing string patterns and periodicity
+- **Algorithm Competitions**: Competitive programming problems
+
+**Advantages**:
+- Guaranteed O(n+m) performance
+- Useful for string analysis
+- Can find all occurrences efficiently
+
+**Limitations**:
+- Higher space complexity O(n+m)
+- Less commonly used than KMP or Boyer-Moore
+- Specialized use cases
+
+#### Aho-Corasick Algorithm
+
+**When to Use**:
+- **Multiple Patterns Simultaneously**: Searching for hundreds or thousands of patterns
+- **Intrusion Detection**: Network security systems detecting attack patterns
+- **Virus Scanners**: Searching for virus signatures in files
+- **Keyword Filtering**: Content moderation, spam detection
+- **Bioinformatics**: Finding multiple gene sequences
+
+**Real-World Examples**:
+- **Intrusion Detection Systems (IDS)**: Snort, Suricata detecting attack patterns
+- **Antivirus Software**: Scanning files for virus signatures
+- **Content Moderation**: Filtering inappropriate content
+- **Search Engines**: Multi-keyword search in documents
+- **DNA Analysis**: Finding multiple gene sequences in genomes
+
+**Advantages**:
+- Optimal for multiple pattern search
+- Single pass through text
+- Efficient preprocessing
+- Used in production security systems
+
+**Limitations**:
+- More complex implementation
+- Requires O(m) space for automaton
+- Overkill for single pattern search
 
 ### Text Processing
 ```cpp

@@ -946,7 +946,357 @@ int main() {
 - **Recursion stack**: O(h) where h is the height of the tree
 - **Worst case**: O(n) for skewed trees
 
-## 6.8 Failure Modes and Common Pitfalls
+## 6.8 Self-Balancing Trees Overview
+
+While a standard Binary Search Tree (BST) provides O(log n) average-case performance, it can degrade to O(n) in the worst case when the tree becomes unbalanced (skewed). **Self-balancing trees** automatically maintain balance during insertions and deletions, guaranteeing O(log n) worst-case performance.
+
+### Why Self-Balancing Trees?
+
+**Problem with Standard BST**:
+- Inserting elements in sorted order creates a linked list: O(n) search time
+- Real-world data is often partially sorted
+- Performance becomes unpredictable
+
+**Solution**: Automatically rebalance the tree to maintain logarithmic height.
+
+### Types of Self-Balancing Trees
+
+#### 1. AVL Trees
+
+**Named after**: Adelson-Velsky and Landis (1962)
+
+**Key Property**: For every node, the heights of left and right subtrees differ by at most 1.
+
+**Balance Factor**: `balance(node) = height(left) - height(right)`
+- Must be -1, 0, or 1 for all nodes
+
+**Operations**:
+- **Search**: O(log n) worst-case
+- **Insert**: O(log n) worst-case (may require rotations)
+- **Delete**: O(log n) worst-case (may require rotations)
+
+**Rotations**:
+- **Single Rotation**: Left rotation or Right rotation
+- **Double Rotation**: Left-Right rotation or Right-Left rotation
+
+**When to Use**:
+- When you need guaranteed O(log n) performance
+- When search operations are more frequent than insertions/deletions
+- Applications requiring predictable performance
+
+**Trade-offs**:
+- ✅ Guaranteed O(log n) operations
+- ✅ More balanced than Red-Black trees (shorter average path)
+- ❌ More rotations during insertions/deletions
+- ❌ More complex implementation
+
+#### 2. Red-Black Trees
+
+**Key Properties**:
+1. Every node is either red or black
+2. Root is always black
+3. No two consecutive red nodes (red node cannot have red parent)
+4. Every path from root to null has the same number of black nodes
+
+**Operations**:
+- **Search**: O(log n) worst-case
+- **Insert**: O(log n) worst-case (may require color changes and rotations)
+- **Delete**: O(log n) worst-case (more complex than AVL)
+
+**When to Use**:
+- Standard library implementations (`std::map`, `std::set` in C++)
+- When insertions/deletions are frequent
+- When you need ordered iteration
+
+**Trade-offs**:
+- ✅ Fewer rotations than AVL trees
+- ✅ Good for frequent insertions/deletions
+- ✅ Used in many standard libraries
+- ❌ Less balanced than AVL (longer average path)
+- ❌ More complex deletion logic
+
+#### 3. B-Trees
+
+**Key Properties**:
+- Each node can have more than 2 children (multi-way tree)
+- All leaves are at the same level
+- Internal nodes have between `⌈m/2⌉` and `m` children (where m is the order)
+- Keys in a node are sorted
+
+**Operations**:
+- **Search**: O(log n) worst-case
+- **Insert**: O(log n) worst-case
+- **Delete**: O(log n) worst-case
+
+**When to Use**:
+- **Database systems**: Disk-based storage (minimizes disk I/O)
+- **File systems**: Directory structures
+- **Large datasets**: When data doesn't fit in memory
+
+**Why B-Trees for Databases?**:
+- **Minimizes disk I/O**: Each node can hold many keys (matches disk block size)
+- **Shallow trees**: Fewer levels mean fewer disk reads
+- **Cache-friendly**: Better locality than binary trees
+
+**Example**: A B-tree of order 1000 can store 1 billion keys in just 3 levels!
+
+**Trade-offs**:
+- ✅ Excellent for disk-based storage
+- ✅ Very shallow trees (fewer I/O operations)
+- ✅ Used in databases (MySQL, PostgreSQL)
+- ❌ More complex than binary trees
+- ❌ Overhead for small datasets
+
+### Comparison Table
+
+| Tree Type | Search | Insert | Delete | Balance | Use Case |
+|-----------|--------|--------|--------|---------|----------|
+| **Standard BST** | O(log n) avg<br>O(n) worst | O(log n) avg<br>O(n) worst | O(log n) avg<br>O(n) worst | No guarantee | Simple cases, random data |
+| **AVL Tree** | O(log n) | O(log n) | O(log n) | Strict (height diff ≤ 1) | Predictable performance |
+| **Red-Black Tree** | O(log n) | O(log n) | O(log n) | Relaxed (black height) | Standard libraries, frequent updates |
+| **B-Tree** | O(log n) | O(log n) | O(log n) | All leaves same level | Databases, file systems |
+
+### Decision Tree: Which Tree Structure to Use?
+
+```
+Do you need guaranteed O(log n) performance?
+├─ No → Standard BST (if data is random)
+│
+└─ Yes → Continue
+    │
+    Is data on disk (database/file system)?
+    ├─ Yes → B-Tree
+    │
+    └─ No → Continue
+        │
+        Are insertions/deletions frequent?
+        ├─ Yes → Red-Black Tree
+        │
+        └─ No → Continue
+            │
+            Do you need shortest average path?
+            ├─ Yes → AVL Tree
+            │
+            └─ No → Red-Black Tree (more common)
+```
+
+### Implementation Note
+
+Full implementations of self-balancing trees are complex and beyond the scope of this chapter. In practice:
+- **Use standard library**: `std::map`, `std::set` (Red-Black trees)
+- **Use specialized libraries**: For AVL or B-Trees if needed
+- **Understand the concepts**: Important for interviews and system design
+
+### Real-World Applications
+
+- **AVL Trees**: When you need guaranteed performance (real-time systems)
+- **Red-Black Trees**: C++ STL (`std::map`, `std::set`), Java `TreeMap`, `TreeSet`
+- **B-Trees**: MySQL, PostgreSQL, MongoDB indexes, file systems (NTFS, ext4)
+
+## 6.9 Tree Traversal Patterns Guide
+
+Understanding when to use each traversal order is crucial for solving tree problems efficiently.
+
+### When to Use Each Traversal
+
+#### Preorder Traversal (Root-Left-Right)
+
+**Use When**:
+- **Copying a tree**: Create a new tree with the same structure
+- **Serialization**: Convert tree to string/array
+- **Prefix notation**: Expression trees (e.g., `+ * 2 3 4`)
+- **Printing directory structure**: Show folder hierarchy
+- **Creating prefix expressions**: From expression trees
+
+**Example**: Serialize a tree
+```cpp
+void serialize(TreeNode* root, vector<int>& result) {
+    if (!root) {
+        result.push_back(-1);  // Null marker
+        return;
+    }
+    result.push_back(root->val);  // Root first
+    serialize(root->left, result);
+    serialize(root->right, result);
+}
+```
+
+#### Inorder Traversal (Left-Root-Right)
+
+**Use When**:
+- **BST operations**: Produces sorted order
+- **Finding kth smallest/largest**: In BST
+- **Validating BST**: Check if inorder is sorted
+- **Expression evaluation**: Infix notation (e.g., `2 * 3 + 4`)
+- **Printing sorted data**: From BST
+
+**Example**: Validate BST
+```cpp
+bool isValidBST(TreeNode* root) {
+    vector<int> values;
+    inorder(root, values);
+    for (int i = 1; i < values.size(); i++) {
+        if (values[i] <= values[i-1]) return false;
+    }
+    return true;
+}
+```
+
+#### Postorder Traversal (Left-Right-Root)
+
+**Use When**:
+- **Deleting a tree**: Delete children before parent
+- **Calculating expressions**: Postfix notation (e.g., `2 3 * 4 +`)
+- **Bottom-up processing**: Need children processed before parent
+- **Finding height/depth**: Process children first
+- **Tree destruction**: Free memory correctly
+
+**Example**: Delete tree
+```cpp
+void deleteTree(TreeNode* root) {
+    if (!root) return;
+    deleteTree(root->left);   // Delete left subtree
+    deleteTree(root->right);  // Delete right subtree
+    delete root;              // Delete root last
+}
+```
+
+#### Level-Order Traversal (BFS)
+
+**Use When**:
+- **Printing level by level**: Show tree structure
+- **Finding level of a node**: BFS naturally processes by level
+- **Finding minimum depth**: Shortest path to leaf
+- **Zigzag traversal**: Alternate left-right per level
+- **Right side view**: Last node at each level
+
+**Example**: Level-order with level information
+```cpp
+vector<vector<int>> levelOrder(TreeNode* root) {
+    vector<vector<int>> result;
+    if (!root) return result;
+    
+    queue<TreeNode*> q;
+    q.push(root);
+    
+    while (!q.empty()) {
+        int size = q.size();
+        vector<int> level;
+        
+        for (int i = 0; i < size; i++) {
+            TreeNode* node = q.front();
+            q.pop();
+            level.push_back(node->val);
+            
+            if (node->left) q.push(node->left);
+            if (node->right) q.push(node->right);
+        }
+        result.push_back(level);
+    }
+    return result;
+}
+```
+
+### Iterative vs Recursive Trade-offs
+
+#### Recursive Approach
+
+**Advantages**:
+- ✅ More intuitive and readable
+- ✅ Natural for tree problems
+- ✅ Less code
+- ✅ Easy to understand
+
+**Disadvantages**:
+- ❌ Stack overflow risk for deep trees
+- ❌ Function call overhead
+- ❌ Harder to debug (deep call stack)
+
+**When to Use**:
+- Tree depth is reasonable (< 1000 levels)
+- Code clarity is priority
+- Interview settings (unless explicitly asked for iterative)
+
+#### Iterative Approach
+
+**Advantages**:
+- ✅ No stack overflow risk
+- ✅ Better performance (no function calls)
+- ✅ More control over execution
+- ✅ Easier to add additional logic
+
+**Disadvantages**:
+- ❌ More complex code
+- ❌ Requires explicit stack/queue
+- ❌ More error-prone
+
+**When to Use**:
+- Very deep trees (risk of stack overflow)
+- Performance-critical code
+- Production systems
+- When explicitly required
+
+### Morris Traversal (O(1) Space)
+
+**Morris Traversal** allows inorder traversal with O(1) extra space (no stack, no recursion).
+
+**Key Idea**: Use threaded binary tree concept - temporarily modify tree structure, then restore.
+
+**When to Use**:
+- Memory-constrained environments
+- Very large trees
+- When O(1) space is required
+
+**Complexity**: O(n) time, O(1) space
+
+**Note**: Advanced technique, rarely needed in interviews but impressive to know.
+
+### Traversal Pattern Decision Guide
+
+```
+What do you need to do?
+│
+├─ Process root before children?
+│   └─ Preorder
+│
+├─ Process in sorted order (BST)?
+│   └─ Inorder
+│
+├─ Process children before root?
+│   └─ Postorder
+│
+├─ Process level by level?
+│   └─ Level-order (BFS)
+│
+└─ Need O(1) space?
+    └─ Morris Traversal (advanced)
+```
+
+### Common Patterns
+
+1. **Two Traversals Together**:
+   - Preorder + Inorder → Reconstruct tree
+   - Inorder + Postorder → Reconstruct tree
+
+2. **Traversal with State**:
+   - Pass additional parameters (sum, path, etc.)
+   - Modify traversal to track state
+
+3. **Multiple Passes**:
+   - First pass: Collect information
+   - Second pass: Use information
+
+### Practice Problems
+
+1. **Serialize and Deserialize Binary Tree** (LeetCode 297) - Preorder
+2. **Validate Binary Search Tree** (LeetCode 98) - Inorder
+3. **Binary Tree Maximum Path Sum** (LeetCode 124) - Postorder
+4. **Binary Tree Level Order Traversal** (LeetCode 102) - Level-order
+5. **Construct Binary Tree from Preorder and Inorder** (LeetCode 105) - Both
+6. **Binary Tree Right Side View** (LeetCode 199) - Level-order
+7. **Kth Smallest Element in BST** (LeetCode 230) - Inorder
+
+## 6.10 Failure Modes and Common Pitfalls
 
 Understanding common failure modes helps avoid bugs and performance issues.
 
