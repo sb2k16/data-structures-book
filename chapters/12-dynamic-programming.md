@@ -1,21 +1,67 @@
 # Chapter 12: Dynamic Programming
 
-## 12.1 Introduction to Dynamic Programming
+## 12.1 Problem Statement & Motivation
+
+### What Problem Does Dynamic Programming Solve?
+
+Many problems have **exponential time complexity** when solved naively:
+
+- **Fibonacci Sequence**: Naive recursion is O(2^n)
+- **Longest Common Subsequence**: Brute force is exponential
+- **Coin Change**: Trying all combinations is exponential
+- **Knapsack Problem**: Checking all subsets is exponential
+
+**Naive Approaches and Their Limitations**:
+
+- **Brute Force**: Try all possibilities → exponential time
+- **Recursion**: Natural but recalculates same subproblems → exponential time
+- **Greedy**: Fast but doesn't always work → incorrect results
+
+**The Dynamic Programming Solution**: DP optimizes recursive solutions by storing results of subproblems, transforming exponential time to polynomial time (often O(n²) or O(n³)).
+
+### When to Use Dynamic Programming
+
+✅ **Use DP when**:
+- Problem has optimal substructure (optimal solution contains optimal subproblem solutions)
+- Problem has overlapping subproblems (same subproblems solved multiple times)
+- Need to optimize (minimize/maximize) or count possibilities
+- Brute force would be exponential
+
+✅ **Real-world applications**:
+- Sequence alignment (bioinformatics)
+- Resource allocation (knapsack variants)
+- Path finding (shortest paths with constraints)
+- Text processing (edit distance, longest common subsequence)
+- Game theory (optimal strategies)
+- Compiler optimization (code generation)
+
+### When NOT to Use Dynamic Programming
+
+❌ **Avoid DP when**:
+- No overlapping subproblems (use divide & conquer)
+- Greedy algorithm works (simpler and faster)
+- Problem doesn't have optimal substructure
+- Space constraints are severe (DP often uses O(n) or O(n²) space)
+
+**Key Trade-off**: DP trades space for time, storing subproblem results to avoid recalculation.
+
+## 12.2 Conceptual Overview
 
 **Dynamic Programming (DP)** is a powerful algorithmic technique for solving complex problems by breaking them down into simpler subproblems. It's particularly effective for optimization problems where we need to find the best solution among many possible solutions.
+
+### Intuitive Explanation
+
+Think of DP like solving a jigsaw puzzle:
+- **Subproblems**: Individual puzzle pieces
+- **Optimal Substructure**: Each piece fits optimally with adjacent pieces
+- **Memoization**: Remember where each piece goes (don't try same placement twice)
+- **Tabulation**: Build solution systematically from bottom up
 
 ### Key Principles of Dynamic Programming
 
 1. **Optimal Substructure**: The optimal solution to a problem contains optimal solutions to its subproblems
 2. **Overlapping Subproblems**: The same subproblems are solved multiple times in a recursive approach
-3. **Memoization**: Store results of subproblems to avoid redundant calculations
-
-### When to Use Dynamic Programming
-
-- **Optimization Problems**: Finding minimum/maximum values
-- **Counting Problems**: Counting the number of ways to do something
-- **Decision Problems**: Making optimal choices at each step
-- **Overlapping Subproblems**: Same subproblems appear multiple times
+3. **Memoization/Tabulation**: Store results of subproblems to avoid redundant calculations
 
 ### DP vs. Other Approaches
 
