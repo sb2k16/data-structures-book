@@ -362,11 +362,17 @@ Dijkstra's algorithm for shortest paths is greedy because it always picks the un
 
 **Key Insight**: Once a vertex is processed, its shortest distance is finalized. This is the greedy choice property - we commit to the locally best option.
 
-## 16.10 When Greedy Fails: Counterexamples
+## 16.10 When Greedy Fails: Counterexamples and Analysis
 
-Understanding when greedy algorithms fail is crucial for choosing the right approach.
+Understanding when greedy algorithms fail is crucial for choosing the right approach. Greedy algorithms fail when the **greedy choice property** doesn't hold - when locally optimal choices don't lead to globally optimal solutions.
 
-### Example: 0-1 Knapsack (Greedy Fails)
+### Why Greedy Fails: The Core Issue
+
+**Greedy algorithms assume**: Making the best local choice will lead to the best global solution.
+
+**When this breaks**: Future choices depend on past choices in ways the greedy algorithm doesn't consider. The greedy choice might prevent access to better future options.
+
+### Example 1: 0-1 Knapsack (Greedy Fails)
 
 The fractional knapsack (Section 16.3) works with greedy, but 0-1 knapsack doesn't:
 
@@ -396,17 +402,34 @@ int knapsackGreedy(vector<Item>& items, int capacity) {
 }
 
 // Example where greedy fails:
-// Items: (value=60, weight=10), (value=100, weight=20), (value=120, weight=30)
+// Items: (value=60, weight=10, ratio=6.0), 
+//        (value=100, weight=20, ratio=5.0), 
+//        (value=120, weight=30, ratio=4.0)
 // Capacity: 50
-// Greedy: Takes item 1 (60) + item 2 (100) = 160
-// Optimal: Takes item 2 (100) + item 3 (120) = 220
+// 
+// Greedy approach:
+//   1. Take item 1 (60, weight=10) → remaining capacity: 40
+//   2. Take item 2 (100, weight=20) → remaining capacity: 20
+//   3. Can't take item 3 (needs 30)
+//   Total value: 60 + 100 = 160
+//
+// Optimal solution:
+//   1. Take item 2 (100, weight=20) → remaining capacity: 30
+//   2. Take item 3 (120, weight=30) → remaining capacity: 0
+//   Total value: 100 + 120 = 220
+//
+// Greedy fails because taking the best ratio item (item 1) 
+// prevents us from taking a better combination (items 2 and 3)
 ```
 
-**Why Greedy Fails**: Once we take an item, we can't take a fraction of it. The greedy choice (best ratio) might prevent us from taking better combinations.
+**Why Greedy Fails**: 
+- Once we take an item, we can't take a fraction of it (unlike fractional knapsack)
+- The greedy choice (best ratio) might prevent us from taking better combinations
+- We need to consider all possible combinations, not just locally optimal choices
 
-**Solution**: Use Dynamic Programming (Chapter 12) for 0-1 Knapsack.
+**Solution**: Use Dynamic Programming (Chapter 12) for 0-1 Knapsack - consider all subsets.
 
-### Example: Coin Change (Greedy Fails for Some Denominations)
+### Example 2: Coin Change (Greedy Fails for Non-Canonical Systems)
 
 Greedy works for standard US coins (1, 5, 10, 25) but fails for arbitrary denominations:
 
@@ -423,13 +446,88 @@ int coinChangeGreedy(vector<int>& coins, int amount) {
     return amount == 0 ? count : -1; // May not find solution even if one exists
 }
 
-// Example where greedy fails:
+// Example 1: Canonical system (greedy works)
+// Coins: [1, 5, 10, 25], Amount: 67
+// Greedy: 25 + 25 + 10 + 5 + 1 + 1 = 6 coins
+// Optimal: Same (greedy is optimal)
+
+// Example 2: Non-canonical system (greedy fails)
 // Coins: [1, 3, 4], Amount: 6
 // Greedy: 4 + 1 + 1 = 3 coins
 // Optimal: 3 + 3 = 2 coins
+//
+// Why greedy fails:
+// - Greedy takes largest coin (4) first
+// - This leaves 2, which requires two 1s
+// - But optimal solution uses two 3s instead
 ```
 
+**Why Greedy Fails**:
+- For non-canonical systems, using a larger coin doesn't always lead to fewer total coins
+- The greedy choice (largest coin) might force us to use many small coins later
+- Optimal solution might use multiple medium coins instead
+
 **Solution**: Use Dynamic Programming for arbitrary coin systems.
+
+### Example 3: Shortest Path with Negative Edges (Greedy Fails)
+
+Dijkstra's algorithm (greedy) fails when edges have negative weights:
+
+```cpp
+// Graph with negative edge:
+//    A --3--> B
+//    |        |
+//    2        -5
+//    |        |
+//    v        v
+//    C --1--> D
+//
+// Shortest path from A to D:
+// Greedy (Dijkstra): A -> B -> D = 3 + (-5) = -2
+// But wait! A -> C -> D = 2 + 1 = 3
+// Actually, A -> B -> C -> D = 3 + (-5) + 1 = -1 (even better!)
+//
+// Problem: Dijkstra's greedy choice (closest unvisited vertex) 
+// doesn't work with negative edges because it assumes all future 
+// edges are non-negative
+```
+
+**Why Greedy Fails**:
+- Dijkstra assumes all edges are non-negative
+- With negative edges, a longer path might be cheaper
+- Greedy choice (closest vertex) might lock in a suboptimal path
+
+**Solution**: Use Bellman-Ford algorithm (Chapter 11) for graphs with negative edges.
+
+### Common Patterns When Greedy Fails
+
+1. **Interdependent Choices**: When choices affect future options in complex ways
+2. **Non-Canonical Systems**: When local optimal doesn't imply global optimal
+3. **Negative Weights/Costs**: When assumptions about costs break down
+4. **Combinatorial Constraints**: When you need to consider all combinations
+5. **NP-Hard Problems**: When the problem itself is computationally hard
+
+### When to Use Greedy vs Dynamic Programming
+
+| Situation | Use Greedy | Use Dynamic Programming |
+|-----------|------------|------------------------|
+| **Fractional choices allowed** | ✅ Yes (fractional knapsack) | ❌ No |
+| **Choices are independent** | ✅ Yes (activity selection) | ❌ No |
+| **Canonical system** | ✅ Yes (standard coin change) | ❌ No |
+| **Need all combinations** | ❌ No | ✅ Yes (0-1 knapsack) |
+| **Non-canonical system** | ❌ No | ✅ Yes (arbitrary coin change) |
+| **Negative weights** | ❌ No | ✅ Yes (Bellman-Ford) |
+| **Optimal substructure** | ✅ If greedy choice property holds | ✅ Always |
+
+### Key Takeaway
+
+**Greedy fails when**:
+- The greedy choice property doesn't hold
+- Local optimal choices don't lead to global optimal
+- Future choices depend on past choices in non-obvious ways
+- The problem requires considering all possible combinations
+
+**Always verify** that your greedy algorithm produces optimal results before using it in production!
 
 ## 16.11 Greedy Algorithm Patterns
 
@@ -451,14 +549,170 @@ int coinChangeGreedy(vector<int>& coins, int amount) {
 
 ## 16.12 Proving Greedy Correctness
 
+Proving that a greedy algorithm produces optimal results is crucial. Unlike dynamic programming (which always produces optimal results), greedy algorithms require careful proof.
+
+### Two Key Properties for Greedy Correctness
+
+1. **Greedy Choice Property**: A global optimum can be reached by making locally optimal choices
+2. **Optimal Substructure**: The problem can be broken down into subproblems, and optimal solutions to subproblems contribute to the global optimum
+
 ### Method 1: Greedy Choice Property
-Show that a greedy choice is part of some optimal solution.
+
+**Goal**: Show that a greedy choice is part of some optimal solution.
+
+**Approach**: 
+1. Assume there exists an optimal solution that doesn't include the greedy choice
+2. Show that we can modify this solution to include the greedy choice without making it worse
+3. Conclude that the greedy choice is part of some optimal solution
+
+**Example: Activity Selection**
+
+**Greedy Choice**: Select the activity with the earliest finish time.
+
+**Proof**:
+1. Let `S` be an optimal solution
+2. Let `a` be the activity with earliest finish time
+3. If `a` is in `S`, we're done
+4. If `a` is not in `S`, let `a'` be the first activity in `S`
+5. Since `a` finishes before `a'`, we can replace `a'` with `a` in `S`
+6. The new solution is still optimal (same number of activities)
+7. Therefore, the greedy choice is part of some optimal solution
 
 ### Method 2: Exchange Argument
-Show that any solution can be transformed to include the greedy choice without making it worse.
+
+**Goal**: Show that any solution can be transformed to include the greedy choice without making it worse.
+
+**Approach**:
+1. Start with any solution (optimal or not)
+2. Show that if it doesn't include the greedy choice, we can exchange elements to include it
+3. Prove that the exchange doesn't make the solution worse
+4. Repeat until the solution matches the greedy solution
+
+**Example: Fractional Knapsack**
+
+**Greedy Choice**: Take items in order of value/weight ratio (descending).
+
+**Proof**:
+1. Let `S` be any solution (optimal or not)
+2. If `S` doesn't match the greedy order, find the first position where it differs
+3. Exchange the items to match greedy order
+4. Show that this exchange doesn't decrease total value (because greedy has better ratio)
+5. Continue until `S` matches greedy solution
+6. Therefore, greedy solution is at least as good as any other solution
 
 ### Method 3: Induction
-Prove that making greedy choices leads to optimal solution.
+
+**Goal**: Prove that making greedy choices leads to optimal solution.
+
+**Approach**:
+1. **Base Case**: Show greedy works for the smallest problem
+2. **Inductive Step**: Assume greedy works for problems of size `k`
+3. **Prove**: Show that adding the greedy choice for size `k+1` maintains optimality
+4. **Conclusion**: By induction, greedy works for all problem sizes
+
+**Example: Minimum Spanning Tree (Kruskal's Algorithm)**
+
+**Greedy Choice**: Add the edge with minimum weight that doesn't form a cycle.
+
+**Proof by Induction**:
+1. **Base Case**: For 1 vertex, no edges needed - optimal
+2. **Inductive Hypothesis**: Assume Kruskal's produces MST for `k` vertices
+3. **Inductive Step**: 
+   - Consider adding edge `e` with minimum weight
+   - If `e` doesn't form a cycle, it must be in some MST (cut property)
+   - Adding `e` maintains optimality
+4. **Conclusion**: Kruskal's produces MST for all sizes
+
+### Method 4: Cut Property / Matroid Theory
+
+**Advanced Method**: For certain problems (like MST), use structural properties.
+
+**Cut Property** (for MST):
+- For any cut in the graph, the minimum weight edge crossing the cut is in some MST
+- Greedy algorithms that always choose minimum crossing edges produce MSTs
+
+**Matroid Theory**:
+- Many greedy problems can be modeled as matroids
+- Greedy algorithm is optimal for matroid problems
+- Examples: Minimum Spanning Tree, Activity Selection
+
+### Step-by-Step Proof Template
+
+**Template for Proving Greedy Correctness**:
+
+1. **Define the Greedy Choice**: Clearly state what choice the algorithm makes at each step
+
+2. **State the Claim**: "The greedy algorithm produces an optimal solution"
+
+3. **Prove Greedy Choice Property**:
+   - Show that the greedy choice is part of some optimal solution
+   - Use exchange argument or direct proof
+
+4. **Prove Optimal Substructure**:
+   - Show that after making the greedy choice, the remaining problem is a smaller instance of the same problem
+   - Show that optimal solution to subproblem + greedy choice = optimal solution
+
+5. **Combine**: Use induction or direct argument to show greedy produces optimal solution
+
+### Example: Complete Proof for Activity Selection
+
+**Problem**: Select maximum number of non-overlapping activities.
+
+**Greedy Algorithm**: 
+1. Sort activities by finish time
+2. Select first activity
+3. For each remaining activity, if it starts after last selected finishes, select it
+
+**Proof**:
+
+**Step 1: Greedy Choice Property**
+- Let `a` be the activity with earliest finish time
+- Let `S` be an optimal solution
+- If `a` is in `S`, done
+- If `a` is not in `S`, let `a'` be the first activity in `S`
+- Since `a` finishes before `a'`, we can replace `a'` with `a`
+- New solution has same size, so still optimal
+- Therefore, greedy choice is part of some optimal solution
+
+**Step 2: Optimal Substructure**
+- After selecting `a`, remaining problem: select maximum activities from those starting after `a` finishes
+- This is the same problem (activity selection) on a smaller set
+- If we have optimal solution `S'` to subproblem, then `{a} ∪ S'` is optimal for original problem
+
+**Step 3: Conclusion**
+- By induction: greedy choice + optimal subproblem = optimal solution
+- Therefore, greedy algorithm produces optimal solution
+
+### Common Proof Techniques Summary
+
+| Technique | When to Use | Example |
+|-----------|-------------|---------|
+| **Exchange Argument** | Can swap elements | Activity Selection, Fractional Knapsack |
+| **Induction** | Problem has optimal substructure | MST, Activity Selection |
+| **Cut Property** | Graph problems | Minimum Spanning Tree |
+| **Contradiction** | Assume greedy is wrong, derive contradiction | Many problems |
+| **Matroid Theory** | Problem is a matroid | Greedy is always optimal for matroids |
+
+### Practice: Proving Your Own Greedy Algorithms
+
+**Checklist for Proving Greedy Correctness**:
+
+- [ ] Clearly define the greedy choice
+- [ ] Prove greedy choice property (greedy choice is in some optimal solution)
+- [ ] Prove optimal substructure (subproblem + greedy choice = optimal)
+- [ ] Use appropriate proof technique (exchange, induction, etc.)
+- [ ] Handle edge cases and boundary conditions
+- [ ] Verify with counterexamples (make sure greedy doesn't fail)
+
+### Key Takeaway
+
+**Proving greedy correctness is essential** because:
+- Greedy algorithms don't always produce optimal results
+- Proof gives confidence that the algorithm works
+- Understanding the proof helps identify when greedy fails
+- Proof techniques are valuable for algorithm design
+
+**Remember**: If you can't prove your greedy algorithm is correct, it might not be! Always verify with test cases and consider using dynamic programming if proof is difficult.
 
 ## 16.13 Key Takeaways
 
