@@ -221,27 +221,29 @@ public:
 
 ### 11.3.1.1 Systems Perspective: Memory Layout and Cache Behavior
 
-Understanding graph representation at the system level reveals critical performance trade-offs.
+Understanding graph representation at the system level reveals critical performance trade-offs. This section applies the memory hierarchy concepts from [Chapter 3.6](03.6-memory-hierarchy-and-performance.md) to graph representations.
+
+For comprehensive coverage of memory hierarchy and cache behavior, see Chapter 3.6. Here we focus on graph-specific implications.
 
 #### Memory Layout Comparison
 
-**Adjacency Matrix:**
+**Adjacency Matrix** (see Section 3.6.6 for contiguous memory):
 - **Memory Layout**: Contiguous 2D array (like 2D arrays from Chapter 3)
-- **Cache Performance**: Excellent for dense graphs - sequential access patterns
+- **Cache Performance**: Excellent for dense graphs - sequential access patterns (Section 3.6.4)
 - **Memory Overhead**: O(V²) - significant for large graphs
 - **Access Pattern**: Random access for edge queries, but matrix is cache-friendly
 
-**Adjacency List:**
+**Adjacency List** (see Section 3.6.6 for non-contiguous memory):
 - **Memory Layout**: Array of linked lists (combines arrays from Chapter 3 with linked lists from Chapter 4)
-- **Cache Performance**: Poor - pointer chasing causes cache misses
+- **Cache Performance**: Poor - pointer chasing causes cache misses (Section 3.6.4)
 - **Memory Overhead**: O(V + E) - efficient for sparse graphs
 - **Access Pattern**: Sequential within each list, but jumping between lists hurts cache
 
-**Performance Comparison (Real-World):**
+**Performance Comparison** (see Section 3.6.5 for CPU cycle details):
 ```
 Operation          | Adjacency Matrix | Adjacency List
 -------------------|------------------|---------------
-Edge Query         | ~5 cycles        | ~50-100 cycles
+Edge Query         | ~5-10 cycles      | ~50-200 cycles
 Iterate Neighbors  | O(V) scans       | O(degree) - cache-friendly
 Memory (sparse)    | O(V²)            | O(V + E) - much better
 Cache Misses       | 0-1 per query    | 2-5 per neighbor

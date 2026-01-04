@@ -273,17 +273,19 @@ public:
 
 ### 6.2.2 Systems Perspective: Memory Layout and Cache Behavior
 
-Trees use pointer-based structures, which have different cache characteristics than the contiguous arrays we saw in Chapter 3.
+Trees use pointer-based structures, which have different cache characteristics than the contiguous arrays we saw in Chapter 3. This section applies the memory hierarchy concepts from [Chapter 3.6](03.6-memory-hierarchy-and-performance.md) to trees.
+
+For comprehensive coverage of memory hierarchy and cache behavior, see Chapter 3.6. Here we focus on tree-specific implications.
 
 #### Memory Layout
 
-**Pointer-Based Trees:**
+**Pointer-Based Trees** (see Section 3.6.6 for non-contiguous memory layouts):
 - **Non-Contiguous Memory**: Nodes allocated separately (like linked lists from Chapter 4)
-- **Cache Performance**: Poor - pointer chasing causes cache misses
+- **Cache Performance**: Poor - pointer chasing causes cache misses (Section 3.6.4)
 - **Memory Overhead**: ~24-32 bytes per node (data + 2-3 pointers)
-- **Access Pattern**: Traversal follows pointers → unpredictable memory access
+- **Access Pattern**: Traversal follows pointers → unpredictable memory access (random access)
 
-**Comparison with Arrays (Chapter 3):**
+**Comparison with Arrays** (see Section 3.6.6):
 ```
 Structure    | Memory Layout    | Cache Misses/Op | Memory/Element
 -------------|------------------|-----------------|----------------
@@ -293,10 +295,11 @@ Tree Node    | Scattered        | 2-5             | 24-32 bytes
 
 #### Cache Behavior
 
-**Tree Traversal:**
-- **DFS**: Follows pointers → 2-5 cache misses per level
+**Tree Traversal** (see Section 3.6.4 for random access performance):
+- **DFS**: Follows pointers → 2-5 cache misses per level (~100-300 cycles each)
 - **BFS**: Uses queue (Chapter 5) → additional cache misses
 - **Search**: O(log n) levels → O(log n) cache misses in balanced tree
+- **Performance**: ~50-200 cycles per node access (random access pattern)
 
 **Why Trees Are Slower Than Arrays:**
 - **Arrays** (Chapter 3): Sequential access → prefetcher helps → 0-1 misses

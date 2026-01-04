@@ -13,33 +13,35 @@ An **array** is a collection of elements of the same data type stored in contigu
 
 ### 3.1.1 Memory Layout and Cache Behavior
 
-Understanding how arrays work at the system level is crucial for performance.
+Understanding how arrays work at the system level is crucial for performance. This section applies the memory hierarchy concepts from [Chapter 3.6](03.6-memory-hierarchy-and-performance.md) to arrays.
+
+For comprehensive coverage of memory hierarchy, cache behavior, and performance, see Chapter 3.6. Here we focus on array-specific implications.
 
 #### Memory Layout
 
-Arrays are stored in **contiguous memory blocks**:
+Arrays are stored in **contiguous memory blocks** (see Section 3.6.6 for memory layout details):
 ```
 Memory addresses: [base] [base+4] [base+8] [base+12] [base+16]
 Array indices:       0       1       2        3        4
 ```
 
 **Why This Matters:**
-- **Cache Efficiency**: Contiguous memory enables excellent cache locality
-- **Prefetching**: CPUs can predict and load adjacent elements
+- **Cache Efficiency**: Contiguous memory enables excellent cache locality (Section 3.6.4)
+- **Prefetching**: CPUs can predict and load adjacent elements (sequential access)
 - **Memory Fragmentation**: Large arrays may fail to allocate if memory is fragmented
 - **Resizing Cost**: Dynamic arrays (vectors) may need to reallocate entire block
 
 #### Cache Behavior
 
-Arrays excel at cache performance:
+Arrays excel at cache performance due to their contiguous layout (see Section 3.6.4 for sequential vs. random access):
 - **Spatial Locality**: Accessing `arr[i]` often brings `arr[i+1]`, `arr[i+2]` into cache
-- **Sequential Access**: Iterating through arrays is extremely fast
-- **Random Access**: Still O(1), but may cause cache misses if elements are far apart
+- **Sequential Access**: Iterating through arrays is extremely fast (~5-10 cycles per element)
+- **Random Access**: Still O(1), but may cause cache misses if elements are far apart (~50-200 cycles)
 
-**Real-World Implication**: 
-- Sequential array access: ~1-3 CPU cycles per element
-- Random array access: ~10-100 CPU cycles (cache miss penalty)
-- Linked list access: ~100-300 CPU cycles (pointer chasing, cache misses)
+**Real-World Performance** (see Section 3.6.5 for CPU cycle details): 
+- Sequential array access: ~5-10 CPU cycles per element (cache hit)
+- Random array access: ~50-200 CPU cycles (cache miss penalty)
+- Linked list access: ~100-300 CPU cycles (pointer chasing, see Chapter 4)
 
 #### When Arrays Become a Bottleneck
 
