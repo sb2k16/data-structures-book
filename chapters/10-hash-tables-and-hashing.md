@@ -1459,23 +1459,157 @@ The **load factor** is the ratio of the number of elements to the number of buck
 Load Factor = Number of Elements / Number of Buckets
 ```
 
-### 10.6.1 Systems Perspective: Memory Layout and Rehashing Costs
+### 10.6.1 Systems Perspective: Memory Hierarchy and Performance
 
-Understanding hash table behavior at the system level reveals critical performance considerations.
+Understanding hash table behavior at the system level reveals critical performance considerations. Modern computers have a complex memory hierarchy that dramatically affects hash table performance.
+
+#### The Memory Hierarchy
+
+Modern computer systems have multiple levels of memory, each with different characteristics:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ CPU Registers                                            │
+│ • Access time: ~1 CPU cycle (0.3-0.5 ns)                │
+│ • Size: ~100-200 bytes                                   │
+│ • Managed by: Compiler/CPU                               │
+└─────────────────────────────────────────────────────────┘
+                    ↓ (miss)
+┌─────────────────────────────────────────────────────────┐
+│ L1 Cache (Level 1)                                      │
+│ • Access time: ~3-5 CPU cycles (1-2 ns)                  │
+│ • Size: 32-64 KB per core (data + instruction)          │
+│ • Bandwidth: ~500-1000 GB/s                              │
+│ • Managed by: Hardware (automatic)                       │
+└─────────────────────────────────────────────────────────┘
+                    ↓ (miss)
+┌─────────────────────────────────────────────────────────┐
+│ L2 Cache (Level 2)                                      │
+│ • Access time: ~10-20 CPU cycles (3-7 ns)               │
+│ • Size: 256 KB - 1 MB per core                           │
+│ • Bandwidth: ~200-400 GB/s                               │
+│ • Managed by: Hardware (automatic)                       │
+└─────────────────────────────────────────────────────────┘
+                    ↓ (miss)
+┌─────────────────────────────────────────────────────────┐
+│ L3 Cache (Level 3, Shared)                              │
+│ • Access time: ~40-75 CPU cycles (10-20 ns)              │
+│ • Size: 8-32 MB (shared across cores)                    │
+│ • Bandwidth: ~100-200 GB/s                               │
+│ • Managed by: Hardware (automatic)                       │
+└─────────────────────────────────────────────────────────┘
+                    ↓ (miss)
+┌─────────────────────────────────────────────────────────┐
+│ Main Memory (RAM)                                        │
+│ • Access time: ~100-300 CPU cycles (50-100 ns)          │
+│ • Size: 8-128 GB typical                                 │
+│ • Bandwidth: ~20-50 GB/s                                 │
+│ • Managed by: Operating System                            │
+└─────────────────────────────────────────────────────────┘
+                    ↓ (page fault)
+┌─────────────────────────────────────────────────────────┐
+│ Disk Storage (SSD/HDD)                                   │
+│ • Access time: ~100,000-10,000,000 cycles (10 μs-10 ms) │
+│ • Size: 256 GB - 4 TB typical                            │
+│ • Bandwidth: ~0.5-3 GB/s (SSD), ~0.1 GB/s (HDD)         │
+│ • Managed by: Operating System                            │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Key Insight**: Each level is 10-100x slower than the previous level, but also 10-100x larger. The goal is to keep frequently accessed data in faster levels.
+
+#### Cache Lines and Cache Misses
+
+**Cache Line**: The smallest unit of data that can be transferred between cache levels. Typically 64 bytes on modern x86-64 systems.
+
+**Cache Hit**: When requested data is found in cache. This is fast:
+- L1 hit: ~1-2 ns (3-5 cycles)
+- L2 hit: ~3-7 ns (10-20 cycles)
+- L3 hit: ~10-20 ns (40-75 cycles)
+
+**Cache Miss**: When requested data is not in cache. This triggers a fetch from the next level:
+- L1 miss → L2: ~10-20 cycles
+- L2 miss → L3: ~40-75 cycles
+- L3 miss → RAM: ~100-300 cycles (cache miss penalty)
+- RAM miss → Disk: ~10,000-10,000,000 cycles (page fault)
+
+**Cache Miss Types**:
+1. **Compulsory Miss (Cold Miss)**: First access to a memory location
+2. **Capacity Miss**: Cache is too small to hold all needed data
+3. **Conflict Miss**: Multiple memory locations map to the same cache line
+4. **Coherence Miss**: Cache line invalidated by another CPU core (multi-threaded)
+
+#### Sequential vs. Random Memory Access
+
+**Sequential Access** (Cache-Friendly):
+```
+Access pattern: [0] → [1] → [2] → [3] → [4] → ...
+```
+- **Prefetching**: CPU predicts next access and loads cache lines ahead
+- **Cache efficiency**: ~90-95% hit rate
+- **Bandwidth**: Can saturate memory bandwidth (~20-50 GB/s)
+- **Example**: Linear probing with good distribution, array iteration
+
+**Random Access** (Cache-Unfriendly):
+```
+Access pattern: [42] → [17] → [99] → [3] → [78] → ...
+```
+- **No prefetching**: CPU cannot predict next access
+- **Cache efficiency**: ~50-70% hit rate (depends on working set size)
+- **Bandwidth**: Limited by cache miss latency (~5-10 GB/s effective)
+- **Example**: Hash table with poor distribution, pointer chasing in chaining
+
+**Performance Impact**:
+- Sequential access: ~5-10 cycles per element
+- Random access: ~50-200 cycles per element (depends on cache level)
 
 #### Memory Layout and Cache Behavior
 
 **Separate Chaining:**
+```
+Memory Layout:
+┌─────┬─────┬─────┬─────┐
+│ B0  │ B1  │ B2  │ B3  │  ← Contiguous bucket array
+└──┬──┴──┬──┴──┬──┴──┬──┘
+   │     │     │     │
+   ▼     ▼     ▼     ▼
+  [A]   [X]   [M]   [P]  ← Non-contiguous linked lists
+   │     │     │     │
+   ▼     ▼     ▼     ▼
+  [B]   [Y]   [N]   [Q]
+   │     │     │     │
+   ▼     ▼     ▼     ▼
+  [C]   [Z]   [O]   [R]
+```
+
 - **Memory Layout**: Buckets are contiguous, but chains are linked lists (non-contiguous)
 - **Cache Performance**: Poor - pointer chasing causes cache misses
 - **Memory Overhead**: ~16-24 bytes per node (data + 2 pointers for doubly-linked)
-- **Real Impact**: Each chain traversal may cause 1-3 cache misses per node
+- **Cache Behavior**:
+  - Bucket array access: L1/L2 hit (contiguous)
+  - First node access: L2/L3 hit (likely)
+  - Subsequent nodes: Random access, 50-70% miss rate
+  - **Real Impact**: Each chain traversal may cause 1-3 cache misses per node
+  - **Example**: Traversing 5 nodes = ~5-15 cache misses = ~500-3000 cycles
 
 **Open Addressing (Linear Probing):**
+```
+Memory Layout:
+┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┐
+│ [A] │ [B] │ [X] │ [C] │ [Y] │ [M] │ [N] │ [P] │  ← Contiguous array
+└─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┘
+   ↑     ↑     ↑     ↑     ↑     ↑     ↑     ↑
+  All in same cache line (64 bytes = 8 slots of 8 bytes each)
+```
+
 - **Memory Layout**: All data in contiguous array (like arrays from Chapter 3)
 - **Cache Performance**: Excellent - sequential access benefits from prefetching
 - **Memory Overhead**: Minimal - only data + status flags
-- **Real Impact**: Clustering hurts cache locality; good distribution = cache-friendly
+- **Cache Behavior**:
+  - Initial hash: L1 hit (bucket array)
+  - Probing: Sequential access, 90-95% hit rate
+  - **Real Impact**: Clustering hurts cache locality; good distribution = cache-friendly
+  - **Example**: Probing 3 slots = ~0-1 cache misses = ~5-20 cycles
 
 **Performance Comparison (Real-World):**
 ```
@@ -1485,29 +1619,206 @@ Cache misses/op    | 2-5               | 0-1
 Memory per element | ~32 bytes         | ~8 bytes
 Best case latency  | ~50-100 cycles    | ~5-10 cycles
 Worst case latency  | ~200-500 cycles   | ~100-200 cycles
+L1 cache hit rate  | ~60-70%           | ~90-95%
+Effective bandwidth| ~5-10 GB/s        | ~20-40 GB/s
 ```
+
+#### CPU Cycles and Real Performance
+
+**Understanding CPU Cycles**:
+- Modern CPU: ~3-4 GHz = 3-4 billion cycles per second
+- 1 cycle = ~0.25-0.33 ns
+- Cache miss to RAM: ~100-300 cycles = ~25-100 ns
+- This is why cache misses are so expensive!
+
+**Hash Table Operation Breakdown** (Linear Probing, cache hit):
+```
+1. Compute hash:           ~10-20 cycles (L1 cache for hash function)
+2. Modulo operation:      ~5-10 cycles
+3. Access bucket:         ~3-5 cycles (L1 cache hit)
+4. Compare key:           ~5-10 cycles
+5. Return value:          ~3-5 cycles
+─────────────────────────────────────
+Total (cache hit):        ~26-50 cycles ≈ 7-15 ns
+```
+
+**Hash Table Operation Breakdown** (Separate Chaining, cache miss):
+```
+1. Compute hash:           ~10-20 cycles
+2. Access bucket array:    ~3-5 cycles (L1 cache hit)
+3. Follow pointer:         ~10-20 cycles (L2 cache hit)
+4. Access node:            ~100-300 cycles (L3/RAM miss!)
+5. Compare key:           ~5-10 cycles
+6. Follow next pointer:    ~100-300 cycles (another miss!)
+7. Access node:           ~100-300 cycles
+─────────────────────────────────────
+Total (2 cache misses):   ~328-955 cycles ≈ 80-240 ns
+```
+
+**Key Insight**: A single cache miss can cost 100-300 cycles, making it 10-30x slower than a cache hit!
+
+#### False Sharing and Cache Coherency
+
+**False Sharing**: When multiple CPU cores modify different variables that happen to be on the same cache line (64 bytes). This causes cache line invalidation and performance degradation.
+
+**Example with Hash Tables**:
+```cpp
+// Two hash tables on same cache line (bad!)
+struct HashTablePair {
+    HashTable table1;  // 32 bytes
+    HashTable table2;  // 32 bytes
+};  // Total: 64 bytes = 1 cache line
+```
+
+If two threads modify `table1` and `table2` simultaneously:
+- Thread 1 modifies `table1` → invalidates cache line
+- Thread 2's cache line becomes invalid → must refetch from L3/RAM
+- **Performance penalty**: ~100-300 cycles per false sharing event
+
+**Solution**: Align structures to cache line boundaries:
+```cpp
+alignas(64) HashTable table1;  // 64-byte alignment
+alignas(64) HashTable table2;  // Separate cache lines
+```
+
+#### Memory Access Patterns in Hash Tables
+
+**Best Case - Linear Probing with Good Distribution**:
+```
+Hash(key) = 5
+Probe sequence: 5 → 6 → 7 → 8 (sequential, same cache line)
+Cache behavior: L1 hits, prefetcher active
+Performance: ~5-10 cycles per probe
+```
+
+**Worst Case - Separate Chaining with Long Chains**:
+```
+Hash(key) = 3
+Chain: bucket[3] → node1 → node2 → node3 → node4
+Memory: [scattered across heap, different cache lines]
+Cache behavior: 1-2 misses per node
+Performance: ~100-300 cycles per node access
+```
+
+**Moderate Case - Quadratic/Double Hashing**:
+```
+Hash(key) = 5, step = 3
+Probe sequence: 5 → 8 → 0 → 3 → 6 (modulo table)
+Memory: [within same cache line if table fits]
+Cache behavior: Mostly L1/L2 hits if table < L3 size
+Performance: ~10-50 cycles per probe
+```
+
+#### Practical Implications
+
+1. **Small Hash Tables (< 1 MB)**: Fit in L3 cache
+   - Open addressing: Excellent performance (~5-20 cycles/op)
+   - Chaining: Moderate performance (~50-200 cycles/op)
+
+2. **Medium Hash Tables (1-32 MB)**: Fit in RAM, not cache
+   - Open addressing: Good performance (~20-100 cycles/op)
+   - Chaining: Poor performance (~200-500 cycles/op)
+
+3. **Large Hash Tables (> 32 MB)**: May cause page faults
+   - Both methods: Degraded performance
+   - Consider: Sharding, distributed hash tables, or disk-based structures
 
 #### Rehashing: The Hidden Cost
 
-Rehashing is expensive and can cause latency spikes:
+Rehashing is expensive and can cause latency spikes. Understanding the memory hierarchy impact is crucial.
 
-**What Happens During Rehash:**
-1. Allocate new table (2x size) - may trigger OS memory allocation
-2. Recompute all hashes - O(n) hash computations
-3. Redistribute all elements - O(n) memory copies
-4. Deallocate old table - may fragment memory
+**What Happens During Rehash (Memory Hierarchy View):**
 
-**Real-World Impact:**
-- **Time Cost**: O(n) - can take milliseconds for large tables
-- **Memory Spike**: Temporarily uses 3x memory (old + new + overhead)
-- **Latency Spikes**: Insert operations can suddenly take 100-1000x longer
-- **Fragmentation**: Repeated rehashing can fragment heap memory
+1. **Allocate new table (2x size)**:
+   - **Memory allocation**: May trigger OS system call if heap is exhausted
+   - **Cache impact**: New memory is "cold" (not in cache)
+   - **Time cost**: 
+     - If in heap: ~100-1000 cycles (L3/RAM access)
+     - If OS allocation needed: ~10,000-100,000 cycles (system call + page allocation)
+   - **Memory access**: Random access pattern, poor cache utilization
+
+2. **Recompute all hashes**:
+   - **CPU-bound**: Hash computation is fast (~10-50 cycles per key)
+   - **Cache behavior**: Hash function code in L1 instruction cache (good)
+   - **Memory access**: Sequential read of old table
+   - **Time cost**: O(n) hash computations = ~10-50 cycles × n elements
+
+3. **Redistribute all elements**:
+   - **Memory access pattern**: 
+     - Read from old table: Sequential (cache-friendly)
+     - Write to new table: Random (based on new hash, cache-unfriendly)
+   - **Cache behavior**:
+     - Old table reads: 90-95% L1/L2 hits (sequential)
+     - New table writes: 50-70% L1/L2 hits (random)
+   - **Time cost**: 
+     - Cache hits: ~5-20 cycles per element
+     - Cache misses: ~100-300 cycles per element
+     - **Total**: O(n) but with significant cache miss penalties
+
+4. **Deallocate old table**:
+   - **Memory management**: Returns memory to heap/OS
+   - **Fragmentation**: May create memory holes
+   - **Time cost**: ~100-1000 cycles (depends on allocator)
+
+**Real-World Impact (Example: 1 million elements):**
+
+```
+Operation                    | Cycles      | Time (3 GHz CPU)
+-----------------------------|-------------|------------------
+Allocate 16 MB table         | ~100,000    | ~33 μs
+Recompute 1M hashes          | ~20,000,000 | ~6.7 ms
+Redistribute (50% cache hit) | ~75,000,000 | ~25 ms
+Deallocate old table         | ~10,000     | ~3.3 μs
+─────────────────────────────|─────────────|──────────────────
+Total                        | ~95,110,000 | ~32 ms
+```
+
+**Memory Hierarchy Breakdown:**
+- **L1/L2 cache**: Hash function code, some table data
+- **L3 cache**: Portions of old table (sequential reads benefit)
+- **RAM**: New table allocation, random writes
+- **Disk**: Possible if table > RAM (page faults = disaster!)
+
+**Latency Spikes:**
+- **Normal insert**: ~5-50 cycles (cache hit)
+- **Insert during rehash**: ~95,000,000 cycles for 1M elements
+- **Spike factor**: 1,900,000x slower!
+
+**Memory Footprint:**
+- **Before rehash**: 8 MB (1M elements × 8 bytes)
+- **During rehash**: 24 MB (old 8 MB + new 16 MB + overhead)
+- **After rehash**: 16 MB
+- **Peak memory**: 3x normal usage
 
 **Mitigation Strategies:**
-1. **Pre-allocate capacity**: Use `reserve()` if size is known (like vectors in Chapter 3)
-2. **Incremental rehashing**: Rehash gradually over multiple operations
-3. **Load factor tuning**: Lower threshold (0.5) reduces rehash frequency
-4. **Memory pools**: Pre-allocate memory to reduce allocation overhead
+
+1. **Pre-allocate capacity**:
+   ```cpp
+   HashTable table;
+   table.reserve(expected_size);  // Allocate once, avoid rehashing
+   ```
+   - **Benefit**: Eliminates rehashing entirely if size is known
+   - **Cache impact**: Single allocation, better memory layout
+
+2. **Incremental rehashing**:
+   - Rehash 1% of elements per operation
+   - Spreads cost over 100 operations
+   - **Trade-off**: Slightly slower normal operations, but no spikes
+
+3. **Load factor tuning**:
+   - Lower threshold (0.5) = more frequent, smaller rehashes
+   - Higher threshold (0.9) = fewer, larger rehashes
+   - **Optimal**: 0.7-0.75 balances space and rehash frequency
+
+4. **Memory pools**:
+   - Pre-allocate large blocks of memory
+   - Reduces allocation overhead
+   - **Cache benefit**: Better memory locality
+
+5. **Cache-conscious rehashing**:
+   - Process elements in cache-line-sized chunks (64 bytes = 8 elements)
+   - Improves cache hit rate during redistribution
+   - **Performance gain**: 20-30% faster rehashing
 
 #### When Hash Tables Become a Bottleneck
 
