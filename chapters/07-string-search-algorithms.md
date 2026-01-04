@@ -1,22 +1,707 @@
 # Chapter 7: String Search Algorithms
 
-## 7.1 Introduction to String Search
+## 7.1 Problem Statement & Motivation
 
-String search algorithms are fundamental tools in computer science for finding patterns within text. These algorithms are essential for text processing, data mining, bioinformatics, and many other applications where pattern matching is required.
+### What Problem Do String Search Algorithms Solve?
+
+Finding patterns in text is a fundamental operation in computing:
+
+- **Text Processing**: Search and replace in documents, code editors
+- **Data Mining**: Finding keywords in large datasets
+- **Bioinformatics**: DNA sequence matching, protein pattern search
+- **Network Security**: Intrusion detection, virus scanning
+- **Search Engines**: Keyword matching in web pages
+
+**Naive Approaches and Their Limitations**:
+
+- **Brute Force**: Check every position → O(n×m) time complexity
+- **Simple Loop**: No optimization, redundant comparisons
+- **Character-by-Character**: Doesn't leverage pattern structure
+
+**The String Search Solution**: Advanced algorithms optimize pattern matching by preprocessing the pattern, skipping impossible positions, and leveraging pattern structure to achieve O(n+m) or even sublinear performance.
+
+### When to Use String Search Algorithms
+
+✅ **Use string search when**:
+- Need to find patterns in text
+- Pattern matching is performance-critical
+- Searching large texts repeatedly
+- Multiple pattern searches needed
+- Real-time search requirements
+
+✅ **Real-world applications**:
+- Text editors (Ctrl+F)
+- Search engines (keyword matching)
+- Virus scanners (signature matching)
+- DNA sequence analysis
+- Log file analysis
+- Network packet inspection
+
+### When NOT to Use Advanced String Search
+
+❌ **Avoid advanced algorithms when**:
+- Text is very small (< 100 characters)
+- Pattern is very short (< 5 characters)
+- Single search operation (preprocessing overhead not worth it)
+- Simple substring search suffices
+
+**Key Trade-off**: Advanced algorithms trade preprocessing time and space for faster search performance.
+
+## 7.2 Conceptual Overview
+
+**String Search** is the process of finding all occurrences of a pattern string within a text string. It's one of the most fundamental operations in text processing.
+
+### Intuitive Explanation
+
+Think of string search like finding a word in a book:
+- **Text**: The entire book
+- **Pattern**: The word you're looking for
+- **Naive Approach**: Check every word sequentially
+- **Optimized Approach**: Use index, skip impossible positions, leverage word structure
 
 ### Key Concepts
 
-- **Text (T)**: The string in which we search for patterns
-- **Pattern (P)**: The string we want to find
+- **Text (T)**: The string in which we search for patterns (length n)
+- **Pattern (P)**: The string we want to find (length m)
 - **Match**: An occurrence of the pattern in the text
 - **Prefix**: A substring starting from the beginning of a string
 - **Suffix**: A substring ending at the end of a string
+- **Overlap**: When pattern prefixes match suffixes (used in KMP)
 
 ### Problem Statement
 
 Given a text string `T` of length `n` and a pattern string `P` of length `m`, find all occurrences of `P` in `T`.
 
-## 7.2 Naive String Search Algorithm
+### Algorithm Categories
+
+1. **Naive Algorithms**: Simple, check every position (O(n×m))
+2. **Hash-Based**: Use rolling hash (Rabin-Karp, O(n+m) average)
+3. **Automaton-Based**: Build finite automaton (KMP, Aho-Corasick, O(n+m))
+4. **Skip-Based**: Skip impossible positions (Boyer-Moore, O(n/m) best case)
+5. **Suffix-Based**: Preprocess text (Suffix Tree/Array, O(n+m) preprocessing)
+
+## 7.3 Abstract Model & Invariants ⭐ (Mandatory)
+
+**Purpose**: Define correctness independent of implementation.
+
+### Abstract Model
+
+A string search problem consists of:
+- **Text T**: Sequence of characters of length n
+- **Pattern P**: Sequence of characters of length m
+- **Match Function**: `match(T, i, P)` returns true if `T[i...i+m-1] == P[0...m-1]`
+- **Result Set**: All positions i where match(T, i, P) is true
+
+### Core Invariants
+
+These invariants must **always** hold for string search algorithms to be correct:
+
+#### 1. Completeness Invariant
+
+```
+For all positions i where T[i...i+m-1] == P[0...m-1]:
+  i is in the result set
+```
+
+**Meaning**: All matches are found, no matches are missed.
+
+#### 2. Correctness Invariant
+
+```
+For all positions i in the result set:
+  T[i...i+m-1] == P[0...m-1]
+```
+
+**Meaning**: All reported positions are actual matches, no false positives.
+
+#### 3. Position Range Invariant
+
+```
+For all positions i checked:
+  0 ≤ i ≤ n - m
+```
+
+**Meaning**: Only valid positions are checked (pattern must fit in remaining text).
+
+#### 4. Comparison Invariant
+
+```
+For position i, comparison checks:
+  T[i+j] == P[j] for all j in [0, m-1]
+```
+
+**Meaning**: Character-by-character comparison is performed correctly.
+
+### Algorithm-Specific Invariants
+
+#### KMP Algorithm Invariants
+
+1. **LPS (Longest Proper Prefix which is also Suffix) Invariant**:
+   - `lps[i]` = length of longest proper prefix of `P[0...i]` that is also a suffix
+   - Used to skip impossible positions
+
+2. **Skip Invariant**:
+   - When mismatch at position `j` in pattern, skip to position `lps[j-1]`
+   - Preserves already-matched prefix
+
+#### Boyer-Moore Algorithm Invariants
+
+1. **Bad Character Rule Invariant**:
+   - If mismatch at `T[i+j]` and `P[j]`, skip to align `T[i+j]` with last occurrence in pattern
+   - Never skips past a possible match
+
+2. **Good Suffix Rule Invariant**:
+   - If suffix of pattern matches, skip to align matching suffix
+   - Leverages pattern structure for larger skips
+
+### Assumptions
+
+1. **Character Comparison**: Characters can be compared for equality (O(1))
+2. **Text Immutability**: Text doesn't change during search
+3. **Pattern Immutability**: Pattern doesn't change during search
+4. **Finite Alphabet**: Alphabet size is finite (affects hash-based algorithms)
+5. **Valid Indices**: All array accesses are within bounds
+
+This abstract model provides the intellectual backbone for understanding string search correctness.
+
+## 7.4 Operations & Interface
+
+**Purpose**: Define what operations are supported.
+
+String search algorithms support the following conceptual operations:
+
+| Operation | Description | Precondition | Postcondition |
+|-----------|-------------|--------------|---------------|
+| `search(text, pattern)` | Find all occurrences | Both strings are valid | Returns list of match positions |
+| `findFirst(text, pattern)` | Find first occurrence | Both strings are valid | Returns first match position or -1 |
+| `findLast(text, pattern)` | Find last occurrence | Both strings are valid | Returns last match position or -1 |
+| `count(text, pattern)` | Count occurrences | Both strings are valid | Returns number of matches |
+| `preprocess(pattern)` | Preprocess pattern | Pattern is valid | Pattern ready for fast search |
+| `searchPreprocessed(text)` | Search with preprocessed pattern | Pattern preprocessed | Returns match positions |
+
+### Behavioral Guarantees
+
+1. **Completeness**: All matches are found
+2. **Correctness**: All reported positions are actual matches
+3. **Order**: Results are returned in order of occurrence (for some algorithms)
+4. **Efficiency**: Time complexity meets algorithm guarantees
+
+## 7.5 Time & Space Complexity
+
+**Purpose**: Make trade-offs explicit.
+
+### Time Complexity Comparison
+
+| Algorithm | Best Case | Average Case | Worst Case | Preprocessing |
+|-----------|-----------|-------------|------------|--------------|
+| **Naive** | O(n) | O(n×m) | O(n×m) | O(1) |
+| **Rabin-Karp** | O(n+m) | O(n+m) | O(n×m) | O(m) |
+| **KMP** | O(n+m) | O(n+m) | O(n+m) | O(m) |
+| **Boyer-Moore** | O(n/m) | O(n) | O(n×m) | O(m) |
+| **Z-Algorithm** | O(n+m) | O(n+m) | O(n+m) | O(m) |
+| **Aho-Corasick** | O(n+m+z) | O(n+m+z) | O(n+m+z) | O(m) |
+
+Where:
+- `n` = text length
+- `m` = pattern length
+- `z` = total number of pattern occurrences
+
+### Space Complexity
+
+| Algorithm | Space Complexity | Notes |
+|-----------|------------------|-------|
+| **Naive** | O(1) | No extra space |
+| **Rabin-Karp** | O(1) | Only hash values |
+| **KMP** | O(m) | LPS array of size m |
+| **Boyer-Moore** | O(m) | Bad character and good suffix tables |
+| **Z-Algorithm** | O(n+m) | Z-array for text and pattern |
+| **Aho-Corasick** | O(m) | Trie structure |
+
+### Detailed Analysis
+
+#### When Each Algorithm Excels
+
+**Naive**: Small texts, short patterns, single search
+**Rabin-Karp**: Multiple pattern search, streaming
+**KMP**: General-purpose, guaranteed O(n+m)
+**Boyer-Moore**: Large texts, long patterns, large alphabet
+**Z-Algorithm**: When Z-array needed, pattern preprocessing
+**Aho-Corasick**: Multiple patterns simultaneously
+
+## 7.6 Pseudocode (Language-Neutral) ⭐ (Mandatory)
+
+**Purpose**: Bridge theory → implementation.
+
+**Rules**: No language syntax, no pointers/templates, focus on logic only.
+
+### Generic String Search Pattern
+
+```
+FUNCTION search(text, pattern):
+  n ← length of text
+  m ← length of pattern
+  results ← empty list
+  
+  FOR i FROM 0 TO n - m:
+    IF matchAtPosition(text, pattern, i):
+      results.add(i)
+    END IF
+  END FOR
+  
+  RETURN results
+END FUNCTION
+
+FUNCTION matchAtPosition(text, pattern, position):
+  FOR j FROM 0 TO length(pattern) - 1:
+    IF text[position + j] ≠ pattern[j]:
+      RETURN false
+    END IF
+  END FOR
+  RETURN true
+END FUNCTION
+```
+
+### Naive String Search
+
+```
+FUNCTION naiveSearch(text, pattern):
+  n ← length of text
+  m ← length of pattern
+  results ← empty list
+  
+  FOR i FROM 0 TO n - m:
+    match ← true
+    FOR j FROM 0 TO m - 1:
+      IF text[i + j] ≠ pattern[j]:
+        match ← false
+        BREAK
+      END IF
+    END FOR
+    
+    IF match:
+      results.add(i)
+    END IF
+  END FOR
+  
+  RETURN results
+END FUNCTION
+```
+
+### KMP Algorithm
+
+```
+FUNCTION buildLPS(pattern):
+  m ← length of pattern
+  lps ← array of size m, initialized to 0
+  len ← 0
+  i ← 1
+  
+  WHILE i < m:
+    IF pattern[i] = pattern[len]:
+      len ← len + 1
+      lps[i] ← len
+      i ← i + 1
+    ELSE:
+      IF len ≠ 0:
+        len ← lps[len - 1]
+      ELSE:
+        lps[i] ← 0
+        i ← i + 1
+      END IF
+    END IF
+  END WHILE
+  
+  RETURN lps
+END FUNCTION
+
+FUNCTION kmpSearch(text, pattern):
+  n ← length of text
+  m ← length of pattern
+  lps ← buildLPS(pattern)
+  results ← empty list
+  i ← 0  // index for text
+  j ← 0  // index for pattern
+  
+  WHILE i < n:
+    IF text[i] = pattern[j]:
+      i ← i + 1
+      j ← j + 1
+    END IF
+    
+    IF j = m:
+      results.add(i - j)  // match found
+      j ← lps[j - 1]
+    ELSE IF i < n AND text[i] ≠ pattern[j]:
+      IF j ≠ 0:
+        j ← lps[j - 1]
+      ELSE:
+        i ← i + 1
+      END IF
+    END IF
+  END WHILE
+  
+  RETURN results
+END FUNCTION
+```
+
+### Boyer-Moore Algorithm (Simplified)
+
+```
+FUNCTION buildBadCharTable(pattern):
+  m ← length of pattern
+  table ← array of size alphabet_size, initialized to -1
+  
+  FOR i FROM 0 TO m - 1:
+    table[pattern[i]] ← i
+  END FOR
+  
+  RETURN table
+END FUNCTION
+
+FUNCTION boyerMooreSearch(text, pattern):
+  n ← length of text
+  m ← length of pattern
+  badChar ← buildBadCharTable(pattern)
+  results ← empty list
+  shift ← 0
+  
+  WHILE shift ≤ n - m:
+    j ← m - 1
+    
+    WHILE j ≥ 0 AND pattern[j] = text[shift + j]:
+      j ← j - 1
+    END WHILE
+    
+    IF j < 0:
+      results.add(shift)
+      IF shift + m < n:
+        shift ← shift + m - badChar[text[shift + m]]
+      ELSE:
+        shift ← shift + 1
+      END IF
+    ELSE:
+      shift ← shift + max(1, j - badChar[text[shift + j]])
+    END IF
+  END WHILE
+  
+  RETURN results
+END FUNCTION
+```
+
+This pseudocode should be readable by any engineer, regardless of their programming language background.
+
+## 7.7 Implementation (Reference Language: C++) ⭐
+
+**Note to Reader**: This section provides concrete C++ implementations. The correctness relies on the invariants defined in Section 7.3 and the pseudocode in Section 7.6.
+
+Detailed C++ implementations for each algorithm are provided in Section 7.11 (String Search Algorithms - Detailed). Each implementation includes:
+- Complete working code
+- Comments mapping to pseudocode from Section 7.6
+- Edge case handling
+- Performance considerations
+
+See Section 7.11 for:
+- 7.11.1: Naive String Search Implementation
+- 7.11.2: Rabin-Karp Implementation
+- 7.11.3: KMP Implementation
+- 7.11.4: Boyer-Moore Implementation
+- 7.11.5: Z-Algorithm Implementation
+- 7.11.6: Aho-Corasick Implementation
+
+## 7.8 Correctness Argument
+
+**Purpose**: Explain why the implementations work.
+
+### Invariant Preservation
+
+String search algorithms preserve the core invariants defined in Section 7.3:
+
+#### 1. Completeness Invariant
+
+**For All Algorithms**:
+- All positions from 0 to n-m are considered (or skipped correctly)
+- No valid match position is missed
+- **Preserves**: All matches are found
+
+**For KMP**:
+- LPS array ensures we never skip past a possible match
+- When mismatch occurs, we skip to longest matching prefix
+- **Preserves**: No matches are missed
+
+**For Boyer-Moore**:
+- Bad character and good suffix rules ensure optimal skipping
+- Skips are safe (never skip past matches)
+- **Preserves**: All matches are found
+
+#### 2. Correctness Invariant
+
+**For All Algorithms**:
+- Character-by-character comparison verifies matches
+- Only positions with full pattern match are reported
+- **Preserves**: No false positives
+
+### Algorithm-Specific Correctness
+
+#### KMP Correctness
+
+**Why LPS Works**:
+- When mismatch at position j, we know P[0...j-1] matched
+- LPS[j-1] gives longest prefix that is also suffix of P[0...j-1]
+- We can skip to align this prefix, preserving already-matched characters
+- **Correct**: Never misses matches, optimal skipping
+
+#### Boyer-Moore Correctness
+
+**Why Bad Character Rule Works**:
+- If T[i+j] doesn't match P[j], and T[i+j] appears in pattern at position k
+- We can align T[i+j] with P[k] for next comparison
+- **Correct**: Safe skipping, never skips past matches
+
+**Why Good Suffix Rule Works**:
+- If suffix of pattern matched, we can skip to align matching suffix
+- Leverages pattern structure for larger skips
+- **Correct**: Optimal skipping while preserving correctness
+
+### Termination Guarantee
+
+**Why algorithms terminate**:
+- Text length n is finite
+- Pattern length m is finite
+- Each iteration makes progress (either match found or position advanced)
+- Eventually all positions are checked or search completes
+
+This correctness argument provides engineers with confidence that string search implementations work correctly.
+
+## 7.9 Edge Cases & Failure Modes
+
+**Purpose**: Build defensive thinking.
+
+### Empty Strings
+
+#### Empty Text
+
+**Problem**: Text is empty string "".
+
+**Edge Cases**:
+- Pattern longer than text (m > n)
+- Pattern same length as text (m == n == 0)
+- Pattern shorter than text (but text is empty)
+
+**Handling**:
+```cpp
+if (text.empty() || pattern.empty() || pattern.length() > text.length()) {
+    return {};  // No matches possible
+}
+```
+
+**Failure Mode**: Accessing text[0] when text is empty causes out-of-bounds error.
+
+#### Empty Pattern
+
+**Problem**: Pattern is empty string "".
+
+**Edge Cases**:
+- Should empty pattern match everywhere?
+- Definition-dependent (usually matches at every position)
+
+**Handling**:
+```cpp
+if (pattern.empty()) {
+    // Return all positions or handle according to requirements
+    return allPositions(text.length());
+}
+```
+
+### Pattern Longer Than Text
+
+**Problem**: Pattern length m > text length n.
+
+**Edge Cases**:
+- Pattern cannot fit in text
+- No matches possible
+
+**Handling**:
+```cpp
+if (pattern.length() > text.length()) {
+    return {};  // No matches possible
+}
+```
+
+**Failure Mode**: Accessing text[i+m-1] when i+m-1 >= n causes out-of-bounds error.
+
+### Single Character Cases
+
+#### Single Character Text
+
+**Problem**: Text has only one character.
+
+**Edge Cases**:
+- Text = "A", Pattern = "A" → match at 0
+- Text = "A", Pattern = "B" → no match
+- Text = "A", Pattern = "AA" → no match (pattern too long)
+
+#### Single Character Pattern
+
+**Problem**: Pattern has only one character.
+
+**Edge Cases**:
+- Pattern = "A", find all 'A' in text
+- Simple case, can optimize
+
+### Repeated Characters
+
+#### All Same Characters
+
+**Problem**: Text or pattern has all same characters.
+
+**Edge Cases**:
+- Text = "AAAAA", Pattern = "AA" → matches at 0, 1, 2, 3
+- Worst case for naive algorithm
+- Best case for some optimized algorithms
+
+#### Pattern is Substring of Text
+
+**Problem**: Pattern appears multiple times, possibly overlapping.
+
+**Edge Cases**:
+- Overlapping matches: Text = "AAAA", Pattern = "AA" → matches at 0, 1, 2
+- Non-overlapping matches: depends on algorithm
+
+### Special Characters
+
+#### Unicode and Multi-byte Characters
+
+**Problem**: Text contains Unicode characters.
+
+**Edge Cases**:
+- Multi-byte UTF-8 characters
+- Emoji, special symbols
+- Character encoding issues
+
+**Handling**:
+- Use proper string encoding
+- Character comparison must handle multi-byte characters
+- Consider using library functions for Unicode
+
+### Memory Issues
+
+#### Very Large Texts
+
+**Problem**: Text is extremely large (millions of characters).
+
+**Edge Cases**:
+- Memory constraints
+- Cache performance
+- Streaming required
+
+**Handling**:
+- Use streaming algorithms (Rabin-Karp with rolling hash)
+- Process in chunks
+- Consider memory-mapped files
+
+#### Very Long Patterns
+
+**Problem**: Pattern is very long.
+
+**Edge Cases**:
+- Preprocessing overhead significant
+- Memory for tables/arrays
+- Pattern may not fit in cache
+
+### Common Failure Patterns
+
+1. **Off-by-One Errors**: Accessing text[i+m] instead of text[i+m-1]
+2. **Boundary Conditions**: Not checking i ≤ n-m before accessing
+3. **Index Out of Bounds**: Accessing text[i+j] without checking i+j < n
+4. **Empty String Handling**: Not handling empty text/pattern
+5. **Unicode Issues**: Incorrect character comparison for multi-byte characters
+
+This section maps directly to production bugs and helps engineers write robust string search code.
+
+## 7.10 Performance & System Considerations ⭐ (Differentiator)
+
+**Purpose**: Connect algorithms to real machines.
+
+### Cache Locality
+
+#### Text Access Patterns
+
+**Sequential Access** (Naive, KMP):
+- Access text sequentially
+- Good cache locality
+- Prefetching works well
+
+**Backward Access** (Boyer-Moore):
+- Access pattern from right to left
+- May cause cache misses
+- Still better than naive due to skipping
+
+**Random Access** (Hash-based):
+- Hash table lookups
+- Cache misses for table access
+- But skips many positions
+
+### Memory Access Optimization
+
+#### Pattern Preprocessing
+
+**KMP LPS Array**:
+- Small array (size m)
+- Fits in cache
+- Fast access during search
+
+**Boyer-Moore Tables**:
+- Bad character table: O(alphabet_size)
+- Good suffix table: O(m)
+- May not fit in cache for large alphabets
+
+### Branch Prediction
+
+#### Conditional Branches
+
+**Character Comparison**:
+- `if (text[i] == pattern[j])` creates branch
+- Well-predicted: ~1 cycle
+- Mispredicted: ~10-20 cycles
+
+**Optimization**:
+- Use branchless comparisons when possible
+- Unroll loops for small patterns
+- Use SIMD for character comparison
+
+### Real-World Performance
+
+#### Algorithm Selection
+
+**Small Texts (< 1KB)**:
+- Naive algorithm often fastest
+- Preprocessing overhead not worth it
+
+**Medium Texts (1KB - 1MB)**:
+- KMP or Boyer-Moore
+- Preprocessing pays off
+
+**Large Texts (> 1MB)**:
+- Boyer-Moore (best case O(n/m))
+- Or specialized algorithms
+
+#### Production Systems
+
+**grep/ripgrep**:
+- Use Boyer-Moore variants
+- Optimized for large files
+- Multi-threaded for parallel search
+
+**Text Editors**:
+- Use KMP for Ctrl+F
+- Fast, predictable performance
+- Good for interactive use
+
+This section connects string search algorithms to real system performance.
+
+## 7.11 String Search Algorithms (Detailed)
+
+### 7.11.1 Naive String Search Algorithm
 
 The naive approach checks every possible position in the text for the pattern. While simple to understand and implement, it's not the most efficient algorithm for large texts.
 
@@ -267,7 +952,7 @@ void demonstrateNaiveSearch() {
 - **Best Case**: O(n) when no matches are found
 - **Worst Case**: O(n*m) when pattern appears at every position
 
-## 7.3 Rabin-Karp Algorithm
+### 7.11.2 Rabin-Karp Algorithm
 
 The Rabin-Karp algorithm uses hashing to find the pattern. It's based on the idea that if two strings are equal, their hash values must also be equal. This algorithm is particularly useful for multiple pattern search and when dealing with rolling hash applications.
 
@@ -599,7 +1284,7 @@ public:
 - **Space Complexity**: O(1)
 - **Best Case**: O(n + m) when no hash collisions occur
 
-## 7.4 Knuth-Morris-Pratt (KMP) Algorithm
+### 7.11.3 Knuth-Morris-Pratt (KMP) Algorithm
 
 The KMP algorithm uses information from previous matches to avoid unnecessary comparisons. It preprocesses the pattern to create a failure function (LPS array) that helps skip characters that are guaranteed to match.
 
@@ -1107,7 +1792,7 @@ public:
 - **Preprocessing Time**: O(m)
 - **Searching Time**: O(n)
 
-## 7.5 Boyer-Moore Algorithm
+### 7.11.4 Boyer-Moore Algorithm
 
 The Boyer-Moore algorithm is often the fastest in practice for large texts. It uses two heuristics: the Bad Character Rule and the Good Suffix Rule. The algorithm compares the pattern with the text from right to left, which allows it to skip many characters when mismatches occur.
 
@@ -1435,7 +2120,7 @@ public:
 - **Average Time Complexity**: O(n)
 - **Space Complexity**: O(m)
 
-## 7.6 Z-Algorithm
+### 7.11.5 Z-Algorithm
 
 The Z-Algorithm finds all occurrences of a pattern in a text by constructing a Z-array that contains the length of the longest substring starting from each position that is also a prefix.
 
@@ -1514,7 +2199,7 @@ public:
 - **Preprocessing Time**: O(n + m)
 - **Searching Time**: O(n + m)
 
-## 7.7 Aho-Corasick Algorithm
+### 7.11.6 Aho-Corasick Algorithm
 
 The Aho-Corasick algorithm efficiently searches for multiple patterns simultaneously using a finite automaton (trie with failure links). It processes the text in a single pass, finding all occurrences of all patterns in O(n + m + z) time, where n is text length, m is total pattern length, and z is the number of matches.
 
@@ -1889,7 +2574,7 @@ public:
 
 **Key Insight**: The algorithm processes the text in a single pass, and with proper output link optimization, each match is found in O(1) time, leading to the O(n + m + z) complexity.
 
-## 7.8 Performance Comparison
+## 7.12 Performance Comparison
 
 ### Comprehensive Algorithm Comparison Table
 
@@ -1967,7 +2652,7 @@ public:
 2. **Z-Algorithm** - Guaranteed O(n+m)
 3. **Aho-Corasick** - Guaranteed O(n+m+z)
 
-## 7.9 Choosing the Right String Search Algorithm
+## 7.13 Choosing the Right String Search Algorithm
 
 Selecting the appropriate algorithm depends on your specific requirements. Here's a decision framework based on practical tradeoffs:
 
@@ -2031,7 +2716,7 @@ Selecting the appropriate algorithm depends on your specific requirements. Here'
 - **Search indexing**: Use Aho-Corasick for multi-keyword search
 - **Stream processing**: Rabin-Karp with rolling hash for continuous pattern matching
 
-## 7.10 Concurrency Considerations
+## 7.14 Concurrency Considerations
 
 String search algorithms appear frequently in concurrent systems: log scanning, stream processing, and indexing pipelines. Understanding concurrent access patterns is essential for thread-safe implementations.
 
@@ -2163,7 +2848,7 @@ void processChunks(const string& text, const string& pattern,
 
 **For Production**: Most string search algorithms are naturally parallelizable. Use thread pools to process text chunks concurrently. See Section 3.5.10 for guidance on using libraries.
 
-## 7.11 Practical Applications and Use Cases
+## 7.15 Practical Applications and Use Cases
 
 ### Detailed Use Cases by Algorithm
 
@@ -2353,7 +3038,7 @@ unordered_map<string, vector<int>> findMultiplePatterns(
 }
 ```
 
-## 7.12 Real-World Systems
+## 7.16 Real-World Systems
 
 String search algorithms are fundamental to many production systems:
 
@@ -2379,7 +3064,7 @@ String search algorithms are fundamental to many production systems:
 
 Understanding these algorithms provides the foundation for building efficient text processing systems.
 
-## 7.13 Key Takeaways
+## 7.17 Key Takeaways
 
 1. **String search algorithms** vary significantly in performance characteristics
 2. **KMP algorithm** provides consistent O(n+m) performance for single patterns
@@ -2388,7 +3073,7 @@ Understanding these algorithms provides the foundation for building efficient te
 5. **Aho-Corasick** efficiently handles multiple pattern search
 6. **Algorithm choice** depends on text size, pattern characteristics, and use case
 
-## 7.14 Exercises
+## 7.18 Exercises
 
 1. Implement a case-insensitive string search algorithm.
 2. Modify the KMP algorithm to find non-overlapping occurrences only.
@@ -2396,7 +3081,7 @@ Understanding these algorithms provides the foundation for building efficient te
 4. Implement a string search algorithm that handles wildcard characters.
 5. Write a program to find all anagrams of a pattern in a text.
 
-## 7.15 Summary
+## 7.19 Summary
 
 String search algorithms are essential tools for pattern matching in text processing. From the simple naive approach to sophisticated algorithms like KMP and Boyer-Moore, each algorithm has its strengths and optimal use cases.
 
