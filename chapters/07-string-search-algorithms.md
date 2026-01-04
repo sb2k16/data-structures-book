@@ -1183,263 +1183,125 @@ Let's trace through the Boyer-Moore algorithm with a concrete example:
 
 **Step 1: Initialize**
 ```
-Text:    G C A A T G C C T A T G T G A C C
+Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17
+Text:    G C A A T G C C T A  T  G  T  G  A  C  C
 Pattern: T A T G T G
 Bad Char Table: T=4, A=1, G=5
-i=0, j=5
+i=0, j=5 (start comparing from rightmost character)
 ```
 
 **Step 2: Compare from Right to Left**
 ```
-Text:    G C A A T G C C T A T G T G A C C
+Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17
+Text:    G C A A T G C C T A  T  G  T  G  A  C  C
 Pattern: T A T G T G
-         ↑
-i=0, j=5: G≠G ✗
-
-Mismatch at j=5, character 'G' in text
-Bad Character Rule: Shift by max(1, j - badChar['G'])
-Shift = max(1, 5 - 5) = max(1, 0) = 1
-i = i + 1 = 1
+                             ↑
+i=0, j=5: text[5]='G', pattern[5]='G' ✓ Match
+Continue to j=4
 ```
 
-**Step 3: New Position**
+**Step 3: Continue Comparison**
 ```
-Text:    G C A A T G C C T A T G T G A C C
-Pattern:   T A T G T G
-           ↑
-i=1, j=5: C≠G ✗
-
-Mismatch at j=5, character 'C' in text
-Bad Character Rule: 'C' not in pattern, shift by j+1 = 6
-i = i + 6 = 7
+Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17
+Text:    G C A A T G C C T A  T  G  T  G  A  C  C
+Pattern: T A T G T G
+                         ↑
+i=0, j=4: text[4]='T', pattern[4]='T' ✓ Match
+Continue to j=3
 ```
 
-**Step 4: New Position**
+**Step 4: Continue Comparison - Mismatch Found**
 ```
-Text:    G C A A T G C C T A T G T G A C C
-Pattern:         T A T G T G
-                 ↑
-i=7, j=5: T≠G ✗
+Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17
+Text:    G C A A T G C C T A  T  G  T  G  A  C  C
+Pattern: T A T G T G
+                     ↑
+i=0, j=3: text[3]='A', pattern[3]='G' ✗ Mismatch
 
-Mismatch at j=5, character 'T' in text
-Bad Character Rule: Shift by max(1, j - badChar['T'])
-Shift = max(1, 5 - 4) = max(1, 1) = 1
-i = i + 1 = 8
+Mismatch at j=3, character 'A' in text
+Bad Character Rule: Shift by max(1, j - badChar['A'])
+Shift = max(1, 3 - 1) = max(1, 2) = 2
+i = i + 2 = 2
 ```
 
 **Step 5: New Position**
 ```
-Text:    G C A A T G C C T A T G T G A C C
-Pattern:           T A T G T G
-                   ↑
-i=8, j=5: A≠G ✗
+Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17
+Text:    G C A A T G C C T A  T  G  T  G  A  C  C
+Pattern:     T A T G T G
+             ↑
+i=2, j=5: text[7]='C', pattern[5]='G' ✗ Mismatch
 
-Mismatch at j=5, character 'A' in text
-Bad Character Rule: Shift by max(1, j - badChar['A'])
-Shift = max(1, 5 - 1) = max(1, 4) = 4
-i = i + 4 = 12
+Mismatch at j=5, character 'C' in text
+Bad Character Rule: 'C' not in pattern, shift by j+1 = 6
+i = i + 6 = 8
 ```
 
 **Step 6: New Position**
 ```
-Text:    G C A A T G C C T A T G T G A C C
-Pattern:                   T A T G T G
-                           ↑
-i=12, j=5: G≠G ✗
-
-Mismatch at j=5, character 'G' in text
-Bad Character Rule: Shift by max(1, j - badChar['G'])
-Shift = max(1, 5 - 5) = max(1, 0) = 1
-i = i + 1 = 13
+Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17
+Text:    G C A A T G C C T A  T  G  T  G  A  C  C
+Pattern:           T A T G T G
+                   ↑
+i=8, j=5: text[13]='G', pattern[5]='G' ✓ Match
+Continue to j=4
 ```
 
-**Step 7: New Position**
+**Step 7: Continue Comparison**
 ```
-Text:    G C A A T G C C T A T G T G A C C
-Pattern:                     T A T G T G
-                             ↑
-i=13, j=5: A≠G ✗
-
-Mismatch at j=5, character 'A' in text
-Bad Character Rule: Shift by max(1, j - badChar['A'])
-Shift = max(1, 5 - 1) = max(1, 4) = 4
-i = i + 4 = 17
+Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17
+Text:    G C A A T G C C T A  T  G  T  G  A  C  C
+Pattern:           T A T G T G
+                       ↑
+i=8, j=4: text[12]='T', pattern[4]='T' ✓ Match
+Continue to j=3
 ```
 
-**Step 8: New Position**
+**Step 8: Continue Comparison**
 ```
-Text:    G C A A T G C C T A T G T G A C C
-Pattern:                         T A T G T G
-                                 ↑
-i=17, j=5: C≠G ✗
-
-Mismatch at j=5, character 'C' in text
-Bad Character Rule: 'C' not in pattern, shift by j+1 = 6
-i = i + 6 = 23
+Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17
+Text:    G C A A T G C C T A  T  G  T  G  A  C  C
+Pattern:           T A T G T G
+                   ↑
+i=8, j=3: text[11]='G', pattern[3]='G' ✓ Match
+Continue to j=2
 ```
 
-**Step 9: Beyond Text Length**
+**Step 9: Continue Comparison**
 ```
-i=23 > text.length() - pattern.length()
-Search complete, no match found
+Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17
+Text:    G C A A T G C C T A  T  G  T  G  A  C  C
+Pattern:           T A T G T G
+                 ↑
+i=8, j=2: text[10]='T', pattern[2]='T' ✓ Match
+Continue to j=1
 ```
 
-**Final Result**: No match found.
+**Step 10: Continue Comparison**
+```
+Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17
+Text:    G C A A T G C C T A  T  G  T  G  A  C  C
+Pattern:           T A T G T G
+               ↑
+i=8, j=1: text[9]='A', pattern[1]='A' ✓ Match
+Continue to j=0
+```
+
+**Step 11: Complete Match**
+```
+Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17
+Text:    G C A A T G C C T A  T  G  T  G  A  C  C
+Pattern:           T A T G T G
+             ↑
+i=8, j=0: text[8]='T', pattern[0]='T' ✓ Match
+All characters matched! Pattern found at position 8.
+```
+
+**Final Result**: Match found at position 8.
 
 ### Visual Representation
 
-```
-Text:    G C A A T G C C T A T G T G A C C
-Pattern: T A T G T G
-         ↑
-         Mismatch: G≠G, shift by 1
-
-Text:    G C A A T G C C T A T G T G A C C
-Pattern:   T A T G T G
-           ↑
-           Mismatch: C≠G, shift by 6
-
-Text:    G C A A T G C C T A T G T G A C C
-Pattern:         T A T G T G
-                 ↑
-                 Mismatch: T≠G, shift by 1
-
-Text:    G C A A T G C C T A T G T G A C C
-Pattern:           T A T G T G
-                   ↑
-                   Mismatch: A≠G, shift by 4
-
-Text:    G C A A T G C C T A T G T G A C C
-Pattern:                   T A T G T G
-                           ↑
-                           Mismatch: G≠G, shift by 1
-
-Text:    G C A A T G C C T A T G T G A C C
-Pattern:                     T A T G T G
-                             ↑
-                             Mismatch: A≠G, shift by 4
-
-Text:    G C A A T G C C T A T G T G A C C
-Pattern:                         T A T G T G
-                                 ↑
-                                 Mismatch: C≠G, shift by 6
-
-Search complete - no match found
-```
-
-### Example with Match Found
-
-Let's try with a different example where a match exists:
-
-**Text**: `"GCAATGCCTATGTGACC"`
-**Pattern**: `"TATGTG"`
-
-#### Step-by-Step Execution:
-
-**Step 1: Initialize**
-```
-Text:    G C A A T G C C T A T G T G A C C
-Pattern: T A T G T G
-Bad Char Table: T=4, A=1, G=5
-i=0, j=5
-```
-
-**Step 2: Compare from Right to Left**
-```
-Text:    G C A A T G C C T A T G T G A C C
-Pattern: T A T G T G
-         ↑
-i=0, j=5: G≠G ✗
-
-Mismatch at j=5, character 'G' in text
-Bad Character Rule: Shift by max(1, j - badChar['G'])
-Shift = max(1, 5 - 5) = max(1, 0) = 1
-i = i + 1 = 1
-```
-
-**Step 3: New Position**
-```
-Text:    G C A A T G C C T A T G T G A C C
-Pattern:   T A T G T G
-           ↑
-i=1, j=5: C≠G ✗
-
-Mismatch at j=5, character 'C' in text
-Bad Character Rule: 'C' not in pattern, shift by j+1 = 6
-i = i + 6 = 7
-```
-
-**Step 4: New Position**
-```
-Text:    G C A A T G C C T A T G T G A C C
-Pattern:         T A T G T G
-                 ↑
-i=7, j=5: T≠G ✗
-
-Mismatch at j=5, character 'T' in text
-Bad Character Rule: Shift by max(1, j - badChar['T'])
-Shift = max(1, 5 - 4) = max(1, 1) = 1
-i = i + 1 = 8
-```
-
-**Step 5: New Position**
-```
-Text:    G C A A T G C C T A T G T G A C C
-Pattern:           T A T G T G
-                   ↑
-i=8, j=5: A≠G ✗
-
-Mismatch at j=5, character 'A' in text
-Bad Character Rule: Shift by max(1, j - badChar['A'])
-Shift = max(1, 5 - 1) = max(1, 4) = 4
-i = i + 4 = 12
-```
-
-**Step 6: New Position**
-```
-Text:    G C A A T G C C T A T G T G A C C
-Pattern:                   T A T G T G
-                           ↑
-i=12, j=5: G≠G ✗
-
-Mismatch at j=5, character 'G' in text
-Bad Character Rule: Shift by max(1, j - badChar['G'])
-Shift = max(1, 5 - 5) = max(1, 0) = 1
-i = i + 1 = 13
-```
-
-**Step 7: New Position**
-```
-Text:    G C A A T G C C T A T G T G A C C
-Pattern:                     T A T G T G
-                             ↑
-i=13, j=5: A≠G ✗
-
-Mismatch at j=5, character 'A' in text
-Bad Character Rule: Shift by max(1, j - badChar['A'])
-Shift = max(1, 5 - 1) = max(1, 4) = 4
-i = i + 4 = 17
-```
-
-**Step 8: New Position**
-```
-Text:    G C A A T G C C T A T G T G A C C
-Pattern:                         T A T G T G
-                                 ↑
-i=17, j=5: C≠G ✗
-
-Mismatch at j=5, character 'C' in text
-Bad Character Rule: 'C' not in pattern, shift by j+1 = 6
-i = i + 6 = 23
-```
-
-**Step 9: Beyond Text Length**
-```
-i=23 > text.length() - pattern.length()
-Search complete, no match found
-```
-
-**Final Result**: No match found.
+The algorithm successfully finds the pattern "TATGTG" at position 8 in the text "GCAATGCCTATGTGACC". The right-to-left comparison allows Boyer-Moore to skip characters efficiently when mismatches occur early in the pattern.
 
 ### Key Observations
 
