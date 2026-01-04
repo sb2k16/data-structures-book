@@ -1899,18 +1899,23 @@ int query(int index) {
 
 ## 14.14 Concurrency Considerations
 
-Heaps and priority queues are frequently used in concurrent systems (task schedulers, event systems). Understanding concurrent access patterns is crucial for thread-safe implementations.
+This section applies the concurrency fundamentals from [Chapter 3.5](03.5-concurrency-fundamentals.md) to heaps and priority queues. See Section 3.5.3 for invariant-based reasoning and Section 3.5.9 for producer-consumer patterns.
 
-### Invariants Threatened by Concurrent Access
+### 14.14.1 Shared-State Invariants
 
-**Core Heap Invariants:**
+**Core Heap Invariants** (see Section 3.5.3):
 1. **Heap Property Invariant**: "Parent >= all children (max-heap) or Parent <= all children (min-heap)"
 2. **Complete Tree Invariant**: "Tree is complete (all levels filled except possibly last, left-to-right)"
 3. **Size Invariant**: "`size` equals number of elements"
 
-### What Operations Need Atomicity
+**What Must Not Be Observed Half-Updated**:
+- Heap property violations during bubble up/down
+- Size changes while elements are being inserted/extracted
+- Parent-child relationships during tree restructuring
 
-**Insert Operation (Bubble Up):**
+### 14.14.2 Operations That Must Be Atomic
+
+**Insert Operation** (see Section 3.5.4):
 ```cpp
 void insert(int value) {
     heap[size] = value;        // Step 1: Add to end
@@ -1919,12 +1924,9 @@ void insert(int value) {
 }
 ```
 
-**Problem**: Between steps, another thread can:
-- Read incorrect size
-- See heap in inconsistent state (element added but heap property not restored)
-- During bubble up: parent-child comparisons may see inconsistent values
+**Tie to Invariants**: Between steps, the **Size Invariant** and **Heap Property Invariant** are violated. Another thread may see incorrect size or inconsistent heap structure.
 
-**Extract Operation (Bubble Down):**
+**Extract Operation**:
 ```cpp
 int extractMax() {
     int max = heap[0];          // Step 1: Get root
@@ -1935,13 +1937,49 @@ int extractMax() {
 }
 ```
 
-**Problem**: Similar race conditions, plus:
-- Two threads may extract same element if check-then-act not atomic
-- Bubble down may see inconsistent parent-child relationships
+**Tie to Invariants**: Similar race conditions, plus check-then-act bug (checking `size > 0` and extracting must be atomic).
 
-### Coarse vs Fine-Grained Locking
+**Operations Requiring Atomicity**:
+- **Insert**: Entire operation (add element, update size, bubble up)
+- **Extract**: Entire operation (get root, move last, update size, bubble down)
+- **Empty Check + Extract**: Must be atomic (check-then-act)
 
-**Coarse-Grained (Single Lock):**
+### 14.14.3 Naïve Approaches and Why They Fail
+
+**1. Partial Updates**:
+```cpp
+// Thread 1: Inserting 10, bubble up
+// Thread 2: Inserting 20, bubble up
+// Both may see inconsistent parent values during bubble up
+```
+**Why It Fails**: Insert is not atomic. Invariant violation: **Heap Property Invariant** broken.
+
+**2. Check-Then-Act Bugs**:
+```cpp
+if (size > 0) {        // Check
+    // Another thread extracts here!
+    return extractMax();  // May extract from empty heap
+}
+```
+**Why It Fails**: Check and extract are not atomic. Invariant violation: **Size Invariant** broken.
+
+**3. Locking Only Part of the Structure**:
+```cpp
+// Locking only during insert, not during extract
+void insert(int value) {
+    std::lock_guard<std::mutex> lock(mtx);
+    // insert operation
+}
+// But extract is unprotected!
+int extractMax() {
+    return heap[0];  // Race condition!
+}
+```
+**Why It Fails**: Operations are not mutually exclusive. Invariant violation: **Heap Property Invariant** broken.
+
+### 14.14.4 Locking Strategies
+
+**Coarse-Grained Lock** (see Section 3.5.8):
 ```cpp
 class ThreadSafeHeap {
     std::vector<int> heap;
@@ -1957,71 +1995,50 @@ public:
 - ✅ Simple, prevents all race conditions
 - ❌ Very low parallelism (only one operation at a time)
 
-**Fine-Grained (Per-Node Locks):**
+**Fine-Grained Lock (Per-Node)**:
 - Not practical for heaps (operations traverse tree, need multiple locks)
 - High overhead, complex deadlock avoidance
 - **Not recommended**
 
-### Lock-Free Approaches
+**Read-Write Locks** (see Section 3.5.8):
+- Use `std::shared_mutex` for read-heavy workloads
+- Multiple readers, single writer
+- Less useful for heaps (operations are write-heavy)
 
-**Lock-free heaps** are extremely complex:
-- **Lock-free skip lists**: Can be used to implement priority queues
-- **Lock-free binomial heaps**: Research-level implementations
-- **CAS-based operations**: Complex due to tree structure modifications
+**Lock-Free** (see Section 3.5.9):
+- Lock-free heaps are extremely complex
+- Lock-free skip lists can be used to implement priority queues
+- Lock-free binomial heaps are research-level implementations
+- **Recommendation**: Use lock-based approach. Lock-free heaps are rarely worth the complexity.
 
-**Recommendation**: Use lock-based approach. Lock-free heaps are rarely worth the complexity.
+### 14.14.5 Performance and Scalability Implications
 
-### Common Bugs
+**Contention** (see Section 3.5.8):
+- Coarse-grained locking: Very high contention, throughput collapses
+- Fine-grained locking: Not practical for heaps
 
-1. **Heap Property Violation**: Concurrent inserts break heap property
-   ```cpp
-   // Thread 1: Inserting 10, bubble up
-   // Thread 2: Inserting 20, bubble up
-   // Both may see inconsistent parent values during bubble up
-   ```
+**Throughput Collapse Under Load**:
+- With many threads, coarse-grained locking becomes severe bottleneck
+- Consider multiple heaps (thread-local heaps, merge periodically)
 
-2. **Duplicate Extraction**: Two threads extract same element
-   ```cpp
-   // Both threads check size > 0
-   // Both extract root
-   // One gets valid element, one gets garbage
-   ```
-
-3. **Size Inconsistency**: Size updated but element not yet in correct position
-   ```cpp
-   size++;              // Thread 1: Size updated
-   // Thread 2: Reads size, expects element at heap[size-1]
-   bubbleUp(...);       // Thread 1: Element not yet bubbled up!
-   ```
-
-### Practical Recommendations
-
-- **For most cases**: Use coarse-grained locking (single mutex)
-- **For high contention**: Consider multiple heaps (thread-local heaps, merge periodically)
-- **For read-heavy**: Use `std::shared_mutex` (multiple readers, single writer)
-- **For production**: Use `std::priority_queue` with external synchronization or thread-safe priority queues from libraries
-
-### Priority Queue Specific Considerations
-
-**Producer-Consumer Pattern:**
-```cpp
-// Multiple producers, multiple consumers
-// Use condition variable for blocking when empty
-std::condition_variable cv;
-std::mutex mtx;
-
-void consumer() {
-    std::unique_lock<std::mutex> lock(mtx);
-    cv.wait(lock, []{ return !pq.empty(); });  // Wait until not empty
-    int value = pq.top();
-    pq.pop();
-}
-```
-
-**Key Points:**
-- Use `std::condition_variable` for efficient waiting
+**Producer-Consumer Pattern** (see Section 3.5.9):
+- Use `std::condition_variable` for bounded priority queues
+- Allows efficient blocking when queue is empty
 - Always check condition in loop (spurious wakeups)
-- Lock must be held when checking condition and when modifying
+
+### 14.14.6 When Not to Do This Yourself
+
+**Use Library Implementations**:
+- `std::priority_queue` with external synchronization
+- Thread-safe priority queues from well-tested libraries
+- Lock-free implementations from proven libraries (see Section 3.5.9)
+
+**Avoid Premature Optimization**:
+- Start with coarse-grained locking
+- Only consider lock-free if profiling shows it's necessary
+- Lock-free heaps are extremely complex (see Section 3.5.9 warning)
+
+**For Production**: Prefer `std::priority_queue` with external synchronization or thread-safe priority queues from proven libraries. See Section 3.5.10 for guidance on using libraries.
 
 ## 14.15 Summary
 

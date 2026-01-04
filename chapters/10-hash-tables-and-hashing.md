@@ -1425,18 +1425,23 @@ int longestConsecutive(const vector<int>& nums) {
 
 ## 10.13 Concurrency Considerations
 
-Hash tables are frequently used in concurrent systems (caches, symbol tables, shared data stores). Understanding concurrent access patterns is essential for thread-safe implementations.
+This section applies the concurrency fundamentals from [Chapter 3.5](03.5-concurrency-fundamentals.md) to hash tables. See Section 3.5.3 for invariant-based reasoning and Section 3.5.8 for lock granularity tradeoffs.
 
-### Invariants Threatened by Concurrent Access
+### 10.13.1 Shared-State Invariants
 
-**Core Hash Table Invariants:**
+**Core Hash Table Invariants** (see Section 3.5.3):
 1. **Bucket Invariant**: "Each key maps to exactly one bucket"
 2. **Collision Chain Invariant**: "Keys in same bucket form valid chain (chaining) or valid probe sequence (open addressing)"
 3. **Load Factor Invariant**: "Load factor = size/capacity (used for rehashing decisions)"
 
-### What Operations Need Atomicity
+**What Must Not Be Observed Half-Updated**:
+- Bucket chain modifications during insertion
+- Table pointer updates during rehashing
+- Size changes while elements are being inserted/removed
 
-**Insert Operation (Chaining):**
+### 10.13.2 Operations That Must Be Atomic
+
+**Insert Operation** (see Section 3.5.4):
 ```cpp
 void insert(int key, int value) {
     int bucket = hash(key) % capacity;
@@ -1447,12 +1452,9 @@ void insert(int key, int value) {
 }
 ```
 
-**Problem**: Between steps, another thread can:
-- Read inconsistent bucket state
-- See incorrect size
-- During rehashing: access old and new table simultaneously
+**Tie to Invariants**: Between steps, the **Collision Chain Invariant** is violated. Another thread may see inconsistent bucket state.
 
-**Rehashing Operation:**
+**Rehashing Operation**:
 ```cpp
 void rehash() {
     // Create new table
@@ -1462,14 +1464,48 @@ void rehash() {
 }
 ```
 
-**Problem**: Rehashing is a long operation. Other threads may:
-- Access old table while migration is happening
-- Access new table before migration completes
-- See inconsistent state during transition
+**Tie to Invariants**: During rehashing, threads may access old table (partially migrated) or new table (not fully populated), breaking the **Bucket Invariant**.
 
-### Coarse vs Fine-Grained Locking
+**Operations Requiring Atomicity**:
+- **Insert**: Entire operation (bucket chain update and size change)
+- **Delete**: Entire operation (bucket chain update and size change)
+- **Rehash**: Entire rehashing operation (or use read-copy-update pattern)
 
-**Coarse-Grained (Single Lock):**
+### 10.13.3 Naïve Approaches and Why They Fail
+
+**1. Partial Updates**:
+```cpp
+// Thread 1: Insert (key=5, value=10)
+// Thread 2: Insert (key=5, value=20)
+// Both read "key not found", both insert
+// One value overwrites the other
+```
+**Why It Fails**: Insert is not atomic. Invariant violation: **Bucket Invariant** broken (duplicate keys).
+
+**2. Check-Then-Act Bugs**:
+```cpp
+// Thread 1: Rehashing (migrating elements)
+// Thread 2: Reading key
+// Thread 2 may access old table (partially migrated)
+// or new table (not fully populated)
+```
+**Why It Fails**: Rehashing and access are not synchronized. Invariant violation: **Bucket Invariant** broken.
+
+**3. Locking Only Part of the Structure**:
+```cpp
+// Locking only the bucket, not the table pointer
+void insert(int key, int value) {
+    int bucket = hash(key) % capacity;
+    std::lock_guard<std::mutex> lock(bucket_locks[bucket]);
+    // But rehashing may change table pointer!
+    table[bucket] = new_node;
+}
+```
+**Why It Fails**: Rehashing can change table pointer while bucket is locked. Invariant violation: **Bucket Invariant** broken.
+
+### 10.13.4 Locking Strategies
+
+**Coarse-Grained Lock** (see Section 3.5.8):
 ```cpp
 class ThreadSafeHashTable {
     std::vector<Bucket> table;
@@ -1485,7 +1521,7 @@ public:
 - ✅ Simple, prevents all race conditions
 - ❌ Very low parallelism (only one operation at a time)
 
-**Fine-Grained (Per-Bucket Locks):**
+**Fine-Grained Lock (Per-Bucket)**:
 ```cpp
 class FineGrainedHashTable {
     std::vector<Bucket> table;
@@ -1503,7 +1539,7 @@ public:
 - ❌ Rehashing becomes complex (need to lock all buckets)
 - ❌ Memory overhead (one mutex per bucket)
 
-**Striped Locking (Compromise):**
+**Striped Locking (Compromise)**:
 ```cpp
 // Fewer locks than buckets, hash to lock index
 std::vector<std::mutex> stripe_locks(16);  // 16 locks for many buckets
@@ -1513,46 +1549,36 @@ int lock_index = hash(key) % 16;
 - ✅ Easier rehashing than fine-grained
 - ⚠️ Some false contention (different buckets may share lock)
 
-### Common Bugs
+**Read-Write Locks** (see Section 3.5.8):
+- Use `std::shared_mutex` for read-heavy workloads
+- Multiple readers, single writer
 
-1. **Lost Updates**: Two threads insert same key
-   ```cpp
-   // Thread 1: Insert (key=5, value=10)
-   // Thread 2: Insert (key=5, value=20)
-   // Both read "key not found", both insert
-   // One value overwrites the other
-   ```
+### 10.13.5 Performance and Scalability Implications
 
-2. **Inconsistent Reads During Rehashing**: Reading while table is being rehashed
-   ```cpp
-   // Thread 1: Rehashing (migrating elements)
-   // Thread 2: Reading key
-   // Thread 2 may access old table (partially migrated)
-   // or new table (not fully populated)
-   ```
+**Contention** (see Section 3.5.8):
+- Coarse-grained locking: Very high contention, throughput collapses
+- Fine-grained locking: Lower contention, but rehashing complexity
+- Striped locking: Good balance
 
-3. **Size Inconsistency**: Size updated but element not yet visible
-   ```cpp
-   size++;              // Thread 1: Size updated
-   // Thread 2: Reads size, expects element to exist
-   table[bucket] = ...;  // Thread 1: Element not yet in table!
-   ```
+**False Sharing**: Less relevant (buckets scattered in memory)
 
-### Lock-Free Considerations
+**Throughput Collapse Under Load**:
+- With many threads, coarse-grained locking becomes severe bottleneck
+- Fine-grained or striped locking helps significantly
 
-Lock-free hash tables are extremely complex:
-- **Read-Copy-Update (RCU)**: For read-heavy workloads
-- **Lock-free chaining**: Each bucket is a lock-free linked list
-- **Concurrent rehashing**: Major challenge (requires coordination)
+### 10.13.6 When Not to Do This Yourself
 
-**Recommendation**: Use lock-based approach or proven libraries. Lock-free hash tables are research-level implementations.
+**Use Library Implementations**:
+- `std::unordered_map` with external synchronization
+- Thread-safe hash tables from well-tested libraries
+- Lock-free implementations from proven libraries (see Section 3.5.9)
 
-### Practical Recommendations
+**Avoid Premature Optimization**:
+- Start with coarse-grained locking
+- Only optimize to fine-grained/striped if profiling shows it's necessary
+- Lock-free hash tables are research-level (see Section 3.5.9 warning)
 
-- **For read-heavy**: Use `std::shared_mutex` (multiple readers, single writer)
-- **For high parallelism**: Use striped locking (compromise between coarse and fine-grained)
-- **For production**: Use `std::unordered_map` with external synchronization or thread-safe hash tables from libraries
-- **For distributed systems**: Consider consistent hashing to minimize rehashing impact
+**For Production**: Prefer `std::unordered_map` with external synchronization or thread-safe hash tables from proven libraries. See Section 3.5.10 for guidance on using libraries.
 
 ## 10.14 Summary
 

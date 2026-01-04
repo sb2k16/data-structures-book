@@ -3443,25 +3443,23 @@ bool isBipartite(const vector<list<int>>& graph) {
 
 ## 11.16 Concurrency Considerations
 
-Graph traversal algorithms (BFS/DFS) are often parallelized for performance. Understanding how concurrent access affects graph operations is important for parallel graph processing.
+This section applies the concurrency fundamentals from [Chapter 3.5](03.5-concurrency-fundamentals.md) to graph traversal (BFS/DFS). See Section 3.5.3 for invariant-based reasoning and Section 3.5.4 for race conditions.
 
-### Invariants Threatened by Concurrent Access
+### 11.16.1 Shared-State Invariants
 
-**Graph Structure Invariants:**
+**Graph Structure Invariants** (see Section 3.5.3):
 1. **Adjacency Invariant**: "Adjacency lists/matrix correctly represent edges"
 2. **Visited State Invariant**: "Visited flags accurately track traversal state"
 3. **Distance Invariant**: "Distance values correctly represent shortest paths (for BFS/Dijkstra)"
 
-### Concurrent Graph Traversal
+**What Must Not Be Observed Half-Updated**:
+- Visited flags during concurrent traversal
+- Distance values during concurrent shortest path computation
+- Adjacency list modifications during traversal
 
-**Parallel BFS/DFS** can be achieved by:
-- **Level-by-level parallelization (BFS)**: Process all vertices at level `i` in parallel
-- **Component-based parallelization**: Process different connected components in parallel
-- **Edge-based parallelization**: Process edges in parallel (for algorithms like MST)
+### 11.16.2 Operations That Must Be Atomic
 
-### What Operations Need Atomicity
-
-**BFS Traversal:**
+**BFS Traversal** (see Section 3.5.4):
 ```cpp
 void bfs(int start) {
     queue<int> q;
@@ -3483,23 +3481,9 @@ void bfs(int start) {
 }
 ```
 
-**Problem**: Check-then-act race condition:
-- Thread 1: Checks `!visited[v]` → true
-- Thread 2: Checks `!visited[v]` → true (same vertex)
-- Both mark and enqueue → vertex processed twice
+**Tie to Invariants**: Check-then-act race condition threatens **Visited State Invariant**. Two threads may both see `visited[v] = false` and both process the vertex.
 
-**Solution**: Use atomic operations for visited flags:
-```cpp
-std::vector<std::atomic<bool>> visited(numVertices);
-// Use compare_exchange to atomically check and set
-if (!visited[v].exchange(true)) {  // Atomic check-and-set
-    q.push(v);
-}
-```
-
-### Concurrent Graph Modification
-
-**Problem**: Graph structure modified during traversal
+**Graph Modification During Traversal**:
 ```cpp
 // Thread 1: Traversing graph
 for (int v : adj[u]) {  // Reading adjacency list
@@ -3508,17 +3492,49 @@ for (int v : adj[u]) {  // Reading adjacency list
 }
 ```
 
-**Invariant Threatened**: "Adjacency list represents current graph state"
+**Tie to Invariants**: Graph modification during traversal threatens **Adjacency Invariant**.
 
-**Solutions:**
-1. **Read-only traversal**: Graph is immutable during traversal
-2. **Copy-on-write**: Create snapshot of graph for traversal
-3. **Fine-grained locking**: Lock individual vertices/edges
-4. **Version numbers**: Track graph versions, detect modifications
+**Operations Requiring Atomicity**:
+- **Visited flag updates**: Check and set must be atomic (use atomic operations)
+- **Distance updates**: Read-modify-write must be atomic
+- **Graph modification**: Entire edge addition/removal must be atomic (or use immutable graph)
 
-### Coarse vs Fine-Grained Locking
+### 11.16.3 Naïve Approaches and Why They Fail
 
-**Coarse-Grained (Single Lock):**
+**1. Partial Updates**:
+```cpp
+// Both threads see visited[v] = false
+// Both process vertex v
+```
+**Why It Fails**: Check-then-act is not atomic. Invariant violation: **Visited State Invariant** broken.
+
+**2. Check-Then-Act Bugs**:
+```cpp
+if (!visited[v]) {     // Check
+    // Another thread marks visited[v] here!
+    visited[v] = true;  // Mark
+    process(v);       // Process (may process twice)
+}
+```
+**Why It Fails**: Check and mark are not atomic. Invariant violation: **Visited State Invariant** broken.
+
+**3. Locking Only Part of the Structure**:
+```cpp
+// Locking only during edge addition, not during traversal
+void addEdge(int u, int v) {
+    std::lock_guard<std::mutex> lock(mtx);
+    adj[u].push_back(v);
+}
+// But traversal is unprotected!
+for (int v : adj[u]) {  // Race condition!
+    process(v);
+}
+```
+**Why It Fails**: Traversal and modification are not mutually exclusive. Invariant violation: **Adjacency Invariant** broken.
+
+### 11.16.4 Locking Strategies
+
+**Coarse-Grained Lock** (see Section 3.5.8):
 ```cpp
 class ThreadSafeGraph {
     std::vector<std::vector<int>> adj;
@@ -3534,7 +3550,7 @@ public:
 - ✅ Simple, prevents all race conditions
 - ❌ Very low parallelism
 
-**Fine-Grained (Per-Vertex Locks):**
+**Fine-Grained Lock (Per-Vertex)**:
 ```cpp
 std::vector<std::mutex> vertex_locks(numVertices);
 
@@ -3548,38 +3564,52 @@ void addEdge(int u, int v) {
 }
 ```
 - ✅ Higher parallelism
-- ❌ Complex, risk of deadlock if lock order violated
+- ❌ Complex, risk of deadlock if lock order violated (see Section 3.5.7)
 - ❌ High memory overhead
 
-### Common Bugs
+**Read-Only Traversal**:
+- If graph is immutable during traversal, no synchronization needed
+- Use copy-on-write for modifications
 
-1. **Duplicate Processing**: Vertex visited by multiple threads
-   ```cpp
-   // Both threads see visited[v] = false
-   // Both process vertex v
-   ```
+**Atomic Operations for Visited Flags**:
+```cpp
+std::vector<std::atomic<bool>> visited(numVertices);
+if (!visited[v].exchange(true)) {  // Atomic check-and-set
+    q.push(v);
+}
+```
+- ✅ Lock-free for visited flags
+- ✅ Good for parallel BFS
 
-2. **Inconsistent Distance**: Distance updated by multiple threads
-   ```cpp
-   // Thread 1: distance[v] = distance[u] + 1
-   // Thread 2: distance[v] = distance[u] + 1 (different u)
-   // Race condition on distance[v]
-   ```
+### 11.16.5 Performance and Scalability Implications
 
-3. **Iterator Invalidation**: Adjacency list modified during iteration
-   ```cpp
-   for (int v : adj[u]) {  // Iterating
-       // Another thread adds edge to adj[u]
-       // Iterator may become invalid
-   }
-   ```
+**Contention** (see Section 3.5.8):
+- Coarse-grained locking: Very high contention, throughput collapses
+- Fine-grained locking: Lower contention, but deadlock risk
+- Atomic operations: Lower contention for visited flags
 
-### Practical Recommendations
+**Throughput Collapse Under Load**:
+- With many threads, coarse-grained locking becomes severe bottleneck
+- Fine-grained locking or atomic operations help significantly
 
-- **For read-only traversal**: No synchronization needed (if graph is immutable)
-- **For parallel BFS**: Use atomic operations for visited flags, lock-free queues
-- **For graph modification**: Use coarse-grained locking or copy-on-write
-- **For production**: Consider graph processing frameworks (e.g., GraphX, Pregel) that handle concurrency
+**Parallel BFS/DFS Strategies**:
+- **Level-by-level parallelization (BFS)**: Process all vertices at level `i` in parallel
+- **Component-based parallelization**: Process different connected components in parallel
+- **Edge-based parallelization**: Process edges in parallel (for algorithms like MST)
+
+### 11.16.6 When Not to Do This Yourself
+
+**Use Library Implementations**:
+- Graph processing frameworks (e.g., GraphX, Pregel) that handle concurrency
+- Thread-safe graph libraries from well-tested sources
+- Immutable graph structures for read-heavy workloads
+
+**Avoid Premature Optimization**:
+- Start with coarse-grained locking or immutable graphs
+- Only optimize to fine-grained if profiling shows it's necessary
+- Consider graph processing frameworks for complex parallel algorithms
+
+**For Production**: Consider graph processing frameworks that handle concurrency, or use immutable graphs for read-heavy workloads. See Section 3.5.10 for guidance on using libraries.
 
 ## 11.17 Summary
 
