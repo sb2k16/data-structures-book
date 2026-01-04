@@ -258,7 +258,87 @@ int searchRotated(const vector<int>& arr, int target) {
 - Random access to elements
 - Elements must be comparable
 
-## 13.4 Exponential Search
+## 13.4 Jump Search
+
+**Jump Search** is a search algorithm for sorted arrays that works by jumping ahead by fixed steps, then performing a linear search in the identified block. It's faster than linear search but simpler than binary search.
+
+### How Jump Search Works
+
+1. **Jump Ahead**: Jump by `√n` steps until we find a block that might contain the target
+2. **Linear Search**: Perform linear search in the identified block
+3. **Optimal Step Size**: `√n` minimizes the total number of comparisons
+
+### Implementation
+
+```cpp
+#include <cmath>
+#include <algorithm>
+using namespace std;
+
+int jumpSearch(const vector<int>& arr, int target) {
+    int n = arr.size();
+    if (n == 0) return -1;
+    
+    // Calculate optimal jump size
+    int step = sqrt(n);
+    int prev = 0;
+    
+    // Jump ahead until we find a block that might contain target
+    while (arr[min(step, n) - 1] < target) {
+        prev = step;
+        step += sqrt(n);
+        
+        // If we've jumped past the array, target not found
+        if (prev >= n) {
+            return -1;
+        }
+    }
+    
+    // Perform linear search in the identified block
+    while (arr[prev] < target) {
+        prev++;
+        
+        // If we've reached the next block or end, target not found
+        if (prev == min(step, n)) {
+            return -1;
+        }
+    }
+    
+    // Check if we found the target
+    if (arr[prev] == target) {
+        return prev;
+    }
+    
+    return -1;
+}
+```
+
+### Time Complexity
+
+- **Best Case**: O(1) - target at first position
+- **Average Case**: O(√n) - optimal step size
+- **Worst Case**: O(√n) - target in last block
+- **Space Complexity**: O(1)
+
+### When to Use Jump Search
+
+- **Sorted arrays** with uniform distribution
+- **When binary search is overkill** (simpler implementation)
+- **When jumping is faster** than binary search (cache-friendly)
+- **Bounded arrays** (unlike exponential search for unbounded)
+
+### Comparison with Other Algorithms
+
+| Algorithm | Time Complexity | When to Use |
+|-----------|----------------|-------------|
+| Linear Search | O(n) | Unsorted, small arrays |
+| Binary Search | O(log n) | Sorted, general purpose |
+| Jump Search | O(√n) | Sorted, simpler than binary |
+| Exponential Search | O(log i) | Unbounded sorted arrays |
+
+**Key Insight**: Jump Search is a middle ground between linear search (O(n)) and binary search (O(log n)), with O(√n) complexity. It's simpler than binary search but still efficient for sorted arrays.
+
+## 13.5 Exponential Search
 
 **Exponential Search** is useful for unbounded or very large sorted arrays. It finds the range where the target might be, then uses binary search.
 
@@ -537,6 +617,7 @@ int boyerMooreSearch(const string& text, const string& pattern) {
 |-----------|-----------|--------------|------------|-------|--------------|
 | Linear Search | O(1) | O(n) | O(n) | O(1) | None |
 | Binary Search | O(1) | O(log n) | O(log n) | O(1) | Sorted array |
+| Jump Search | O(1) | O(√n) | O(√n) | O(1) | Sorted array |
 | Exponential Search | O(1) | O(log i) | O(log n) | O(1) | Sorted array |
 | Interpolation Search | O(1) | O(log log n) | O(n) | O(1) | Sorted, uniform |
 | Ternary Search | O(1) | O(log n) | O(log n) | O(1) | Sorted array |

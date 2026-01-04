@@ -1130,7 +1130,176 @@ void set(int index, int value) {
 
 **For Production**: Prefer `std::vector` with external synchronization or thread-safe containers from proven libraries. See Section 3.5.10 for guidance on using libraries.
 
-## 3.15 Summary
+## 3.15 Bit Manipulation
+
+**Bit manipulation** is the act of algorithmically manipulating bits or binary digits. It's a powerful technique for optimizing code and solving problems efficiently, especially in competitive programming and system-level programming.
+
+### Why Bit Manipulation Matters
+
+1. **Performance**: Bit operations are extremely fast (single CPU cycle)
+2. **Memory Efficiency**: Can pack multiple boolean values in a single integer
+3. **Interview Questions**: Common in technical interviews
+4. **System Programming**: Essential for low-level operations
+5. **Algorithm Optimization**: Can reduce time/space complexity
+
+### Basic Bitwise Operations
+
+```cpp
+#include <iostream>
+#include <bitset>
+using namespace std;
+
+void demonstrateBitwiseOperations() {
+    int a = 5;   // 0101 in binary
+    int b = 3;   // 0011 in binary
+    
+    // AND: Both bits must be 1
+    cout << "a & b = " << (a & b) << endl;  // 0101 & 0011 = 0001 = 1
+    
+    // OR: At least one bit must be 1
+    cout << "a | b = " << (a | b) << endl;  // 0101 | 0011 = 0111 = 7
+    
+    // XOR: Bits differ (exclusive or)
+    cout << "a ^ b = " << (a ^ b) << endl;  // 0101 ^ 0011 = 0110 = 6
+    
+    // NOT: Flip all bits
+    cout << "~a = " << (~a) << endl;  // ~0101 = ...11111010 (platform dependent)
+    
+    // Left Shift: Multiply by 2^n
+    cout << "a << 1 = " << (a << 1) << endl;  // 0101 << 1 = 1010 = 10
+    
+    // Right Shift: Divide by 2^n
+    cout << "a >> 1 = " << (a >> 1) << endl;  // 0101 >> 1 = 0010 = 2
+}
+```
+
+### Common Bit Manipulation Tricks
+
+#### 1. Check if Number is Power of 2
+
+```cpp
+bool isPowerOfTwo(int n) {
+    return n > 0 && (n & (n - 1)) == 0;
+}
+
+// Explanation: Powers of 2 have only one set bit
+// n = 8:  1000
+// n-1 = 7: 0111
+// n & (n-1) = 0000 ✓
+```
+
+#### 2. Count Set Bits (Population Count)
+
+```cpp
+// Method 1: Loop through bits
+int countSetBits(int n) {
+    int count = 0;
+    while (n) {
+        count += n & 1;  // Check if last bit is set
+        n >>= 1;          // Right shift
+    }
+    return count;
+}
+
+// Method 2: Brian Kernighan's Algorithm (faster)
+int countSetBitsOptimized(int n) {
+    int count = 0;
+    while (n) {
+        n &= (n - 1);  // Remove rightmost set bit
+        count++;
+    }
+    return count;
+}
+
+// Method 3: Built-in (C++20)
+#include <bit>
+int countSetBitsBuiltin(int n) {
+    return popcount(n);  // C++20
+}
+```
+
+#### 3. Get/Set/Clear/Toggle Bit at Position
+
+```cpp
+// Get bit at position i (0-indexed from right)
+bool getBit(int num, int i) {
+    return (num >> i) & 1;
+}
+
+// Set bit at position i
+int setBit(int num, int i) {
+    return num | (1 << i);
+}
+
+// Clear bit at position i
+int clearBit(int num, int i) {
+    return num & ~(1 << i);
+}
+
+// Toggle bit at position i
+int toggleBit(int num, int i) {
+    return num ^ (1 << i);
+}
+```
+
+#### 4. Find Single Number (All Others Appear Twice)
+
+```cpp
+// LeetCode: Single Number
+int singleNumber(vector<int>& nums) {
+    int result = 0;
+    for (int num : nums) {
+        result ^= num;  // XOR cancels out pairs
+    }
+    return result;
+}
+
+// Explanation: a^a = 0, a^0 = a
+// All pairs cancel out, only single number remains
+```
+
+#### 5. Subset Generation Using Bit Masks
+
+```cpp
+// Generate all subsets of array
+vector<vector<int>> generateSubsets(vector<int>& nums) {
+    int n = nums.size();
+    vector<vector<int>> subsets;
+    
+    // 2^n possible subsets
+    for (int mask = 0; mask < (1 << n); mask++) {
+        vector<int> subset;
+        for (int i = 0; i < n; i++) {
+            if (mask & (1 << i)) {  // Check if bit i is set
+                subset.push_back(nums[i]);
+            }
+        }
+        subsets.push_back(subset);
+    }
+    
+    return subsets;
+}
+```
+
+### Key Takeaways
+
+1. **Bitwise operations** are extremely fast (single CPU cycle)
+2. **XOR** is useful for canceling duplicates
+3. **Left/Right shifts** are fast multiply/divide by powers of 2
+4. **Bit masks** can represent sets efficiently
+5. **Common patterns**: Power of 2 check, set bit count, subset generation
+
+### When to Use Bit Manipulation
+
+- **Performance critical** code
+- **Memory constrained** environments (packing booleans)
+- **Competitive programming** problems
+- **System programming** (flags, permissions)
+- **Interview problems** (common pattern)
+
+**Note**: While bit manipulation is powerful, prioritize code readability. Use it when performance matters or when it significantly simplifies the solution.
+
+## 3.16 Summary
 
 Arrays and strings are fundamental data structures that form the building blocks of more complex algorithms and data structures. Understanding their properties, operations, and common algorithms is essential for any programmer. The techniques learned in this chapter—such as two pointers, sliding window, and prefix sums—are widely applicable in solving various algorithmic problems.
 
