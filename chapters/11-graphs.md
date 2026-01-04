@@ -3443,7 +3443,439 @@ bool isBipartite(const vector<list<int>>& graph) {
 
 10. Create a graph visualization tool that can display small graphs.
 
-## 11.16 Concurrency Considerations
+## 11.14 A* Algorithm
+
+**A\* (A-star)** is an informed search algorithm that finds the shortest path between nodes in a weighted graph. It combines Dijkstra's algorithm with a heuristic function to guide the search more efficiently.
+
+### How A* Works
+
+A* uses:
+- **g(n)**: Actual cost from start to node n
+- **h(n)**: Heuristic estimate from node n to goal
+- **f(n) = g(n) + h(n)**: Total estimated cost
+
+The algorithm prioritizes nodes with lower f(n) values.
+
+### Key Properties
+
+- **Admissible Heuristic**: h(n) never overestimates the true cost
+- **Consistent Heuristic**: h(n) ≤ cost(n, n') + h(n') for all neighbors n'
+- **Optimal**: Finds shortest path if heuristic is admissible
+
+### Implementation
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <unordered_map>
+#include <cmath>
+#include <climits>
+using namespace std;
+
+struct Node {
+    int x, y;
+    int g, h, f;
+    Node* parent;
+    
+    Node(int x, int y) : x(x), y(y), g(0), h(0), f(0), parent(nullptr) {}
+    
+    bool operator>(const Node& other) const {
+        return f > other.f;
+    }
+};
+
+class AStar {
+private:
+    vector<vector<int>> grid;
+    int rows, cols;
+    
+    // Manhattan distance heuristic (admissible for grid)
+    int heuristic(int x1, int y1, int x2, int y2) {
+        return abs(x1 - x2) + abs(y1 - y2);
+    }
+    
+    // Get neighbors (4-directional)
+    vector<pair<int, int>> getNeighbors(int x, int y) {
+        vector<pair<int, int>> neighbors;
+        int dx[] = {-1, 1, 0, 0};
+        int dy[] = {0, 0, -1, 1};
+        
+        for (int i = 0; i < 4; i++) {
+            int nx = x + dx[i];
+            int ny = y + dy[i];
+            
+            if (nx >= 0 && nx < rows && ny >= 0 && ny < cols && 
+                grid[nx][ny] != 1) {  // 1 = obstacle
+                neighbors.push_back({nx, ny});
+            }
+        }
+        
+        return neighbors;
+    }
+    
+public:
+    AStar(vector<vector<int>> g) : grid(g) {
+        rows = grid.size();
+        cols = grid[0].size();
+    }
+    
+    vector<pair<int, int>> findPath(pair<int, int> start, pair<int, int> goal) {
+        priority_queue<Node*, vector<Node*>, greater<Node*>> openSet;
+        unordered_map<string, Node*> allNodes;
+        unordered_map<string, bool> closedSet;
+        
+        Node* startNode = new Node(start.first, start.second);
+        startNode->h = heuristic(start.first, start.second, goal.first, goal.second);
+        startNode->f = startNode->g + startNode->h;
+        
+        string startKey = to_string(start.first) + "," + to_string(start.second);
+        allNodes[startKey] = startNode;
+        openSet.push(startNode);
+        
+        while (!openSet.empty()) {
+            Node* current = openSet.top();
+            openSet.pop();
+            
+            string currentKey = to_string(current->x) + "," + to_string(current->y);
+            
+            if (closedSet[currentKey]) continue;
+            closedSet[currentKey] = true;
+            
+            // Goal reached
+            if (current->x == goal.first && current->y == goal.second) {
+                // Reconstruct path
+                vector<pair<int, int>> path;
+                Node* node = current;
+                while (node) {
+                    path.push_back({node->x, node->y});
+                    node = node->parent;
+                }
+                reverse(path.begin(), path.end());
+                return path;
+            }
+            
+            // Explore neighbors
+            for (auto [nx, ny] : getNeighbors(current->x, current->y)) {
+                string neighborKey = to_string(nx) + "," + to_string(ny);
+                
+                if (closedSet[neighborKey]) continue;
+                
+                int tentativeG = current->g + 1;  // Assuming unit cost
+                
+                Node* neighbor;
+                if (allNodes.find(neighborKey) == allNodes.end()) {
+                    neighbor = new Node(nx, ny);
+                    allNodes[neighborKey] = neighbor;
+                } else {
+                    neighbor = allNodes[neighborKey];
+                    if (tentativeG >= neighbor->g) continue;
+                }
+                
+                neighbor->parent = current;
+                neighbor->g = tentativeG;
+                neighbor->h = heuristic(nx, ny, goal.first, goal.second);
+                neighbor->f = neighbor->g + neighbor->h;
+                
+                openSet.push(neighbor);
+            }
+        }
+        
+        return {};  // No path found
+    }
+};
+```
+
+### When to Use A*
+
+**Use A* When**:
+- Need shortest path in weighted graph
+- Have good heuristic function
+- Pathfinding in games, robotics, navigation
+
+**Use Dijkstra When**:
+- No good heuristic available
+- Need all shortest paths from source
+
+**Use BFS When**:
+- Unweighted graph
+- Need shortest path in terms of edges
+
+## 11.15 Network Flow Algorithms
+
+**Network flow** problems involve finding the maximum flow or minimum cut in a flow network. These are fundamental in optimization and graph theory.
+
+### Ford-Fulkerson Algorithm
+
+The **Ford-Fulkerson algorithm** finds the maximum flow in a flow network using augmenting paths.
+
+#### Key Concepts
+
+- **Flow Network**: Directed graph with capacities on edges
+- **Source**: Node producing flow
+- **Sink**: Node consuming flow
+- **Augmenting Path**: Path from source to sink with available capacity
+- **Residual Graph**: Graph showing remaining capacity
+
+### Implementation
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <climits>
+#include <algorithm>
+using namespace std;
+
+class FordFulkerson {
+private:
+    int n;
+    vector<vector<int>> capacity;
+    vector<vector<int>> flow;
+    vector<vector<int>> graph;
+    
+    // BFS to find augmenting path
+    bool bfs(int source, int sink, vector<int>& parent) {
+        vector<bool> visited(n, false);
+        queue<int> q;
+        
+        q.push(source);
+        visited[source] = true;
+        parent[source] = -1;
+        
+        while (!q.empty()) {
+            int u = q.front();
+            q.pop();
+            
+            for (int v : graph[u]) {
+                if (!visited[v] && capacity[u][v] - flow[u][v] > 0) {
+                    visited[v] = true;
+                    parent[v] = u;
+                    q.push(v);
+                    
+                    if (v == sink) {
+                        return true;
+                    }
+                }
+            }
+        }
+        
+        return false;
+    }
+    
+public:
+    FordFulkerson(int numNodes) : n(numNodes) {
+        capacity.assign(n, vector<int>(n, 0));
+        flow.assign(n, vector<int>(n, 0));
+        graph.assign(n, vector<int>());
+    }
+    
+    void addEdge(int u, int v, int cap) {
+        graph[u].push_back(v);
+        graph[v].push_back(u);  // For residual graph
+        capacity[u][v] = cap;
+    }
+    
+    int maxFlow(int source, int sink) {
+        int maxFlow = 0;
+        vector<int> parent(n);
+        
+        // Find augmenting paths and update flow
+        while (bfs(source, sink, parent)) {
+            int pathFlow = INT_MAX;
+            
+            // Find minimum capacity in path
+            for (int v = sink; v != source; v = parent[v]) {
+                int u = parent[v];
+                pathFlow = min(pathFlow, capacity[u][v] - flow[u][v]);
+            }
+            
+            // Update flow along path
+            for (int v = sink; v != source; v = parent[v]) {
+                int u = parent[v];
+                flow[u][v] += pathFlow;
+                flow[v][u] -= pathFlow;  // Residual capacity
+            }
+            
+            maxFlow += pathFlow;
+        }
+        
+        return maxFlow;
+    }
+};
+```
+
+### Applications
+
+1. **Maximum Bipartite Matching**: Find maximum matching in bipartite graph
+2. **Minimum Cut**: Find minimum edges to disconnect source and sink
+3. **Network Reliability**: Calculate maximum flow capacity
+4. **Resource Allocation**: Distribute resources optimally
+
+### Time Complexity
+
+- **Ford-Fulkerson**: O(E × max_flow) - can be slow for large flows
+- **Edmonds-Karp**: O(V × E²) - uses BFS for augmenting paths
+- **Dinic's Algorithm**: O(V² × E) - more efficient in practice
+
+## 11.16 Graph Coloring
+
+**Graph coloring** is the problem of assigning colors to vertices such that no two adjacent vertices have the same color. The minimum number of colors needed is the **chromatic number**.
+
+### Applications
+
+1. **Scheduling**: Assign time slots to courses (no conflicts)
+2. **Register Allocation**: Assign CPU registers to variables
+3. **Map Coloring**: Color map regions (four-color theorem)
+4. **Sudoku**: Special case of graph coloring
+
+### Greedy Coloring Algorithm
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <set>
+#include <algorithm>
+using namespace std;
+
+class GraphColoring {
+private:
+    vector<vector<int>> graph;
+    int n;
+    
+public:
+    GraphColoring(vector<vector<int>> g) : graph(g), n(g.size()) {}
+    
+    // Greedy coloring - O(V + E)
+    vector<int> greedyColoring() {
+        vector<int> color(n, -1);
+        color[0] = 0;  // First vertex gets color 0
+        
+        // Available colors for each vertex
+        vector<bool> available(n, true);
+        
+        for (int u = 1; u < n; u++) {
+            // Mark colors of adjacent vertices as unavailable
+            for (int v : graph[u]) {
+                if (color[v] != -1) {
+                    available[color[v]] = false;
+                }
+            }
+            
+            // Find first available color
+            int cr;
+            for (cr = 0; cr < n; cr++) {
+                if (available[cr]) {
+                    break;
+                }
+            }
+            
+            color[u] = cr;
+            
+            // Reset available colors for next vertex
+            fill(available.begin(), available.end(), true);
+        }
+        
+        return color;
+    }
+    
+    // Check if graph is bipartite (2-colorable)
+    bool isBipartite() {
+        vector<int> color(n, -1);
+        queue<int> q;
+        
+        for (int i = 0; i < n; i++) {
+            if (color[i] == -1) {
+                color[i] = 0;
+                q.push(i);
+                
+                while (!q.empty()) {
+                    int u = q.front();
+                    q.pop();
+                    
+                    for (int v : graph[u]) {
+                        if (color[v] == -1) {
+                            color[v] = 1 - color[u];
+                            q.push(v);
+                        } else if (color[v] == color[u]) {
+                            return false;  // Not bipartite
+                        }
+                    }
+                }
+            }
+        }
+        
+        return true;
+    }
+    
+    // Find chromatic number (minimum colors needed)
+    int chromaticNumber() {
+        // This is NP-hard, so we use greedy as approximation
+        vector<int> colors = greedyColoring();
+        return *max_element(colors.begin(), colors.end()) + 1;
+    }
+};
+```
+
+### Backtracking for Optimal Coloring
+
+```cpp
+// Backtracking to find minimum colors (optimal but slow)
+bool isSafe(vector<vector<int>>& graph, vector<int>& color, int v, int c) {
+    for (int u : graph[v]) {
+        if (color[u] == c) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool graphColoringUtil(vector<vector<int>>& graph, int m, vector<int>& color, int v) {
+    int n = graph.size();
+    if (v == n) {
+        return true;  // All vertices colored
+    }
+    
+    for (int c = 0; c < m; c++) {
+        if (isSafe(graph, color, v, c)) {
+            color[v] = c;
+            
+            if (graphColoringUtil(graph, m, color, v + 1)) {
+                return true;
+            }
+            
+            color[v] = -1;  // Backtrack
+        }
+    }
+    
+    return false;
+}
+
+vector<int> graphColoringBacktracking(vector<vector<int>>& graph, int maxColors) {
+    int n = graph.size();
+    vector<int> color(n, -1);
+    
+    if (graphColoringUtil(graph, maxColors, color, 0)) {
+        return color;
+    }
+    
+    return {};  // No valid coloring with maxColors
+}
+```
+
+### When to Use
+
+**Use Greedy Coloring When**:
+- Need fast approximate solution
+- Graph is sparse
+- Optimal coloring not required
+
+**Use Backtracking When**:
+- Need optimal solution
+- Graph is small
+- Exact chromatic number required
+
+## 11.17 Concurrency Considerations
 
 This section applies the concurrency fundamentals from [Chapter 3.5](03.5-concurrency-fundamentals.md) to graph traversal (BFS/DFS). See Section 3.5.3 for invariant-based reasoning and Section 3.5.4 for race conditions.
 
@@ -3613,7 +4045,7 @@ if (!visited[v].exchange(true)) {  // Atomic check-and-set
 
 **For Production**: Consider graph processing frameworks that handle concurrency, or use immutable graphs for read-heavy workloads. See Section 3.5.10 for guidance on using libraries.
 
-## 11.17 Summary
+## 11.18 Summary
 
 Graphs are fundamental data structures that model relationships and connections. Understanding graph representations, traversal algorithms, shortest path algorithms, and minimum spanning tree algorithms is essential for solving many computational problems. The choice of representation and algorithm depends on the specific problem requirements, graph characteristics, and performance constraints.
 

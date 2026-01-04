@@ -1720,7 +1720,516 @@ Tracks frequencies at multiple time scales (recent, hourly, daily).
 **3. Conservative Update**
 Only updates minimum cells, reducing overestimation.
 
-## 14.11 Failure Modes and Common Pitfalls
+## 14.11 Fibonacci Heap
+
+**Fibonacci Heap** is an advanced heap data structure that provides better amortized time complexity for decrease-key and merge operations compared to binary heaps. It's particularly useful for algorithms like Dijkstra's shortest path.
+
+### Why Fibonacci Heap?
+
+While binary heaps are excellent for most applications, Fibonacci heaps offer:
+- **O(1) amortized decrease-key**: Critical for Dijkstra's algorithm
+- **O(1) amortized merge**: Efficient heap merging
+- **O(log n) extract-min**: Same as binary heap
+- **Lazy operations**: Defer work until necessary
+
+### Structure
+
+Fibonacci heaps are collections of heap-ordered trees (min-heap property) with:
+- **Root list**: Circular doubly-linked list of tree roots
+- **Min pointer**: Points to minimum root
+- **Degree array**: Tracks trees by degree
+- **Marked nodes**: Track nodes that lost a child (for decrease-key optimization)
+
+### Key Operations
+
+| Operation | Binary Heap | Fibonacci Heap |
+|-----------|-------------|----------------|
+| Insert | O(log n) | O(1) amortized |
+| Extract Min | O(log n) | O(log n) amortized |
+| Decrease Key | O(log n) | O(1) amortized |
+| Merge | O(n) | O(1) amortized |
+| Delete | O(log n)) | O(log n) amortized |
+
+### Implementation Overview
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <list>
+#include <climits>
+using namespace std;
+
+class FibonacciHeap {
+private:
+    struct Node {
+        int key;
+        int degree;
+        bool marked;
+        Node* parent;
+        Node* child;
+        Node* left;
+        Node* right;
+        
+        Node(int k) : key(k), degree(0), marked(false),
+                     parent(nullptr), child(nullptr),
+                     left(this), right(this) {}
+    };
+    
+    Node* minNode;
+    int numNodes;
+    
+    // Consolidate trees of same degree
+    void consolidate() {
+        vector<Node*> degreeTable(64, nullptr);  // Max degree ~64 for practical sizes
+        
+        Node* current = minNode;
+        list<Node*> roots;
+        
+        // Collect all roots
+        do {
+            roots.push_back(current);
+            current = current->right;
+        } while (current != minNode);
+        
+        // Process each root
+        for (Node* root : roots) {
+            int degree = root->degree;
+            
+            // Merge trees of same degree
+            while (degreeTable[degree] != nullptr) {
+                Node* other = degreeTable[degree];
+                
+                // Make root with smaller key the parent
+                if (root->key > other->key) {
+                    swap(root, other);
+                }
+                
+                // Link other as child of root
+                link(other, root);
+                degreeTable[degree] = nullptr;
+                degree++;
+            }
+            
+            degreeTable[degree] = root;
+        }
+        
+        // Rebuild root list and find new min
+        minNode = nullptr;
+        for (Node* node : degreeTable) {
+            if (node != nullptr) {
+                if (minNode == nullptr || node->key < minNode->key) {
+                    minNode = node;
+                }
+            }
+        }
+    }
+    
+    // Link node as child of parent
+    void link(Node* node, Node* parent) {
+        // Remove from root list
+        node->left->right = node->right;
+        node->right->left = node->left;
+        
+        // Add to parent's child list
+        if (parent->child == nullptr) {
+            parent->child = node;
+            node->left = node;
+            node->right = node;
+        } else {
+            node->right = parent->child;
+            node->left = parent->child->left;
+            parent->child->left->right = node;
+            parent->child->left = node;
+        }
+        
+        node->parent = parent;
+        parent->degree++;
+        node->marked = false;
+    }
+    
+public:
+    FibonacciHeap() : minNode(nullptr), numNodes(0) {}
+    
+    void insert(int key) {
+        Node* node = new Node(key);
+        
+        if (minNode == nullptr) {
+            minNode = node;
+        } else {
+            // Add to root list
+            node->right = minNode;
+            node->left = minNode->left;
+            minNode->left->right = node;
+            minNode->left = node;
+            
+            if (key < minNode->key) {
+                minNode = node;
+            }
+        }
+        
+        numNodes++;
+    }
+    
+    int extractMin() {
+        if (minNode == nullptr) {
+            throw runtime_error("Heap is empty");
+        }
+        
+        Node* min = minNode;
+        int minKey = min->key;
+        
+        // Add children to root list
+        if (min->child != nullptr) {
+            Node* child = min->child;
+            do {
+                Node* next = child->right;
+                child->parent = nullptr;
+                
+                // Add to root list
+                child->right = minNode;
+                child->left = minNode->left;
+                minNode->left->right = child;
+                minNode->left = child;
+                
+                child = next;
+            } while (child != min->child);
+        }
+        
+        // Remove min from root list
+        min->left->right = min->right;
+        min->right->left = min->left;
+        
+        if (min == min->right) {
+            minNode = nullptr;
+        } else {
+            minNode = min->right;
+            consolidate();
+        }
+        
+        numNodes--;
+        delete min;
+        return minKey;
+    }
+    
+    bool empty() const {
+        return minNode == nullptr;
+    }
+};
+```
+
+### When to Use Fibonacci Heap
+
+**Use Fibonacci Heap When**:
+- Implementing Dijkstra's algorithm with many decrease-key operations
+- Need frequent heap merging
+- Decrease-key is the dominant operation
+
+**Use Binary Heap When**:
+- Simplicity is important
+- Operations are balanced (not just decrease-key)
+- Memory overhead matters (Fibonacci heaps have higher constant factors)
+
+### Real-World Application: Dijkstra's Algorithm
+
+```cpp
+// Dijkstra's with Fibonacci Heap - O(V log V + E) instead of O((V + E) log V)
+// Better when E >> V (dense graphs)
+```
+
+**Key Insight**: Fibonacci heaps shine when decrease-key operations dominate, as in Dijkstra's algorithm on dense graphs. For most applications, binary heaps are simpler and sufficient.
+
+## 14.12 Suffix Array and Suffix Tree
+
+**Suffix Array** and **Suffix Tree** are advanced data structures for efficient string operations, particularly substring search and pattern matching.
+
+### Suffix Array
+
+A **suffix array** is a sorted array of all suffixes of a string. It enables efficient substring search and many string algorithms.
+
+#### Construction
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <string>
+#include <algorithm>
+using namespace std;
+
+class SuffixArray {
+private:
+    string text;
+    vector<int> suffixArray;
+    vector<int> lcp;  // Longest Common Prefix array
+    
+    void buildSuffixArray() {
+        int n = text.length();
+        suffixArray.resize(n);
+        
+        // Initialize with indices
+        for (int i = 0; i < n; i++) {
+            suffixArray[i] = i;
+        }
+        
+        // Sort by suffixes (naive O(n² log n) approach)
+        // In practice, use O(n log n) algorithms like DC3 or SA-IS
+        sort(suffixArray.begin(), suffixArray.end(), 
+             [this](int a, int b) {
+                 return text.substr(a) < text.substr(b);
+             });
+    }
+    
+    void buildLCP() {
+        int n = text.length();
+        lcp.resize(n);
+        lcp[0] = 0;
+        
+        for (int i = 1; i < n; i++) {
+            int len = 0;
+            int a = suffixArray[i - 1];
+            int b = suffixArray[i];
+            
+            while (a + len < n && b + len < n && 
+                   text[a + len] == text[b + len]) {
+                len++;
+            }
+            
+            lcp[i] = len;
+        }
+    }
+    
+public:
+    SuffixArray(const string& s) : text(s) {
+        text += '$';  // Sentinel character
+        buildSuffixArray();
+        buildLCP();
+    }
+    
+    // Search for pattern - O(m log n) where m is pattern length
+    bool search(const string& pattern) {
+        int left = 0, right = suffixArray.size() - 1;
+        
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+            int suffixIndex = suffixArray[mid];
+            string suffix = text.substr(suffixIndex);
+            
+            if (suffix.substr(0, pattern.length()) == pattern) {
+                return true;
+            } else if (suffix < pattern) {
+                left = mid + 1;
+            } else {
+                right = mid - 1;
+            }
+        }
+        
+        return false;
+    }
+    
+    // Find all occurrences of pattern
+    vector<int> findAllOccurrences(const string& pattern) {
+        vector<int> occurrences;
+        int left = 0, right = suffixArray.size() - 1;
+        
+        // Binary search for first occurrence
+        int first = -1;
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+            int suffixIndex = suffixArray[mid];
+            string suffix = text.substr(suffixIndex);
+            
+            if (suffix.substr(0, pattern.length()) == pattern) {
+                first = mid;
+                right = mid - 1;
+            } else if (suffix < pattern) {
+                left = mid + 1;
+            } else {
+                right = mid - 1;
+            }
+        }
+        
+        if (first == -1) return occurrences;
+        
+        // Find last occurrence
+        left = first;
+        right = suffixArray.size() - 1;
+        int last = first;
+        
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+            int suffixIndex = suffixArray[mid];
+            string suffix = text.substr(suffixIndex);
+            
+            if (suffix.substr(0, pattern.length()) == pattern) {
+                last = mid;
+                left = mid + 1;
+            } else {
+                right = mid - 1;
+            }
+        }
+        
+        // Collect all occurrences
+        for (int i = first; i <= last; i++) {
+            occurrences.push_back(suffixArray[i]);
+        }
+        
+        return occurrences;
+    }
+    
+    vector<int> getSuffixArray() const {
+        return suffixArray;
+    }
+    
+    vector<int> getLCP() const {
+        return lcp;
+    }
+};
+```
+
+### Suffix Tree
+
+A **suffix tree** is a compressed trie containing all suffixes of a string. It enables O(m) substring search where m is pattern length.
+
+#### Key Properties
+
+- **Space**: O(n) with Ukkonen's algorithm
+- **Construction**: O(n) with Ukkonen's algorithm
+- **Search**: O(m) for pattern of length m
+- **Applications**: Longest common substring, longest repeated substring, substring search
+
+#### Applications
+
+1. **Substring Search**: O(m) time for pattern of length m
+2. **Longest Common Substring**: Between two strings
+3. **Longest Repeated Substring**: In a single string
+4. **String Compression**: LZ77 algorithm uses suffix trees
+5. **Bioinformatics**: DNA sequence analysis
+
+**Note**: Suffix trees are complex to implement. Suffix arrays are often preferred in practice due to simpler implementation and similar performance.
+
+### When to Use
+
+**Use Suffix Array/Tree When**:
+- Need to search for many patterns in same text
+- String processing is performance-critical
+- Need advanced string operations (LCS, repeated substrings)
+
+**Use Simple String Search When**:
+- Single pattern search
+- Text is small
+- Simplicity is important
+
+## 14.13 Persistent Data Structures
+
+**Persistent data structures** maintain all previous versions when modified. They're essential for functional programming and time-travel queries.
+
+### Types of Persistence
+
+1. **Partial Persistence**: Can access all previous versions, but only modify latest
+2. **Full Persistence**: Can access and modify any previous version
+3. **Confluent Persistence**: Can merge versions
+
+### Persistent Segment Tree Example
+
+```cpp
+#include <iostream>
+#include <vector>
+using namespace std;
+
+class PersistentSegmentTree {
+private:
+    struct Node {
+        int value;
+        Node* left;
+        Node* right;
+        
+        Node(int v) : value(v), left(nullptr), right(nullptr) {}
+        Node(Node* l, Node* r) : value(0), left(l), right(r) {
+            if (l) value += l->value;
+            if (r) value += r->value;
+        }
+    };
+    
+    vector<Node*> roots;  // Store roots of all versions
+    int n;
+    
+    Node* build(vector<int>& arr, int left, int right) {
+        if (left == right) {
+            return new Node(arr[left]);
+        }
+        
+        int mid = left + (right - left) / 2;
+        Node* l = build(arr, left, mid);
+        Node* r = build(arr, mid + 1, right);
+        return new Node(l, r);
+    }
+    
+    Node* update(Node* node, int left, int right, int index, int value) {
+        if (left == right) {
+            return new Node(value);
+        }
+        
+        int mid = left + (right - left) / 2;
+        if (index <= mid) {
+            return new Node(update(node->left, left, mid, index, value), 
+                           node->right);
+        } else {
+            return new Node(node->left, 
+                           update(node->right, mid + 1, right, index, value));
+        }
+    }
+    
+    int query(Node* node, int left, int right, int qLeft, int qRight) {
+        if (qRight < left || qLeft > right) return 0;
+        if (qLeft <= left && right <= qRight) return node->value;
+        
+        int mid = left + (right - left) / 2;
+        return query(node->left, left, mid, qLeft, qRight) +
+               query(node->right, mid + 1, right, qLeft, qRight);
+    }
+    
+public:
+    PersistentSegmentTree(vector<int>& arr) {
+        n = arr.size();
+        roots.push_back(build(arr, 0, n - 1));
+    }
+    
+    // Create new version by updating
+    void update(int version, int index, int value) {
+        Node* newRoot = update(roots[version], 0, n - 1, index, value);
+        roots.push_back(newRoot);
+    }
+    
+    // Query a specific version
+    int query(int version, int left, int right) {
+        return query(roots[version], 0, n - 1, left, right);
+    }
+    
+    int getLatestVersion() {
+        return roots.size() - 1;
+    }
+};
+```
+
+### Applications
+
+1. **Time-Travel Queries**: "What was the sum at time t?"
+2. **Functional Programming**: Immutable data structures
+3. **Version Control**: Track changes over time
+4. **Rollback Operations**: Revert to previous state
+
+### When to Use
+
+**Use Persistent Structures When**:
+- Need to access historical versions
+- Functional programming paradigm
+- Time-travel queries required
+
+**Use Regular Structures When**:
+- Only need current state
+- Memory is constrained
+- Simplicity is important
+
+## 14.14 Failure Modes and Common Pitfalls
 
 Understanding common failure modes helps avoid bugs and performance issues.
 
@@ -1857,7 +2366,7 @@ int query(int index) {
 **Why it happens**: Fenwick trees use 1-based indexing internally
 **Impact**: Incorrect prefix sums, wrong query results
 
-## 14.12 Key Takeaways
+## 14.15 Key Takeaways
 
 1. **Heaps** provide efficient priority queue operations
 2. **Tries** excel at prefix-based string operations
@@ -1867,7 +2376,7 @@ int query(int index) {
 6. **Sqrt Decomposition** offers simple O(√n) queries and updates
 7. Choose the right structure based on operation requirements and constraints
 
-## 14.13 Exercises
+## 14.16 Exercises
 
 1. Implement a k-way merge using a min-heap.
 
@@ -1897,7 +2406,7 @@ int query(int index) {
 
 14. Implement a Sqrt Decomposition that supports range minimum and range sum queries.
 
-## 14.14 Concurrency Considerations
+## 14.17 Concurrency Considerations
 
 This section applies the concurrency fundamentals from [Chapter 3.5](03.5-concurrency-fundamentals.md) to heaps and priority queues. See Section 3.5.3 for invariant-based reasoning and Section 3.5.9 for producer-consumer patterns.
 
@@ -2040,7 +2549,7 @@ public:
 
 **For Production**: Prefer `std::priority_queue` with external synchronization or thread-safe priority queues from proven libraries. See Section 3.5.10 for guidance on using libraries.
 
-## 14.15 Summary
+## 14.18 Summary
 
 Advanced data structures provide specialized operations for specific use cases. Understanding when and how to use heaps, tries, segment trees, and Fenwick trees is essential for solving complex problems efficiently.
 
