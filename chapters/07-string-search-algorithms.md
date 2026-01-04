@@ -25,6 +25,26 @@ The naive approach checks every possible position in the text for the pattern. W
 2. At each position, compare the pattern with the corresponding substring
 3. If all characters match, record the position as a match
 
+### 7.2.1 Core Invariants
+
+Understanding invariants ensures correct string search implementations.
+
+**Core Invariants of Naive Search:**
+
+1. **Position Invariant**: 
+   - At position `i` in the text, we check if `text[i...i+m-1]` matches `pattern[0...m-1]`
+   - All positions from `0` to `n-m` are checked exactly once
+
+2. **Comparison Invariant**:
+   - Character-by-character comparison is performed left-to-right
+   - If any character mismatches, the position is rejected immediately
+   - Only if all `m` characters match is the position recorded as a match
+
+3. **Completeness Invariant**:
+   - Every possible starting position is examined
+   - No valid match position is skipped
+   - The algorithm finds all occurrences of the pattern in the text
+
 ### Detailed Example Walkthrough
 
 Let's trace through the naive algorithm with a concrete example:
@@ -256,6 +276,25 @@ The Rabin-Karp algorithm uses hashing to find the pattern. It's based on the ide
 2. Calculate hash value of the first window of text
 3. Slide the window one position at a time and update the hash
 4. Compare hash values; if they match, verify character by character
+
+### 7.3.1 Core Invariants
+
+**Core Invariants of Rabin-Karp:**
+
+1. **Hash Equality Invariant** (Probabilistic):
+   - If two strings are equal, their hash values must be equal
+   - If hash values are equal, the strings are likely equal (with high probability)
+   - Hash collisions are possible but rare with good hash functions
+
+2. **Rolling Hash Invariant**:
+   - At position `i`, the hash of `text[i...i+m-1]` can be computed from the hash at position `i-1`
+   - The rolling hash update maintains: `hash(text[i...i+m-1]) = f(hash(text[i-1...i+m-2]), text[i-1], text[i+m-1])`
+   - This allows O(1) hash updates instead of O(m) recomputation
+
+3. **Verification Invariant**:
+   - When hash values match, character-by-character verification is performed
+   - This ensures correctness despite potential hash collisions
+   - False positives (hash match but strings differ) are caught during verification
 
 ### Detailed Example Walkthrough
 
@@ -568,6 +607,25 @@ The KMP algorithm uses information from previous matches to avoid unnecessary co
 1. Preprocess the pattern to create the Longest Proper Prefix which is also Suffix (LPS) array
 2. Use the LPS array to skip characters that are guaranteed to match
 3. When a mismatch occurs, use the LPS array to determine the next position to check
+
+### 7.4.1 Core Invariants
+
+**Core Invariants of KMP:**
+
+1. **Prefix-Suffix Invariant** (Strong Invariant):
+   - At position `i` in the text, the algorithm maintains that the prefix of length `lps[j]` of the pattern matches the suffix ending at position `i-1` in the text
+   - When a mismatch occurs at `text[i]` and `pattern[j]`, we know that `text[i-lps[j]...i-1]` matches `pattern[0...lps[j]-1]`
+   - This allows skipping `j - lps[j]` characters that are guaranteed to match
+
+2. **LPS Array Invariant**:
+   - `lps[i]` stores the length of the longest proper prefix of `pattern[0...i]` that is also a suffix
+   - The LPS array is computed once during preprocessing and remains constant
+   - This invariant enables efficient pattern matching without backtracking in the text
+
+3. **Progress Invariant**:
+   - The text pointer `i` never decreases (no backtracking)
+   - The pattern pointer `j` may decrease (via LPS), but total progress is guaranteed
+   - This ensures O(n) time complexity for the search phase
 
 ### Understanding the LPS Array
 
@@ -1031,6 +1089,25 @@ The Boyer-Moore algorithm is often the fastest in practice for large texts. It u
 1. Compare pattern with text from right to left
 2. When a mismatch occurs, use the Bad Character Rule to shift the pattern
 3. Use the Good Suffix Rule for additional optimization
+
+### 7.5.1 Core Invariants
+
+**Core Invariants of Boyer-Moore:**
+
+1. **Right-to-Left Comparison Invariant**:
+   - The pattern is compared with the text from right to left
+   - This allows discovering mismatches earlier when they occur near the end of the pattern
+   - Early mismatch detection enables larger shifts
+
+2. **Bad Character Rule Invariant**:
+   - When a mismatch occurs at `text[i+j]` and `pattern[j]`, the bad character `text[i+j]` is not in the pattern suffix `pattern[j+1...m-1]`
+   - The pattern can be shifted to align the last occurrence of `text[i+j]` in the pattern (if it exists) with `text[i+j]`
+   - If the bad character doesn't exist in the pattern, the entire pattern can be shifted past position `i+j`
+
+3. **Good Suffix Rule Invariant**:
+   - When a mismatch occurs, the suffix `pattern[j+1...m-1]` matched the text
+   - The pattern can be shifted to align the longest suffix of `pattern[j+1...m-1]` that matches a prefix of the pattern
+   - This ensures we don't miss potential matches by shifting too far
 
 ### Understanding the Bad Character Rule
 
@@ -1704,7 +1781,139 @@ public:
 5. **Z-Algorithm**: Pattern preprocessing, string analysis
 6. **Aho-Corasick**: Multiple pattern search, text mining
 
-## 7.9 Practical Applications
+## 7.10 Concurrency Considerations
+
+String search algorithms appear frequently in concurrent systems: log scanning, stream processing, and indexing pipelines. Understanding concurrent access patterns is essential for thread-safe implementations.
+
+This section applies the concurrency fundamentals from [Chapter 3.5](03.5-concurrency-fundamentals.md). See Section 3.5.3 for invariant-based reasoning.
+
+### 7.10.1 Shared-State Invariants
+
+**Core String Search Invariants** (see Section 3.5.3):
+1. **Pattern Invariant**: "The pattern remains constant during search"
+2. **Text Invariant**: "The text being searched remains consistent (or changes are handled)"
+3. **Match Position Invariant**: "Match positions are correctly identified and reported"
+
+**What Must Not Be Observed Half-Updated**:
+- Pattern modifications during search
+- Text modifications during search (for mutable text)
+- Partial match results
+
+### 7.10.2 Stateless String Search is Embarrassingly Parallel
+
+**Key Insight**: Most string search algorithms are **stateless** during the search phase (after preprocessing).
+
+**Naive, KMP, Boyer-Moore Search Phase**:
+- Each position in the text can be checked independently
+- No shared mutable state during search
+- Perfect for parallelization
+
+**Example: Parallel Naive Search**
+```cpp
+// Each thread processes a chunk of text
+void parallelNaiveSearch(const string& text, const string& pattern, 
+                         int start, int end, vector<int>& results) {
+    for (int i = start; i <= end - pattern.length(); i++) {
+        if (text.substr(i, pattern.length()) == pattern) {
+            results.push_back(i);
+        }
+    }
+}
+```
+
+**Invariant Preserved**: Each thread operates on disjoint text regions, maintaining the **Match Position Invariant**.
+
+### 7.10.3 Shared Pattern Preprocessing Must Be Immutable
+
+**Problem**: Pattern preprocessing (LPS array, bad character table) is shared across threads.
+
+**Invariant Threatened**: If preprocessing data is modified during search, the **Pattern Invariant** is violated.
+
+**Solution**: Make preprocessing data **immutable** after construction:
+```cpp
+class ThreadSafeKMP {
+    vector<int> lps;  // Immutable after construction
+    string pattern;   // Immutable after construction
+    
+public:
+    ThreadSafeKMP(const string& p) : pattern(p) {
+        // Preprocess once, never modify
+        buildLPS();
+    }
+    
+    // Multiple threads can safely call search concurrently
+    vector<int> search(const string& text) {
+        // Uses immutable lps and pattern
+    }
+};
+```
+
+### 7.10.4 Rolling Hashes Must Avoid Shared Mutable State
+
+**Rabin-Karp Rolling Hash**:
+- Hash computation uses previous hash value
+- **Problem**: Shared mutable state if multiple threads update same hash
+
+**Solution**: Each thread maintains its own hash state:
+```cpp
+// Each thread has its own hash state
+void parallelRabinKarp(const string& text, const string& pattern,
+                       int start, int end, vector<int>& results) {
+    // Each thread computes its own initial hash
+    // No shared mutable state
+}
+```
+
+**Invariant Preserved**: Each thread's hash computation is independent, maintaining the **Hash Equality Invariant**.
+
+### 7.10.5 Streaming Inputs Require Boundary Handling Across Chunks
+
+**Problem**: When processing text in chunks across threads, matches may span chunk boundaries.
+
+**Example**:
+```
+Chunk 1: "...ABC"
+Chunk 2: "DEF..."
+Pattern: "CDEF"
+```
+
+**Solution**: Overlap chunks by `pattern.length() - 1` characters:
+```cpp
+void processChunks(const string& text, const string& pattern, 
+                   int numThreads) {
+    int chunkSize = text.length() / numThreads;
+    int overlap = pattern.length() - 1;
+    
+    for (int i = 0; i < numThreads; i++) {
+        int start = i * chunkSize;
+        int end = min((i + 1) * chunkSize + overlap, text.length());
+        // Process chunk with overlap
+    }
+}
+```
+
+**Invariant Preserved**: Overlapping ensures no matches are missed at boundaries, maintaining the **Completeness Invariant**.
+
+### 7.10.6 Practical Recommendations
+
+**For Stateless Algorithms**:
+- Parallelize by dividing text into chunks
+- Each thread processes its chunk independently
+- Merge results at the end
+
+**For Preprocessing**:
+- Preprocess pattern once before parallel search
+- Make preprocessing data immutable
+- Share read-only preprocessing data across threads
+
+**For Streaming**:
+- Handle chunk boundaries with overlap
+- Use lock-free data structures for result collection
+- Consider producer-consumer pattern for continuous streams
+
+**For Production**: Most string search algorithms are naturally parallelizable. Use thread pools to process text chunks concurrently. See Section 3.5.10 for guidance on using libraries.
+
+## 7.11 Practical Applications
 
 ### Text Processing
 ```cpp
@@ -1749,7 +1958,33 @@ unordered_map<string, vector<int>> findMultiplePatterns(
 }
 ```
 
-## 7.10 Key Takeaways
+## 7.12 Real-World Systems
+
+String search algorithms are fundamental to many production systems:
+
+**Text Processing Tools:**
+- **`grep`**: Uses Boyer-Moore algorithm for efficient pattern matching in files
+- **`ripgrep`**: Modern implementation using Boyer-Moore variants, optimized for large-scale text search
+- **Text editors**: Use KMP or Boyer-Moore for find/replace operations
+
+**Log Scanning Pipelines:**
+- **Log analysis tools**: Process millions of log lines using parallel string search
+- **Intrusion detection**: Use Aho-Corasick to search for multiple attack patterns simultaneously
+- **Security scanners**: Search for known vulnerability signatures in code or logs
+
+**Search Indexing:**
+- **Search engines**: Use multiple pattern search algorithms for keyword matching
+- **Database full-text search**: Implement string search for text queries
+- **Code search tools**: Search across large codebases efficiently
+
+**Stream Processing:**
+- **Network monitoring**: Real-time pattern matching in network traffic
+- **Data pipelines**: Continuous pattern detection in streaming data
+- **Event processing**: Detect patterns in event streams
+
+Understanding these algorithms provides the foundation for building efficient text processing systems.
+
+## 7.13 Key Takeaways
 
 1. **String search algorithms** vary significantly in performance characteristics
 2. **KMP algorithm** provides consistent O(n+m) performance for single patterns
@@ -1758,7 +1993,7 @@ unordered_map<string, vector<int>> findMultiplePatterns(
 5. **Aho-Corasick** efficiently handles multiple pattern search
 6. **Algorithm choice** depends on text size, pattern characteristics, and use case
 
-## 7.11 Exercises
+## 7.14 Exercises
 
 1. Implement a case-insensitive string search algorithm.
 2. Modify the KMP algorithm to find non-overlapping occurrences only.
@@ -1766,8 +2001,18 @@ unordered_map<string, vector<int>> findMultiplePatterns(
 4. Implement a string search algorithm that handles wildcard characters.
 5. Write a program to find all anagrams of a pattern in a text.
 
-## 7.12 Summary
+## 7.15 Summary
 
-String search algorithms are essential tools for pattern matching in text processing. From the simple naive approach to sophisticated algorithms like KMP and Boyer-Moore, each algorithm has its strengths and optimal use cases. Understanding these algorithms provides a solid foundation for text processing, data mining, and many other applications that require efficient pattern matching.
+String search algorithms are essential tools for pattern matching in text processing. From the simple naive approach to sophisticated algorithms like KMP and Boyer-Moore, each algorithm has its strengths and optimal use cases.
 
-The choice of algorithm depends on factors such as text size, pattern characteristics, and whether single or multiple patterns need to be searched. Mastery of these algorithms is crucial for anyone working with text processing or string manipulation tasks.
+**What We Learned:**
+- Each algorithm maintains specific invariants that ensure correctness
+- **Naive search**: Simple but O(n*m) complexity, suitable for small inputs
+- **Rabin-Karp**: Probabilistic hash-based approach, excellent for multiple patterns
+- **KMP**: Strong prefix-suffix invariant, consistent O(n+m) performance
+- **Boyer-Moore**: Right-to-left comparison, often fastest in practice
+- Algorithm choice depends on input size, pattern characteristics, and use case
+- String search is naturally parallelizable with proper boundary handling
+
+**Why the Next Chapter Follows:**
+Now that we understand string search algorithms, we'll explore **sorting algorithms** in Chapter 9. Both string search and sorting are fundamental operations that appear throughout computer science, and understanding their tradeoffs helps in choosing the right tool for each problem.
