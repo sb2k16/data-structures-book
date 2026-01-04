@@ -22,6 +22,7 @@ A comprehensive introduction to data structures and algorithms using C++ as the 
 ### Part III: Non-Linear Data Structures
 - [Chapter 6: Trees and Binary Trees](chapters/06-trees-and-binary-trees.md)
 - [Chapter 7: String Search Algorithms](chapters/07-string-search-algorithms.md)
+- [Chapter 8: Recursion and Backtracking](chapters/08-recursion-and-backtracking.md)
 - [Chapter 9: Sorting Algorithms](chapters/09-sorting-algorithms.md)
 - [Chapter 10: Hash Tables and Hashing](chapters/10-hash-tables-and-hashing.md)
 - [Chapter 11: Graphs](chapters/11-graphs.md)
