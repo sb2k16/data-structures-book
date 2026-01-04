@@ -511,10 +511,24 @@ public:
 template<typename K, typename V>
 class HashTableQuadraticProbing {
 private:
-    // Similar structure to linear probing
+    struct Slot {
+        K key;
+        V value;
+        SlotStatus status;
+        
+        Slot() : status(SlotStatus::EMPTY) {}
+    };
+    
+    vector<Slot> table;
+    size_t tableSize;
+    size_t numElements;
+    const double LOAD_FACTOR_THRESHOLD = 0.7;
+    
+    size_t hashFunction(const K& key) const {
+        return hash<K>{}(key) % tableSize;
+    }
     
     size_t probe(const K& key, size_t startIndex) const {
-        size_t index = startIndex;
         size_t probeCount = 0;
         
         while (probeCount < tableSize) {
@@ -528,10 +542,112 @@ private:
             probeCount++;
         }
         
-        return tableSize;
+        return tableSize; // Table full
     }
     
-    // Rest of implementation similar to linear probing
+    void rehash() {
+        size_t oldSize = tableSize;
+        vector<Slot> oldTable = move(table);
+        
+        // Important: For quadratic probing, table size must be prime
+        // to ensure all slots can be probed. Here we double and find next prime.
+        tableSize *= 2;
+        // In practice, you'd find the next prime number >= tableSize
+        // For simplicity, we'll use the doubled size
+        
+        table.clear();
+        table.resize(tableSize);
+        numElements = 0;
+        
+        // Reinsert all occupied slots
+        for (const auto& slot : oldTable) {
+            if (slot.status == SlotStatus::OCCUPIED) {
+                insert(slot.key, slot.value);
+            }
+        }
+    }
+    
+public:
+    HashTableQuadraticProbing(size_t initialSize = 16) 
+        : tableSize(initialSize), numElements(0) {
+        table.resize(tableSize);
+    }
+    
+    void insert(const K& key, const V& value) {
+        if (static_cast<double>(numElements) / tableSize > LOAD_FACTOR_THRESHOLD) {
+            rehash();
+        }
+        
+        size_t index = hashFunction(key);
+        size_t slot = probe(key, index);
+        
+        if (slot == tableSize) {
+            throw runtime_error("Hash table is full");
+        }
+        
+        if (table[slot].status != SlotStatus::OCCUPIED) {
+            numElements++;
+        }
+        
+        table[slot].key = key;
+        table[slot].value = value;
+        table[slot].status = SlotStatus::OCCUPIED;
+    }
+    
+    bool find(const K& key, V& value) const {
+        size_t index = hashFunction(key);
+        size_t probeCount = 0;
+        
+        while (probeCount < tableSize) {
+            size_t currentIndex = (index + probeCount * probeCount) % tableSize;
+            
+            if (table[currentIndex].status == SlotStatus::EMPTY) {
+                return false;
+            }
+            
+            if (table[currentIndex].status == SlotStatus::OCCUPIED && 
+                table[currentIndex].key == key) {
+                value = table[currentIndex].value;
+                return true;
+            }
+            
+            probeCount++;
+        }
+        
+        return false;
+    }
+    
+    bool remove(const K& key) {
+        size_t index = hashFunction(key);
+        size_t probeCount = 0;
+        
+        while (probeCount < tableSize) {
+            size_t currentIndex = (index + probeCount * probeCount) % tableSize;
+            
+            if (table[currentIndex].status == SlotStatus::EMPTY) {
+                return false;
+            }
+            
+            if (table[currentIndex].status == SlotStatus::OCCUPIED && 
+                table[currentIndex].key == key) {
+                table[currentIndex].status = SlotStatus::DELETED;
+                numElements--;
+                return true;
+            }
+            
+            probeCount++;
+        }
+        
+        return false;
+    }
+    
+    size_t size() const {
+        return numElements;
+    }
+    
+    bool empty() const {
+        return numElements == 0;
+    }
 };
 ```
 
