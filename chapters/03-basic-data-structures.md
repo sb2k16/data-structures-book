@@ -13,7 +13,7 @@ An **array** is a collection of elements of the same data type stored in contigu
 
 ### 3.1.1 Core Invariants
 
-Understanding array invariants is crucial for correct implementation and reasoning about array operations.
+To reason correctly about arrays—and to implement them safely—we must understand the **invariants** they maintain. An invariant is a condition that must always hold true, regardless of the operations performed on the array.
 
 #### Core Invariants of Arrays
 
@@ -35,19 +35,19 @@ Understanding array invariants is crucial for correct implementation and reasoni
    - Static arrays: Size is constant (set at declaration)
    - Dynamic arrays: Size tracked accurately, matches allocated memory
 
-#### What Breaks Invariants
+#### What Can Break These Invariants
 
-- **Index Out of Bounds**: Accessing `arr[-1]` or `arr[size]` → undefined behavior
-- **Memory Corruption**: Writing beyond array bounds → corrupts adjacent memory
-- **Size Mismatch**: Size variable doesn't match actual allocated memory → incorrect operations
-- **Type Violation**: Mixing types in array → breaks type safety
+- **Out-of-bounds access**: (e.g., `arr[-1]` or `arr[size]`)
+- **Memory Corruption** from writes beyond allocated space
+- **Incorrect size tracking** in dynamic arrays
+- **Violating type assumptions**, which compromises safety and correctness
 
 #### How Operations Preserve Invariants
 
-- **Access**: Check bounds before accessing → preserves index bounds invariant
-- **Modification**: Ensure index is valid → preserves bounds and type invariants
-- **Iteration**: Use valid range `[0, size)` → preserves bounds invariant
-- **Resizing** (dynamic): Allocate new contiguous block → preserves contiguous memory invariant
+- **Access**: Validate index bounds before reading or writing
+- **Modification**: Only update elements at valid indices
+- **Iteration**: Traverse indices in the range `[0, size)`
+- **Resizing** (dynamic): Allocate a new contiguous block and copy elements
 
 **Example**: When accessing `arr[i]`:
 1. Verify `0 ≤ i < size` (preserves index bounds invariant)
