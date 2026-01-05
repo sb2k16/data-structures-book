@@ -822,8 +822,7 @@ string result = oss.str();  // Convert to string once
 ```
 
 
-# Memory: Each operation creates a new string object
-```
+### Memory: Each operation creates a new string object
 
 **Characteristics**:
 - **Immutable**: Cannot modify after creation
