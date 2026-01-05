@@ -524,7 +524,11 @@ void hiddenComplexity(vector<string>& words) {
 
 ## 2.8 Amortized Analysis
 
-Amortized analysis considers the average time per operation over a sequence of operations, even if some individual operations are expensive.
+Amortized analysis studies the time-averaged cost of executing a sequence of operations. It differs from average-case analysis in an important way: amortized analysis makes no assumptions about the probability distribution of inputs or data values, whereas average-case analysis relies on the assumption that inputs are not adversarial or “pathological.” For example, some sorting algorithms perform well on average over all input orderings but degrade severely on specific orderings.
+
+In contrast, amortized analysis is still a form of worst-case analysis—but applied to an entire sequence of operations rather than to each operation in isolation. By analyzing the sequence as a whole, it allows the cost of occasional expensive operations to be spread across many inexpensive ones, much like insurance spreads rare catastrophic losses across many small, predictable payments.
+
+Amortized analysis is motivated by the need to more accurately characterize the running time of algorithms for which traditional worst-case analysis is overly pessimistic. It is typically applied to methods that perform a sequence of operations in which most operations are inexpensive, while a few are costly. When these expensive operations occur infrequently, their cost can be spread—or amortized—across the many cheap operations. By charging the occasional high cost to the surrounding low-cost operations, we obtain a more realistic bound on the average cost per operation over the entire sequence.
 
 ### Example: Dynamic Array (Vector)
 ```cpp
@@ -561,7 +565,10 @@ private:
 ```
 
 **Analysis:**
-- Individual push_back: O(1) amortized, O(n) worst case
+Capacity grows as `1, 2, 4, 8, 16, ..., 2^k`. There are only O(log n) resizes during n insertions.
+- Total resize cost: O(n)
+- Total non-resize inserts: n × O(1) = O(n)
+- Amortized cost per push_back: O(n) / n = O(1)
 - Sequence of n push_back operations: O(n) total time
 - Average time per operation: O(1)
 
