@@ -127,39 +127,6 @@ int main() {
 }
 ```
 
-### Basic Operations on Static Arrays
-```cpp
-void demonstrateStaticArray() {
-    array<int, 5> arr = {1, 2, 3, 4, 5};
-    
-    // Access elements
-    cout << "Element at index 2: " << arr[2] << endl;
-    cout << "Element at index 2: " << arr.at(2) << endl; // Bounds checking
-    
-    // Modify elements
-    arr[0] = 10;
-    arr.at(1) = 20;
-    
-    // Get array properties
-    cout << "Size: " << arr.size() << endl;
-    cout << "Empty: " << arr.empty() << endl;
-    
-    // Iterate through array
-    cout << "Array elements: ";
-    for (int i = 0; i < arr.size(); i++) {
-        cout << arr[i] << " ";
-    }
-    cout << endl;
-    
-    // Range-based for loop
-    cout << "Array elements: ";
-    for (int element : arr) {
-        cout << element << " ";
-    }
-    cout << endl;
-}
-```
-
 ## 3.3 Dynamic Arrays (Vectors) in C++
 
 The `std::vector` class provides a dynamic array that can grow and shrink in size.
@@ -230,66 +197,22 @@ Vectors maintain two key properties:
 
 ```mermaid
 graph LR
-    subgraph Growth["Vector Growth Pattern"]
-        V1["Size: 0<br/>Capacity: 0"] -->|push_back| V2["Size: 1<br/>Capacity: 1"]
-        V2 -->|push_back| V3["Size: 2<br/>Capacity: 2"]
-        V3 -->|push_back| V4["Size: 3<br/>Capacity: 4<br/>(doubled!)"]
-        V4 -->|push_back| V5["Size: 4<br/>Capacity: 4"]
-        V5 -->|push_back| V6["Size: 5<br/>Capacity: 8<br/>(doubled!)"]
-        V6 -->|push_back| V7["Size: 6<br/>Capacity: 8"]
-        V7 -->|push_back| V8["Size: 7<br/>Capacity: 8"]
-        V8 -->|push_back| V9["Size: 8<br/>Capacity: 8"]
-        V9 -->|push_back| V10["Size: 9<br/>Capacity: 16<br/>(doubled!)"]
-    end
+    V1["Size: 0<br/>Capacity: 0"] -->|push_back| V2["Size: 1<br/>Capacity: 1"]
+    V2 -->|push_back| V3["Size: 2<br/>Capacity: 2"]
+    V3 -->|push_back| V4["Size: 3<br/>Capacity: 4<br/>⚡doubled!"]
+    V4 -->|push_back| V5["Size: 4<br/>Capacity: 4"]
+    V5 -->|push_back| V6["Size: 5<br/>Capacity: 8<br/>⚡doubled!"]
     
     style V1 fill:#E6F3FF,stroke:#333,stroke-width:2px
     style V4 fill:#FFE5B4,stroke:#333,stroke-width:3px
     style V6 fill:#FFE5B4,stroke:#333,stroke-width:3px
-    style V10 fill:#FFE5B4,stroke:#333,stroke-width:3px
 ```
 
 **Key Insight**: Capacity doubles when size exceeds capacity, ensuring O(1) amortized insertion time.
 
-```cpp
-#include <vector>
-#include <iostream>
-#include <chrono>
-using namespace std;
-
-void demonstrateVectorGrowth() {
-    vector<int> vec;
-    
-    cout << "Initial state:" << endl;
-    cout << "Size: " << vec.size() << ", Capacity: " << vec.capacity() << endl;
-    
-    // Add elements and observe growth
-    for (int i = 1; i <= 20; i++) {
-        vec.push_back(i);
-        cout << "After adding " << i << ": Size = " << vec.size() 
-             << ", Capacity = " << vec.capacity() << endl;
-    }
-}
-```
-
 ### Growth Strategy Analysis
 
 Most C++ implementations use a **doubling strategy** where capacity is doubled when more space is needed:
-
-```cpp
-// Simple demonstration of vector growth
-void demonstrateGrowthPattern() {
-    vector<int> vec;
-    
-    cout << "Vector growth pattern:" << endl;
-    cout << "Elements\tSize\tCapacity" << endl;
-    
-    for (int i = 0; i < 20; i++) {
-        vec.push_back(i);
-        cout << i + 1 << "\t\t" << vec.size() 
-             << "\t" << vec.capacity() << endl;
-    }
-}
-```
 
 > **Note**: For detailed performance analysis and benchmarking, see `examples/arrays/vector_growth_analysis.cpp`
 
@@ -465,6 +388,8 @@ bool binarySearchSTL(const vector<int>& arr, int target) {
     return binary_search(arr.begin(), arr.end(), target);
 }
 ```
+
+### REVISIT THIS --> /<begin>
 
 ### Binary Search Pitfalls: When to Use `<=` vs `<`
 
@@ -705,6 +630,8 @@ int upperBound(const vector<int>& arr, int target) {
    - Exclusive bounds → `<`
 
 4. **Test edge cases**: Empty array, single element, target not found, target at boundaries
+
+### REVISIT THIS --> /<end>
 
 #### Practice Problems
 
