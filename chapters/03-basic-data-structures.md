@@ -466,6 +466,253 @@ bool binarySearchSTL(const vector<int>& arr, int target) {
 }
 ```
 
+### Binary Search Pitfalls: When to Use `<=` vs `<`
+
+Binary search is deceptively simple but notoriously error-prone. One of the most common mistakes is choosing the wrong comparison operator in the while loop condition. Understanding when to use `<=` versus `<` is crucial for correctness.
+
+#### The Fundamental Question: Inclusive vs Exclusive Bounds
+
+The choice between `<=` and `<` depends on how you define your search space:
+
+1. **Inclusive bounds** (`left <= right`): Both `left` and `right` are valid indices that might contain the target
+2. **Exclusive bounds** (`left < right`): `right` is exclusive—it's one past the last valid index
+
+#### Pattern 1: Inclusive Bounds (`left <= right`)
+
+**When to use**: Standard binary search for finding an exact match.
+
+```cpp
+int binarySearch(const vector<int>& arr, int target) {
+    int left = 0;
+    int right = arr.size() - 1;  // Inclusive: last valid index
+    
+    while (left <= right) {  // ✅ Use <= for inclusive bounds
+        int mid = left + (right - left) / 2;
+        
+        if (arr[mid] == target) {
+            return mid;
+        } else if (arr[mid] < target) {
+            left = mid + 1;   // Exclude mid from search space
+        } else {
+            right = mid - 1;   // Exclude mid from search space
+        }
+    }
+    return -1;  // Not found
+}
+```
+
+**Why `<=` works here**:
+- `left` and `right` both point to valid array indices
+- When `left == right`, there's still one element to check (`arr[left]`)
+- The loop terminates when `left > right`, meaning the search space is empty
+
+**Example trace**:
+```
+Array: [1, 3, 5, 7, 9], target = 5
+Initial: left=0, right=4
+
+Iteration 1: mid=2, arr[2]=5 == target → Found!
+```
+
+```
+Array: [1, 3, 5, 7, 9], target = 4
+Initial: left=0, right=4
+
+Iteration 1: mid=2, arr[2]=5 > 4 → right=1
+Iteration 2: left=0, right=1, mid=0, arr[0]=1 < 4 → left=1
+Iteration 3: left=1, right=1, mid=1, arr[1]=3 < 4 → left=2
+Termination: left=2 > right=1 → Not found
+```
+
+#### Pattern 2: Exclusive Bounds (`left < right`)
+
+**When to use**: Finding insertion point, lower/upper bounds, or when you want to avoid checking `left == right`.
+
+```cpp
+// Find the first position where target can be inserted (lower_bound)
+int lowerBound(const vector<int>& arr, int target) {
+    int left = 0;
+    int right = arr.size();  // Exclusive: one past last valid index
+    
+    while (left < right) {  // ✅ Use < for exclusive bounds
+        int mid = left + (right - left) / 2;
+        
+        if (arr[mid] < target) {
+            left = mid + 1;   // arr[mid] is too small, exclude it
+        } else {
+            right = mid;       // arr[mid] >= target, keep it (right is exclusive)
+        }
+    }
+    return left;  // Insertion point
+}
+```
+
+**Why `<` works here**:
+- `right` is one past the last valid index (exclusive)
+- When `left == right`, the search space is empty (no elements between them)
+- We update `right = mid` (not `mid - 1`) because `right` is exclusive
+
+**Example trace**:
+```
+Array: [1, 3, 5, 7, 9], target = 4
+Initial: left=0, right=5 (exclusive)
+
+Iteration 1: mid=2, arr[2]=5 >= 4 → right=2
+Iteration 2: left=0, right=2, mid=1, arr[1]=3 < 4 → left=2
+Termination: left=2 == right=2 → Insertion point is 2
+```
+
+#### Common Mistake: Using `<` with Inclusive Bounds
+
+**WRONG**:
+```cpp
+int binarySearchWRONG(const vector<int>& arr, int target) {
+    int left = 0;
+    int right = arr.size() - 1;  // Inclusive bound
+    
+    while (left < right) {  // ❌ WRONG: Using < with inclusive bounds
+        int mid = left + (right - left) / 2;
+        
+        if (arr[mid] == target) {
+            return mid;
+        } else if (arr[mid] < target) {
+            left = mid + 1;
+        } else {
+            right = mid - 1;
+        }
+    }
+    // ❌ BUG: When left == right, we exit without checking arr[left]!
+    return (arr[left] == target) ? left : -1;  // Need extra check
+}
+```
+
+**Why this fails**:
+- When `left == right`, there's still one element to check, but the loop exits
+- You need an extra check after the loop, which is error-prone
+- Easy to forget the post-loop check
+
+**Example of failure**:
+```
+Array: [5], target = 5
+Initial: left=0, right=0
+
+Loop condition: 0 < 0? No → Exit immediately
+Result: Returns -1 (WRONG! Should return 0)
+```
+
+#### Common Mistake: Using `<=` with Exclusive Bounds
+
+**WRONG**:
+```cpp
+int lowerBoundWRONG(const vector<int>& arr, int target) {
+    int left = 0;
+    int right = arr.size();  // Exclusive bound
+    
+    while (left <= right) {  // ❌ WRONG: Using <= with exclusive bounds
+        int mid = left + (right - left) / 2;
+        
+        if (arr[mid] < target) {
+            left = mid + 1;
+        } else {
+            right = mid - 1;  // ❌ BUG: right is exclusive, shouldn't use mid-1
+        }
+    }
+    return left;
+}
+```
+
+**Why this fails**:
+- When `right = arr.size()`, accessing `arr[right]` is out of bounds
+- The update `right = mid - 1` doesn't make sense with exclusive bounds
+- Can cause infinite loops or incorrect results
+
+#### Decision Tree: Which Pattern to Use?
+
+```
+Is right = arr.size() - 1 (inclusive)?
+├─ YES → Use while (left <= right)
+│         Update: left = mid + 1, right = mid - 1
+│         Check: arr[mid] == target
+│
+└─ NO (right = arr.size(), exclusive)
+    → Use while (left < right)
+      Update: left = mid + 1, right = mid
+      Check: arr[mid] < target (for lower_bound)
+```
+
+#### Complete Examples
+
+**Example 1: Standard Binary Search (Inclusive)**
+```cpp
+int binarySearch(const vector<int>& arr, int target) {
+    int left = 0;
+    int right = arr.size() - 1;  // Inclusive
+    
+    while (left <= right) {  // ✅
+        int mid = left + (right - left) / 2;
+        if (arr[mid] == target) return mid;
+        if (arr[mid] < target) left = mid + 1;
+        else right = mid - 1;
+    }
+    return -1;
+}
+```
+
+**Example 2: Lower Bound (Exclusive)**
+```cpp
+int lowerBound(const vector<int>& arr, int target) {
+    int left = 0;
+    int right = arr.size();  // Exclusive
+    
+    while (left < right) {  // ✅
+        int mid = left + (right - left) / 2;
+        if (arr[mid] < target) left = mid + 1;
+        else right = mid;
+    }
+    return left;
+}
+```
+
+**Example 3: Upper Bound (Exclusive)**
+```cpp
+int upperBound(const vector<int>& arr, int target) {
+    int left = 0;
+    int right = arr.size();  // Exclusive
+    
+    while (left < right) {  // ✅
+        int mid = left + (right - left) / 2;
+        if (arr[mid] <= target) left = mid + 1;  // Note: <=
+        else right = mid;
+    }
+    return left;
+}
+```
+
+#### Key Takeaways
+
+1. **Inclusive bounds** (`right = size - 1`): Use `while (left <= right)`
+   - Both endpoints are valid indices
+   - Update: `left = mid + 1`, `right = mid - 1`
+   - Check `arr[mid]` directly
+
+2. **Exclusive bounds** (`right = size`): Use `while (left < right)`
+   - `right` is one past the last valid index
+   - Update: `left = mid + 1`, `right = mid` (keep mid in search space)
+   - Useful for insertion point problems
+
+3. **Consistency is key**: Match your loop condition with your bound semantics
+   - Inclusive bounds → `<=`
+   - Exclusive bounds → `<`
+
+4. **Test edge cases**: Empty array, single element, target not found, target at boundaries
+
+#### Practice Problems
+
+1. Implement binary search with inclusive bounds
+2. Implement `lower_bound` with exclusive bounds
+3. Implement `upper_bound` with exclusive bounds
+4. Find the first and last occurrence of a target in a sorted array with duplicates
+
 ### Array Rotation
 ```cpp
 // Rotate array left by k positions
