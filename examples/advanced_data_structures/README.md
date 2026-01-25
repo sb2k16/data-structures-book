@@ -77,3 +77,8 @@ After studying these examples, you should understand:
 4. Build Sqrt Decomposition for range maximum with updates
 5. Compare performance of Sparse Table vs Segment Tree
 
+
+
+
+
+

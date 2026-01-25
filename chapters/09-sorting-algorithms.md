@@ -1084,91 +1084,13 @@ This section connects sorting to real machine behavior.
 
 ### 9.5.2 Testing and Benchmarking
 
-```cpp
-// Utility functions for testing
-vector<int> generateRandomArray(int size, int minVal = 1, int maxVal = 1000) {
-    vector<int> arr(size);
-    for (int i = 0; i < size; i++) {
-        arr[i] = minVal + rand() % (maxVal - minVal + 1);
-    }
-    return arr;
-}
+When testing sorting algorithms, it's important to:
+- Test with different array sizes (small, medium, large)
+- Test with different input patterns (random, sorted, reverse sorted, nearly sorted)
+- Verify correctness by checking if the result is sorted
+- Measure performance across different scenarios
 
-vector<int> generateSortedArray(int size) {
-    vector<int> arr(size);
-    for (int i = 0; i < size; i++) {
-        arr[i] = i;
-    }
-    return arr;
-}
-
-vector<int> generateReverseSortedArray(int size) {
-    vector<int> arr(size);
-    for (int i = 0; i < size; i++) {
-        arr[i] = size - i;
-    }
-    return arr;
-}
-
-bool isSorted(const vector<int>& arr) {
-    for (int i = 1; i < arr.size(); i++) {
-        if (arr[i] < arr[i - 1]) {
-            return false;
-        }
-    }
-    return true;
-}
-
-void printArray(const vector<int>& arr) {
-    for (int num : arr) {
-        cout << num << " ";
-    }
-    cout << endl;
-}
-
-// Benchmarking function
-template<typename SortFunction>
-double benchmarkSort(SortFunction sortFunc, vector<int> arr) {
-    auto start = chrono::high_resolution_clock::now();
-    sortFunc(arr);
-    auto end = chrono::high_resolution_clock::now();
-    
-    auto duration = chrono::duration_cast<chrono::microseconds>(end - start);
-    return duration.count() / 1000.0; // Return time in milliseconds
-}
-
-void runSortingBenchmarks() {
-    const int sizes[] = {100, 1000, 10000};
-    const string algorithms[] = {"Bubble", "Selection", "Insertion", "Merge", "Quick", "Heap"};
-    
-    for (int size : sizes) {
-        cout << "\nArray size: " << size << endl;
-        cout << "Algorithm\t\tTime (ms)" << endl;
-        cout << "----------------------------------------" << endl;
-        
-        vector<int> originalArray = generateRandomArray(size);
-        
-        // Test each algorithm
-        vector<int> testArray = originalArray;
-        cout << "Bubble Sort\t\t" << benchmarkSort(bubbleSort, testArray) << endl;
-        
-        testArray = originalArray;
-        cout << "Selection Sort\t\t" << benchmarkSort(selectionSort, testArray) << endl;
-        
-        testArray = originalArray;
-        cout << "Insertion Sort\t\t" << benchmarkSort(insertionSort, testArray) << endl;
-        
-        testArray = originalArray;
-        cout << "Merge Sort\t\t" << benchmarkSort(mergeSort, testArray) << endl;
-        
-        testArray = originalArray;
-        cout << "Quick Sort\t\t" << benchmarkSort(quickSort, testArray) << endl;
-        
-        testArray = originalArray;
-        cout << "Heap Sort\t\t" << benchmarkSort(heapSort, testArray) << endl;
-    }
-}
-```
+Benchmarking helps identify which algorithm performs best for specific data characteristics and sizes.
 
 ## 9.14 Choosing the Right Sorting Algorithm
 

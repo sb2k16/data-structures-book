@@ -2331,39 +2331,13 @@ vector<int> twoSum(const vector<int>& nums, int target) {
 4. **Data Distribution**: Skewed data can degrade performance
 
 ### Benchmarking Example
-```cpp
-#include <chrono>
-#include <random>
 
-void benchmarkHashTable() {
-    HashTable<int, int> table;
-    const int NUM_OPERATIONS = 100000;
-    
-    // Insert benchmark
-    auto start = chrono::high_resolution_clock::now();
-    for (int i = 0; i < NUM_OPERATIONS; i++) {
-        table.insert(i, i * 2);
-    }
-    auto end = chrono::high_resolution_clock::now();
-    auto insertTime = chrono::duration_cast<chrono::microseconds>(end - start);
-    
-    // Search benchmark
-    start = chrono::high_resolution_clock::now();
-    for (int i = 0; i < NUM_OPERATIONS; i++) {
-        int value;
-        table.find(i, value);
-    }
-    end = chrono::high_resolution_clock::now();
-    auto searchTime = chrono::duration_cast<chrono::microseconds>(end - start);
-    
-    cout << "Insert time: " << insertTime.count() << " microseconds" << endl;
-    cout << "Search time: " << searchTime.count() << " microseconds" << endl;
-    cout << "Average insert: " << insertTime.count() / NUM_OPERATIONS 
-         << " microseconds" << endl;
-    cout << "Average search: " << searchTime.count() / NUM_OPERATIONS 
-         << " microseconds" << endl;
-}
-```
+When benchmarking hash tables, measure:
+- Insert performance: Time to insert a large number of elements
+- Search performance: Time to search for elements
+- Average operation time: Total time divided by number of operations
+
+This helps compare different hash table implementations and hash functions.
 
 ## 10.16 Common Hash Table Problems
 

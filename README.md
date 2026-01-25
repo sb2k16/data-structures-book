@@ -37,6 +37,7 @@ A comprehensive introduction to data structures and algorithms using C++ as the 
 
 ### Part V: Advanced Topics
 - [Chapter 18: Advanced Topics and Modern Optimizations](chapters/18-advanced-topics.md)
+- [Chapter 19: Benchmarking and Load Testing](chapters/19-benchmarking-and-load-testing.md)
 
 ## 🚀 Quick Start
 

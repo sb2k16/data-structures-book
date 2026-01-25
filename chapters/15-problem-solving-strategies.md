@@ -1042,34 +1042,12 @@ vector<vector<int>> generateTestCases() {
 
 ### Unit Testing Framework
 
-```cpp
-// Simple test framework
-class TestFramework {
-public:
-    static void assertEqual(int expected, int actual, string testName) {
-        if (expected == actual) {
-            cout << "✓ " << testName << " PASSED" << endl;
-        } else {
-            cout << "✗ " << testName << " FAILED - Expected: " << expected 
-                 << ", Got: " << actual << endl;
-        }
-    }
-    
-    static void assertTrue(bool condition, string testName) {
-        if (condition) {
-            cout << "✓ " << testName << " PASSED" << endl;
-        } else {
-            cout << "✗ " << testName << " FAILED" << endl;
-        }
-    }
-};
+A simple test framework can help verify solutions. Key features include:
+- Assertion functions to compare expected vs actual results
+- Clear test output indicating pass/fail status
+- Ability to run multiple test cases systematically
 
-// Example usage
-void runTests() {
-    TestFramework::assertEqual(2, maxArea({1, 8, 6, 2, 5, 4, 8, 3, 7}), "Max Area Test");
-    TestFramework::assertTrue(isPalindrome("racecar"), "Palindrome Test");
-}
-```
+Testing helps catch bugs early and verify correctness before optimization.
 
 ## 15.7 Comprehensive Interview Strategies
 

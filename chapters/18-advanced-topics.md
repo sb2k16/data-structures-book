@@ -1480,107 +1480,13 @@ P(A, H, D) = f(complexity(A), characteristics(H), patterns(D))
 
 #### Implementation Example
 
-```cpp
-#include <chrono>
-#include <random>
-#include <iomanip>
+Modern benchmarking frameworks typically include:
+- Test case generation with varying text and pattern sizes
+- Time measurement utilities using high-resolution clocks
+- Performance counter integration for cache and branch analysis
+- Statistical analysis tools for comparing algorithm performance
 
-class StringSearchBenchmark {
-private:
-    mt19937 rng;
-    
-    string generateRandomText(int length, const string& alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ") {
-        string text;
-        uniform_int_distribution<int> dist(0, alphabet.length() - 1);
-        
-        for (int i = 0; i < length; i++) {
-            text += alphabet[dist(rng)];
-        }
-        
-        return text;
-    }
-    
-    template<typename Func>
-    long long measureTime(Func func) {
-        auto start = chrono::high_resolution_clock::now();
-        func();
-        auto end = chrono::high_resolution_clock::now();
-        return chrono::duration_cast<chrono::microseconds>(end - start).count();
-    }
-    
-public:
-    StringSearchBenchmark() : rng(chrono::steady_clock::now().time_since_epoch().count()) {}
-    
-    void benchmarkModernAlgorithms() {
-        cout << "=== Modern String Search Algorithm Benchmark ===" << endl;
-        
-        vector<int> textSizes = {10000, 100000, 1000000, 10000000};
-        vector<int> patternSizes = {5, 10, 20, 50};
-        
-        for (int textSize : textSizes) {
-            cout << "\nText Size: " << textSize << endl;
-            cout << "Pattern Size\tOptimal-Hash\tElongated-Q\tReverse-Colussi\tCache-Friendly" << endl;
-            cout << "------------\t------------\t------------\t---------------\t-------------" << endl;
-            
-            for (int patternSize : patternSizes) {
-                string text = generateRandomText(textSize);
-                string pattern = generateRandomText(patternSize);
-                
-                // Ensure pattern exists in text
-                text = pattern + text;
-                
-                long long optimalHashTime = measureTime([&]() {
-                    OptimalHashMatcher matcher(pattern);
-                    matcher.search(text);
-                });
-                
-                long long elongatedQTime = measureTime([&]() {
-                    ElongatedQGramMatcher matcher(pattern);
-                    matcher.search(text);
-                });
-                
-                long long reverseColussiTime = measureTime([&]() {
-                    ReverseColussiMatcher matcher(pattern);
-                    matcher.search(text);
-                });
-                
-                long long cacheFriendlyTime = measureTime([&]() {
-                    CacheFriendlyMatcher matcher(pattern);
-                    matcher.search(text);
-                });
-                
-                cout << patternSize << "\t\t" << optimalHashTime << "\t\t" << elongatedQTime 
-                     << "\t\t" << reverseColussiTime << "\t\t" << cacheFriendlyTime << endl;
-            }
-        }
-    }
-    
-    void benchmarkHardwareCharacteristics() {
-        cout << "\n=== Hardware Characteristic Analysis ===" << endl;
-        
-        string text = generateRandomText(1000000);
-        string pattern = "ABCDEFGHIJ";
-        
-        cout << "Algorithm\t\tTime (microseconds)\tCache Misses\tBranch Mispredictions" << endl;
-        cout << "--------\t\t------------------\t------------\t---------------------" << endl;
-        
-        // This would require hardware performance counters
-        // Simplified version for demonstration
-        long long time1 = measureTime([&]() {
-            OptimalHashMatcher matcher(pattern);
-            matcher.search(text);
-        });
-        
-        long long time2 = measureTime([&]() {
-            CacheFriendlyMatcher matcher(pattern);
-            matcher.search(text);
-        });
-        
-        cout << "Optimal-Hash\t\t" << time1 << "\t\t\tN/A\t\tN/A" << endl;
-        cout << "Cache-Friendly\t\t" << time2 << "\t\t\tN/A\t\tN/A" << endl;
-    }
-};
-```
+These frameworks help evaluate algorithms across different hardware platforms and data patterns.
 
 ## 18.8 Future Directions and Research Trends
 

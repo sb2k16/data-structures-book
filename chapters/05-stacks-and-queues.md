@@ -647,136 +647,12 @@ A **circular queue** (also called a ring buffer) is a queue implementation that 
 
 #### Implementation
 
-```cpp
-#include <iostream>
-#include <vector>
-using namespace std;
+The circular queue uses a fixed-size array with two pointers (`front` and `rear`) that wrap around using modulo arithmetic. Key operations:
+- **Enqueue**: Increment `rear` circularly, add element
+- **Dequeue**: Increment `front` circularly, remove element
+- **Full/Empty check**: Use a size counter to distinguish states
 
-template<typename T>
-class CircularQueue {
-private:
-    vector<T> data;
-    int front;
-    int rear;
-    int size;
-    int capacity;
-    
-public:
-    CircularQueue(int cap) : capacity(cap), front(0), rear(-1), size(0) {
-        data.resize(capacity);
-    }
-    
-    // Check if queue is full
-    bool isFull() const {
-        return size == capacity;
-    }
-    
-    // Check if queue is empty
-    bool isEmpty() const {
-        return size == 0;
-    }
-    
-    // Enqueue: Add element to rear
-    bool enqueue(T value) {
-        if (isFull()) {
-            cout << "Queue is full!" << endl;
-            return false;
-        }
-        
-        // Circular increment of rear
-        rear = (rear + 1) % capacity;
-        data[rear] = value;
-        size++;
-        return true;
-    }
-    
-    // Dequeue: Remove element from front
-    bool dequeue() {
-        if (isEmpty()) {
-            cout << "Queue is empty!" << endl;
-            return false;
-        }
-        
-        // Circular increment of front
-        front = (front + 1) % capacity;
-        size--;
-        return true;
-    }
-    
-    // Get front element
-    T getFront() const {
-        if (isEmpty()) {
-            throw runtime_error("Queue is empty!");
-        }
-        return data[front];
-    }
-    
-    // Get rear element
-    T getRear() const {
-        if (isEmpty()) {
-            throw runtime_error("Queue is empty!");
-        }
-        return data[rear];
-    }
-    
-    // Get current size
-    int getSize() const {
-        return size;
-    }
-    
-    // Display queue
-    void display() const {
-        if (isEmpty()) {
-            cout << "Queue is empty" << endl;
-            return;
-        }
-        
-        cout << "Queue (front to rear): ";
-        int count = 0;
-        int index = front;
-        
-        while (count < size) {
-            cout << data[index] << " ";
-            index = (index + 1) % capacity;
-            count++;
-        }
-        cout << endl;
-    }
-};
-```
-
-#### Example Usage
-
-```cpp
-void demonstrateCircularQueue() {
-    CircularQueue<int> cq(5);
-    
-    // Enqueue elements
-    cq.enqueue(10);
-    cq.enqueue(20);
-    cq.enqueue(30);
-    cq.enqueue(40);
-    cq.enqueue(50);
-    cq.display();  // Queue (front to rear): 10 20 30 40 50
-    
-    // Try to enqueue when full
-    cq.enqueue(60);  // Queue is full!
-    
-    // Dequeue elements
-    cq.dequeue();
-    cq.dequeue();
-    cq.display();  // Queue (front to rear): 30 40 50
-    
-    // Enqueue after dequeue (wraps around)
-    cq.enqueue(60);
-    cq.enqueue(70);
-    cq.display();  // Queue (front to rear): 30 40 50 60 70
-    
-    cout << "Front: " << cq.getFront() << endl;  // 30
-    cout << "Rear: " << cq.getRear() << endl;    // 70
-    cout << "Size: " << cq.getSize() << endl;    // 5
-}
-```
+**See**: `examples/stacks_queues/circular_queue_basic.cpp` for complete implementation and usage examples.
 
 #### Visual Representation
 
@@ -839,113 +715,15 @@ rear=0 front=2, size=5 (full, wraps around)
 
 **Example: Audio Buffer**
 
-```cpp
-class AudioBuffer {
-private:
-    vector<int16_t> buffer;  // 16-bit audio samples
-    int front, rear, size, capacity;
-    mutex mtx;
-    
-public:
-    AudioBuffer(int cap) : capacity(cap), front(0), rear(-1), size(0) {
-        buffer.resize(capacity);
-    }
-    
-    bool addSample(int16_t sample) {
-        lock_guard<mutex> lock(mtx);
-        if (size >= capacity) {
-            // Buffer full - overwrite oldest (ring buffer behavior)
-            front = (front + 1) % capacity;
-            size--;
-        }
-        
-        rear = (rear + 1) % capacity;
-        buffer[rear] = sample;
-        size++;
-        return true;
-    }
-    
-    bool getSample(int16_t& sample) {
-        lock_guard<mutex> lock(mtx);
-        if (size == 0) return false;
-        
-        sample = buffer[front];
-        front = (front + 1) % capacity;
-        size--;
-        return true;
-    }
-    
-    int getBufferLevel() const {
-        lock_guard<mutex> lock(mtx);
-        return size;
-    }
-};
-```
+A thread-safe circular buffer for audio samples that overwrites oldest samples when full (ring buffer behavior). Uses mutex for thread safety in producer-consumer scenarios.
+
+**See**: `examples/stacks_queues/circular_buffer_audio.cpp` for complete implementation.
 
 **Example: Command History (Ring Buffer)**
 
-```cpp
-class CommandHistory {
-private:
-    vector<string> history;
-    int front, rear, size, capacity;
-    int current;  // Current position in history
-    
-public:
-    CommandHistory(int maxCommands) 
-        : capacity(maxCommands), front(0), rear(-1), size(0), current(-1) {
-        history.resize(capacity);
-    }
-    
-    void addCommand(const string& cmd) {
-        rear = (rear + 1) % capacity;
-        history[rear] = cmd;
-        
-        if (size < capacity) {
-            size++;
-        } else {
-            // Overwrite oldest command
-            front = (front + 1) % capacity;
-        }
-        
-        current = rear;  // Reset to most recent
-    }
-    
-    string getPrevious() {
-        if (size == 0 || current == -1) return "";
-        
-        string cmd = history[current];
-        current = (current - 1 + capacity) % capacity;
-        
-        // Wrap around if needed
-        if (current == rear && size == capacity) {
-            current = front;
-        }
-        
-        return cmd;
-    }
-    
-    string getNext() {
-        if (size == 0 || current == -1) return "";
-        
-        current = (current + 1) % capacity;
-        if (current > rear) {
-            current = rear;
-        }
-        
-        return history[current];
-    }
-    
-    void displayHistory() {
-        cout << "Command History:" << endl;
-        int idx = front;
-        for (int i = 0; i < size; i++) {
-            cout << "  " << (i + 1) << ": " << history[idx] << endl;
-            idx = (idx + 1) % capacity;
-        }
-    }
-};
-```
+A circular buffer implementation for command history that maintains a fixed-size history. When capacity is reached, oldest commands are overwritten. Supports navigation through history with `getPrevious()` and `getNext()` methods.
+
+**See**: `examples/stacks_queues/circular_buffer_command_history.cpp` for complete implementation.
 
 #### Alternative: Distinguishing Full from Empty
 
@@ -2484,6 +2262,77 @@ Explanation:
 - 10 → no greater element
 - 8 → no greater element
 ```
+
+#### Problem 4.1: Next Greater Element I (Subset Problem)
+**Problem**: The next greater element of some element `x` in an array is the first greater element that is to the right of `x` in the same array.
+
+You are given two distinct 0-indexed integer arrays `nums1` and `nums2`, where `nums1` is a subset of `nums2`.
+
+For each `0 <= i < nums1.length`, find the index `j` such that `nums1[i] == nums2[j]` and determine the next greater element of `nums2[j]` in `nums2`. If there is no next greater element, then the answer for this query is -1.
+
+Return an array `ans` of length `nums1.length` such that `ans[i]` is the next greater element as described above.
+
+**Solution Approach**: Use a monotonic decreasing stack to find all next greater elements in `nums2`, then use a hash map to quickly look up results for elements in `nums1`.
+
+```cpp
+vector<int> nextGreaterElement(vector<int>& nums1, vector<int>& nums2) {
+    const int n = nums2.size();
+    stack<int> stack;
+    unordered_map<int,int> cache;
+    
+    // Find next greater element for all elements in nums2
+    for (int i=0; i<n; i++) {
+        const int num = nums2[i];
+        // While current element is greater than stack top
+        // The current element is the next greater for stack top
+        while (!stack.empty() && nums2[stack.top()] < num) {
+            cache[nums2[stack.top()]] = num;
+            stack.pop();
+        }
+        stack.push(i);
+    }
+    
+    // Look up results for elements in nums1
+    const int m = nums1.size();
+    vector<int> result(m, -1);
+    for (int i=0; i<m; i++) {
+        const int num = nums1[i];
+        if (cache.contains(num)) {
+            result[i] = cache[num];
+        }
+    }
+    return result;
+}
+```
+
+**Key Insight**: 
+- First pass: Process `nums2` to find next greater elements for all elements, storing results in a hash map
+- Second pass: For each element in `nums1`, look up its next greater element from the hash map
+- This approach is efficient because we only process `nums2` once, and lookups in `nums1` are O(1)
+
+**Example**:
+```
+Input: nums1 = [4,1,2], nums2 = [1,3,4,2]
+Output: [-1,3,-1]
+
+Explanation:
+- For 4 in nums1: In nums2, 4 is at index 2, next greater is -1 (none)
+- For 1 in nums1: In nums2, 1 is at index 0, next greater is 3
+- For 2 in nums1: In nums2, 2 is at index 3, next greater is -1 (none)
+
+Processing nums2:
+- i=0: num=1, stack=[0]
+- i=1: num=3, 3 > nums2[0]=1 → cache[1]=3, stack=[1]
+- i=2: num=4, 4 > nums2[1]=3 → cache[3]=4, stack=[2]
+- i=3: num=2, 2 < nums2[2]=4 → stack=[2,3]
+- Final cache: {1→3, 3→4}
+- Lookup for nums1: [4→-1, 1→3, 2→-1]
+```
+
+**Time Complexity**: O(n + m) where n = nums2.length, m = nums1.length
+- O(n) to process nums2
+- O(m) to look up results for nums1
+**Space Complexity**: O(n) for the stack and hash map
 
 #### Problem 5: Sliding Window Maximum (Monotonic Queue)
 **Problem**: Given an array and a window size k, find the maximum element in every window of size k.

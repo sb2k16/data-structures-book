@@ -3028,6 +3028,100 @@ int query(int index) {
     **Time Complexity**: O(n) - single pass through the array
     **Space Complexity**: O(1) auxiliary space (excluding output array)
 
+16. **Split Array Largest Sum**: Given an integer array `nums` and an integer `k`, split `nums` into `k` non-empty subarrays such that the largest sum of any subarray is minimized.
+
+    Return the minimized largest sum of the split.
+
+    A subarray is a contiguous part of the array.
+
+    **Solution**:
+    ```cpp
+    int splitArray(vector<int>& nums, int k) {
+        int low = nums[0]; int high = 0;
+        for (auto num: nums) {
+            low = max(low, num); high += num;
+        }
+        while (low < high) {
+            int mid = low + (high - low)/2;
+            if (count_less_than_k(nums, mid, k)) {
+                high = mid;
+            } else {
+                low = mid + 1;
+            }
+        }
+        return low;
+    }
+    
+    bool count_less_than_k(
+        vector<int>& nums, const int target, const int k
+    ){
+        const int n = nums.size();
+        int curr_sum = 0; int count = 1;
+        for (int i=0; i<n; i++) {
+            if (curr_sum + nums[i] > target) {
+                curr_sum = nums[i];
+                count++;
+            } else {
+                curr_sum += nums[i];
+            }
+        }
+        return count <= k;
+    }
+    ```
+
+    **Explanation: Binary Search on Answer**
+
+    This problem uses the **binary search on answer** technique, where instead of searching for a value in a sorted array, we search for the minimum valid answer in a range of possible values.
+
+    **Key Insight**:
+    - The answer (minimized largest sum) must be between:
+      - **Lower bound (`low`)**: The maximum element (we need at least one subarray containing the largest element)
+      - **Upper bound (`high`)**: The sum of all elements (all elements in one subarray)
+    
+    **Binary Search Strategy**:
+    1. For each candidate value `mid` in the range `[low, high]`, check if it's possible to split the array into `k` subarrays where each subarray has sum ≤ `mid`.
+    2. If yes (`count_less_than_k` returns true), then `mid` is a valid answer, but we can try smaller values → set `high = mid`.
+    3. If no, we need a larger value → set `low = mid + 1`.
+    4. Continue until `low == high`, which gives us the minimum valid answer.
+
+    **The Greedy Validation Function (`count_less_than_k`)**:
+    - This function checks if we can split the array into at most `k` subarrays where each subarray sum ≤ `target`.
+    - **Greedy approach**: As we iterate through the array, we keep adding elements to the current subarray until adding the next element would exceed `target`. Then we start a new subarray.
+    - If we need more than `k` subarrays, the `target` is too small (return false).
+    - If we can do it with ≤ `k` subarrays, the `target` is valid (return true).
+
+    **Why Binary Search Works**:
+    - **Monotonicity**: If a value `x` is valid (can split into ≤ k subarrays), then any value > `x` is also valid. This monotonic property allows binary search.
+    - **Optimality**: We're searching for the minimum valid value, which binary search finds efficiently.
+
+    **Example**:
+    ```
+    Input: nums = [7, 2, 5, 10, 8], k = 2
+    
+    low = max(7, 2, 5, 10, 8) = 10
+    high = 7 + 2 + 5 + 10 + 8 = 32
+    
+    Binary search in [10, 32]:
+    - mid = 21: Can we split into ≤2 subarrays with max sum 21?
+      [7,2,5] (sum=14) + [10,8] (sum=18) → Yes! (2 subarrays)
+      high = 21
+    - mid = 15: Can we split into ≤2 subarrays with max sum 15?
+      [7,2,5] (sum=14) + [10] (sum=10) + [8] (sum=8) → No! (3 subarrays needed)
+      low = 16
+    - mid = 18: Can we split into ≤2 subarrays with max sum 18?
+      [7,2,5] (sum=14) + [10,8] (sum=18) → Yes! (2 subarrays)
+      high = 18
+    - mid = 17: Can we split into ≤2 subarrays with max sum 17?
+      [7,2,5] (sum=14) + [10] (sum=10) + [8] (sum=8) → No! (3 subarrays needed)
+      low = 18
+    - low == high == 18 → Answer is 18
+    ```
+
+    **Time Complexity**: O(n × log(sum)), where `sum` is the sum of all elements
+    - Binary search: O(log(sum)) iterations
+    - Each iteration: O(n) to validate
+    **Space Complexity**: O(1)
+
 ## 14.26 Concurrency Considerations
 
 This section applies the concurrency fundamentals from [Chapter 3.5](03.5-concurrency-fundamentals.md) to heaps and priority queues. See Section 3.5.3 for invariant-based reasoning and Section 3.5.9 for producer-consumer patterns.

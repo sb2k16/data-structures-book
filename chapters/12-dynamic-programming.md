@@ -2402,50 +2402,114 @@ private:
 };
 ```
 
-## 12.18 Comprehensive DP Patterns Taxonomy
+## 12.18 10 Must-Know Dynamic Programming Patterns for Coding Interviews
 
-Understanding DP patterns helps recognize when to apply dynamic programming and which approach to use.
+**Why This Section Matters**: Dynamic programming is a favorite interview topic at top tech companies like Google. Most DP questions follow well-established patterns. If you can identify the pattern, the solution writes itself. This section covers the 10 most important DP patterns with LeetCode-style examples to help you map problems to solutions quickly.
 
-### DP Patterns Overview
+### Pattern Recognition Strategy
 
-```mermaid
-graph TD
-    DP["Dynamic Programming Patterns"]
-    DP --> Linear["1. Linear DP<br/>- 1D state<br/>- Sequential processing<br/>- Examples: Fibonacci, Climbing Stairs"]
-    DP --> Grid2D["2. 2D Grid DP<br/>- 2D state space<br/>- Grid traversal<br/>- Examples: Unique Paths, Min Path Sum"]
-    DP --> Subseq["3. Subsequence DP<br/>- String/Array subsequences<br/>- Matching problems<br/>- Examples: LCS, LIS, Edit Distance"]
-    DP --> Partition["4. Partition DP<br/>- Split into subproblems<br/>- Optimization over partitions<br/>- Examples: Coin Change, Palindrome Partitioning"]
-    DP --> Interval["5. Interval DP<br/>- Process intervals<br/>- Combine subintervals<br/>- Examples: Matrix Chain, Burst Balloons"]
-    DP --> StateMachine["6. State Machine DP<br/>- Multiple states<br/>- State transitions<br/>- Examples: Buy/Sell Stock, String Matching"]
-    
-    style DP fill:#FFE5B4,stroke:#333,stroke-width:3px
-    style Linear fill:#E6F3FF,stroke:#333,stroke-width:2px
-    style Grid2D fill:#E6F3FF,stroke:#333,stroke-width:2px
-    style Subseq fill:#E6F3FF,stroke:#333,stroke-width:2px
-    style Partition fill:#E6F3FF,stroke:#333,stroke-width:2px
-    style Interval fill:#E6F3FF,stroke:#333,stroke-width:2px
-    style StateMachine fill:#E6F3FF,stroke:#333,stroke-width:2px
-```
+**Key Insight**: Most DP problems are not new problems—they are variations of the same old patterns. The ability to recognize patterns is more valuable than memorizing solutions.
 
-### Pattern 1: Linear DP
+**How to Use This Section**:
+1. Study each pattern's characteristics
+2. Understand the recurrence relation
+3. Practice the example problems
+4. Learn to identify which pattern a new problem matches
+
+---
+
+### Pattern 1: 1D DP (Linear DP) ⭐ Classic Starter
+
+**Core Concept**: You make decisions based on previous index. The state depends only on the current position and previous positions.
 
 **Characteristics**:
 - 1D state space: `dp[i]` represents solution up to position `i`
 - Sequential processing: Process elements one by one
 - Simple recurrence: Usually depends on previous 1-2 states
+- Time: O(n), Space: O(n) or O(1) with optimization
 
-**Examples**: Fibonacci, Climbing Stairs, House Robber
+**When to Use**: Problems where the answer at position `i` depends on answers at positions `i-1`, `i-2`, etc.
+
+**LeetCode Examples**:
+- **Climbing Stairs** (LeetCode 70): How many ways to climb n steps (1 or 2 steps at a time)
+- **House Robber** (LeetCode 198): Maximize money without robbing adjacent houses
+- **Fibonacci** (LeetCode 509): Classic sequence problem
+
+**Example 1: Climbing Stairs**
+
+**Problem**: You can climb 1 or 2 steps at a time. How many distinct ways can you climb to the top?
+
+**Recurrence**: `dp[i] = dp[i-1] + dp[i-2]` (ways to reach step i-1 + ways to reach step i-2)
 
 ```cpp
-// Example: Climbing Stairs
+// LeetCode 70: Climbing Stairs
 int climbStairs(int n) {
     if (n <= 2) return n;
     
-    int prev2 = 1;  // dp[0]
-    int prev1 = 2;  // dp[1]
+    // Space-optimized: O(1) space
+    int prev2 = 1;  // ways to reach step 1
+    int prev1 = 2;  // ways to reach step 2
     
     for (int i = 3; i <= n; i++) {
-        int current = prev1 + prev2;  // dp[i] = dp[i-1] + dp[i-2]
+        int current = prev1 + prev2;
+        prev2 = prev1;
+        prev1 = current;
+    }
+    
+    return prev1;
+}
+
+// Alternative: O(n) space (easier to understand)
+int climbStairsTabulation(int n) {
+    if (n <= 2) return n;
+    
+    vector<int> dp(n + 1);
+    dp[1] = 1;
+    dp[2] = 2;
+    
+    for (int i = 3; i <= n; i++) {
+        dp[i] = dp[i - 1] + dp[i - 2];
+    }
+    
+    return dp[n];
+}
+```
+
+**Example 2: House Robber**
+
+**Problem**: Rob houses to maximize money, but can't rob two adjacent houses.
+
+**Recurrence**: `dp[i] = max(dp[i-1], dp[i-2] + nums[i])` (skip current OR rob current)
+
+```cpp
+// LeetCode 198: House Robber
+int rob(vector<int>& nums) {
+    if (nums.empty()) return 0;
+    if (nums.size() == 1) return nums[0];
+    
+    // dp[i] = max money from houses 0 to i
+    vector<int> dp(nums.size());
+    dp[0] = nums[0];
+    dp[1] = max(nums[0], nums[1]);
+    
+    for (int i = 2; i < nums.size(); i++) {
+        // Either skip house i (use dp[i-1])
+        // Or rob house i (use dp[i-2] + nums[i])
+        dp[i] = max(dp[i - 1], dp[i - 2] + nums[i]);
+    }
+    
+    return dp[nums.size() - 1];
+}
+
+// Space-optimized version
+int robOptimized(vector<int>& nums) {
+    if (nums.empty()) return 0;
+    
+    int prev2 = 0;  // max money from houses 0 to i-2
+    int prev1 = nums[0];  // max money from houses 0 to i-1
+    
+    for (int i = 1; i < nums.size(); i++) {
+        int current = max(prev1, prev2 + nums[i]);
         prev2 = prev1;
         prev1 = current;
     }
@@ -2454,130 +2518,1051 @@ int climbStairs(int n) {
 }
 ```
 
-### Pattern 2: 2D Grid DP
+**Pattern Recognition Tips**:
+- Look for "ways to reach", "maximum/minimum up to position i"
+- State depends only on previous 1-2 positions
+- Can often optimize space to O(1)
+
+---
+
+### Pattern 2: 2D DP (Grid / Matrix DP) ⭐ Very Common in Interviews
+
+**Core Concept**: State depends on row and column. You traverse a grid and make decisions based on adjacent cells.
 
 **Characteristics**:
 - 2D state space: `dp[i][j]` represents solution at grid position `(i, j)`
 - Grid traversal: Fill grid row by row or column by column
-- Adjacent dependencies: Usually depends on top and left cells
+- Adjacent dependencies: Usually depends on top `(i-1, j)` and left `(i, j-1)` cells
+- Time: O(m×n), Space: O(m×n) or O(min(m,n)) with optimization
 
-**Examples**: Unique Paths, Minimum Path Sum, Maximal Square
+**When to Use**: Problems involving grid traversal, path finding, or 2D optimization.
 
-```cpp
-// Example: Unique Paths (already covered in 12.4)
-// dp[i][j] = number of ways to reach (i, j)
-// dp[i][j] = dp[i-1][j] + dp[i][j-1]
-```
+**LeetCode Examples**:
+- **Unique Paths** (LeetCode 62): Count paths from top-left to bottom-right
+- **Minimum Path Sum** (LeetCode 64): Find minimum sum path
+- **Dungeon Game** (LeetCode 174): Minimum initial health to reach bottom-right
 
-### Pattern 3: Subsequence DP
+**Example 1: Unique Paths**
 
-**Characteristics**:
-- String/Array subsequences: Work with subsequences (not necessarily contiguous)
-- Matching problems: Compare two sequences
-- Two pointers: Usually `dp[i][j]` compares positions `i` and `j`
+**Problem**: Find number of unique paths from top-left to bottom-right (can only move right or down).
 
-**Examples**: LCS, LIS, Edit Distance, Longest Palindromic Subsequence
+**Recurrence**: `dp[i][j] = dp[i-1][j] + dp[i][j-1]` (paths from top + paths from left)
 
 ```cpp
-// Example: Longest Common Subsequence (already covered)
-// dp[i][j] = LCS of s1[0..i-1] and s2[0..j-1]
-```
-
-### Pattern 4: Partition DP
-
-**Characteristics**:
-- Split into subproblems: Divide problem into partitions
-- Optimization: Find optimal way to partition
-- Multiple choices: Try different partition points
-
-**Examples**: Coin Change, Palindrome Partitioning, Word Break
-
-```cpp
-// Example: Coin Change
-int coinChange(vector<int>& coins, int amount) {
-    vector<int> dp(amount + 1, amount + 1);
-    dp[0] = 0;
+// LeetCode 62: Unique Paths
+int uniquePaths(int m, int n) {
+    // dp[i][j] = number of ways to reach (i, j)
+    vector<vector<int>> dp(m, vector<int>(n, 1));
     
-    for (int i = 1; i <= amount; i++) {
-        for (int coin : coins) {
-            if (coin <= i) {
-                dp[i] = min(dp[i], dp[i - coin] + 1);
+    // First row and column are all 1 (only one way to reach)
+    // Fill the rest
+    for (int i = 1; i < m; i++) {
+        for (int j = 1; j < n; j++) {
+            dp[i][j] = dp[i - 1][j] + dp[i][j - 1];
+        }
+    }
+    
+    return dp[m - 1][n - 1];
+}
+
+// Space-optimized: O(n) space using rolling array
+int uniquePathsOptimized(int m, int n) {
+    vector<int> prev(n, 1);  // Previous row
+    
+    for (int i = 1; i < m; i++) {
+        vector<int> curr(n, 1);
+        for (int j = 1; j < n; j++) {
+            curr[j] = prev[j] + curr[j - 1];
+        }
+        prev = curr;
+    }
+    
+    return prev[n - 1];
+}
+```
+
+**Example 2: Minimum Path Sum**
+
+**Problem**: Find minimum sum path from top-left to bottom-right.
+
+**Recurrence**: `dp[i][j] = grid[i][j] + min(dp[i-1][j], dp[i][j-1])`
+
+```cpp
+// LeetCode 64: Minimum Path Sum
+int minPathSum(vector<vector<int>>& grid) {
+    int m = grid.size();
+    int n = grid[0].size();
+    
+    vector<vector<int>> dp(m, vector<int>(n));
+    dp[0][0] = grid[0][0];
+    
+    // Initialize first row
+    for (int j = 1; j < n; j++) {
+        dp[0][j] = dp[0][j - 1] + grid[0][j];
+    }
+    
+    // Initialize first column
+    for (int i = 1; i < m; i++) {
+        dp[i][0] = dp[i - 1][0] + grid[i][0];
+    }
+    
+    // Fill the rest
+    for (int i = 1; i < m; i++) {
+        for (int j = 1; j < n; j++) {
+            dp[i][j] = grid[i][j] + min(dp[i - 1][j], dp[i][j - 1]);
+        }
+    }
+    
+    return dp[m - 1][n - 1];
+}
+```
+
+**Pattern Recognition Tips**:
+- Look for "grid", "matrix", "path", "traverse"
+- State is 2D: `dp[i][j]`
+- Usually depends on top and left cells
+
+---
+
+### Pattern 3: Knapsack Pattern (Pick or Not Pick) ⭐ Most DP Problems Reduce to This
+
+**Core Concept**: At every step you decide: take or skip. This is the mental model for most DP problems.
+
+**Characteristics**:
+- Decision at each step: Include current item or skip it
+- State: `dp[i][capacity]` or `dp[i][sum]` depending on problem
+- Two choices: Take current item or don't take it
+- Time: O(n×W) for knapsack, Space: O(n×W) or O(W) optimized
+
+**When to Use**: Problems where you make binary choices (take/skip) at each step.
+
+**LeetCode Examples**:
+- **0/1 Knapsack**: Each item can be used at most once
+- **Subset Sum** (LeetCode 416): Can you make target sum with subset?
+- **Partition Equal Subset Sum** (LeetCode 416): Can array be partitioned into two equal sum subsets?
+
+**Example 1: 0/1 Knapsack**
+
+**Problem**: Maximize value with weight constraint. Each item can be used at most once.
+
+**Recurrence**: `dp[i][w] = max(dp[i-1][w], dp[i-1][w-weight[i]] + value[i])`
+
+```cpp
+// Classic 0/1 Knapsack
+int knapsack(vector<int>& weights, vector<int>& values, int capacity) {
+    int n = weights.size();
+    // dp[i][w] = max value using first i items with capacity w
+    vector<vector<int>> dp(n + 1, vector<int>(capacity + 1, 0));
+    
+    for (int i = 1; i <= n; i++) {
+        for (int w = 1; w <= capacity; w++) {
+            // Don't take item i-1
+            dp[i][w] = dp[i - 1][w];
+            
+            // Take item i-1 (if it fits)
+            if (weights[i - 1] <= w) {
+                dp[i][w] = max(dp[i][w], 
+                              dp[i - 1][w - weights[i - 1]] + values[i - 1]);
             }
         }
     }
     
-    return dp[amount] > amount ? -1 : dp[amount];
+    return dp[n][capacity];
+}
+
+// Space-optimized: O(capacity) space
+// IMPORTANT: Iterate capacity backwards to avoid using updated values
+int knapsackOptimized(vector<int>& weights, vector<int>& values, int capacity) {
+    vector<int> dp(capacity + 1, 0);
+    
+    for (int i = 0; i < weights.size(); i++) {
+        // Iterate backwards to avoid using updated dp[w] in same iteration
+        for (int w = capacity; w >= weights[i]; w--) {
+            dp[w] = max(dp[w], dp[w - weights[i]] + values[i]);
+        }
+    }
+    
+    return dp[capacity];
 }
 ```
 
-### Pattern 5: Interval DP
+**Example 2: Partition Equal Subset Sum**
+
+**Problem**: Can array be partitioned into two subsets with equal sum?
+
+**Key Insight**: This is a subset sum problem. If total sum is S, we need to find subset with sum S/2.
+
+```cpp
+// LeetCode 416: Partition Equal Subset Sum
+bool canPartition(vector<int>& nums) {
+    int totalSum = accumulate(nums.begin(), nums.end(), 0);
+    
+    // If sum is odd, can't partition
+    if (totalSum % 2 != 0) return false;
+    
+    int target = totalSum / 2;
+    int n = nums.size();
+    
+    // dp[i][sum] = can we make sum using first i items?
+    vector<vector<bool>> dp(n + 1, vector<bool>(target + 1, false));
+    
+    // Base case: sum 0 is always possible (empty subset)
+    for (int i = 0; i <= n; i++) {
+        dp[i][0] = true;
+    }
+    
+    for (int i = 1; i <= n; i++) {
+        for (int sum = 1; sum <= target; sum++) {
+            // Don't take nums[i-1]
+            dp[i][sum] = dp[i - 1][sum];
+            
+            // Take nums[i-1] (if it fits)
+            if (sum >= nums[i - 1]) {
+                dp[i][sum] = dp[i][sum] || dp[i - 1][sum - nums[i - 1]];
+            }
+        }
+    }
+    
+    return dp[n][target];
+}
+
+// Space-optimized version
+bool canPartitionOptimized(vector<int>& nums) {
+    int totalSum = accumulate(nums.begin(), nums.end(), 0);
+    if (totalSum % 2 != 0) return false;
+    
+    int target = totalSum / 2;
+    vector<bool> dp(target + 1, false);
+    dp[0] = true;  // Base case: sum 0 is always possible
+    
+    for (int num : nums) {
+        // Iterate backwards to avoid using updated dp[sum] in same iteration
+        for (int sum = target; sum >= num; sum--) {
+            dp[sum] = dp[sum] || dp[sum - num];
+        }
+    }
+    
+    return dp[target];
+}
+```
+
+**Pattern Recognition Tips**:
+- Look for "subset", "partition", "can you make sum X"
+- Mental model: "Do I take this item or skip it?"
+- Often can optimize to 1D array with backwards iteration
+
+---
+
+### Pattern 4: Longest Subsequence / Subarray ⭐ Tricky Transitions, Very Popular
+
+**Core Concept**: You compare past states to build the longest answer. Compare current element with previous elements to extend sequences.
+
+**Characteristics**:
+- Compare current with previous: `dp[i]` depends on `dp[j]` for `j < i`
+- Two variants: Subsequence (not necessarily contiguous) vs Subarray (contiguous)
+- Matching problems: Compare two sequences
+- Time: O(n²) for LIS, O(m×n) for LCS, Space: O(n) or O(m×n)
+
+**When to Use**: Problems asking for longest increasing/decreasing/common subsequences or subarrays.
+
+**LeetCode Examples**:
+- **Longest Increasing Subsequence** (LeetCode 300): Find length of longest strictly increasing subsequence
+- **Longest Common Subsequence** (LeetCode 1143): Find LCS of two strings
+- **Longest Palindromic Subsequence** (LeetCode 516): Find longest palindromic subsequence
+
+**Example 1: Longest Increasing Subsequence (LIS)**
+
+**Problem**: Find length of longest strictly increasing subsequence.
+
+**Recurrence**: `dp[i] = max(dp[j] + 1)` for all `j < i` where `nums[j] < nums[i]`
+
+```cpp
+// LeetCode 300: Longest Increasing Subsequence
+// O(n²) DP approach
+int lengthOfLIS(vector<int>& nums) {
+    int n = nums.size();
+    // dp[i] = length of LIS ending at index i
+    vector<int> dp(n, 1);  // Each element is a subsequence of length 1
+    
+    for (int i = 1; i < n; i++) {
+        for (int j = 0; j < i; j++) {
+            // If nums[j] < nums[i], we can extend LIS ending at j
+            if (nums[j] < nums[i]) {
+                dp[i] = max(dp[i], dp[j] + 1);
+            }
+        }
+    }
+    
+    return *max_element(dp.begin(), dp.end());
+}
+
+// O(n log n) optimized approach using binary search
+int lengthOfLISOptimized(vector<int>& nums) {
+    vector<int> tails;  // tails[i] = smallest tail of all increasing subsequences of length i+1
+    
+    for (int num : nums) {
+        // Find first element >= num
+        auto it = lower_bound(tails.begin(), tails.end(), num);
+        
+        if (it == tails.end()) {
+            // num is larger than all tails, extend longest subsequence
+            tails.push_back(num);
+        } else {
+            // Replace first element >= num with num (maintains sorted order)
+            *it = num;
+        }
+    }
+    
+    return tails.size();
+}
+```
+
+**Example 2: Longest Common Subsequence (LCS)**
+
+**Problem**: Find length of longest common subsequence of two strings.
+
+**Recurrence**: 
+- If `s1[i] == s2[j]`: `dp[i][j] = 1 + dp[i-1][j-1]`
+- Else: `dp[i][j] = max(dp[i-1][j], dp[i][j-1])`
+
+```cpp
+// LeetCode 1143: Longest Common Subsequence
+int longestCommonSubsequence(string text1, string text2) {
+    int m = text1.length();
+    int n = text2.length();
+    
+    // dp[i][j] = LCS of text1[0..i-1] and text2[0..j-1]
+    vector<vector<int>> dp(m + 1, vector<int>(n + 1, 0));
+    
+    for (int i = 1; i <= m; i++) {
+        for (int j = 1; j <= n; j++) {
+            if (text1[i - 1] == text2[j - 1]) {
+                // Characters match: extend LCS
+                dp[i][j] = 1 + dp[i - 1][j - 1];
+            } else {
+                // Characters don't match: take max of skipping either
+                dp[i][j] = max(dp[i - 1][j], dp[i][j - 1]);
+            }
+        }
+    }
+    
+    return dp[m][n];
+}
+
+// Space-optimized: O(min(m, n)) space
+int longestCommonSubsequenceOptimized(string text1, string text2) {
+    if (text1.length() < text2.length()) {
+        swap(text1, text2);
+    }
+    
+    int m = text1.length();
+    int n = text2.length();
+    
+    vector<int> prev(n + 1, 0);
+    vector<int> curr(n + 1, 0);
+    
+    for (int i = 1; i <= m; i++) {
+        for (int j = 1; j <= n; j++) {
+            if (text1[i - 1] == text2[j - 1]) {
+                curr[j] = 1 + prev[j - 1];
+            } else {
+                curr[j] = max(prev[j], curr[j - 1]);
+            }
+        }
+        prev = curr;
+    }
+    
+    return prev[n];
+}
+```
+
+**Pattern Recognition Tips**:
+- Look for "longest", "subsequence", "subarray", "common"
+- Compare current element with previous elements
+- Two sequences → 2D DP, one sequence → 1D DP
+
+---
+
+### Pattern 5: Interval DP ⭐ Usually O(n³), Scary but Powerful
+
+**Core Concept**: You solve smaller ranges and expand. Process intervals by length, combining solutions from smaller intervals.
 
 **Characteristics**:
 - Process intervals: Work with ranges `[i, j]`
-- Combine subintervals: Combine solutions from smaller intervals
-- Length-based: Usually iterate by interval length
+- Length-based iteration: Iterate by interval length (length 2, 3, ..., n)
+- Combine subintervals: `dp[i][j]` combines solutions from `dp[i][k]` and `dp[k+1][j]`
+- Time: O(n³), Space: O(n²)
 
-**Examples**: Matrix Chain Multiplication, Burst Balloons, Palindrome Partitioning II
+**When to Use**: Problems involving ranges, intervals, or splitting into subproblems.
+
+**LeetCode Examples**:
+- **Burst Balloons** (LeetCode 312): Maximize coins by bursting balloons
+- **Matrix Chain Multiplication**: Minimize multiplication operations
+- **Palindrome Partitioning II** (LeetCode 132): Minimum cuts for palindrome partitioning
+
+**Example 1: Burst Balloons**
+
+**Problem**: Burst balloons to maximize coins. When you burst balloon i, you get `nums[left] * nums[i] * nums[right]` coins.
+
+**Key Insight**: Think backwards—which balloon is the LAST one to burst in range [i, j]?
+
+**Recurrence**: `dp[i][j] = max(dp[i][k-1] + dp[k+1][j] + nums[i-1]*nums[k]*nums[j+1])` for all k in [i, j]
 
 ```cpp
-// Example: Matrix Chain Multiplication
+// LeetCode 312: Burst Balloons
+int maxCoins(vector<int>& nums) {
+    int n = nums.size();
+    
+    // Add boundary balloons with value 1
+    vector<int> balloons(n + 2, 1);
+    for (int i = 0; i < n; i++) {
+        balloons[i + 1] = nums[i];
+    }
+    
+    // dp[i][j] = max coins from bursting balloons in range [i, j]
+    vector<vector<int>> dp(n + 2, vector<int>(n + 2, 0));
+    
+    // Iterate by length (length 1, 2, ..., n)
+    for (int len = 1; len <= n; len++) {
+        for (int i = 1; i <= n - len + 1; i++) {
+            int j = i + len - 1;
+            
+            // Try each balloon k in [i, j] as the LAST one to burst
+            for (int k = i; k <= j; k++) {
+                int coins = balloons[i - 1] * balloons[k] * balloons[j + 1];
+                coins += dp[i][k - 1] + dp[k + 1][j];
+                dp[i][j] = max(dp[i][j], coins);
+            }
+        }
+    }
+    
+    return dp[1][n];
+}
+```
+
+**Example 2: Matrix Chain Multiplication**
+
+**Problem**: Find optimal way to parenthesize matrix multiplication to minimize operations.
+
+**Recurrence**: `dp[i][j] = min(dp[i][k] + dp[k+1][j] + p[i]*p[k+1]*p[j+1])` for all k in [i, j-1]
+
+```cpp
+// Matrix Chain Multiplication
 int matrixChainOrder(vector<int>& p) {
-    int n = p.size() - 1;
+    int n = p.size() - 1;  // n matrices
+    // dp[i][j] = min operations to multiply matrices i to j
     vector<vector<int>> dp(n, vector<int>(n, 0));
     
-    // l is chain length
-    for (int l = 2; l <= n; l++) {
-        for (int i = 0; i < n - l + 1; i++) {
-            int j = i + l - 1;
+    // Iterate by chain length
+    for (int len = 2; len <= n; len++) {
+        for (int i = 0; i < n - len + 1; i++) {
+            int j = i + len - 1;
             dp[i][j] = INT_MAX;
             
+            // Try each split point k
             for (int k = i; k < j; k++) {
-                int cost = dp[i][k] + dp[k+1][j] + p[i]*p[k+1]*p[j+1];
+                int cost = dp[i][k] + dp[k + 1][j] + 
+                          p[i] * p[k + 1] * p[j + 1];
                 dp[i][j] = min(dp[i][j], cost);
             }
         }
     }
     
-    return dp[0][n-1];
+    return dp[0][n - 1];
 }
 ```
 
-### Pattern 6: State Machine DP
+**Pattern Recognition Tips**:
+- Look for "range", "interval", "split", "parenthesize"
+- Iterate by length, not by start position
+- Usually O(n³) time complexity
+
+---
+
+### Pattern 6: DP on Strings ⭐ Edit Operations, Matching, Skipping
+
+**Core Concept**: State usually based on two indices. Compare two strings character by character, making edit decisions.
+
+**Characteristics**:
+- Two indices: `dp[i][j]` compares positions `i` and `j` in two strings
+- Edit operations: Insert, delete, replace characters
+- Matching: Compare characters and decide to match or skip
+- Time: O(m×n), Space: O(m×n) or O(min(m,n))
+
+**When to Use**: String transformation, matching, or comparison problems.
+
+**LeetCode Examples**:
+- **Edit Distance** (LeetCode 72): Minimum operations to convert string1 to string2
+- **Regular Expression Matching** (LeetCode 10): Match pattern with string
+- **Wildcard Matching** (LeetCode 44): Match pattern with wildcards
+
+**Example 1: Edit Distance (Levenshtein Distance)**
+
+**Problem**: Find minimum operations (insert, delete, replace) to convert word1 to word2.
+
+**Recurrence**:
+- If `word1[i] == word2[j]`: `dp[i][j] = dp[i-1][j-1]` (no operation)
+- Else: `dp[i][j] = 1 + min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1])` (delete, insert, replace)
+
+```cpp
+// LeetCode 72: Edit Distance
+int minDistance(string word1, string word2) {
+    int m = word1.length();
+    int n = word2.length();
+    
+    // dp[i][j] = min operations to convert word1[0..i-1] to word2[0..j-1]
+    vector<vector<int>> dp(m + 1, vector<int>(n + 1, 0));
+    
+    // Base cases: converting empty string
+    for (int i = 0; i <= m; i++) {
+        dp[i][0] = i;  // i deletions
+    }
+    for (int j = 0; j <= n; j++) {
+        dp[0][j] = j;  // j insertions
+    }
+    
+    for (int i = 1; i <= m; i++) {
+        for (int j = 1; j <= n; j++) {
+            if (word1[i - 1] == word2[j - 1]) {
+                // Characters match: no operation needed
+                dp[i][j] = dp[i - 1][j - 1];
+            } else {
+                // Three choices:
+                // 1. Delete from word1: dp[i-1][j] + 1
+                // 2. Insert into word1: dp[i][j-1] + 1
+                // 3. Replace in word1: dp[i-1][j-1] + 1
+                dp[i][j] = 1 + min({dp[i - 1][j],      // delete
+                                   dp[i][j - 1],        // insert
+                                   dp[i - 1][j - 1]});  // replace
+            }
+        }
+    }
+    
+    return dp[m][n];
+}
+```
+
+**Example 2: Regular Expression Matching**
+
+**Problem**: Match pattern with string. '.' matches any character, '*' matches zero or more of preceding element.
+
+**Recurrence**: Complex state machine with matching and skipping logic.
+
+```cpp
+// LeetCode 10: Regular Expression Matching
+bool isMatch(string s, string p) {
+    int m = s.length();
+    int n = p.length();
+    
+    // dp[i][j] = does s[0..i-1] match p[0..j-1]?
+    vector<vector<bool>> dp(m + 1, vector<bool>(n + 1, false));
+    
+    // Base case: empty string matches empty pattern
+    dp[0][0] = true;
+    
+    // Handle patterns like "a*", "a*b*" that can match empty string
+    for (int j = 2; j <= n; j++) {
+        if (p[j - 1] == '*') {
+            dp[0][j] = dp[0][j - 2];  // '*' can match zero characters
+        }
+    }
+    
+    for (int i = 1; i <= m; i++) {
+        for (int j = 1; j <= n; j++) {
+            if (p[j - 1] == '*') {
+                // '*' can match zero or more of preceding character
+                // Option 1: Match zero (skip pattern)
+                dp[i][j] = dp[i][j - 2];
+                
+                // Option 2: Match one or more (if preceding char matches)
+                if (p[j - 2] == '.' || p[j - 2] == s[i - 1]) {
+                    dp[i][j] = dp[i][j] || dp[i - 1][j];
+                }
+            } else if (p[j - 1] == '.' || p[j - 1] == s[i - 1]) {
+                // Current characters match
+                dp[i][j] = dp[i - 1][j - 1];
+            }
+        }
+    }
+    
+    return dp[m][n];
+}
+```
+
+**Pattern Recognition Tips**:
+- Look for "edit", "match", "transform", "convert"
+- Two strings → 2D DP
+- Think about operations: insert, delete, replace, match, skip
+
+---
+
+### Pattern 7: DP on Trees ⭐ Very Common in System Style Interviews
+
+**Core Concept**: DFS + DP values returned from children. Traverse tree and combine results from subtrees.
+
+**Characteristics**:
+- Tree traversal: DFS (post-order usually)
+- Return values: Each node returns DP value to parent
+- Combine children: Parent combines results from left and right children
+- Time: O(n), Space: O(h) where h is height
+
+**When to Use**: Tree problems where answer depends on subtree solutions.
+
+**LeetCode Examples**:
+- **House Robber III** (LeetCode 337): Rob houses in binary tree (can't rob adjacent)
+- **Diameter of Binary Tree** (LeetCode 543): Longest path between any two nodes (DP variant)
+- **Binary Tree Maximum Path Sum** (LeetCode 124): Maximum path sum in tree
+
+**Example 1: House Robber III**
+
+**Problem**: Rob houses arranged in binary tree. Can't rob two directly linked houses.
+
+**Recurrence**: For each node, return `[rob, notRob]` where:
+- `rob = node.val + left[notRob] + right[notRob]`
+- `notRob = max(left) + max(right)`
+
+```cpp
+// LeetCode 337: House Robber III
+struct TreeNode {
+    int val;
+    TreeNode* left;
+    TreeNode* right;
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+};
+
+pair<int, int> robHelper(TreeNode* root) {
+    if (!root) return {0, 0};
+    
+    // [rob, notRob] for current node
+    auto left = robHelper(root->left);
+    auto right = robHelper(root->right);
+    
+    // If we rob current node, we can't rob children
+    int rob = root->val + left.second + right.second;
+    
+    // If we don't rob current node, we can choose best from children
+    int notRob = max(left.first, left.second) + max(right.first, right.second);
+    
+    return {rob, notRob};
+}
+
+int rob(TreeNode* root) {
+    auto result = robHelper(root);
+    return max(result.first, result.second);
+}
+```
+
+**Example 2: Diameter of Binary Tree (DP Variant)**
+
+**Problem**: Find longest path between any two nodes (may or may not pass through root).
+
+**Recurrence**: For each node, return max depth. Diameter = max(leftDepth + rightDepth) across all nodes.
+
+```cpp
+// LeetCode 543: Diameter of Binary Tree
+int diameter = 0;
+
+int maxDepth(TreeNode* root) {
+    if (!root) return 0;
+    
+    int leftDepth = maxDepth(root->left);
+    int rightDepth = maxDepth(root->right);
+    
+    // Update diameter: path through current node
+    diameter = max(diameter, leftDepth + rightDepth);
+    
+    // Return max depth from current node
+    return 1 + max(leftDepth, rightDepth);
+}
+
+int diameterOfBinaryTree(TreeNode* root) {
+    diameter = 0;
+    maxDepth(root);
+    return diameter;
+}
+```
+
+**Pattern Recognition Tips**:
+- Look for "tree", "binary tree", "subtree"
+- Use DFS (usually post-order)
+- Return values from children, combine at parent
+
+---
+
+### Pattern 8: DP on Graphs (DAG DP) ⭐ Only Works When No Cycles
+
+**Core Concept**: Topological order + DP relaxations. Process nodes in topological order and relax edges.
+
+**Characteristics**:
+- DAG only: Works only on Directed Acyclic Graphs
+- Topological sort: Process nodes in topological order
+- Relax edges: Update DP values by relaxing incoming/outgoing edges
+- Time: O(V + E), Space: O(V)
+
+**When to Use**: Graph problems on DAGs where you need longest/shortest paths or optimal values.
+
+**LeetCode Examples**:
+- **Longest Path in DAG**: Find longest path in directed acyclic graph
+- **Course Schedule** variants: Prerequisites, longest path in course dependency graph
+- **Critical Path**: Longest path in project scheduling
+
+**Example 1: Longest Path in DAG**
+
+**Problem**: Find longest path from source to all nodes in DAG.
+
+**Approach**: Topological sort + DP relaxation.
+
+```cpp
+// Longest Path in DAG
+vector<int> longestPathDAG(int n, vector<vector<pair<int, int>>>& graph, int source) {
+    // Topological sort
+    vector<int> inDegree(n, 0);
+    for (int u = 0; u < n; u++) {
+        for (auto [v, w] : graph[u]) {
+            inDegree[v]++;
+        }
+    }
+    
+    queue<int> q;
+    for (int i = 0; i < n; i++) {
+        if (inDegree[i] == 0) {
+            q.push(i);
+        }
+    }
+    
+    vector<int> topoOrder;
+    while (!q.empty()) {
+        int u = q.front();
+        q.pop();
+        topoOrder.push_back(u);
+        
+        for (auto [v, w] : graph[u]) {
+            inDegree[v]--;
+            if (inDegree[v] == 0) {
+                q.push(v);
+            }
+        }
+    }
+    
+    // DP: longest path from source
+    vector<int> dp(n, INT_MIN);
+    dp[source] = 0;
+    
+    // Process nodes in topological order
+    for (int u : topoOrder) {
+        if (dp[u] != INT_MIN) {
+            for (auto [v, w] : graph[u]) {
+                dp[v] = max(dp[v], dp[u] + w);
+            }
+        }
+    }
+    
+    return dp;
+}
+```
+
+**Example 2: Course Schedule with Longest Path**
+
+**Problem**: Find longest path in course prerequisite DAG.
+
+```cpp
+// Variant: Longest path in course dependency graph
+int longestCoursePath(int numCourses, vector<vector<int>>& prerequisites) {
+    // Build graph
+    vector<vector<int>> graph(numCourses);
+    vector<int> inDegree(numCourses, 0);
+    
+    for (auto& edge : prerequisites) {
+        graph[edge[1]].push_back(edge[0]);
+        inDegree[edge[0]]++;
+    }
+    
+    // Topological sort
+    queue<int> q;
+    for (int i = 0; i < numCourses; i++) {
+        if (inDegree[i] == 0) {
+            q.push(i);
+        }
+    }
+    
+    // DP: longest path ending at each node
+    vector<int> dp(numCourses, 1);  // Each course takes at least 1 semester
+    int maxPath = 1;
+    
+    while (!q.empty()) {
+        int u = q.front();
+        q.pop();
+        
+        for (int v : graph[u]) {
+            dp[v] = max(dp[v], dp[u] + 1);
+            maxPath = max(maxPath, dp[v]);
+            
+            inDegree[v]--;
+            if (inDegree[v] == 0) {
+                q.push(v);
+            }
+        }
+    }
+    
+    return maxPath;
+}
+```
+
+**Pattern Recognition Tips**:
+- Look for "DAG", "directed acyclic", "topological", "prerequisites"
+- Must be acyclic (no cycles)
+- Process in topological order
+
+---
+
+### Pattern 9: Bitmask DP ⭐ Looks Hard, but Brute Force Optimized
+
+**Core Concept**: State compressed into bits. Represent sets or combinations as bit masks.
+
+**Characteristics**:
+- Bit representation: Use integers to represent sets (bit i = 1 means element i is included)
+- State compression: Reduce state space using bit masks
+- Iterate subsets: Use bit manipulation to iterate over subsets
+- Time: O(2^n × n) typically, Space: O(2^n)
+
+**When to Use**: Problems involving subsets, combinations, or visited/unvisited states.
+
+**LeetCode Examples**:
+- **Traveling Salesman Problem**: Visit all cities exactly once, return to start
+- **Assign Tasks to Workers**: Assign tasks optimally
+- **Partition to K Equal Sum Subsets** (LeetCode 698): Can array be partitioned into k equal subsets?
+
+**Example 1: Traveling Salesman Problem (TSP)**
+
+**Problem**: Visit all cities exactly once and return to start, minimizing total distance.
+
+**State**: `dp[mask][last]` = min cost to visit cities in mask, ending at last city.
+
+```cpp
+// Traveling Salesman Problem
+int tsp(vector<vector<int>>& dist) {
+    int n = dist.size();
+    int maskLimit = 1 << n;
+    
+    // dp[mask][last] = min cost to visit cities in mask, ending at last
+    vector<vector<int>> dp(maskLimit, vector<int>(n, INT_MAX));
+    
+    // Base case: starting from city 0
+    dp[1][0] = 0;  // mask=1 means only city 0 is visited
+    
+    // Iterate over all masks
+    for (int mask = 1; mask < maskLimit; mask++) {
+        for (int last = 0; last < n; last++) {
+            // Check if last city is in mask
+            if (!(mask & (1 << last))) continue;
+            if (dp[mask][last] == INT_MAX) continue;
+            
+            // Try visiting next unvisited city
+            for (int next = 0; next < n; next++) {
+                if (mask & (1 << next)) continue;  // Already visited
+                
+                int newMask = mask | (1 << next);
+                dp[newMask][next] = min(dp[newMask][next], 
+                                       dp[mask][last] + dist[last][next]);
+            }
+        }
+    }
+    
+    // Return to starting city (city 0)
+    int result = INT_MAX;
+    int fullMask = maskLimit - 1;  // All cities visited
+    for (int last = 1; last < n; last++) {
+        result = min(result, dp[fullMask][last] + dist[last][0]);
+    }
+    
+    return result;
+}
+```
+
+**Example 2: Partition to K Equal Sum Subsets**
+
+**Problem**: Can array be partitioned into k non-empty subsets with equal sum?
+
+**State**: `dp[mask]` = can we partition subset represented by mask into valid subsets?
+
+```cpp
+// LeetCode 698: Partition to K Equal Sum Subsets
+bool canPartitionKSubsets(vector<int>& nums, int k) {
+    int n = nums.size();
+    int totalSum = accumulate(nums.begin(), nums.end(), 0);
+    
+    if (totalSum % k != 0) return false;
+    int target = totalSum / k;
+    
+    // Sort in descending order for optimization
+    sort(nums.rbegin(), nums.rend());
+    
+    int maskLimit = 1 << n;
+    vector<bool> dp(maskLimit, false);
+    vector<int> sum(maskLimit, 0);
+    
+    dp[0] = true;  // Empty set can be partitioned
+    
+    for (int mask = 0; mask < maskLimit; mask++) {
+        if (!dp[mask]) continue;
+        
+        for (int i = 0; i < n; i++) {
+            if (mask & (1 << i)) continue;  // Already used
+            
+            int newMask = mask | (1 << i);
+            int newSum = sum[mask] + nums[i];
+            
+            if (newSum <= target) {
+                sum[newMask] = newSum % target;  // Reset to 0 if equals target
+                dp[newMask] = true;
+            }
+        }
+    }
+    
+    return dp[maskLimit - 1];
+}
+```
+
+**Pattern Recognition Tips**:
+- Look for "subset", "combination", "visited", "all cities"
+- State space is exponential (2^n)
+- Use bit manipulation: `mask & (1 << i)`, `mask | (1 << i)`
+
+---
+
+### Pattern 10: State Machine DP ⭐ Very Common in Trading Style Questions
+
+**Core Concept**: You track states like buy/sell, hold/not hold. Model problem as state machine with transitions.
 
 **Characteristics**:
 - Multiple states: Problem has distinct states (e.g., holding stock, not holding)
 - State transitions: Move between states based on actions
 - State tracking: `dp[i][state]` = solution at position `i` in state `state`
+- Time: O(n×k) where k is number of states, Space: O(n×k) or O(k)
 
-**Examples**: Best Time to Buy/Sell Stock, House Robber II, Decode Ways
+**When to Use**: Problems with multiple states and transitions (trading, game states, etc.).
+
+**LeetCode Examples**:
+- **Best Time to Buy and Sell Stock I** (LeetCode 121): One transaction
+- **Best Time to Buy and Sell Stock II** (LeetCode 122): Unlimited transactions
+- **Best Time to Buy and Sell Stock III** (LeetCode 123): At most 2 transactions
+- **Best Time to Buy and Sell Stock with Cooldown** (LeetCode 309): Cooldown period
+
+**Example 1: Best Time to Buy and Sell Stock with Cooldown**
+
+**Problem**: Buy and sell stock with cooldown (can't buy the day after selling).
+
+**States**: 
+- `hold`: Currently holding stock
+- `sold`: Just sold (cooldown)
+- `rest`: Can buy (not holding, not in cooldown)
 
 ```cpp
-// Example: Best Time to Buy and Sell Stock with Cooldown
+// LeetCode 309: Best Time to Buy and Sell Stock with Cooldown
 int maxProfit(vector<int>& prices) {
     int n = prices.size();
     if (n <= 1) return 0;
     
-    // States: 0 = hold, 1 = sold (cooldown), 2 = can buy
+    // States: 0 = hold, 1 = sold (cooldown), 2 = rest (can buy)
     vector<vector<int>> dp(n, vector<int>(3, 0));
     
+    // Day 0
     dp[0][0] = -prices[0];  // Hold: bought on day 0
     dp[0][1] = 0;            // Sold: can't sell on day 0
-    dp[0][2] = 0;            // Can buy: no action on day 0
+    dp[0][2] = 0;            // Rest: no action on day 0
     
     for (int i = 1; i < n; i++) {
-        // Hold: max of (continue holding, buy today)
-        dp[i][0] = max(dp[i-1][0], dp[i-1][2] - prices[i]);
+        // Hold: max of (continue holding, buy today from rest state)
+        dp[i][0] = max(dp[i - 1][0], dp[i - 1][2] - prices[i]);
         
         // Sold: sold today (was holding)
-        dp[i][1] = dp[i-1][0] + prices[i];
+        dp[i][1] = dp[i - 1][0] + prices[i];
         
-        // Can buy: max of (continue can buy, end cooldown)
-        dp[i][2] = max(dp[i-1][2], dp[i-1][1]);
+        // Rest: max of (continue rest, end cooldown from sold)
+        dp[i][2] = max(dp[i - 1][2], dp[i - 1][1]);
     }
     
-    return max({dp[n-1][0], dp[n-1][1], dp[n-1][2]});
+    return max({dp[n - 1][0], dp[n - 1][1], dp[n - 1][2]});
+}
+
+// Space-optimized version
+int maxProfitOptimized(vector<int>& prices) {
+    int hold = INT_MIN, sold = 0, rest = 0;
+    
+    for (int price : prices) {
+        int prevHold = hold, prevSold = sold, prevRest = rest;
+        
+        hold = max(prevHold, prevRest - price);
+        sold = prevHold + price;
+        rest = max(prevRest, prevSold);
+    }
+    
+    return max(sold, rest);
 }
 ```
+
+**Example 2: Best Time to Buy and Sell Stock III (At Most 2 Transactions)**
+
+**Problem**: At most 2 transactions allowed.
+
+**States**: Track number of transactions completed and whether holding.
+
+```cpp
+// LeetCode 123: Best Time to Buy and Sell Stock III
+int maxProfit(vector<int>& prices) {
+    int n = prices.size();
+    
+    // dp[i][k][0/1] = max profit on day i with k transactions completed, 0=not holding, 1=holding
+    // Since k is at most 2, we can use separate variables
+    int buy1 = -prices[0], sell1 = 0;
+    int buy2 = -prices[0], sell2 = 0;
+    
+    for (int i = 1; i < n; i++) {
+        // First transaction
+        buy1 = max(buy1, -prices[i]);        // Buy first stock
+        sell1 = max(sell1, buy1 + prices[i]); // Sell first stock
+        
+        // Second transaction
+        buy2 = max(buy2, sell1 - prices[i]);  // Buy second stock
+        sell2 = max(sell2, buy2 + prices[i]); // Sell second stock
+    }
+    
+    return sell2;
+}
+```
+
+**Pattern Recognition Tips**:
+- Look for "buy", "sell", "hold", "state", "transaction"
+- Identify distinct states and transitions
+- Often can optimize space to O(k) where k is number of states
+
+---
+
+### Summary: Pattern Recognition Guide
+
+**Quick Reference Table**:
+
+| Pattern | Key Indicator | State Dimension | Time Complexity | Common Examples |
+|---------|--------------|----------------|-----------------|-----------------|
+| 1D DP | "ways to reach", "max up to i" | 1D | O(n) | Climbing Stairs, House Robber |
+| 2D Grid | "grid", "matrix", "path" | 2D | O(m×n) | Unique Paths, Min Path Sum |
+| Knapsack | "subset", "take or skip" | 2D or 1D | O(n×W) | 0/1 Knapsack, Subset Sum |
+| Subsequence | "longest", "common", "increasing" | 1D or 2D | O(n²) or O(m×n) | LIS, LCS |
+| Interval | "range", "split", "parenthesize" | 2D | O(n³) | Burst Balloons, Matrix Chain |
+| String DP | "edit", "match", "transform" | 2D | O(m×n) | Edit Distance, Regex Match |
+| Tree DP | "tree", "subtree" | Return values | O(n) | House Robber III, Diameter |
+| DAG DP | "DAG", "topological", "prerequisite" | 1D | O(V+E) | Longest Path, Course Schedule |
+| Bitmask | "subset", "all cities", "visited" | Bit mask | O(2^n × n) | TSP, Partition K Subsets |
+| State Machine | "buy/sell", "hold", "states" | 2D (pos × state) | O(n×k) | Stock Problems |
+
+**Interview Strategy**:
+1. **Read the problem carefully** and identify keywords
+2. **Match to pattern** using the table above
+3. **Write recurrence relation** based on pattern
+4. **Implement with memoization or tabulation**
+5. **Optimize space** if asked
+
+**Remember**: Most DP questions are not new problems—they are the same old patterns. If you can identify the pattern, the solution writes itself slowly but surely.
 
 ## 12.19 DP vs Recursion vs Greedy
 
