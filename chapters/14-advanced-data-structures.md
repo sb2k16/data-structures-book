@@ -2973,6 +2973,61 @@ int query(int index) {
 
 14. Implement a Sqrt Decomposition that supports range minimum and range sum queries.
 
+15. **Find All Duplicates in Array**: Given an integer array `nums` of length `n` where all the integers of `nums` are in the range `[1, n]` and each integer appears at most twice, return an array of all the integers that appear twice.
+
+    You must write an algorithm that runs in O(n) time and uses only constant auxiliary space, excluding the space needed to store the output.
+
+    **Solution**:
+    ```cpp
+    vector<int> findDuplicates(vector<int>& nums) {
+        const int n = nums.size();
+        vector<int> result;
+        for (int i=0; i<n; i++) {
+            const int idx = abs(nums[i]) - 1;
+            if (nums[idx] < 0) {
+                result.push_back(abs(nums[i]));
+            } else {
+                nums[idx] = -nums[idx];
+            }
+        }
+        return result;
+    }
+    ```
+
+    **Explanation: How Array Elements Track Duplicates**
+
+    The key insight is that when numbers are in the range `[1, n]`, we can use the array itself as a hash table by treating each index as a "bucket" for a specific number.
+
+    **The Technique**:
+    1. **Index Mapping**: For a number `x` in the range `[1, n]`, we map it to index `x - 1` (since arrays are 0-indexed).
+    2. **Sign as Marker**: We use the sign of the value at index `x - 1` to track whether we've seen the number `x` before:
+       - If `nums[x - 1]` is positive: we haven't seen `x` yet → mark it by making it negative
+       - If `nums[x - 1]` is negative: we've already seen `x` → it's a duplicate!
+
+    **Why This Works**:
+    - **Range Constraint `[1, n]`**: This ensures every number `x` maps to a valid index `x - 1` in the array `[0, n-1]`.
+    - **At Most Twice**: Since each number appears at most twice, we only need one bit of information (positive/negative) to track whether we've seen it.
+    - **In-Place Tracking**: Instead of using a separate hash set (O(n) space), we reuse the input array by flipping signs.
+
+    **Step-by-Step Example**:
+    ```
+    Input: nums = [4, 3, 2, 7, 8, 2, 3, 1]
+    
+    i=0: nums[0]=4 → idx=3, nums[3]=7 (positive) → mark: nums[3]=-7
+    i=1: nums[1]=3 → idx=2, nums[2]=2 (positive) → mark: nums[2]=-2
+    i=2: nums[2]=-2 → idx=1, nums[1]=3 (positive) → mark: nums[1]=-3
+    i=3: nums[3]=-7 → idx=6, nums[6]=3 (positive) → mark: nums[6]=-3
+    i=4: nums[4]=8 → idx=7, nums[7]=1 (positive) → mark: nums[7]=-1
+    i=5: nums[5]=2 → idx=1, nums[1]=-3 (negative!) → DUPLICATE! Add 2 to result
+    i=6: nums[6]=-3 → idx=2, nums[2]=-2 (negative!) → DUPLICATE! Add 3 to result
+    i=7: nums[7]=-1 → idx=0, nums[0]=4 (positive) → mark: nums[0]=-4
+    
+    Result: [2, 3]
+    ```
+
+    **Time Complexity**: O(n) - single pass through the array
+    **Space Complexity**: O(1) auxiliary space (excluding output array)
+
 ## 14.26 Concurrency Considerations
 
 This section applies the concurrency fundamentals from [Chapter 3.5](03.5-concurrency-fundamentals.md) to heaps and priority queues. See Section 3.5.3 for invariant-based reasoning and Section 3.5.9 for producer-consumer patterns.
