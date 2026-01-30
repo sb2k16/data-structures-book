@@ -1,5 +1,92 @@
 # Chapter 6: Trees and Binary Trees
 
+## Table of Contents
+
+- [6.1 Problem Statement & Motivation](#problem-statement-motivation)
+  - [What Problem Do Trees Solve?](#what-problem-do-trees-solve)
+  - [When to Use Trees](#when-to-use-trees)
+  - [When NOT to Use Trees](#when-not-to-use-trees)
+- [6.2 Conceptual Overview](#conceptual-overview)
+  - [Intuitive Explanation](#intuitive-explanation)
+  - [Tree Terminology](#tree-terminology)
+  - [Tree Properties](#tree-properties)
+- [6.3 Abstract Model & Invariants ⭐](#abstract-model-invariants)
+  - [Abstract Model](#abstract-model)
+  - [Core Invariants](#core-invariants)
+- [6.8 Implementation (Reference Language: C++) ⭐](#implementation-reference-language-c)
+  - [6.8.1 Binary Trees](#1-binary-trees)
+  - [Binary Tree Node Structure](#binary-tree-node-structure)
+  - [Binary Tree Implementation](#binary-tree-implementation)
+  - [6.8.2 Tree Traversal Algorithms](#2-tree-traversal-algorithms)
+  - [Depth-First Traversal (DFS)](#depth-first-traversal-dfs)
+  - [Breadth-First Traversal (BFS)](#breadth-first-traversal-bfs)
+  - [Adding Traversal Methods to BinaryTree Class](#adding-traversal-methods-to-binarytree-class)
+  - [6.8.3 Binary Search Trees (BST)](#3-binary-search-trees-bst)
+  - [BST Implementation](#bst-implementation)
+  - [6.8.4 Advanced Tree Operations](#4-advanced-tree-operations)
+  - [Lowest Common Ancestor (LCA)](#lowest-common-ancestor-lca)
+  - [Path Sum Problems](#path-sum-problems)
+  - [Tree Serialization and Deserialization](#tree-serialization-and-deserialization)
+  - [Tree Validation and Properties](#tree-validation-and-properties)
+  - [6.8.5 Example Usage and Testing](#5-example-usage-and-testing)
+- [6.9 Correctness Argument](#correctness-argument)
+  - [Why BST Search Is Correct](#why-bst-search-is-correct)
+  - [Why BST Insert Is Correct](#why-bst-insert-is-correct)
+  - [Why BST Delete Is Correct](#why-bst-delete-is-correct)
+- [6.10 Edge Cases & Failure Modes](#edge-cases-failure-modes)
+  - [Empty Tree Operations](#empty-tree-operations)
+  - [Single Node Tree](#single-node-tree)
+  - [Unbalanced Tree](#unbalanced-tree)
+  - [Memory Leaks](#memory-leaks)
+  - [Stack Overflow](#stack-overflow)
+  - [BST Property Violation](#bst-property-violation)
+- [6.11 Performance & System Considerations ⭐](#performance-system-considerations)
+  - [Memory Layout Impact](#memory-layout-impact)
+  - [When Trees Become Bottlenecks](#when-trees-become-bottlenecks)
+- [6.12 Variants & Extensions](#variants-extensions)
+  - [Tree Variants](#tree-variants)
+  - [Self-Balancing Trees](#self-balancing-trees)
+- [6.13 Real-World Implementations](#real-world-implementations)
+  - [C++ Standard Library: std::map, std::set](#c-standard-library-stdmap-stdset)
+  - [Database Indexes: B-Trees](#database-indexes-b-trees)
+- [6.14 Common Pitfalls & Interview Traps](#common-pitfalls-interview-traps)
+  - [1. Not Handling Empty Tree](#not-handling-empty-tree)
+  - [2. Breaking BST Property](#breaking-bst-property)
+  - [3. Memory Leaks](#memory-leaks)
+  - [4. Stack Overflow in Deep Trees](#stack-overflow-in-deep-trees)
+  - [5. Incorrect Height Calculation](#incorrect-height-calculation)
+  - [6. Creating Cycles](#creating-cycles)
+  - [7. Forgetting to Update Parent Pointers](#forgetting-to-update-parent-pointers)
+  - [8. Assuming Tree Is Balanced](#assuming-tree-is-balanced)
+- [6.15 Additional Performance Analysis](#additional-performance-analysis)
+  - [Time Complexity](#time-complexity)
+  - [Space Complexity](#space-complexity)
+  - [6.12.1 Self-Balancing Trees Overview](#1-self-balancing-trees-overview)
+  - [Why Self-Balancing Trees?](#why-self-balancing-trees)
+  - [Types of Self-Balancing Trees](#types-of-self-balancing-trees)
+  - [Comparison Table](#comparison-table)
+  - [Decision Tree: Which Tree Structure to Use?](#decision-tree-which-tree-structure-to-use)
+  - [Implementation Note](#implementation-note)
+  - [Real-World Applications](#real-world-applications)
+  - [6.12.2 Tree Traversal Patterns Guide](#2-tree-traversal-patterns-guide)
+  - [When to Use Each Traversal](#when-to-use-each-traversal)
+  - [Iterative vs Recursive Trade-offs](#iterative-vs-recursive-trade-offs)
+  - [Morris Traversal (O(1) Space)](#morris-traversal-o1-space)
+  - [Traversal Pattern Decision Guide](#traversal-pattern-decision-guide)
+  - [Common Patterns](#common-patterns)
+  - [Practice Problems](#practice-problems)
+  - [Additional Failure Modes](#additional-failure-modes)
+- [6.16 Exercises & Thought Questions](#exercises-thought-questions)
+  - [Conceptual Questions](#conceptual-questions)
+  - [Implementation Tasks](#implementation-tasks)
+  - [Performance Reasoning](#performance-reasoning)
+  - [Interview-Style Problems](#interview-style-problems)
+- [6.17 Key Takeaways](#key-takeaways)
+  - [Additional Exercises](#additional-exercises)
+- [6.18 Summary](#summary)
+
+
+
 ## 6.1 Problem Statement & Motivation
 
 ### What Problem Do Trees Solve?
@@ -1778,6 +1865,95 @@ What do you need to do?
 5. **Construct Binary Tree from Preorder and Inorder** (LeetCode 105) - Both
 6. **Binary Tree Right Side View** (LeetCode 199) - Level-order
 7. **Kth Smallest Element in BST** (LeetCode 230) - Inorder
+8. **Find Largest Value in Each Tree Row** (LeetCode 515) - Level-order/DFS
+
+**Problem 8: Find Largest Value in Each Tree Row**
+
+Given the root of a binary tree, return an array of the largest value in each row of the tree (0-indexed).
+
+**Examples**:
+```
+Input: root = [1,3,2,5,3,null,9]
+Output: [1,3,9]
+
+Input: root = [1,2,3]
+Output: [1,3]
+```
+
+**Solution Approach**: Use DFS with depth tracking to maintain the maximum value at each depth level.
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    vector<int> largestValues(TreeNode* root) {
+        vector<int> result;
+        dfs(root, 0, result);
+        return result;
+    }
+    
+    void dfs(TreeNode* root, int depth, vector<int>& result) {
+        if (!root) {
+            return;
+        }
+        if (result.size() <= depth) {
+            result.push_back(root->val);
+        } else {
+            result[depth] = max(result[depth], root->val);
+        }
+        dfs(root->left, 1 + depth, result);
+        dfs(root->right, 1 + depth, result);
+    }
+};
+```
+
+**Key Insight**: 
+- Use DFS to traverse the tree while tracking depth
+- Maintain a result array where `result[depth]` stores the maximum value seen at that depth
+- When visiting a node at depth `d`, update `result[d]` if the current node's value is larger
+- If `result.size() <= depth`, this is the first node at this depth, so initialize it
+
+**Alternative Approach (BFS/Level-order)**:
+```cpp
+vector<int> largestValues(TreeNode* root) {
+    if (!root) return {};
+    
+    vector<int> result;
+    queue<TreeNode*> q;
+    q.push(root);
+    
+    while (!q.empty()) {
+        int levelSize = q.size();
+        int maxVal = INT_MIN;
+        
+        for (int i = 0; i < levelSize; i++) {
+            TreeNode* node = q.front();
+            q.pop();
+            maxVal = max(maxVal, node->val);
+            
+            if (node->left) q.push(node->left);
+            if (node->right) q.push(node->right);
+        }
+        
+        result.push_back(maxVal);
+    }
+    
+    return result;
+}
+```
+
+**Time Complexity**: O(n) - visit each node once
+**Space Complexity**: O(h) for DFS (recursion stack), O(w) for BFS (queue), where h is height and w is maximum width
 
 ### Additional Failure Modes
 

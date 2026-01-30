@@ -1,5 +1,43 @@
 # Chapter 1: Introduction to Data Structures and Algorithms
 
+## Table of Contents
+
+- [1.1 What Are Data Structures and Algorithms?](#what-are-data-structures-and-algorithms)
+  - [Data Structures](#data-structures)
+  - [Algorithms](#algorithms)
+- [1.2 Who This Book Is For](#who-this-book-is-for)
+  - [Target Audience](#target-audience)
+  - [Learning Approach](#learning-approach)
+- [1.3 Why DSA Matters: Real-World Impact](#why-dsa-matters-real-world-impact)
+  - [Real-World Applications](#real-world-applications)
+  - [Why Study Data Structures and Algorithms?](#why-study-data-structures-and-algorithms)
+  - [DSA in the Software Stack](#dsa-in-the-software-stack)
+- [1.3 Problem-Solving Methodology](#problem-solving-methodology)
+  - [Step 1: Understand the Problem](#step-1-understand-the-problem)
+  - [Step 2: Design the Algorithm](#step-2-design-the-algorithm)
+  - [Step 3: Analyze Complexity](#step-3-analyze-complexity)
+  - [Step 4: Implement the Solution](#step-4-implement-the-solution)
+  - [Step 5: Test and Optimize](#step-5-test-and-optimize)
+- [1.4 How to Use This Book](#how-to-use-this-book)
+  - [Learning Paths](#learning-paths)
+  - [What to Expect](#what-to-expect)
+  - [Prerequisites](#prerequisites)
+  - [Visual Roadmap](#visual-roadmap)
+- [1.5 Programming Environment Setup](#programming-environment-setup)
+  - [C++ Compiler Setup](#c-compiler-setup)
+  - [Compilation Commands](#compilation-commands)
+  - [Basic C++ Template](#basic-c-template)
+- [1.6 Common C++ Data Structures and Libraries](#common-c-data-structures-and-libraries)
+  - [Standard Template Library (STL) Containers](#standard-template-library-stl-containers)
+  - [Common Algorithms](#common-algorithms)
+- [1.7 Example: Your First Algorithm](#example-your-first-algorithm)
+  - [Analysis of the Algorithm](#analysis-of-the-algorithm)
+- [1.8 Key Takeaways](#key-takeaways)
+- [1.9 Exercises](#exercises)
+- [1.10 Summary](#summary)
+
+
+
 ## 1.1 What Are Data Structures and Algorithms?
 
 ### Data Structures

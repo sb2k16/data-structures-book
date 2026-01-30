@@ -1,5 +1,42 @@
 # Chapter 18: Advanced Topics and Modern Optimizations
 
+## Table of Contents
+
+- [18.1 Introduction to Advanced Topics](#introduction-to-advanced-topics)
+- [18.2 Modern String Search Optimizations](#modern-string-search-optimizations)
+  - [18.2.1 Introduction to Modern String Search](#1-introduction-to-modern-string-search)
+  - [Key Modern Optimization Areas](#key-modern-optimization-areas)
+- [18.2 Optimal-Hash Exact String Matching Algorithms](#optimal-hash-exact-string-matching-algorithms)
+  - [18.2.1 The HASH Family and q-gram Optimization](#1-the-hash-family-and-q-gram-optimization)
+  - [18.2.2 Elongated q-gram Shifting](#2-elongated-q-gram-shifting)
+- [18.3 Quantum String Matching Algorithms](#quantum-string-matching-algorithms)
+  - [18.3.1 Bridging Classical and Quantum String Matching](#1-bridging-classical-and-quantum-string-matching)
+- [18.4 GPU-Accelerated String Matching](#gpu-accelerated-string-matching)
+  - [18.4.1 CUSMART: GPU-Accelerated Parallel String Matching](#1-cusmart-gpu-accelerated-parallel-string-matching)
+- [18.5 Pattern Scan Order Optimizations](#pattern-scan-order-optimizations)
+  - [18.5.1 Reverse Colussi Algorithm](#1-reverse-colussi-algorithm)
+  - [18.5.1 Reverse Colussi Algorithm](#1-reverse-colussi-algorithm)
+- [18.6 Hardware-Aware Optimizations](#hardware-aware-optimizations)
+  - [18.6.1 Cache-Friendly String Matching](#1-cache-friendly-string-matching)
+- [18.7 Benchmarking and Empirical Studies](#benchmarking-and-empirical-studies)
+  - [18.7.1 Modern Benchmarking Framework](#1-modern-benchmarking-framework)
+- [18.8 Future Directions and Research Trends](#future-directions-and-research-trends)
+  - [18.8.1 Emerging Technologies](#1-emerging-technologies)
+  - [18.8.2 Research Challenges](#2-research-challenges)
+  - [18.8.3 Practical Applications](#3-practical-applications)
+- [18.9 Key Takeaways](#key-takeaways)
+- [18.10 Summary](#summary)
+- [18.11 References and Further Reading](#references-and-further-reading)
+  - [18.11.1 Optimal Hash and q-gram Optimization](#1-optimal-hash-and-q-gram-optimization)
+  - [18.11.2 Quantum String Matching](#2-quantum-string-matching)
+  - [18.11.3 GPU-Accelerated String Matching](#3-gpu-accelerated-string-matching)
+  - [18.11.4 Hardware-Aware Optimizations](#4-hardware-aware-optimizations)
+  - [18.11.5 Pattern Scan Order Optimizations](#5-pattern-scan-order-optimizations)
+  - [18.11.6 Benchmarking and Empirical Studies](#6-benchmarking-and-empirical-studies)
+  - [18.11.7 Additional Resources](#7-additional-resources)
+
+
+
 ## 18.1 Introduction to Advanced Topics
 
 This chapter covers cutting-edge developments and advanced optimization techniques that build upon the foundational concepts covered in earlier chapters. These topics are suitable for readers who have mastered the core material and are ready to explore advanced research areas and modern hardware-aware optimizations.

@@ -1,5 +1,77 @@
 # Chapter 15: Problem Solving Strategies and Practice
 
+## Table of Contents
+
+- [15.1 Introduction to Problem-Solving Methodology](#introduction-to-problem-solving-methodology)
+  - [The Problem-Solving Process](#the-problem-solving-process)
+- [15.2 Comprehensive Problem-Solving Framework](#comprehensive-problem-solving-framework)
+  - [Step-by-Step Framework](#step-by-step-framework)
+  - [Step 1: Understand the Problem](#step-1-understand-the-problem)
+  - [Step 2: Identify Patterns](#step-2-identify-patterns)
+  - [Step 3: Consider Data Structures](#step-3-consider-data-structures)
+  - [Step 4: Analyze Complexity](#step-4-analyze-complexity)
+  - [Step 5: Implement](#step-5-implement)
+  - [Step 6: Test Edge Cases](#step-6-test-edge-cases)
+  - [Example: Two Sum Problem](#example-two-sum-problem)
+- [15.3 Comprehensive Pattern Recognition Guide](#comprehensive-pattern-recognition-guide)
+  - [Pattern Recognition Decision Tree](#pattern-recognition-decision-tree)
+  - [Pattern 1: Two Pointers](#pattern-1-two-pointers)
+  - [Pattern 2: Sliding Window](#pattern-2-sliding-window)
+  - [Pattern 3: Fast/Slow Pointers](#pattern-3-fastslow-pointers)
+  - [Pattern 4: Hash Map/Set](#pattern-4-hash-mapset)
+  - [Pattern 5: Stack](#pattern-5-stack)
+  - [Pattern 6: DFS (Depth-First Search)](#pattern-6-dfs-depth-first-search)
+  - [Pattern 7: BFS (Breadth-First Search)](#pattern-7-bfs-breadth-first-search)
+  - [Pattern 8: Binary Search](#pattern-8-binary-search)
+  - [Pattern 9: Dynamic Programming](#pattern-9-dynamic-programming)
+  - [Pattern 10: Greedy](#pattern-10-greedy)
+- [15.4 Common Problem Patterns (Detailed Examples)](#common-problem-patterns-detailed-examples)
+  - [Pattern 1: Two Pointers](#pattern-1-two-pointers)
+  - [Pattern 2: Sliding Window](#pattern-2-sliding-window)
+  - [Pattern 3: Hash Map/Set](#pattern-3-hash-mapset)
+  - [Pattern 4: Stack](#pattern-4-stack)
+  - [Pattern 5: Tree Traversal](#pattern-5-tree-traversal)
+  - [Pattern 6: Dynamic Programming](#pattern-6-dynamic-programming)
+- [15.4 Algorithm Design Techniques](#algorithm-design-techniques)
+  - [Technique 1: Divide and Conquer](#technique-1-divide-and-conquer)
+  - [Technique 2: Greedy Algorithm](#technique-2-greedy-algorithm)
+  - [Technique 3: Backtracking](#technique-3-backtracking)
+- [15.5 Problem-Solving Strategies by Category](#problem-solving-strategies-by-category)
+  - [Array Problems](#array-problems)
+  - [String Problems](#string-problems)
+  - [Tree Problems](#tree-problems)
+  - [Graph Problems](#graph-problems)
+- [15.6 Debugging and Testing Strategies](#debugging-and-testing-strategies)
+  - [Systematic Debugging Approach](#systematic-debugging-approach)
+  - [Unit Testing Framework](#unit-testing-framework)
+- [15.7 Comprehensive Interview Strategies](#comprehensive-interview-strategies)
+  - [Interview Communication Framework](#interview-communication-framework)
+  - [Technical Interview Strategy](#technical-interview-strategy)
+  - [Interview Time Management](#interview-time-management)
+  - [Common Interview Patterns by Company](#common-interview-patterns-by-company)
+  - [Behavioral Questions Integration](#behavioral-questions-integration)
+- [15.8 Common Pitfalls and How to Avoid Them](#common-pitfalls-and-how-to-avoid-them)
+  - [Pitfall 1: Off-by-One Errors](#pitfall-1-off-by-one-errors)
+  - [Pitfall 2: Integer Overflow](#pitfall-2-integer-overflow)
+  - [Pitfall 3: Null/Empty Input](#pitfall-3-nullempty-input)
+  - [Pitfall 4: Modifying Input When Not Allowed](#pitfall-4-modifying-input-when-not-allowed)
+  - [Pitfall 5: Forgetting to Handle Duplicates](#pitfall-5-forgetting-to-handle-duplicates)
+  - [Pitfall 6: Incorrect Base Cases in Recursion](#pitfall-6-incorrect-base-cases-in-recursion)
+  - [Pitfall 7: Not Backtracking Properly](#pitfall-7-not-backtracking-properly)
+  - [Pitfall 8: Wrong Data Structure Choice](#pitfall-8-wrong-data-structure-choice)
+- [15.8 Competitive Programming Tips](#competitive-programming-tips)
+  - [Contest Strategy](#contest-strategy)
+  - [Common Pitfalls](#common-pitfalls)
+- [15.9 Practice Resources and Recommendations](#practice-resources-and-recommendations)
+  - [Online Platforms](#online-platforms)
+  - [Recommended Practice Schedule](#recommended-practice-schedule)
+  - [Problem Selection Strategy](#problem-selection-strategy)
+- [15.10 Key Takeaways](#key-takeaways)
+- [15.11 Final Thoughts](#final-thoughts)
+- [15.12 Summary](#summary)
+
+
+
 ## 15.1 Introduction to Problem-Solving Methodology
 
 Problem-solving in computer science is both an art and a science. While technical knowledge is essential, the ability to approach problems systematically and creatively is equally important. This chapter provides a comprehensive framework for tackling algorithmic problems, from initial analysis to implementation and optimization.
@@ -514,6 +586,91 @@ int lengthOfLongestSubstring(string s) {
     return maxLength;
 }
 ```
+
+**Example: Maximum Subarray Sum with Distinct Elements**
+
+Given an integer array `nums` and an integer `k`, find the maximum subarray sum of all subarrays that meet:
+- The length of the subarray is `k`
+- All elements of the subarray are distinct
+
+Return the maximum subarray sum. If no subarray meets the conditions, return 0.
+
+```cpp
+class Solution {
+public:
+    long long maximumSubarraySum(vector<int>& nums, int k) {
+        const int n = nums.size();
+        unordered_map<int, int> cache;  // Track frequency of elements in window
+        int left = 0;
+        int right = 0;
+        long long sum = 0;
+        long long max_sum = 0;
+        int uniqs = k;  // Track how many unique elements we still need
+        
+        while (right < n) {
+            const int num = nums[right];
+            
+            // If this element is new in the window, decrement uniqs counter
+            if (cache[num] == 0) {
+                uniqs--;  // One more unique element found
+            }
+            cache[num]++;
+            sum += num;
+            
+            // Shrink window if it exceeds size k
+            while (right - left + 1 > k) {
+                sum -= nums[left];
+                cache[nums[left]]--;
+                if (cache[nums[left]] == 0) {
+                    uniqs++;  // Lost a unique element
+                }
+                left++;
+            }
+            
+            // Check if current window is valid (size k and all distinct)
+            if (right - left + 1 == k && uniqs == 0) {
+                max_sum = max(max_sum, sum);
+            }
+            
+            right++;
+        }
+        
+        return max_sum;
+    }
+};
+```
+
+**Key Insights**:
+- **Fixed window size**: Maintain window of exactly size `k` by shrinking when `right - left + 1 > k`
+- **Distinctness tracking**: Use hash map `cache` to count frequencies; `uniqs` counter tracks how many unique elements we still need (starts at `k`, decreases as we find unique elements)
+- **Window maintenance**: 
+  - When adding element: if `cache[num] == 0`, it's new → decrement `uniqs`
+  - When removing element: if `cache[nums[left]]` becomes 0, we lost a unique element → increment `uniqs`
+- **Valid window check**: Window is valid when size equals `k` AND `uniqs == 0` (meaning we have exactly `k` distinct elements)
+
+**Example Walkthrough**:
+```
+nums = [1, 5, 4, 2, 9, 9, 9], k = 3
+
+right=0: num=1, cache[1]=0 → uniqs=2, sum=1, window=[1] (size=1)
+right=1: num=5, cache[5]=0 → uniqs=1, sum=6, window=[1,5] (size=2)
+right=2: num=4, cache[4]=0 → uniqs=0, sum=10, window=[1,5,4] (size=3, uniqs=0) ✓
+         max_sum = max(0, 10) = 10
+right=3: num=2, cache[2]=0 → uniqs=-1, sum=12, window=[1,5,4,2] (size=4 > k)
+         Shrink: remove nums[0]=1 → sum=11, uniqs=0, window=[5,4,2] (size=3, uniqs=0) ✓
+         max_sum = max(10, 11) = 11
+right=4: num=9, cache[9]=0 → uniqs=-1, sum=20, window=[5,4,2,9] (size=4 > k)
+         Shrink: remove nums[1]=5 → sum=15, uniqs=1, window=[4,2,9] (size=3, uniqs=1) ✗
+right=5: num=9, cache[9]=1 → uniqs=1, sum=24, window=[4,2,9,9] (size=4 > k)
+         Shrink: remove nums[2]=4 → sum=20, uniqs=1, window=[2,9,9] (size=3, uniqs=1) ✗
+right=6: num=9, cache[9]=2 → uniqs=1, sum=29, window=[2,9,9,9] (size=4 > k)
+         Shrink: remove nums[3]=2 → sum=27, uniqs=2, window=[9,9,9] (size=3, uniqs=2) ✗
+
+Result: 11
+```
+
+**Time Complexity**: O(n) - each element visited at most twice (once by `right`, once by `left`)
+**Space Complexity**: O(k) - hash map stores at most `k` distinct elements
 
 ### Pattern 3: Hash Map/Set
 

@@ -1,5 +1,54 @@
 # Chapter 2: Time and Space Complexity Analysis
 
+## Table of Contents
+
+- [2.1 Introduction to Complexity Analysis](#introduction-to-complexity-analysis)
+- [2.2 Big O Notation](#big-o-notation)
+  - [Mathematical Definition](#mathematical-definition)
+  - [Common Big O Notations (from best to worst)](#common-big-o-notations-from-best-to-worst)
+  - [Visual Representation of Growth Rates](#visual-representation-of-growth-rates)
+- [2.3 Time Complexity Analysis](#time-complexity-analysis)
+  - [Rules for Analyzing Time Complexity](#rules-for-analyzing-time-complexity)
+  - [Examples of Time Complexity Analysis](#examples-of-time-complexity-analysis)
+  - [Recursive Time Complexity](#recursive-time-complexity)
+- [2.4 Space Complexity Analysis](#space-complexity-analysis)
+  - [Types of Space Complexity](#types-of-space-complexity)
+  - [Examples of Space Complexity Analysis](#examples-of-space-complexity-analysis)
+- [2.5 Best, Average, and Worst Case Analysis](#best-average-and-worst-case-analysis)
+  - [Best Case (Ω - Omega)](#best-case-ω-omega)
+  - [Average Case (Θ - Theta)](#average-case-θ-theta)
+  - [Worst Case (O - Big O)](#worst-case-o-big-o)
+  - [Example: Quick Sort Analysis](#example-quick-sort-analysis)
+- [2.6 When Does Big-O Matter?](#when-does-big-o-matter)
+  - [Small Input Sizes (n < 100)](#small-input-sizes-n-100)
+  - [Medium Input Sizes (100 < n < 10,000)](#medium-input-sizes-100-n-10000)
+  - [Large Input Sizes (n > 10,000)](#large-input-sizes-n-10000)
+  - [Practical Example: When O(n²) is Fine](#practical-example-when-on²-is-fine)
+  - [Practical Example: When O(n²) is a Problem](#practical-example-when-on²-is-a-problem)
+- [2.7 Common Pitfalls in Complexity Analysis](#common-pitfalls-in-complexity-analysis)
+  - [Pitfall 1: Confusing O(n) with Actual Running Time](#pitfall-1-confusing-on-with-actual-running-time)
+  - [Pitfall 2: Ignoring Constants in Production Code](#pitfall-2-ignoring-constants-in-production-code)
+  - [Pitfall 3: Missing Hidden Complexities](#pitfall-3-missing-hidden-complexities)
+  - [Pitfall 4: Worst Case vs. Average Case Confusion](#pitfall-4-worst-case-vs-average-case-confusion)
+- [2.8 Amortized Analysis](#amortized-analysis)
+  - [Example: Dynamic Array (Vector)](#example-dynamic-array-vector)
+- [2.9 Practical Complexity Analysis Examples](#practical-complexity-analysis-examples)
+  - [Example 1: Two Sum Problem](#example-1-two-sum-problem)
+  - [Example 2: Finding Duplicates](#example-2-finding-duplicates)
+- [2.10 Space-Time Tradeoffs](#space-time-tradeoffs)
+- [2.11 Master Theorem Preview](#master-theorem-preview)
+  - [What is a Recurrence Relation?](#what-is-a-recurrence-relation)
+  - [Common Recurrence Patterns](#common-recurrence-patterns)
+  - [Master Theorem (Informal Preview)](#master-theorem-informal-preview)
+  - [Why This Matters](#why-this-matters)
+  - [Examples You'll See Later](#examples-youll-see-later)
+  - [Quick Reference](#quick-reference)
+- [2.12 Key Takeaways](#key-takeaways)
+- [2.13 Exercises](#exercises)
+- [2.14 Summary](#summary)
+
+
+
 ## 2.1 Introduction to Complexity Analysis
 
 Complexity analysis is the process of determining how the resource requirements (time and space) of an algorithm scale with the input size. This helps us:
