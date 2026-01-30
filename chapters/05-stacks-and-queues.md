@@ -13,17 +13,23 @@
   - [Queue](#queue)
 - [5.3 Abstract Model & Invariants ⭐](#abstract-model-invariants)
   - [Core Invariants](#core-invariants)
+- [5.4 Operations & Interface](#operations-interface)
+  - [Stack Operations](#stack-operations)
+  - [Queue Operations](#queue-operations)
+  - [Behavioral Guarantees](#behavioral-guarantees)
+- [5.5 Time & Space Complexity](#time-space-complexity)
+  - [Time Complexity](#time-complexity)
+  - [Space Complexity](#space-complexity)
+  - [Implementation Trade-offs](#implementation-trade-offs)
+- [5.6 Pseudocode (Language-Neutral) ⭐](#pseudocode-language-neutral)
+  - [Stack Operations](#stack-operations)
+  - [Queue Operations](#queue-operations)
+- [5.7 Implementation (Reference Language: C++) ⭐](#implementation-reference-language-c)
   - [5.7.1 Array-Based Stack](#1-array-based-stack)
   - [Linked List-Based Stack](#linked-list-based-stack)
-  - [Stack Applications and Examples](#stack-applications-and-examples)
-  - [5.7.2 Basic Queue Implementation](#2-basic-queue-implementation)
-  - [Linked List-Based Queue](#linked-list-based-queue)
-  - [Queue Applications and Examples](#queue-applications-and-examples)
-  - [5.4 Specialized Data Structures](#specialized-data-structures)
-  - [Deque (Double-Ended Queue)](#deque-double-ended-queue)
-  - [Circular Queue](#circular-queue)
-  - [Priority Queue](#priority-queue)
-  - [5.7.4 Implementation Trade-offs and Analysis](#4-implementation-trade-offs-and-analysis)
+  - [5.7.2 Array-Based Queue](#2-array-based-queue)
+  - [5.7.3 Linked List-Based Queue](#3-linked-list-based-queue)
+  - [5.7.4 Example Usage](#4-example-usage)
 - [5.8 Correctness Argument](#correctness-argument)
   - [Why Stack Push Is Correct](#why-stack-push-is-correct)
   - [Why Stack Pop Is Correct](#why-stack-pop-is-correct)
@@ -41,7 +47,9 @@
 - [5.11 Variants & Extensions](#variants-extensions)
   - [Stack Variants](#stack-variants)
   - [Queue Variants](#queue-variants)
-  - [Specialized Structures](#specialized-structures)
+  - [Deque (Double-Ended Queue)](#deque-double-ended-queue)
+  - [Circular Queue](#circular-queue)
+  - [Priority Queue](#priority-queue)
 - [5.12 Real-World Implementations](#real-world-implementations)
   - [C++ Standard Library](#c-standard-library)
 - [5.13 Common Pitfalls & Interview Traps](#common-pitfalls-interview-traps)
@@ -90,8 +98,6 @@
   - [5.13.3 How Operations Restore Invariants](#3-how-operations-restore-invariants)
   - [5.13.4 Best Practices](#4-best-practices)
 - [5.17 Summary](#summary)
-
-
 
 ## 5.1 Problem Statement & Motivation
 
@@ -247,6 +253,183 @@ These invariants must **always** hold for stacks and queues to be correct:
 - **Queue enqueue**: Add to rear → preserves FIFO, increments size
 - **Queue dequeue**: Remove from front → preserves FIFO, decrements size
 
+## 5.4 Operations & Interface
+
+This section defines the operations supported by stacks and queues, independent of implementation.
+
+### Stack Operations
+
+| Operation | Description | Precondition | Postcondition |
+|-----------|-------------|--------------|---------------|
+| `push(element)` | Add element to top of stack | None | Element is now at top, size increased by 1 |
+| `pop()` | Remove and return top element | Stack is not empty | Top element removed, size decreased by 1 |
+| `top()` | Return top element without removing | Stack is not empty | Stack unchanged |
+| `isEmpty()` | Check if stack is empty | None | Returns true if size == 0 |
+| `size()` | Get number of elements | None | Returns current size |
+
+### Queue Operations
+
+| Operation | Description | Precondition | Postcondition |
+|-----------|-------------|--------------|---------------|
+| `enqueue(element)` | Add element to rear of queue | None | Element added to rear, size increased by 1 |
+| `dequeue()` | Remove and return front element | Queue is not empty | Front element removed, size decreased by 1 |
+| `front()` | Return front element without removing | Queue is not empty | Queue unchanged |
+| `isEmpty()` | Check if queue is empty | None | Returns true if size == 0 |
+| `size()` | Get number of elements | None | Returns current size |
+
+### Behavioral Guarantees
+
+**Stack (LIFO)**:
+- `push(x)` followed by `pop()` returns `x`
+- `push(a)`, `push(b)`, `push(c)` followed by three `pop()` calls returns `c`, `b`, `a` (in that order)
+- `top()` always returns the most recently pushed element
+
+**Queue (FIFO)**:
+- `enqueue(x)` followed by `dequeue()` returns `x`
+- `enqueue(a)`, `enqueue(b)`, `enqueue(c)` followed by three `dequeue()` calls returns `a`, `b`, `c` (in that order)
+- `front()` always returns the oldest element in the queue
+
+## 5.5 Time & Space Complexity
+
+### Time Complexity
+
+| Operation | Array Stack | Linked Stack | Array Queue | Linked Queue |
+|-----------|-------------|--------------|-------------|--------------|
+| Push/Enqueue | O(1) amortized | O(1) | O(1) amortized | O(1) |
+| Pop/Dequeue | O(1) | O(1) | O(1) | O(1) |
+| Top/Front | O(1) | O(1) | O(1) | O(1) |
+| Search | O(n) | O(n) | O(n) | O(n) |
+
+**Notes**:
+- Array-based implementations have O(1) amortized time due to occasional resizing
+- All basic operations are O(1) in both implementations
+- Search requires O(n) as elements must be examined sequentially
+
+### Space Complexity
+
+- **Array-based**: O(n) where n is the maximum number of elements (may waste space if not full)
+- **Linked list-based**: O(n) where n is the current number of elements (no wasted space, but overhead for pointers)
+
+### Implementation Trade-offs
+
+**Array-based Stack/Queue:**
+- ✅ Better cache locality
+- ✅ Lower memory overhead per element
+- ✅ Simpler implementation
+- ❌ Fixed size (unless resized)
+- ❌ Memory waste if not full
+
+**Linked List-based Stack/Queue:**
+- ✅ Dynamic size
+- ✅ No memory waste
+- ✅ Easy to grow/shrink
+- ❌ Extra memory for pointers
+- ❌ Poor cache locality
+
+## 5.6 Pseudocode (Language-Neutral) ⭐
+
+This section provides language-neutral pseudocode for stack and queue operations.
+
+### Stack Operations
+
+```
+OPERATION push(element):
+    IF using array:
+        IF size >= capacity:
+            resize array to double capacity
+        data[size] = element
+        size = size + 1
+    ELSE IF using linked list:
+        new_node = create new node with element
+        new_node.next = top
+        top = new_node
+        size = size + 1
+
+OPERATION pop():
+    IF isEmpty():
+        ERROR "Stack is empty"
+    
+    IF using array:
+        element = data[size - 1]
+        size = size - 1
+        RETURN element
+    ELSE IF using linked list:
+        element = top.data
+        top = top.next
+        size = size - 1
+        RETURN element
+
+OPERATION top():
+    IF isEmpty():
+        ERROR "Stack is empty"
+    
+    IF using array:
+        RETURN data[size - 1]
+    ELSE IF using linked list:
+        RETURN top.data
+
+OPERATION isEmpty():
+    RETURN size == 0
+
+OPERATION size():
+    RETURN size
+```
+
+### Queue Operations
+
+```
+OPERATION enqueue(element):
+    IF using array:
+        IF size >= capacity:
+            resize array to double capacity
+        data[rear] = element
+        rear = (rear + 1) MOD capacity
+        size = size + 1
+    ELSE IF using linked list:
+        new_node = create new node with element
+        IF isEmpty():
+            front = new_node
+            rear = new_node
+        ELSE:
+            rear.next = new_node
+            rear = new_node
+        size = size + 1
+
+OPERATION dequeue():
+    IF isEmpty():
+        ERROR "Queue is empty"
+    
+    IF using array:
+        element = data[front]
+        front = (front + 1) MOD capacity
+        size = size - 1
+        RETURN element
+    ELSE IF using linked list:
+        element = front.data
+        front = front.next
+        IF front is null:
+            rear = null
+        size = size - 1
+        RETURN element
+
+OPERATION front():
+    IF isEmpty():
+        ERROR "Queue is empty"
+    
+    IF using array:
+        RETURN data[front]
+    ELSE IF using linked list:
+        RETURN front.data
+
+OPERATION isEmpty():
+    RETURN size == 0
+
+OPERATION size():
+    RETURN size
+```
+
+## 5.7 Implementation (Reference Language: C++) ⭐
+
 ### 5.7.1 Array-Based Stack
 ```cpp
 #include <iostream>
@@ -395,32 +578,8 @@ public:
 };
 ```
 
-### Stack Applications and Examples
-```cpp
-void demonstrateStack() {
-    ArrayStack<int> stack;
-    
-    // Push elements
-    stack.push(10);
-    stack.push(20);
-    stack.push(30);
-    stack.display();  // Stack (top to bottom): 30 20 10
-    
-    // Access top element
-    cout << "Top element: " << stack.top() << endl;  // 30
-    
-    // Pop elements
-    cout << "Popped: " << stack.pop() << endl;  // 30
-    cout << "Popped: " << stack.pop() << endl;  // 20
-    stack.display();  // Stack (top to bottom): 10
-    
-    cout << "Size: " << stack.size() << endl;  // 1
-}
-```
+### 5.7.2 Array-Based Queue
 
-### 5.7.2 Basic Queue Implementation
-
-#### Array-Based Queue
 ```cpp
 template<typename T>
 class ArrayQueue {
@@ -511,7 +670,8 @@ public:
 };
 ```
 
-### Linked List-Based Queue
+### 5.7.3 Linked List-Based Queue
+
 ```cpp
 template<typename T>
 class LinkedListQueue {
@@ -597,7 +757,32 @@ public:
 };
 ```
 
-### Queue Applications and Examples
+### 5.7.4 Example Usage
+
+**Stack Example**:
+```cpp
+void demonstrateStack() {
+    ArrayStack<int> stack;
+    
+    // Push elements
+    stack.push(10);
+    stack.push(20);
+    stack.push(30);
+    stack.display();  // Stack (top to bottom): 30 20 10
+    
+    // Access top element
+    cout << "Top element: " << stack.top() << endl;  // 30
+    
+    // Pop elements
+    cout << "Popped: " << stack.pop() << endl;  // 30
+    cout << "Popped: " << stack.pop() << endl;  // 20
+    stack.display();  // Stack (top to bottom): 10
+    
+    cout << "Size: " << stack.size() << endl;  // 1
+}
+```
+
+**Queue Example**:
 ```cpp
 void demonstrateQueue() {
     ArrayQueue<string> queue;
@@ -620,11 +805,248 @@ void demonstrateQueue() {
 }
 ```
 
-## Part II: Advanced Implementations
+### 5.7.3 Linked List-Based Queue
 
-### 5.4 Specialized Data Structures
+```cpp
+template<typename T>
+class LinkedListQueue {
+private:
+    struct Node {
+        T data;
+        unique_ptr<Node> next;
+        Node(const T& value) : data(value), next(nullptr) {}
+    };
+    
+    unique_ptr<Node> frontNode;
+    Node* rearNode;
+    size_t queueSize;
+    
+public:
+    LinkedListQueue() : frontNode(nullptr), rearNode(nullptr), queueSize(0) {}
+    
+    // Enqueue element
+    void enqueue(const T& element) {
+        auto newNode = make_unique<Node>(element);
+        
+        if (isEmpty()) {
+            frontNode = move(newNode);
+            rearNode = frontNode.get();
+        } else {
+            rearNode->next = move(newNode);
+            rearNode = rearNode->next.get();
+        }
+        queueSize++;
+    }
+    
+    // Dequeue element
+    T dequeue() {
+        if (isEmpty()) {
+            throw runtime_error("Queue is empty");
+        }
+        
+        T element = frontNode->data;
+        frontNode = move(frontNode->next);
+        
+        if (frontNode == nullptr) {
+            rearNode = nullptr;
+        }
+        queueSize--;
+        return element;
+    }
+    
+    // Get front element without removing
+    T& front() {
+        if (isEmpty()) {
+            throw runtime_error("Queue is empty");
+        }
+        return frontNode->data;
+    }
+    
+    const T& front() const {
+        if (isEmpty()) {
+            throw runtime_error("Queue is empty");
+        }
+        return frontNode->data;
+    }
+    
+    // Check if queue is empty
+    bool isEmpty() const {
+        return frontNode == nullptr;
+    }
+    
+    // Get size
+    size_t size() const {
+        return queueSize;
+    }
+    
+    // Display queue
+    void display() const {
+        cout << "Queue (front to rear): ";
+        Node* current = frontNode.get();
+        while (current) {
+            cout << current->data << " ";
+            current = current->next.get();
+        }
+        cout << endl;
+    }
+};
+```
+
+## 5.8 Correctness Argument
+
+This section explains why stack and queue operations preserve invariants.
+
+### Why Stack Push Is Correct
+
+**Correctness Argument**:
+1. Element added to top position ✓
+2. Top pointer/index updated ✓
+3. Size incremented ✓
+4. LIFO invariant preserved: new element is now top ✓
+5. Access invariant preserved: only top accessible ✓
+
+**Edge Cases Handled**:
+- Empty stack: First element becomes top ✓
+- Full stack: Should check capacity (precondition) ✓
+
+### Why Stack Pop Is Correct
+
+**Correctness Argument**:
+1. Check stack not empty ✓
+2. Retrieve top element ✓
+3. Update top pointer/index ✓
+4. Size decremented ✓
+5. LIFO invariant preserved: next element becomes top ✓
+
+**Edge Cases Handled**:
+- Empty stack: Returns error (precondition violation) ✓
+- Single element: Stack becomes empty after pop ✓
+
+### Why Queue Enqueue Is Correct
+
+**Correctness Argument**:
+1. Element added to rear position ✓
+2. Rear pointer/index updated ✓
+3. Size incremented ✓
+4. FIFO invariant preserved: element joins queue at end ✓
+5. Access invariant preserved: front unchanged ✓
+
+**Edge Cases Handled**:
+- Empty queue: Element becomes both front and rear ✓
+- Full queue: Should check capacity (precondition) ✓
+
+### Why Queue Dequeue Is Correct
+
+**Correctness Argument**:
+1. Check queue not empty ✓
+2. Retrieve front element ✓
+3. Update front pointer/index ✓
+4. Size decremented ✓
+5. FIFO invariant preserved: next element becomes front ✓
+
+**Edge Cases Handled**:
+- Empty queue: Returns error (precondition violation) ✓
+- Single element: Queue becomes empty after dequeue ✓
+
+## 5.9 Edge Cases & Failure Modes
+
+Understanding edge cases helps build defensive thinking.
+
+### Empty Stack/Queue Operations
+
+**Operations on Empty Structure**:
+- Pop/Dequeue: Must return error or no-op
+- Top/Front: Must check before accessing
+- Search: Returns not found
+
+**Example Failure**: Accessing `stack.top()` without checking if empty → undefined behavior
+
+### Full Stack/Queue (Array-Based)
+
+**Operations on Full Structure**:
+- Push/Enqueue: Must check capacity
+- Should either reject or resize
+
+**Example Failure**: Pushing to full stack without check → buffer overflow
+
+### Circular Queue Edge Cases
+
+**Full vs Empty Distinction**:
+- Both states have `front == rear`
+- Must use size counter or sentinel
+- Off-by-one errors common
+
+**Example Failure**: Not distinguishing full from empty → incorrect behavior
+
+### Memory Issues
+
+**Linked List Implementation**:
+- Memory leaks if nodes not freed
+- Dangling pointers if accessed after deletion
+
+**Example Failure**: Pop operation doesn't delete node → memory leak
+
+## 5.10 Performance & System Considerations ⭐
+
+This section connects stacks/queues to real machine behavior.
+
+### Memory Layout Impact
+
+**Array-Based**:
+- Contiguous memory → excellent cache locality
+- Sequential access → cache hits
+- Good for performance
+
+**Linked List-Based**:
+- Non-contiguous memory → cache misses
+- Pointer chasing → poor locality
+- Slower but more flexible
+
+### Cache Behavior
+
+**Array Stack/Queue**:
+- Elements in same cache line
+- Sequential access pattern
+- Excellent cache performance
+
+**Linked Stack/Queue**:
+- Each node may be in different cache line
+- Random memory access
+- Poor cache performance
+
+**Performance Implication**: Array-based can be 2-3x faster due to cache effects.
+
+### When Stacks/Queues Become Bottlenecks
+
+**Signs**:
+- Frequent resize operations (array-based)
+- Many cache misses (linked list-based)
+- Memory fragmentation (linked list-based)
+
+**Solutions**:
+- Pre-allocate capacity if size known
+- Use array-based for performance
+- Consider memory pools for linked lists
+
+## 5.11 Variants & Extensions
+
+### Stack Variants
+
+- **Min Stack**: O(1) minimum retrieval
+- **Max Stack**: O(1) maximum retrieval
+- **Monotonic Stack**: Maintains monotonic property
+
+### Queue Variants
+
+- **Circular Queue**: Efficient use of fixed-size array
+- **Priority Queue**: Elements ordered by priority
+- **Deque**: Double-ended queue
+- **Monotonic Queue**: Maintains monotonic property
 
 ### Deque (Double-Ended Queue)
+
+A deque (double-ended queue) allows insertion and deletion at both ends.
+
 ```cpp
 template<typename T>
 class Deque {
@@ -843,6 +1265,9 @@ The size counter method is simpler and more intuitive.
 | Use Case | Unknown size | Known max size |
 
 ### Priority Queue
+
+A priority queue orders elements by priority rather than insertion order. Elements with higher priority are dequeued first.
+
 ```cpp
 template<typename T>
 class PriorityQueue {
@@ -920,194 +1345,7 @@ public:
 };
 ```
 
-### 5.7.4 Implementation Trade-offs and Analysis
-
-#### Time Complexity Comparison
-
-| Operation | Array Stack | Linked Stack | Array Queue | Linked Queue |
-|-----------|-------------|--------------|-------------|--------------|
-| Push/Enqueue | O(1) amortized | O(1) | O(1) amortized | O(1) |
-| Pop/Dequeue | O(1) | O(1) | O(1) | O(1) |
-| Top/Front | O(1) | O(1) | O(1) | O(1) |
-| Search | O(n) | O(n) | O(n) | O(n) |
-
-#### Space Complexity
-- **Array-based**: O(n) where n is the maximum number of elements
-- **Linked list-based**: O(n) where n is the current number of elements
-
-#### When to Use Each Implementation
-
-**Array-based Stack/Queue:**
-- ✅ Better cache locality
-- ✅ Lower memory overhead per element
-- ✅ Simpler implementation
-- ❌ Fixed size (unless resized)
-- ❌ Memory waste if not full
-
-**Linked List-based Stack/Queue:**
-- ✅ Dynamic size
-- ✅ No memory waste
-- ✅ Easy to grow/shrink
-- ❌ Extra memory for pointers
-- ❌ Poor cache locality
-
-## Part III: Applications
-
-## 5.8 Correctness Argument
-
-This section explains why stack and queue operations preserve invariants.
-
-### Why Stack Push Is Correct
-
-**Correctness Argument**:
-1. Element added to top position ✓
-2. Top pointer/index updated ✓
-3. Size incremented ✓
-4. LIFO invariant preserved: new element is now top ✓
-5. Access invariant preserved: only top accessible ✓
-
-**Edge Cases Handled**:
-- Empty stack: First element becomes top ✓
-- Full stack: Should check capacity (precondition) ✓
-
-### Why Stack Pop Is Correct
-
-**Correctness Argument**:
-1. Check stack not empty ✓
-2. Retrieve top element ✓
-3. Update top pointer/index ✓
-4. Size decremented ✓
-5. LIFO invariant preserved: next element becomes top ✓
-
-**Edge Cases Handled**:
-- Empty stack: Returns error (precondition violation) ✓
-- Single element: Stack becomes empty after pop ✓
-
-### Why Queue Enqueue Is Correct
-
-**Correctness Argument**:
-1. Element added to rear position ✓
-2. Rear pointer/index updated ✓
-3. Size incremented ✓
-4. FIFO invariant preserved: element joins queue at end ✓
-5. Access invariant preserved: front unchanged ✓
-
-**Edge Cases Handled**:
-- Empty queue: Element becomes both front and rear ✓
-- Full queue: Should check capacity (precondition) ✓
-
-### Why Queue Dequeue Is Correct
-
-**Correctness Argument**:
-1. Check queue not empty ✓
-2. Retrieve front element ✓
-3. Update front pointer/index ✓
-4. Size decremented ✓
-5. FIFO invariant preserved: next element becomes front ✓
-
-**Edge Cases Handled**:
-- Empty queue: Returns error (precondition violation) ✓
-- Single element: Queue becomes empty after dequeue ✓
-
-## 5.9 Edge Cases & Failure Modes
-
-Understanding edge cases helps build defensive thinking.
-
-### Empty Stack/Queue Operations
-
-**Operations on Empty Structure**:
-- Pop/Dequeue: Must return error or no-op
-- Top/Front: Must check before accessing
-- Search: Returns not found
-
-**Example Failure**: Accessing `stack.top()` without checking if empty → undefined behavior
-
-### Full Stack/Queue (Array-Based)
-
-**Operations on Full Structure**:
-- Push/Enqueue: Must check capacity
-- Should either reject or resize
-
-**Example Failure**: Pushing to full stack without check → buffer overflow
-
-### Circular Queue Edge Cases
-
-**Full vs Empty Distinction**:
-- Both states have `front == rear`
-- Must use size counter or sentinel
-- Off-by-one errors common
-
-**Example Failure**: Not distinguishing full from empty → incorrect behavior
-
-### Memory Issues
-
-**Linked List Implementation**:
-- Memory leaks if nodes not freed
-- Dangling pointers if accessed after deletion
-
-**Example Failure**: Pop operation doesn't delete node → memory leak
-
-## 5.10 Performance & System Considerations ⭐
-
-This section connects stacks/queues to real machine behavior.
-
-### Memory Layout Impact
-
-**Array-Based**:
-- Contiguous memory → excellent cache locality
-- Sequential access → cache hits
-- Good for performance
-
-**Linked List-Based**:
-- Non-contiguous memory → cache misses
-- Pointer chasing → poor locality
-- Slower but more flexible
-
-### Cache Behavior
-
-**Array Stack/Queue**:
-- Elements in same cache line
-- Sequential access pattern
-- Excellent cache performance
-
-**Linked Stack/Queue**:
-- Each node may be in different cache line
-- Random memory access
-- Poor cache performance
-
-**Performance Implication**: Array-based can be 2-3x faster due to cache effects.
-
-### When Stacks/Queues Become Bottlenecks
-
-**Signs**:
-- Frequent resize operations (array-based)
-- Many cache misses (linked list-based)
-- Memory fragmentation (linked list-based)
-
-**Solutions**:
-- Pre-allocate capacity if size known
-- Use array-based for performance
-- Consider memory pools for linked lists
-
-## 5.11 Variants & Extensions
-
-### Stack Variants
-
-- **Min Stack**: O(1) minimum retrieval
-- **Max Stack**: O(1) maximum retrieval
-- **Monotonic Stack**: Maintains monotonic property
-
-### Queue Variants
-
-- **Circular Queue**: Efficient use of fixed-size array
-- **Priority Queue**: Elements ordered by priority
-- **Deque**: Double-ended queue
-- **Monotonic Queue**: Maintains monotonic property
-
-### Specialized Structures
-
-- **Deque**: Combines stack and queue
-- **Priority Queue**: Heap-based (see Chapter 14)
+**Note**: Priority queues are covered in detail in Chapter 14 (Advanced Data Structures). This is a basic implementation using a max-heap.
 
 ## 5.12 Real-World Implementations
 
@@ -1794,7 +2032,6 @@ public:
 - Stream processing
 - Event queues
 
-## Part IV: Problem Solving
 
 ### 5.13.3 Advanced Stack Problems
 
@@ -2694,7 +2931,6 @@ vector<int> maxOfSubarrays(vector<int>& arr, int k) {
 7. **Stock Span Problem** (GeeksforGeeks)
 8. **Sum of Subarray Minimums** (LeetCode 907)
 
-## Part V: Summary
 
 ### Additional Performance Analysis
 
