@@ -1,0 +1,54 @@
+---
+/**
+ * The list is the asset. Ads on a systems-engineering audience earn ~$2 RPM
+ * against ~50% ad-blocking; one sponsored issue to the same readers earns
+ * multiples of that. So this sits above the fold of every chapter's footer and
+ * the ad slot does not.
+ *
+ * Point PUBLIC_NEWSLETTER_ENDPOINT at Buttondown / ConvertKit / a form handler.
+ * With no endpoint configured the form is hidden rather than silently dropping
+ * addresses on the floor.
+ */
+const endpoint = import.meta.env.PUBLIC_NEWSLETTER_ENDPOINT;
+const { compact = false } = Astro.props;
+---
+{endpoint && (
+  <section
+    class:list={['rounded-xl border', compact ? 'p-5' : 'p-6 sm:p-8']}
+    style="border-color: var(--border); background: var(--surface-2)"
+  >
+    <h2 class="text-lg font-semibold" style="color: var(--text-primary)">
+      One chapter at a time, when it's ready
+    </h2>
+    <p class="mt-1.5 max-w-xl text-sm leading-relaxed" style="color: var(--text-secondary)">
+      New chapters, new interactive benchmarks, and the occasional deep dive into why a data structure
+      behaves nothing like its complexity class. No spam, and one click to leave.
+    </p>
+
+    <form
+      action={endpoint}
+      method="post"
+      target="_blank"
+      class="mt-4 flex flex-col gap-2.5 sm:flex-row"
+    >
+      <label class="sr-only" for="email">Email address</label>
+      <input
+        id="email"
+        type="email"
+        name="email"
+        required
+        autocomplete="email"
+        placeholder="you@example.com"
+        class="min-w-0 flex-1 rounded-lg border px-3.5 py-2.5 text-sm outline-none focus:ring-2"
+        style="border-color: var(--border-strong); background: var(--surface-1); color: var(--text-primary)"
+      />
+      <button
+        type="submit"
+        class="rounded-lg px-5 py-2.5 text-sm font-semibold whitespace-nowrap"
+        style="background: var(--accent); color: #fff"
+      >
+        Subscribe
+      </button>
+    </form>
+  </section>
+)}

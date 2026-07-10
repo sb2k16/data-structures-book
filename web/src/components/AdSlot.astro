@@ -1,0 +1,32 @@
+---
+/**
+ * Ads stay off until there is traffic worth selling.
+ *
+ * Rationale, so nobody flips this on early: at launch this site earns roughly
+ * zero from display ads no matter what network fills the slot, while the ads
+ * themselves measurably suppress the sharing behavior — HN, Reddit, GitHub
+ * stars — that is the only thing that gets us to the traffic where ads pay at
+ * all. The cost is real and the revenue is zero, so the slot renders nothing
+ * until PUBLIC_ADS_ENABLED is set.
+ *
+ * When it is time: EthicalAds (dev audience, no tracking, accepts small sites)
+ * or Carbon (higher RPM, needs approval). Not AdSense — its RPM on a technical
+ * audience is poor and it makes the page look untrustworthy, which costs more
+ * than it earns.
+ */
+const enabled = import.meta.env.PUBLIC_ADS_ENABLED === 'true';
+const publisher = import.meta.env.PUBLIC_ETHICALADS_PUBLISHER;
+const { placement = 'sidebar' } = Astro.props;
+---
+{enabled && publisher && (
+  <aside class="not-prose my-8" aria-label="Sponsor">
+    <div
+      data-ea-publisher={publisher}
+      data-ea-type={placement === 'sidebar' ? 'image' : 'text'}
+      class="rounded-lg border p-3 text-sm"
+      style="border-color: var(--border); background: var(--surface-2)"
+    >
+    </div>
+    <script is:inline async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+  </aside>
+)}

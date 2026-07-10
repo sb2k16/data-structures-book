@@ -1,10 +1,26 @@
-# Data Structures and Algorithms: A Comprehensive Guide with C++
+# Data Structures on Real Hardware
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![C++](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://en.cppreference.com/)
+[![Read online](https://img.shields.io/badge/read-realhardware.dev-2a78d6.svg)](https://realhardware.dev)
 [![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/sb2k16/data-structures-book/issues)
 
-A comprehensive introduction to data structures and algorithms using C++ as the primary programming language. This book is designed for computer science students, software engineers, and anyone looking to strengthen their understanding of fundamental computer science concepts.
+**A free book about data structures as the machine actually runs them.**
+
+Here are two loops. They perform the same number of operations on the same number of elements. Every complexity analysis you have ever been taught calls them both `O(n)`.
+
+```cpp
+for (int i = 0; i < n; ++i) sum += data[i];         // Loop A
+for (int i = 0; i < n; ++i) sum += data[index[i]];  // Loop B — index is a random permutation
+```
+
+Loop B takes **thirty to sixty times longer**. Not thirty percent — thirty times. Nothing is hidden: the two loops issue the same instructions and differ only in the *order* in which they touch memory, and that order matters more than almost any algorithmic choice you will make this year.
+
+Most data structures books stop at Big-O. This one keeps going: into cache lines, prefetchers, memory layout, false sharing, and concurrency, because that is where the performance of real systems is decided. Every structure gets its invariants, its failure modes, and its behavior on hardware — not just its interface and its complexity class.
+
+### [→ Read it online](https://realhardware.dev), where the benchmarks run on your own CPU
+
+The [memory hierarchy chapter](https://realhardware.dev/chapters/memory-hierarchy) measures *your* machine while you read it: the latency of every level of your cache, the cost of a cache miss, and what array-of-structures really charges you. No screenshots of someone else's laptop.
 
 ## 📚 Table of Contents
 
@@ -15,7 +31,7 @@ A comprehensive introduction to data structures and algorithms using C++ as the 
 ### Part II: Linear Data Structures
 - [Chapter 3: Basic Data Structures (Arrays and Strings)](chapters/03-basic-data-structures.md)
 - [Chapter 3.5: Concurrency Fundamentals for Data Structures](chapters/03.5-concurrency-fundamentals.md)
-- [Chapter 3.6: Memory Hierarchy and Performance](chapters/03.6-memory-hierarchy-and-performance.md)
+- [Chapter 3.6: Memory Hierarchy and Performance](chapters/03.6-memory-hierarchy-and-performance.md) — [read the interactive version](https://realhardware.dev/chapters/memory-hierarchy)
 - [Chapter 4: Linked Lists](chapters/04-linked-lists.md)
 - [Chapter 5: Stacks and Queues](chapters/05-stacks-and-queues.md)
 
@@ -56,6 +72,21 @@ cd data-structures-book
 2. Follow the [Compilation Guide](docs/compilation-guide.md) to set up your C++ environment.
 
 3. Start with [Chapter 1](chapters/01-introduction.md) for a gentle introduction.
+
+### Running the website locally
+
+The site in [`web/`](web/) publishes these chapters and adds the live benchmarks. It reads
+`chapters/*.md` directly, so the markdown here stays the single source of truth.
+
+```bash
+cd web
+npm install
+npm run dev     # http://localhost:4321
+```
+
+See [`web/README.md`](web/README.md) for how the benchmarks avoid measuring the wrong thing —
+JIT elimination, prefetcher interference, and the accumulator dependency chain that made an early
+version report two very different memory layouts as identical.
 
 ## 🏗️ Repository Structure
 

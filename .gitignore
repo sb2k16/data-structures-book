@@ -103,3 +103,9 @@ node_modules/
 __pycache__/
 *.pyc
 *.pyo
+
+# Web build artifacts
+web/node_modules/
+web/dist/
+web/.astro/
+web/.env

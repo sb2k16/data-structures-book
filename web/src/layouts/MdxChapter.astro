@@ -1,0 +1,18 @@
+---
+import Chapter from './Chapter.astro';
+import { BY_SLUG } from '../lib/book';
+import type { MarkdownHeading } from 'astro';
+
+/** MDX pages hand their layout `frontmatter` and `headings`. */
+interface Props {
+  frontmatter: { slug: string; description?: string };
+  headings: MarkdownHeading[];
+}
+
+const { frontmatter, headings } = Astro.props;
+const chapter = BY_SLUG.get(frontmatter.slug);
+if (!chapter) throw new Error(`Unknown chapter slug "${frontmatter.slug}"`);
+---
+<Chapter chapter={chapter} headings={headings} description={frontmatter.description}>
+  <slot />
+</Chapter>

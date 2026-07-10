@@ -1,0 +1,25 @@
+---
+import { getCollection, render } from 'astro:content';
+import Chapter from '../../layouts/Chapter.astro';
+import { CHAPTERS } from '../../lib/book';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('chapters');
+  const byId = new Map(entries.map((e) => [e.id, e]));
+
+  // `custom: true` chapters have their own hand-authored page; skip them here
+  // so we don't generate two routes for one slug.
+  return CHAPTERS.filter((c) => !c.custom).map((chapter) => ({
+    params: { slug: chapter.slug },
+    props: { chapter, entry: byId.get(chapter.id) },
+  }));
+}
+
+const { chapter, entry } = Astro.props;
+if (!entry) throw new Error(`No markdown found for chapter "${chapter.id}" in ../chapters`);
+
+const { Content, headings } = await render(entry);
+---
+<Chapter chapter={chapter} headings={headings}>
+  <Content />
+</Chapter>

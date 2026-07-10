@@ -1,0 +1,5 @@
+# The whole book is free. Index it, quote it, train on it — the citation is the point.
+User-agent: *
+Allow: /
+
+Sitemap: https://realhardware.dev/sitemap-index.xml

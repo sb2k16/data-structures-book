@@ -1,0 +1,272 @@
+---
+layout: ../../layouts/MdxChapter.astro
+slug: memory-hierarchy
+description: Two loops with identical Big-O, 100x apart in wall time. Measure your own machine's cache hierarchy in the browser and watch the abstraction leak.
+---
+
+import CacheCliff from '../../components/bench/CacheCliff';
+import Compare from '../../components/bench/Compare';
+
+Here are two loops. They perform the same number of operations on the same number of
+elements. Every complexity analysis you have ever been taught calls them both `O(n)`.
+
+```cpp
+// Loop A
+for (int i = 0; i < n; ++i)
+    sum += data[i];
+
+// Loop B
+for (int i = 0; i < n; ++i)
+    sum += data[index[i]];   // index is a random permutation of 0..n-1
+```
+
+On the machine this sentence was written on, Loop B takes **more than thirty times
+longer** than Loop A. Not thirty percent. Thirty times. And the gap widens with `n` —
+which is exactly the behavior asymptotic analysis is supposed to be *for*.
+
+Nothing about this is a trick. There is no hidden work in Loop B, no extra allocation,
+no cache of results. The two loops issue the same instructions. They differ only in the
+*order* in which they touch memory, and that order turns out to matter more than almost
+any algorithmic choice you will make this year.
+
+This chapter is about why. And rather than ask you to take a benchmark on faith, every
+number below is measured on *your* machine, in *your* browser, while you read.
+
+## The abstraction that isn't
+
+Big-O rests on an assumption so quiet that most courses never say it out loud: that
+memory access takes constant time. One array read costs the same as any other, so we
+count the reads and stop.
+
+That assumption was reasonable in 1975, when a CPU cycle and a DRAM access took about
+the same amount of time. It has been false for thirty years. Processors got roughly a
+thousand times faster. Memory got about ten times faster. The gap between them —
+sometimes called the *memory wall* — is now so wide that a modern CPU can execute
+several hundred instructions in the time it takes to fetch one value from RAM.
+
+So chip designers did the only thing they could: they put small, fast memories in front
+of the big, slow one. A handful of kilobytes of L1 cache, a megabyte or so of L2, tens
+of megabytes of shared L3, and only then the gigabytes of DRAM. Each level is roughly
+ten times larger and several times slower than the one above it.
+
+The whole arrangement is invisible. There is no instruction to read from L2. Your code
+says `data[i]` and the hardware decides, silently, whether that costs one nanosecond or
+one hundred. `O(1)` is the same symbol in both cases.
+
+Let's watch it happen.
+
+## Watching the hierarchy appear
+
+The benchmark below does one thing: it follows a chain of pointers through an array,
+where each element tells it which element to read next. The chain is a single random
+cycle, so the address of the next read is unknowable until the current read completes.
+The CPU cannot overlap the loads, cannot guess ahead, cannot do anything but wait. What
+we measure is the raw latency of one memory access.
+
+Then we do it again with a slightly larger array. And again. From 4 KiB up to 128 MiB.
+
+The code never changes. The access pattern never changes. The number of operations never
+changes. The only thing that changes is how much memory the array occupies.
+
+<CacheCliff client:visible />
+
+That staircase is the memory hierarchy, drawn by your own hardware.
+
+Each flat region is a level of cache. While the working set fits, every access is served
+at that level's speed and the size of the array is irrelevant — this is what `O(1)`
+actually looks like when the constant is honest. Each cliff is the moment the array
+outgrew a level and started being served by the next one down.
+
+The last plateau is DRAM, and it is typically thirty to a hundred times slower than the
+first. That entire spread is invisible to complexity analysis. Both ends of the curve are
+one array read. Both ends are `O(1)`.
+
+If the table below your chart names fewer levels than you expected, that is the detector
+declining to guess. It only claims a level when the curve shows a sustained step, so a
+machine whose last-level cache blurs gradually into main memory is reported as L1, L2,
+DRAM rather than being handed an L3 it cannot demonstrate.
+
+## Why the cliffs are where they are
+
+Caches do not move bytes. They move **cache lines** — fixed-size blocks, and the only
+unit the memory system understands. Ask for a single byte and the hardware fetches the
+whole line containing it, on the theory that you will want its neighbors shortly. That
+theory is called *spatial locality*, and it is right often enough to have shaped every
+processor built since 1980.
+
+A cache line is 64 bytes on x86-64 and 128 bytes on Apple Silicon. Nothing in your
+program can request less. Read one `int` and you have paid for sixteen of them, whether
+or not you ever look at the other fifteen.
+
+This single fact explains most of what follows. It is why an array of 32-byte structs
+iterates twice as fast as an array of 64-byte structs even though both are `O(n)`, and
+why adding one innocent field to a hot struct can measurably slow down a program that
+never reads it. The cliffs in the chart above are where the working set outgrew a level;
+the line is what got moved when it did.
+
+<aside class="not-prose my-8 rounded-xl border p-5" style="border-color: var(--border); background: var(--surface-2)">
+  <div class="text-xs font-semibold uppercase tracking-wider" style="color: var(--text-muted)">
+    A benchmark that is not here
+  </div>
+  <p class="mt-2 text-sm leading-relaxed" style="color: var(--text-secondary)">
+    In C++ you can measure the line size directly: sum every <em>n</em>-th integer of a
+    large array and watch the cost per access climb until each access needs a line of its
+    own, then flatten. Where it flattens is the line.
+  </p>
+  <p class="mt-2.5 text-sm leading-relaxed" style="color: var(--text-secondary)">
+    That experiment does not survive the trip into a browser. JavaScript spends roughly
+    half a nanosecond per loop iteration on bounds checks and dispatch, which is <em>more</em>
+    than the amortized cost of an access that shares a cache line with its neighbors. The
+    interesting half of the curve is underneath the noise floor, and a version of this page
+    that plotted it anyway would have confidently told Apple Silicon readers their cache
+    line was 256 bytes. So it was cut. The C++ version is in
+    <a href="https://github.com/sb2k16/data-structures-book/blob/main/chapters/19-benchmarking-and-load-testing.md" style="color: var(--accent)">the benchmarking chapter</a>,
+    where it works.
+  </p>
+</aside>
+
+## The prefetcher, and the reason Loop A was fast
+
+Latency is not the whole story, or nothing would ever run fast. Modern CPUs hide memory
+latency by *predicting* it: a hardware prefetcher watches your access pattern, and when
+it detects a stride — forward, backward, constant — it starts fetching lines before you
+ask. When it guesses right, the data is already in L1 by the time the load executes, and
+you pay nothing at all.
+
+The prefetcher is very good and very literal. Walk memory in a straight line and it will
+stay ahead of you. Walk it randomly and it has nothing to work with.
+
+That is the entire difference between Loop A and Loop B.
+
+<Compare
+  client:visible
+  bench="seqVsRand"
+  title="Sequential versus random, same array, same instructions"
+  blurb="Two pointer chases over an identical 32 MiB array. One follows i → i+1. The other follows a random cycle. Same operation count, same asymptotics, same code path."
+  seconds={4}
+  unit="ns per access"
+/>
+
+The sequential version is not fast because it does less work. It does exactly the same
+amount of work. It is fast because the machine could *see it coming*.
+
+This is the single most useful thing to know about performance on modern hardware, and
+it explains a long list of results that look paradoxical if you only have Big-O: why a
+linear scan of an array beats a binary search on anything under a few hundred elements;
+why `std::vector` outruns `std::list` even for workloads that look tailor-made for a
+linked list; why array-backed heaps beat pointer-based ones; and why the fastest hash
+tables in the world use open addressing rather than chaining.
+
+Every one of those is the same observation. A linked list is a random access pattern
+wearing a data structure costume. Each `node->next` is a dependent load into an address
+the prefetcher cannot predict, and you pay the full latency on every single hop.
+
+## Layout is a performance decision
+
+Once you accept that the machine moves lines rather than bytes, a design rule falls out:
+**the bytes you use should be adjacent to the bytes you use next.**
+
+The classic violation is the array of structures. Store a million particles, each with
+position, velocity, orientation and mass, then write a loop that reads only the
+x-coordinate. Every line the cache pulls in is mostly velocity and mass that this loop
+will never touch. You paid for the whole line and used a sliver of it.
+
+Store the same data as a structure of arrays — all the x's contiguous, all the y's
+contiguous — and every byte you fetch is a byte you wanted. The particle data is
+identical; only its address arithmetic changed.
+
+<Compare
+  client:visible
+  bench="aosSoa"
+  title="Array of structures versus structure of arrays"
+  blurb="One million particles of sixteen floats each — a 64-byte struct, a full cache line on x86. Both loops sum the same million x-coordinates, in the same order, through the same kernel. Only the spacing between the floats differs."
+  seconds={5}
+/>
+
+The same rule, in a different costume, governs how you traverse a matrix. A 2D array in
+C++ is one flat block of memory with the rows laid end to end. Walking a row walks memory
+in the order it is stored. Walking a *column* jumps a full row's width on every step —
+and once that jump exceeds the cache line, every access is a fresh line, and once it
+exceeds the page size you start missing in the TLB as well.
+
+<Compare
+  client:visible
+  bench="rowCol"
+  title="Row-major versus column-major traversal"
+  blurb="Summing every element of a 2048×2048 matrix of floats. Identical arithmetic, identical element count, identical asymptotics. One loop swaps the order of two nested for-statements."
+  seconds={4}
+/>
+
+Two nested loops. Swap them, and the program gets several times slower. There is no
+version of Big-O that sees this, because at the level Big-O operates, nothing happened.
+
+## So what do you do with this?
+
+Not premature optimization. Most code is not hot, and the fastest thing you can do to
+cold code is leave it alone. But when code *is* hot, the memory hierarchy is usually
+where the time went, and these are the moves that matter:
+
+**Prefer contiguous memory.** A `std::vector` you scan linearly will beat almost any
+pointer-linked structure that has the same asymptotics. Reach for a linked list when you
+genuinely need stable addresses or O(1) splicing, not because insertion is "O(1)."
+
+**Make the hot fields adjacent.** Split hot data from cold. If a loop reads one field of
+a struct, that field wants to live next to the same field of the next element, not next
+to fields nobody is reading.
+
+**Walk memory the way it is laid out.** Row-major arrays get row-major loops. This is the
+cheapest performance win in software and it costs you two swapped lines.
+
+**Size your working set on purpose.** The cliffs in that first chart are real boundaries.
+An algorithm that keeps its hot data inside L2 can beat an asymptotically superior one
+that spills to DRAM, and blocking a computation into cache-sized tiles is how every fast
+matrix library on earth is written.
+
+**Measure, because your intuition is calibrated for a machine that no longer exists.**
+The chapter on [benchmarking](/chapters/benchmarking-and-load-testing) is about doing
+that without lying to yourself, which is harder than it sounds.
+
+None of this replaces algorithmic thinking. An `O(n log n)` algorithm will beat an
+`O(n²)` one at scale no matter how beautifully the quadratic one is laid out, and you
+should still learn why. But between two algorithms in the same complexity class — which
+is where most real engineering decisions actually live — the memory hierarchy decides,
+and Big-O is silent.
+
+## A note on the measurements
+
+Everything above ran in a JavaScript engine, inside a browser, on a machine that is
+simultaneously doing other things. That is worth being honest about:
+
+- **Browsers deliberately blur their clocks.** `performance.now()` is coarsened as a
+  Spectre mitigation, so each measurement runs long enough for that coarsening to be
+  noise rather than signal, and reports the *minimum* of several repetitions — a
+  scheduler preemption can only make a run slower, never faster.
+- **JavaScript adds a bounds check to every array access.** The absolute latencies are
+  therefore a little higher than the same loop in C++. The *shape* of the curve, and the
+  ratios between its plateaus, are the hardware's, not the language's.
+- **The cache-boundary sizes are inferred**, by finding the knees in your latency curve.
+  They are an estimate read off a noisy measurement, not a value queried from the CPU.
+- **The pointer chase uses Sattolo's algorithm**, which guarantees the random permutation
+  forms a single cycle covering every element. An ordinary shuffle would produce several
+  short cycles, the chase would revisit a small subset, and every working set would
+  quietly report L1 latency. It is an easy mistake to make and it invalidates the entire
+  experiment.
+- **The summing loops use four accumulators, not one.** With a single running total, each
+  addition waits for the previous one, and the loop becomes bound by the latency of the
+  floating-point adder rather than by memory. The first draft of the array-of-structures
+  benchmark did exactly this and reported the two layouts as *identical* — a 1.0× ratio,
+  measuring the adder in both cases and the memory system in neither. If a benchmark tells
+  you an effect does not exist, suspect the benchmark.
+
+The code is a few hundred lines and worth reading if you intend to benchmark anything
+yourself: [`kernels.ts`](https://github.com/sb2k16/data-structures-book/blob/main/web/src/bench/kernels.ts)
+holds the measurement loops and the reasoning behind each one.
+
+---
+
+This is one chapter of a free, MIT-licensed book on data structures — written for people
+who care what the machine is actually doing. The rest treats every structure the same
+way: the invariants, the failure modes, and the systems behavior underneath the
+complexity class.
+
+[Start from the beginning →](/chapters/introduction)
