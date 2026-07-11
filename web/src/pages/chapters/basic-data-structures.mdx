@@ -1,0 +1,130 @@
+---
+layout: ../../layouts/MdxChapter.astro
+slug: basic-data-structures
+description: The array is the structure the hardware loves — contiguous memory the CPU can prefetch. This chapter shows why that makes it the foundation of fast software, from std::vector to columnar databases, and where its one weakness sends you looking for the next structure.
+---
+
+import Compare from '../../components/bench/Compare';
+import InProduction from '../../components/InProduction.astro';
+import InterviewChecklist from '../../components/InterviewChecklist.astro';
+
+The array is the oldest data structure and still the most important one, because it is the
+structure the hardware was built to love. Everything you learned in the last two chapters —
+that a cache hit is a hundred times faster than a miss, that the prefetcher rewards predictable
+access — is a description of what makes an array fast. An array is just `n` elements laid end to
+end in one unbroken block of memory. That single property, **contiguity**, is the source of both
+its superpower and its one real weakness, and the tension between them is what sends us looking
+for every other structure in this book.
+
+## Why the machine loves a contiguous block
+
+An array gives you two things for free. The first is **O(1) random access**: element `i` lives
+at `base + i × sizeof(element)`, so the CPU computes the address and goes there in a single step,
+no searching. The second is the one Big-O can't express — **the access pattern is perfect**.
+Walk an array front to back and you touch memory in exactly the order the prefetcher can predict,
+so the next cache line is already on its way to the CPU before you ask for it. There are no
+pointers to chase, no cache misses to stall on. The array isn't just asymptotically good; it is
+the best case the memory system has.
+
+This is why "use an array" (in C++, `std::vector`) is the correct default for a sequence of
+things, and why reaching for a fancier structure usually makes your code *slower*, not faster,
+until your `n` is large enough to change the asymptotics.
+
+## Layout is a decision the array forces you to make
+
+Because an array is one contiguous block, *how you arrange your data inside it* directly controls
+how much of each cache line you actually use — and that turns out to be one of the highest-leverage
+performance decisions in systems code. Store a million records as an **array of structures** (each
+record's fields together) and a loop that reads one field drags in every other field alongside it,
+wasting most of every cache line it fetches. Store the same data as a **structure of arrays** (each
+field in its own contiguous array) and a loop over one field touches nothing but that field.
+
+Same data, same element count, same O(n) loop. Here is what the layout alone costs, measured on
+your machine:
+
+<Compare
+  client:visible
+  bench="aosSoa"
+  title="Array of structures vs. structure of arrays"
+  blurb="One million records of sixteen floats each. Both loops sum the same field over the same records; only the memory layout differs. Array-of-structures fetches whole records to read one field; structure-of-arrays fetches only the field it needs."
+  seconds={5}
+/>
+
+That gap is why high-performance code — game engines, physics simulations, and especially
+**columnar databases** — stores data column-by-column rather than row-by-row. It is also the
+door to SIMD: once a field is contiguous, the CPU can add sixteen of them in a single vector
+instruction. The array didn't just store your data; it handed you a performance lever, and how
+you pull it is the difference between code that saturates memory bandwidth and code that wastes
+most of it.
+
+## The weakness: the middle is expensive
+
+Contiguity giveth and contiguity taketh away. Because the elements are packed with no gaps,
+*inserting or deleting anywhere but the end* means physically shifting everything after it to
+keep the block unbroken — an O(n) memmove. Appending is cheap; inserting at the front is the
+worst thing you can do to an array.
+
+```cpp
+std::vector<int> v = {1, 2, 3, 4, 5};
+v.push_back(6);            // O(1) amortized — just write past the end
+v.insert(v.begin(), 0);   // O(n) — every element slides right one slot
+```
+
+Appending is only "amortized" O(1) because the array must occasionally grow. A `std::vector`
+that runs out of room allocates a bigger block (typically 1.5× or 2× the size), copies everything
+over, and frees the old one — an O(n) operation. But because it *doubles*, those copies happen at
+sizes 1, 2, 4, 8, …, so across `n` appends the total copying work sums to about `2n`, and the
+amortized cost per append is O(1). (This is the same amortized-doubling argument as the dynamic
+array in [Chapter 2](/chapters/complexity-analysis); it is worth internalizing once, because it
+recurs everywhere.) The practical lesson: if you know roughly how many elements you'll add, call
+`reserve()` and skip the reallocations entirely.
+
+That O(n)-insert-in-the-middle is the array's genuine limitation, and it is precisely the problem
+the **linked list** — the next chapter — sets out to solve, by trading contiguity (and thus cache
+performance) for O(1) splicing. Whether that trade is ever worth it is one of the most instructive
+questions in this book.
+
+## Where this actually lives
+
+The array is so foundational that most other structures are secretly built on top of one, and the
+fastest systems in the world are the ones that lean into its cache behavior hardest.
+
+<InProduction>
+- **`std::vector`, Python `list`, Java `ArrayList`, Go slices** — the default growable sequence in every language is a dynamic array with amortized-doubling growth. When you "make a list," you almost always make an array.
+- **NumPy and pandas** — the entire scientific-Python stack is a contiguous C array under an ergonomic wrapper. Vectorized operations are fast for exactly one reason: the data is a packed array the CPU can stream and SIMD over.
+- **Columnar databases and file formats** — ClickHouse, Apache Parquet, Arrow, and every analytics engine store each column as its own contiguous array. That's the structure-of-arrays layout above, at terabyte scale: a query touching three columns reads only those three arrays, not whole rows.
+- **Kafka and write-ahead logs** — an append-only log *is* an array where the only mutation is `push_back`. The O(1) append and sequential-read-friendliness are why logs are the backbone of durable, high-throughput systems.
+- **Ring buffers in the kernel and in audio/network I/O** — a fixed array plus two indices gives a bounded, allocation-free queue with perfect cache behavior; it's how the OS moves packets and how low-latency audio avoids stalls.
+</InProduction>
+
+## Engineering judgment
+
+- **Default to a dynamic array (`std::vector`).** For a sequence of elements, it is almost always the right choice: O(1) random access, O(1) amortized append, and cache behavior nothing else matches. Reach for something fancier only when a profiler or the asymptotics force you to.
+- **`reserve()` when you know the size.** It converts a series of reallocations into a single allocation — often a free 2–3× on a hot build loop.
+- **Insert and delete at the end, not the middle.** If your workload is front-insertion-heavy, that's a signal to use a `std::deque` (a chunked array) or to rethink the algorithm — not to reach for a linked list, whose cache penalty usually costs more than the O(1) splice saves.
+- **Arrange arrays for the access pattern.** If you loop over one field of many records, store that field contiguously. The AoS→SoA flip above is one of the cheapest large wins in performance work.
+
+## Interview checklist
+
+<InterviewChecklist>
+**Say this, not that.** "Array access is O(1)" is correct but shallow. The deeper answer: "O(1) random access *and* the best possible cache behavior on sequential access — which is why arrays beat asymptotically-similar structures in practice. The cost is O(n) insertion or deletion anywhere but the end."
+
+**The techniques interviewers are really testing**
+- **Two pointers** — one array, two indices moving toward or with each other. Turns many O(n²) scans into O(n): pair-sum in a sorted array, reversing in place, removing duplicates.
+- **Sliding window** — a two-pointer variant for "longest/smallest subarray satisfying X." Grow the right edge, shrink the left; O(n) instead of O(n²).
+- **Prefix sums** — precompute cumulative totals once so any range sum is O(1). The setup for a huge class of subarray problems.
+
+**Common mistakes**
+- Calling `v.insert(v.begin(), x)` or `v.erase(v.begin())` and thinking it's O(1) — it's O(n).
+- Off-by-one and overflow in binary search: use `lo + (hi - lo) / 2`, not `(lo + hi) / 2`.
+- Forgetting that `push_back` can invalidate every pointer and iterator into the vector when it reallocates.
+</InterviewChecklist>
+
+## Takeaways
+
+- The array's power is **contiguity**: O(1) random access, and the sequential access pattern the CPU's prefetcher was built to reward. It is the memory system's best case.
+- **How you lay data out inside an array is a performance decision** — array-of-structures vs structure-of-arrays changed the speed of an identical loop above, and it's why analytics systems are columnar.
+- Its one real weakness is **O(n) insertion or deletion in the middle**, the problem the next structure exists to solve.
+- Almost everything fast is built on an array: `std::vector`, NumPy, columnar stores, logs, ring buffers.
+
+Next, [linked lists](/chapters/linked-lists) — which buy O(1) insertion anywhere by giving up the one thing that made arrays fast, and force the question of whether that trade is ever worth it on real hardware.

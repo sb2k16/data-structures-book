@@ -20,9 +20,7 @@
 - [3.6 Common Array Algorithms](#common-array-algorithms)
   - [Linear Search](#linear-search)
   - [Binary Search (for sorted arrays)](#binary-search-for-sorted-arrays)
-  - [REVISIT THIS --> /<begin>](#revisit-this-begin)
   - [Binary Search Pitfalls: When to Use `<=` vs `<`](#binary-search-pitfalls-when-to-use-vs)
-  - [REVISIT THIS --> /<end>](#revisit-this-end)
   - [Array Rotation](#array-rotation)
   - [Finding Maximum Subarray (Kadane's Algorithm)](#finding-maximum-subarray-kadanes-algorithm)
   - [Two Pointers Technique](#two-pointers-technique)
@@ -453,8 +451,6 @@ bool binarySearchSTL(const vector<int>& arr, int target) {
 }
 ```
 
-### REVISIT THIS --> /<begin>
-
 ### Binary Search Pitfalls: When to Use `<=` vs `<`
 
 Binary search is deceptively simple but notoriously error-prone. One of the most common mistakes is choosing the wrong comparison operator in the while loop condition. Understanding when to use `<=` versus `<` is crucial for correctness.
@@ -694,8 +690,6 @@ int upperBound(const vector<int>& arr, int target) {
    - Exclusive bounds → `<`
 
 4. **Test edge cases**: Empty array, single element, target not found, target at boundaries
-
-### REVISIT THIS --> /<end>
 
 #### Practice Problems
 

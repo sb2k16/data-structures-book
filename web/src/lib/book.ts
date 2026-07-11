@@ -46,7 +46,8 @@ export const CHAPTERS: ChapterMeta[] = [
     number: '3',
     title: 'Arrays and Strings',
     part: 'Linear Structures',
-    blurb: 'Contiguous memory, bit manipulation, and the structure every fast program is secretly built on.',
+    blurb: 'The structure the hardware loves: why contiguity makes arrays fast, how layout (AoS vs SoA) decides their speed, and where columnar databases take it. Measured live.',
+    custom: true,
   },
   {
     id: 'concurrency-fundamentals',

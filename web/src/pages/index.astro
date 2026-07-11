@@ -6,7 +6,7 @@ import { byPart, CHAPTERS, REPO_URL } from '../lib/book';
 
 const parts = byPart();
 const DESC =
-  'A free, open-source book on data structures and algorithms in C++ — written for engineers who care what the machine is actually doing. Cache lines, prefetchers, concurrency, and benchmarks you run in your browser.';
+  'A free, open-source book on data structures and algorithms in C++ — how they behave on real hardware and how production systems like Redis, Postgres, and OpenSearch actually use them. With benchmarks you run in your browser.';
 ---
 <Base title="Data Structures on Real Hardware" description={DESC}>
   <section class="mx-auto max-w-6xl px-5 pt-16 pb-8 sm:pt-24">
@@ -15,12 +15,12 @@ const DESC =
         Free · MIT licensed · 21 chapters
       </div>
       <h1 class="mt-3 text-4xl font-bold leading-[1.1] tracking-tight sm:text-6xl" style="color: var(--text-primary)">
-        Data structures, as the machine actually runs them.
+        Data structures, down to the cache line and out to the cluster.
       </h1>
       <p class="mt-6 max-w-2xl text-lg leading-relaxed" style="color: var(--text-secondary)">
-        Every other book stops at Big-O. This one keeps going — into cache lines, branch
-        predictors, memory layout, and concurrency, because that is where the performance of real
-        systems is actually decided.
+        Most books stop at Big-O. This one shows what the machine actually does — cache misses,
+        memory layout, branch predictors — and how the systems you use every day, from Redis to
+        OpenSearch, turn these structures into infrastructure that scales.
       </p>
       <p class="mt-4 max-w-2xl text-lg leading-relaxed" style="color: var(--text-secondary)">
         Below are two loops with identical complexity. Run them on your own hardware.
@@ -59,10 +59,10 @@ const DESC =
   <section class="mx-auto max-w-6xl px-5 py-16">
     <div class="grid gap-10 sm:grid-cols-3">
       <div>
-        <h2 class="text-base font-semibold" style="color: var(--text-primary)">Systems, not trivia</h2>
+        <h2 class="text-base font-semibold" style="color: var(--text-primary)">From the cache line to the cluster</h2>
         <p class="mt-2 text-sm leading-relaxed" style="color: var(--text-secondary)">
-          Dedicated chapters on the memory hierarchy, concurrency, and benchmarking — the three
-          subjects a data structures course leaves out and a production incident puts back in.
+          Each structure is followed from what the CPU does with it — cache, memory layout, branch
+          prediction — up to how it shards across a fleet of machines. The span no other DSA book covers.
         </p>
       </div>
       <div>
@@ -73,11 +73,11 @@ const DESC =
         </p>
       </div>
       <div>
-        <h2 class="text-base font-semibold" style="color: var(--text-primary)">Modern C++, and it compiles</h2>
+        <h2 class="text-base font-semibold" style="color: var(--text-primary)">Connected to production</h2>
         <p class="mt-2 text-sm leading-relaxed" style="color: var(--text-secondary)">
-          C++17/20 throughout, with runnable examples and tests in the
-          <a href={REPO_URL} class="underline" rel="noopener">repository</a>. Every structure gets its
-          invariants and its failure modes, not just its interface.
+          Every chapter ends where the structure actually ships — Redis, Postgres, the Linux kernel,
+          OpenSearch shard routing — in modern C++ that compiles, with the invariants and failure modes
+          <a href={REPO_URL} class="underline" rel="noopener">in the repo</a>.
         </p>
       </div>
     </div>
