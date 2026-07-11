@@ -37,7 +37,8 @@ export const CHAPTERS: ChapterMeta[] = [
     number: '2',
     title: 'Time and Space Complexity Analysis',
     part: 'Foundations',
-    blurb: 'Big-O, and the far more interesting question of when Big-O stops predicting anything.',
+    blurb: 'Big-O, and the two things it hides — the constant factor and the memory hierarchy — that decide which O(n) actually wins. Measured live.',
+    custom: true,
   },
   {
     id: 'basic-data-structures',

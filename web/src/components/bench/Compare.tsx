@@ -10,6 +10,12 @@ interface Props {
   seconds: number;
   /** Reads as a sentence: "…is {verb} than…" */
   unit?: string;
+  /**
+   * Trailing clause of the ratio callout. Defaults to the same-work framing
+   * (correct for array-vs-list, AoS/SoA, row/column); override it for the
+   * constant-factor demo, where differing work is the whole point.
+   */
+  caption?: string;
 }
 
 /**
@@ -17,7 +23,14 @@ interface Props {
  * categories, so both bars wear the same hue — coloring them differently would
  * double-encode bar length as identity and say nothing extra.
  */
-export default function Compare({ bench, title, blurb, seconds, unit = 'ns per element' }: Props) {
+export default function Compare({
+  bench,
+  title,
+  blurb,
+  seconds,
+  unit = 'ns per element',
+  caption = 'for identical work and identical asymptotics',
+}: Props) {
   const { points, running, finished, progress, error, run } = useBench<BarPoint>(bench);
 
   const max = points.length ? Math.max(...points.map((p) => p.nsPerOp)) : 1;
@@ -86,8 +99,8 @@ export default function Compare({ bench, title, blurb, seconds, unit = 'ns per e
             {ratio(slow.nsPerOp, fast.nsPerOp)}
           </div>
           <div className="mt-0.5 text-sm" style={{ color: 'var(--text-secondary)' }}>
-            {slow.label.toLowerCase()} is {ratio(slow.nsPerOp, fast.nsPerOp)} the cost of {fast.label.toLowerCase()},
-            for identical work and identical asymptotics.
+            {slow.label.toLowerCase()} is {ratio(slow.nsPerOp, fast.nsPerOp)} the cost of {fast.label.toLowerCase()},{' '}
+            {caption}.
           </div>
         </div>
       )}

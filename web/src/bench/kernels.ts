@@ -143,6 +143,49 @@ export function sumStrided(buf: Float32Array, stride: number, passes: number): n
   return s0 + s1 + s2 + s3;
 }
 
+/**
+ * Two loops over the same cache-resident array that differ only in how much
+ * work they do per element. Both are O(n); the point is that Big-O cannot see
+ * the difference between them, but the clock can.
+ *
+ * The array is small enough to live in cache, so neither loop is waiting on
+ * memory — the gap you measure is pure per-element instruction count, i.e. the
+ * "constant factor" that asymptotic analysis discards.
+ *
+ * Light: add each value into a running total — a checksum, one flop per element.
+ */
+export function sumLight(buf: Uint32Array, passes: number): number {
+  let acc = 0;
+  const len = buf.length;
+  for (let p = 0; p < passes; p++) {
+    for (let i = 0; i < len; i++) {
+      acc += buf[i];
+    }
+  }
+  return acc;
+}
+
+/**
+ * Same shape, same element count, same O(n) — but each element is run through
+ * an avalanche hash (~15 integer ops) before being combined, instead of one
+ * add. Still constant work per element, so still O(n); just a much larger
+ * constant. This is the "hash every value" to sumLight's "sum every value".
+ */
+export function sumHeavy(buf: Uint32Array, passes: number): number {
+  let acc = 0;
+  const len = buf.length;
+  for (let p = 0; p < passes; p++) {
+    for (let i = 0; i < len; i++) {
+      let x = (buf[i] ^ acc) >>> 0;
+      x = Math.imul(x ^ (x >>> 16), 0x45d9f3b) >>> 0;
+      x = Math.imul(x ^ (x >>> 13), 0x45d9f3b) >>> 0;
+      x = (x ^ (x >>> 16)) >>> 0;
+      acc = (acc + x) >>> 0;
+    }
+  }
+  return acc;
+}
+
 export function sumRowMajor(m: Float32Array, n: number, passes: number): number {
   let sum = 0;
   for (let p = 0; p < passes; p++) {

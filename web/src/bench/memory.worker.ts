@@ -13,13 +13,21 @@ import {
   sumStrided,
   sumRowMajor,
   sumColumnMajor,
+  sumLight,
+  sumHeavy,
   timeChase,
   timeFn,
   consume,
 } from './kernels';
 import { detectLevels, type CacheLevel, type CachePoint } from './levels';
 
-export type BenchId = 'cacheCliff' | 'seqVsRand' | 'aosSoa' | 'rowCol';
+export type BenchId =
+  | 'cacheCliff'
+  | 'seqVsRand'
+  | 'aosSoa'
+  | 'rowCol'
+  | 'constantFactor'
+  | 'arrayVsList';
 export type { CacheLevel, CachePoint };
 
 export interface BarPoint {
@@ -109,6 +117,41 @@ function runSeqVsRand() {
   post({ type: 'done', bench: 'seqVsRand' });
 }
 
+function runArrayVsList() {
+  // The same 32 MiB of integers, visited in a full cycle. Laid out in order,
+  // this is what walking a std::vector costs; scattered into a random cycle, it
+  // is what chasing a std::list's node->next pointers costs. Same element count,
+  // same O(n), same "one dereference per element".
+  const n = (32 * MIB) / 4;
+
+  const arr = sequentialCycle(n);
+  const arrT = timeChase(arr);
+  post({
+    type: 'point',
+    bench: 'arrayVsList',
+    point: {
+      label: 'Array (std::vector)',
+      nsPerOp: arrT.nsPerOp,
+      detail: 'elements are contiguous, so the prefetcher has the next one before you ask',
+    },
+  });
+  post({ type: 'progress', bench: 'arrayVsList', done: 1, total: 2 });
+
+  const list = randomCycle(n);
+  const listT = timeChase(list);
+  post({
+    type: 'point',
+    bench: 'arrayVsList',
+    point: {
+      label: 'Linked list (std::list)',
+      nsPerOp: listT.nsPerOp,
+      detail: 'each node->next lands somewhere unpredictable — a cache miss per element',
+    },
+  });
+  post({ type: 'progress', bench: 'arrayVsList', done: 2, total: 2 });
+  post({ type: 'done', bench: 'arrayVsList' });
+}
+
 function runAosSoa() {
   // 16 floats = a 64-byte particle: position, velocity, orientation, mass, flags.
   // At 8 fields the AoS array is only 31 MiB and the effect is a muted 2.6x;
@@ -182,11 +225,47 @@ function runRowCol() {
   post({ type: 'done', bench: 'rowCol' });
 }
 
+function runConstantFactor() {
+  // 64 KiB — fits in L2 on every machine, so neither loop waits on memory and
+  // the gap you measure is pure per-element work: the constant Big-O discards.
+  const n = 16384;
+  const buf = new Uint32Array(n);
+  for (let i = 0; i < n; i++) buf[i] = (i * 2654435761) >>> 0;
+  const passes = Math.round(40_000_000 / n);
+
+  const lightMs = timeFn(() => sumLight(buf, passes));
+  post({
+    type: 'point',
+    bench: 'constantFactor',
+    point: {
+      label: 'Sum each value',
+      nsPerOp: (lightMs * 1e6) / (n * passes),
+      detail: 'one add per element — a checksum',
+    },
+  });
+  post({ type: 'progress', bench: 'constantFactor', done: 1, total: 2 });
+
+  const heavyMs = timeFn(() => sumHeavy(buf, passes));
+  post({
+    type: 'point',
+    bench: 'constantFactor',
+    point: {
+      label: 'Hash each value',
+      nsPerOp: (heavyMs * 1e6) / (n * passes),
+      detail: '~15 integer ops per element — same loop, same O(n), more work inside',
+    },
+  });
+  post({ type: 'progress', bench: 'constantFactor', done: 2, total: 2 });
+  post({ type: 'done', bench: 'constantFactor' });
+}
+
 const RUNNERS: Record<BenchId, () => void> = {
   cacheCliff: runCacheCliff,
   seqVsRand: runSeqVsRand,
   aosSoa: runAosSoa,
   rowCol: runRowCol,
+  constantFactor: runConstantFactor,
+  arrayVsList: runArrayVsList,
 };
 
 self.onmessage = (e: MessageEvent<{ bench: BenchId }>) => {
