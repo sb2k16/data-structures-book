@@ -1,0 +1,196 @@
+---
+layout: ../../layouts/MdxChapter.astro
+slug: hash-tables-and-hashing
+description: Why hash tables exist, how a lookup actually finds your data, and why the fastest hash tables — from Redis to OpenSearch's shard router — care as much about cache lines as about Big-O. With a live benchmark.
+---
+
+import Compare from '../../components/bench/Compare';
+import InProduction from '../../components/InProduction.astro';
+import InterviewChecklist from '../../components/InterviewChecklist.astro';
+
+Every data structure exists because the one before it had a problem.
+
+An unsorted array can append in O(1), but finding a value means scanning the whole thing:
+O(n). Sort it and you can binary-search in O(log n), but now every insert has to shift
+elements to keep the order. A balanced tree gives you O(log n) for *both* — and for a long
+time that was the best anyone knew how to do for a general lookup.
+
+The hash table asks a bolder question: what if finding a value took the same time whether you
+had a hundred of them or a hundred million? What if lookup were O(1) — not "log n and we call
+it fast," but genuinely constant? That is what a hash table delivers, and it is why it may be
+the most-used data structure in all of software. The catch, and there is always a catch, is
+that it throws away order to get there. Ask a hash table for "the smallest key" or "everything
+between 100 and 200" and it has no idea — that question belongs to a tree. **This chapter is
+about how the O(1) is actually achieved, and why, on real hardware, two hash tables with
+identical Big-O can be 2× apart.**
+
+## The one idea: compute the address
+
+A hash table does something almost impudent: instead of *searching* for where a key lives, it
+*computes* where the key lives. Run the key through a hash function, get a number, reduce that
+number to an array index, and go straight there. No scan, no comparisons walking down a tree —
+one arithmetic step and a memory access.
+
+```cpp
+size_t index = hash(key) % table.size();   // compute the slot
+// table[index] is where this key belongs — go directly there.
+```
+
+The hash function's whole job is to scatter keys uniformly across the array so that different
+keys land in different slots. A good one is fast, deterministic, and avalanche-y: flipping one
+bit of the key should change about half the bits of the output, so that keys which look similar
+(`user_1000`, `user_1001`) don't pile up in neighboring slots.
+
+But "scatter `n` keys across `m` slots" cannot give every key its own slot unless you have as
+many slots as possible keys — and you never do. So eventually two distinct keys hash to the same
+index. That is a **collision**, and how a hash table handles collisions is where the theory
+meets the hardware.
+
+## Collisions, and the decision Big-O can't see
+
+There are two classic ways to resolve collisions, and choosing between them is the single most
+consequential implementation decision in a hash table.
+
+**Separate chaining** makes each slot the head of a linked list. Keys that collide are appended
+to the same bucket's list. Lookup hashes to a bucket, then walks its list. Simple, forgiving of
+a high load factor, and the textbook default.
+
+**Open addressing** keeps everything in the one flat array. If a key's slot is taken, it probes
+forward — slot+1, slot+2 — until it finds the key or an empty slot. No lists, no pointers, no
+per-element allocation.
+
+On paper these are the same: both are O(1) average, O(n) worst case. Introductory books present
+them as a matter of taste. But watch what the machine does. A chaining lookup, after hashing to
+its bucket, has to follow a pointer to a list node — and that node was allocated whenever it was
+inserted, so it lives at some unpredictable address on the heap. Following that pointer is very
+likely a **cache miss**: the CPU stalls for ~100 cycles fetching a line from main memory. An
+open-addressing lookup, by contrast, hashes to a slot in a flat array and reads it — and if it
+has to probe, slot+1 is almost certainly on the *same cache line* it already paid for.
+
+Same asymptotic complexity. Different number of cache misses per lookup. Here is what that costs,
+measured on your machine — two hash tables holding the same two million keys at load factor 0.5,
+the only difference being chaining versus open addressing:
+
+<Compare
+  client:visible
+  bench="hashProbe"
+  title="Separate chaining vs. open addressing"
+  blurb="Two million keys, load factor 0.5, one million random lookups. Both are O(1) average and store identical data. Chaining dereferences a heap-scattered node per lookup; open addressing probes a flat array. Nothing else differs."
+  seconds={5}
+  unit="ns per lookup"
+/>
+
+Open addressing wins by roughly 2×, for exactly one reason: it touches fewer cache lines. This
+is why the fastest hash tables in the world — Google's `absl::flat_hash_map`, Rust's `HashMap`,
+the one inside your language's runtime — are open-addressed, and why `std::unordered_map`, which
+the C++ standard effectively mandates be chained, is the container serious performance engineers
+most often replace. The gap is not in the algorithm. It is in the memory access pattern, and
+Big-O cannot see it.
+
+One subtlety the benchmark rewards you for noticing: the advantage is largest at *low* load
+factor and shrinks as the table fills, because a full open-addressed table starts doing long
+probe sequences of its own. That is the mechanism behind the universal rule of thumb — **keep a
+hash table no more than about 70% full** — and why exceeding that triggers a resize.
+
+## Load factor and the cost of growing
+
+The **load factor** is simply `elements / slots` — how full the table is. It governs everything:
+too low wastes memory; too high means long probe sequences or long chains, and O(1) quietly
+degrades toward O(n). Implementations watch it, and when it crosses a threshold (commonly 0.7,
+0.75, or for the fastest tables 0.5) they **resize**: allocate a bigger array, then rehash every
+existing key into it.
+
+Resizing is O(n), which sounds alarming for a structure that promises O(1). It isn't, for the
+same amortized reason a dynamic array's `push_back` is O(1): because the table doubles, a given
+element is rehashed only O(log n) times across its life, and the total resize work across `n`
+insertions sums to O(n) — O(1) amortized per insert. The one place it bites is latency: a single
+unlucky insert that triggers a rehash of a large table can stall for milliseconds, which is why
+latency-sensitive systems pre-size their tables or use incremental resizing. (Redis rehashes a
+few buckets at a time on each operation precisely to avoid a stop-the-world resize.)
+
+## Where this actually lives
+
+Hash tables are not a data-structures-course curiosity; they are load-bearing infrastructure in
+essentially every system you touch. The interesting part, for an engineer, is that the same idea
+shows up at wildly different scales — from a single array in your process to a routing decision
+spread across a thousand machines.
+
+<InProduction>
+- **Python `dict`, Ruby `Hash`, JavaScript objects, Go `map`** — the language's core mapping type is a hash table, so the performance of an enormous amount of code rests on the one described here. CPython's `dict` is open-addressed; Go's `map` uses bucketed chaining with 8 slots per bucket to stay cache-friendly.
+- **Java `HashMap`** — separate chaining, but since Java 8 a bucket that grows past 8 entries converts its list into a balanced tree, bounding the worst case at O(log n) instead of O(n) — a direct defense against hash-collision denial-of-service attacks.
+- **Redis and Memcached** — an in-memory key-value store *is*, at its core, one enormous hash table. Redis's is open-addressed-adjacent with incremental rehashing so a resize never blocks the event loop.
+- **Database query engines** — a hash join builds a hash table on one relation's join key and probes it with the other, turning an O(n·m) nested-loop join into O(n+m). Every serious SQL engine (PostgreSQL, and every columnar analytics engine) ships one.
+- **OpenSearch / Elasticsearch shard routing** — to decide which of N shards a document belongs to, the coordinating node computes `hash(routing_key) % number_of_shards`. That one modulo is a hash table whose "slots" are machines. It also explains a famous operational wart: you cannot change a primary shard count on a live index, because doing so changes N and thus *every* document's slot — the reindex-the-world problem.
+</InProduction>
+
+That last example is the bridge from the data structure to distributed systems, and it exposes a
+real flaw in the naive scheme worth understanding.
+
+## When the array is a fleet of machines: consistent hashing
+
+Take the hash table's core move — `hash(key) % N` picks the slot — and let each "slot" be a
+server in a distributed cache or database. It works, until N changes. Add or remove one machine
+and `% N` becomes `% (N±1)`, which remaps *almost every key* to a different server. For an
+in-memory table that is a routine resize. For a hundred-machine cache it is a catastrophe: nearly
+every cache entry is suddenly on the wrong node, every lookup misses, and the stampede of misses
+can take down the database the cache was protecting.
+
+**Consistent hashing** fixes this. Instead of hashing keys directly to `N` slots, you hash both
+the keys *and* the servers onto the same large circular space — a ring of, say, 2³² positions. A
+key belongs to the first server found walking clockwise from the key's position. Now when a
+server joins or leaves, only the keys in the arc between it and its neighbor move; everything else
+stays put. Adding a machine to a 100-node cluster remaps roughly 1% of keys instead of 99%.
+
+```
+        server B
+           ●
+      k3 ○   ○ k1        each key ○ belongs to the next
+   ●           ● server A   server ● clockwise. Remove A and
+ server C    ○ k2           only k1, k2 move — to B — not the
+           ●                whole keyspace.
+        server D
+```
+
+(In practice each server is placed at many positions on the ring — "virtual nodes" — so load
+stays balanced and no single server inherits a huge arc.) This is the algorithm underneath
+Amazon's Dynamo and its descendants (DynamoDB, Cassandra, Riak), the sharding in Discord and many
+CDNs, and — bringing it home — the way distributed search and storage systems spread data across a
+cluster without reshuffling the world every time the cluster changes size. It is a hash table
+whose collision-resolution problem became a distributed-systems problem, and the same instinct —
+*compute the location, don't search for it* — is what makes it scale.
+
+## Engineering judgment: reach for a hash table when…
+
+- **You need fast lookup by exact key and don't care about order.** This is the home run: membership tests, deduplication, counting frequencies, caches, indexes, joins. If your question is "is X here?" or "what's the value for X?", a hash table is almost always the answer.
+- **Reach for a balanced tree (`std::map`) instead when you need order** — sorted iteration, range queries ("all keys between A and B"), or min/max. A hash table cannot answer these at all; it will happily give you O(1) lookup and nothing else.
+- **Reach for a plain array when `n` is small.** For a handful of elements, a linear scan of a contiguous array beats a hash table outright — no hashing, no pointer-chasing, everything on one cache line. The crossover is often larger than people expect; measure before assuming the hash table wins.
+- **When you do use one, prefer an open-addressed implementation for hot lookup paths,** keep the load factor moderate, and give it a good hash function — a weak hash silently converts your O(1) table into an O(n) linked list and invites collision-based denial-of-service.
+
+## Interview checklist
+
+<InterviewChecklist>
+**Say this, not that.** "Hash table lookup is O(1)" is only half an answer. The full one: "O(1) *average*, O(n) worst case under adversarial collisions or a bad hash — and its real-world speed depends on the load factor and whether it's chained or open-addressed, because that decides the cache-miss count."
+
+**Common mistakes**
+- Claiming O(1) worst case. It's O(1) *amortized average*; the worst case is O(n).
+- Forgetting that the hash function's cost counts. Hashing a long string is O(k) in its length, so a "O(1)" lookup on string keys is really O(key length).
+- Ignoring that resize is O(n) and can spike tail latency, even though it's O(1) amortized.
+
+**Questions you should be ready for**
+- How do you resolve collisions, and what are the trade-offs? (Chaining vs open addressing — and mention the cache-locality difference; it signals real depth.)
+- What's a load factor and what happens when it gets too high?
+- Why can't you use a hash table for a range query or sorted iteration? What would you use instead?
+- Design a system to shard data across N servers. Follow-up: what breaks when N changes, and how does consistent hashing fix it?
+
+**Classic problems that are really "use a hash table"**
+- Two Sum, group anagrams, first unique character, longest consecutive sequence, subarray-sum-equals-k. The hash table turns a nested-loop O(n²) scan into one O(n) pass — recognizing that is usually the whole problem.
+</InterviewChecklist>
+
+## Takeaways
+
+- A hash table **computes** a key's location instead of searching for it, buying O(1) average lookup at the price of losing all ordering.
+- **Collisions are inevitable**, and how you resolve them — chaining vs open addressing — is a memory-layout decision that Big-O hides and the cache exposes. You measured open addressing winning ~2× on identical data.
+- **Load factor governs everything**; keep it moderate, and understand that resizing is O(n) but O(1) amortized.
+- The same "compute, don't search" idea scales from a `dict` in your process to **consistent hashing** across a fleet — the backbone of distributed caches, databases, and search clusters.
+
+Next, [graphs](/chapters/graphs) — where the data is the *relationships* between things, and the structures you've met so far become the machinery inside the algorithms.

@@ -119,7 +119,8 @@ export const CHAPTERS: ChapterMeta[] = [
     number: '10',
     title: 'Hash Tables and Hashing',
     part: 'Non-Linear Structures',
-    blurb: 'Chaining versus open addressing is a memory-layout argument, not a complexity one.',
+    blurb: 'Why they exist, why chaining loses to open addressing on real hardware, and how the same idea scales from a dict to OpenSearch shard routing. Measured live.',
+    custom: true,
   },
   {
     id: 'graphs',

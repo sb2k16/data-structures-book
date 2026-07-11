@@ -27,7 +27,8 @@ export type BenchId =
   | 'aosSoa'
   | 'rowCol'
   | 'constantFactor'
-  | 'arrayVsList';
+  | 'arrayVsList'
+  | 'hashProbe';
 export type { CacheLevel, CachePoint };
 
 export interface BarPoint {
@@ -259,6 +260,111 @@ function runConstantFactor() {
   post({ type: 'done', bench: 'constantFactor' });
 }
 
+function runHashProbe() {
+  // Both structures hold the same 2M keys at load factor 0.5 — the regime a
+  // well-tuned hash table runs in. Both are "O(1) average". The difference is
+  // pure memory layout: open addressing probes a flat array (stays on one cache
+  // line); separate chaining dereferences a heap-scattered node (an extra miss).
+  const n = 2_000_000;
+  const cap = Math.ceil(n / 0.5);
+
+  // Deterministic keys, so a reader re-running gets the same table.
+  let s = 0x9e3779b9;
+  const rng = () => {
+    s = (s + 0x6d2b79f5) >>> 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const hash = (k: number) => (Math.imul(k, 2654435761) >>> 0) % cap;
+
+  const keys = new Int32Array(n);
+  for (let i = 0; i < n; i++) keys[i] = (Math.floor(rng() * 2 ** 31) | 1) >>> 0; // odd, non-zero
+
+  // Open addressing: one flat array, linear probe. 0 marks an empty slot.
+  const oaKeys = new Int32Array(cap);
+  for (let i = 0; i < n; i++) {
+    let h = hash(keys[i]);
+    while (oaKeys[h] !== 0) h = h + 1 === cap ? 0 : h + 1;
+    oaKeys[h] = keys[i];
+  }
+
+  // Separate chaining: bucket heads plus node arrays, with nodes placed in
+  // SHUFFLED physical order so `next` jumps around memory — exactly what a heap
+  // allocator does to real list nodes.
+  const head = new Int32Array(cap).fill(-1);
+  const nodeKey = new Int32Array(n);
+  const nodeNext = new Int32Array(n);
+  const order = new Int32Array(n);
+  for (let i = 0; i < n; i++) order[i] = i;
+  for (let i = n - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    const tmp = order[i];
+    order[i] = order[j];
+    order[j] = tmp;
+  }
+  for (let i = 0; i < n; i++) {
+    const slot = order[i];
+    const b = hash(keys[i]);
+    nodeKey[slot] = keys[i];
+    nodeNext[slot] = head[b];
+    head[b] = slot;
+  }
+
+  // Query present keys in random order — realistic, and worst case for the cache.
+  const Q = 1_000_000;
+  const queries = new Int32Array(Q);
+  for (let i = 0; i < Q; i++) queries[i] = keys[Math.floor(rng() * n)];
+
+  const lookupOpen = () => {
+    let found = 0;
+    for (let i = 0; i < Q; i++) {
+      const key = queries[i];
+      let h = hash(key);
+      while (oaKeys[h] !== 0) {
+        if (oaKeys[h] === key) { found++; break; }
+        h = h + 1 === cap ? 0 : h + 1;
+      }
+    }
+    return found;
+  };
+  const lookupChain = () => {
+    let found = 0;
+    for (let i = 0; i < Q; i++) {
+      const key = queries[i];
+      for (let p = head[hash(key)]; p !== -1; p = nodeNext[p]) {
+        if (nodeKey[p] === key) { found++; break; }
+      }
+    }
+    return found;
+  };
+
+  const openMs = timeFn(lookupOpen);
+  post({
+    type: 'point',
+    bench: 'hashProbe',
+    point: {
+      label: 'Open addressing',
+      nsPerOp: (openMs * 1e6) / Q,
+      detail: 'keys live in one flat array; a linear probe stays on the same cache line',
+    },
+  });
+  post({ type: 'progress', bench: 'hashProbe', done: 1, total: 2 });
+
+  const chainMs = timeFn(lookupChain);
+  post({
+    type: 'point',
+    bench: 'hashProbe',
+    point: {
+      label: 'Separate chaining',
+      nsPerOp: (chainMs * 1e6) / Q,
+      detail: 'every lookup dereferences a heap-scattered node — one extra cache miss',
+    },
+  });
+  post({ type: 'progress', bench: 'hashProbe', done: 2, total: 2 });
+  post({ type: 'done', bench: 'hashProbe' });
+}
+
 const RUNNERS: Record<BenchId, () => void> = {
   cacheCliff: runCacheCliff,
   seqVsRand: runSeqVsRand,
@@ -266,6 +372,7 @@ const RUNNERS: Record<BenchId, () => void> = {
   rowCol: runRowCol,
   constantFactor: runConstantFactor,
   arrayVsList: runArrayVsList,
+  hashProbe: runHashProbe,
 };
 
 self.onmessage = (e: MessageEvent<{ bench: BenchId }>) => {

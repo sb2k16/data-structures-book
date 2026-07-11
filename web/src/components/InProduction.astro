@@ -1,0 +1,52 @@
+---
+/**
+ * "Where this actually lives in production" callout. The book's differentiator
+ * is connecting each structure to the real systems that ship it, so this box
+ * appears near the end of every chapter. Slot content is a Markdown list:
+ *
+ *   <InProduction>
+ *   - **Redis** keeps its keyspace in a hash table...
+ *   - **OpenSearch** routes a document to a shard by hashing its `_id`...
+ *   </InProduction>
+ */
+const { title = 'In production' } = Astro.props;
+---
+<aside
+  class="not-prose my-8 rounded-xl border p-5 sm:p-6"
+  style="border-color: color-mix(in srgb, var(--series-2) 40%, var(--border)); background: color-mix(in srgb, var(--series-2) 7%, var(--surface-2))"
+  aria-label={title}
+>
+  <div class="mb-2 flex items-center gap-2">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--series-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="2" y="2" width="20" height="8" rx="2"></rect>
+      <rect x="2" y="14" width="20" height="8" rx="2"></rect>
+      <path d="M6 6h.01M6 18h.01"></path>
+    </svg>
+    <span class="text-xs font-semibold uppercase tracking-wider" style="color: var(--series-2)">{title}</span>
+  </div>
+  <div class="in-production-body text-sm leading-relaxed" style="color: var(--text-secondary)">
+    <slot />
+  </div>
+</aside>
+
+<style>
+  .in-production-body :global(ul) { margin: 0; padding-left: 1.2em; list-style: none; }
+  .in-production-body :global(li) { position: relative; padding-left: 0.9em; }
+  .in-production-body :global(li + li) { margin-top: 0.6em; }
+  .in-production-body :global(li)::before {
+    content: '→';
+    position: absolute;
+    left: -0.1em;
+    color: var(--series-2);
+    font-weight: 600;
+  }
+  .in-production-body :global(strong) { color: var(--text-primary); font-weight: 640; }
+  .in-production-body :global(code) {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    background: color-mix(in srgb, var(--series-2) 12%, transparent);
+    border-radius: 4px;
+    padding: 0.1em 0.35em;
+  }
+  .in-production-body :global(a) { color: var(--series-2); text-decoration: underline; text-underline-offset: 2px; }
+</style>

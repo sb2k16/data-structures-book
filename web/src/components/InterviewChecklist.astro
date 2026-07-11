@@ -1,0 +1,47 @@
+---
+/**
+ * End-of-chapter interview checklist. Turns each chapter into interview prep
+ * without breaking the reading flow. Slot content is freeform Markdown, usually
+ * a few subsections (Common mistakes / Typical questions / Follow-ups) as bold
+ * leads plus lists.
+ */
+const { title = 'Interview checklist' } = Astro.props;
+---
+<aside
+  class="not-prose my-8 rounded-xl border p-5 sm:p-6"
+  style="border-color: color-mix(in srgb, var(--accent) 35%, var(--border)); background: color-mix(in srgb, var(--accent) 6%, var(--surface-2))"
+  aria-label={title}
+>
+  <div class="mb-3 flex items-center gap-2">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M9 11l3 3L22 4"></path>
+      <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
+    </svg>
+    <span class="text-xs font-semibold uppercase tracking-wider" style="color: var(--accent)">{title}</span>
+  </div>
+  <div class="interview-body text-sm leading-relaxed" style="color: var(--text-secondary)">
+    <slot />
+  </div>
+</aside>
+
+<style>
+  .interview-body :global(p) { margin: 0.75em 0 0.35em; }
+  .interview-body :global(p:first-child) { margin-top: 0; }
+  .interview-body :global(strong) { color: var(--text-primary); font-weight: 640; }
+  .interview-body :global(ul) { margin: 0; padding-left: 1.25em; }
+  .interview-body :global(li) { list-style: none; position: relative; padding-left: 1.1em; }
+  .interview-body :global(li + li) { margin-top: 0.4em; }
+  .interview-body :global(li)::before {
+    content: '☐';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+  }
+  .interview-body :global(code) {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    border-radius: 4px;
+    padding: 0.1em 0.35em;
+  }
+</style>
