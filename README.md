@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![C++](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://en.cppreference.com/)
-[![Read online](https://img.shields.io/badge/read-realhardware.dev-2a78d6.svg)](https://realhardware.dev)
+[![Read online](https://img.shields.io/badge/read-online-2a78d6.svg)](https://sb2k16.github.io)
 [![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/sb2k16/data-structures-book/issues)
 
 **A free book about data structures as the machine actually runs them.**
@@ -18,9 +18,9 @@ Loop B takes **thirty to sixty times longer**. Not thirty percent — thirty tim
 
 Most data structures books stop at Big-O. This one keeps going: into cache lines, prefetchers, memory layout, false sharing, and concurrency, because that is where the performance of real systems is decided. Every structure gets its invariants, its failure modes, and its behavior on hardware — not just its interface and its complexity class.
 
-### [→ Read it online](https://realhardware.dev), where the benchmarks run on your own CPU
+### [→ Read it online](https://sb2k16.github.io), where the benchmarks run on your own CPU
 
-The [memory hierarchy chapter](https://realhardware.dev/chapters/memory-hierarchy) measures *your* machine while you read it: the latency of every level of your cache, the cost of a cache miss, and what array-of-structures really charges you. No screenshots of someone else's laptop.
+The [memory hierarchy chapter](https://sb2k16.github.io/chapters/memory-hierarchy) measures *your* machine while you read it: the latency of every level of your cache, the cost of a cache miss, and what array-of-structures really charges you. No screenshots of someone else's laptop.
 
 ## 📚 Table of Contents
 
@@ -31,7 +31,7 @@ The [memory hierarchy chapter](https://realhardware.dev/chapters/memory-hierarch
 ### Part II: Linear Data Structures
 - [Chapter 3: Basic Data Structures (Arrays and Strings)](chapters/03-basic-data-structures.md)
 - [Chapter 3.5: Concurrency Fundamentals for Data Structures](chapters/03.5-concurrency-fundamentals.md)
-- [Chapter 3.6: Memory Hierarchy and Performance](chapters/03.6-memory-hierarchy-and-performance.md) — [read the interactive version](https://realhardware.dev/chapters/memory-hierarchy)
+- [Chapter 3.6: Memory Hierarchy and Performance](chapters/03.6-memory-hierarchy-and-performance.md) — [read the interactive version](https://sb2k16.github.io/chapters/memory-hierarchy)
 - [Chapter 4: Linked Lists](chapters/04-linked-lists.md)
 - [Chapter 5: Stacks and Queues](chapters/05-stacks-and-queues.md)
 

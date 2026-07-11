@@ -2,4 +2,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://realhardware.dev/sitemap-index.xml
+Sitemap: https://sb2k16.github.io/sitemap-index.xml
