@@ -20,6 +20,7 @@ export const PARTS = [
   'Non-Linear Structures',
   'Algorithm Design',
   'Advanced Topics',
+  'Storage Engines at Scale',
 ] as const;
 
 export const CHAPTERS: ChapterMeta[] = [
@@ -72,7 +73,8 @@ export const CHAPTERS: ChapterMeta[] = [
     number: '4',
     title: 'Linked Lists',
     part: 'Linear Structures',
-    blurb: 'O(1) insertion, and why it can still lose to an O(n) memmove on real hardware.',
+    blurb: 'O(1) insertion — bought by giving up the contiguity that made arrays fast, a trade real hardware rarely rewards. Measured live.',
+    custom: true,
   },
   {
     id: 'stacks-and-queues',
@@ -80,7 +82,8 @@ export const CHAPTERS: ChapterMeta[] = [
     number: '5',
     title: 'Stacks and Queues',
     part: 'Linear Structures',
-    blurb: 'Monotonic patterns, circular buffers, and the structures that show up in every scheduler.',
+    blurb: 'The two most useful restrictions on a sequence — LIFO and FIFO — running everything from your call stack to message brokers.',
+    custom: true,
   },
   {
     id: 'trees-and-binary-trees',
@@ -88,7 +91,8 @@ export const CHAPTERS: ChapterMeta[] = [
     number: '6',
     title: 'Trees and Binary Trees',
     part: 'Non-Linear Structures',
-    blurb: 'Traversals, balance, and the invariants that keep a tree from degenerating into a list.',
+    blurb: 'Ordering and O(log n) at once — the thing hash tables threw away — plus why databases don’t actually use binary trees.',
+    custom: true,
   },
   {
     id: 'string-search-algorithms',
@@ -194,6 +198,24 @@ export const CHAPTERS: ChapterMeta[] = [
     title: 'Benchmarking and Load Testing',
     part: 'Advanced Topics',
     blurb: 'How to measure without lying to yourself. The chapter most books skip entirely.',
+  },
+  {
+    id: 'b-trees',
+    slug: 'b-trees',
+    number: '20',
+    title: 'B-Trees',
+    part: 'Storage Engines at Scale',
+    blurb: 'Why every database index is a B-tree and not a binary tree: wide, cache-line-sized nodes turn 20 cache misses into a handful. ~8× faster, measured live.',
+    custom: true,
+  },
+  {
+    id: 'lsm-trees',
+    slug: 'lsm-trees',
+    number: '21',
+    title: 'LSM Trees',
+    part: 'Storage Engines at Scale',
+    blurb: 'Turning every random write into a sequential append — the engine behind RocksDB, Cassandra, and the write path of modern data infrastructure.',
+    custom: true,
   },
 ];
 

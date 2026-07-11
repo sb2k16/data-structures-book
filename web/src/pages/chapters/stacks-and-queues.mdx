@@ -1,0 +1,147 @@
+---
+layout: ../../layouts/MdxChapter.astro
+slug: stacks-and-queues
+description: Stacks and queues are the two most useful restrictions you can put on a sequence — LIFO and FIFO — and that one restriction is what runs everything from your function calls to the message brokers behind your infrastructure.
+---
+
+import InProduction from '../../components/InProduction.astro';
+import InterviewChecklist from '../../components/InterviewChecklist.astro';
+
+The last chapter, [linked lists](/chapters/linked-lists), bought you the freedom to insert or delete
+*anywhere* in a sequence. Stacks and queues do the opposite thing on purpose: they take that freedom
+away. You may only touch one end — or, for a queue, one end for adding and the other for removing —
+and everything in the middle is off-limits.
+
+That sounds like a downgrade. It is the entire point. A restriction you can't violate is a property
+you can rely on. Every operation is O(1) because there is nothing to search and nothing to shift. The
+access pattern is so simple that an entire class of bugs — "who mutated this out from under me?" —
+cannot occur. And the two useful restrictions turn out to be the two most common orderings in all of
+computing:
+
+- A **stack** is **LIFO** — last in, first out. You `push` onto the top and `pop` from the top. A
+  stack of plates: the last one you set down is the first one you pick up.
+- A **queue** is **FIFO** — first in, first out. You `enqueue` at the back and `dequeue` from the
+  front. A line at a checkout: served in the order you arrived.
+
+## Both are secretly an array
+
+Neither of these is a new kind of memory. They are *interfaces* — a promise about which operations
+you're allowed to call — laid over a structure you already know. Almost always, that structure is an
+array.
+
+A stack backed by a `std::vector` is as good as it gets: `push` is `push_back`, `pop` is `pop_back`,
+both O(1) amortized, and the whole thing grows contiguously with perfect cache behavior. You rarely
+need to write it yourself.
+
+```cpp
+std::stack<int> s;      // adapts std::deque by default
+s.push(1); s.push(2);
+int top = s.top();      // 2
+s.pop();                // removes 2
+```
+
+A queue is more interesting, because the naive array version has a flaw: `dequeue` from the front
+would be an O(n) shift of every remaining element (exactly the array weakness from two chapters ago).
+The fix is the **ring buffer** — a fixed array plus two indices, `head` and `tail`, that wrap around
+modulo the capacity. Nothing ever moves; the indices chase each other around the ring.
+
+```cpp
+template <typename T, size_t N>
+struct RingQueue {
+    T buf[N];
+    size_t head = 0, tail = 0, count = 0;
+
+    bool enqueue(const T& x) {
+        if (count == N) return false;         // full — no room
+        buf[tail] = x;
+        tail = (tail + 1) % N;
+        ++count;
+        return true;
+    }
+    bool dequeue(T& out) {
+        if (count == 0) return false;         // empty — nothing to take
+        out = buf[head];
+        head = (head + 1) % N;
+        --count;
+        return true;
+    }
+};
+```
+
+That `count` field is doing real work: without it, a full ring and an empty ring both satisfy
+`head == tail`, and you can't tell them apart. (The classic alternative is to leave one slot unused so
+`full` means `(tail + 1) % N == head` — either works, but you must pick one.)
+
+The ring buffer is a bounded, allocation-free FIFO with contiguous memory the CPU can prefetch. That
+combination — no allocation on the hot path, no cache misses, a fixed memory footprint you can reason
+about — is exactly why the OS kernel and low-latency code reach for it. You *can* back a queue with a
+linked list instead, and it works, but you're back to per-node heap allocation and pointer-chasing:
+the same tax the [linked-list chapter](/chapters/linked-lists) measured, usually a loss on real
+hardware.
+
+## The most important stack in computing
+
+You are running on one right now. Every program has a **call stack**, and it is a stack in the literal
+sense.
+
+Call a function, and the machine **pushes a stack frame**: space for that function's local variables,
+its arguments, and the return address to jump back to when it finishes. The function returns, and the
+frame is **popped** — its locals vanish, and control resumes at the return address. LIFO is the only
+ordering that makes sense: a function must finish before the one that called it can continue.
+
+This gives a couple of things a precise, physical meaning. **Recursion depth is stack usage** — each
+recursive call is another frame pushed on top, and a function that recurses `n` deep is holding `n`
+frames at once. And a **stack overflow** is exactly what it sounds like: this stack, which is a fixed
+region of memory, filled up. Infinite recursion is the usual culprit; the frames pile up until they
+run off the end of the allotted space and the program dies.
+
+## Where this actually lives
+
+<InProduction>
+- **The call stack** — function calls, recursion, and exception unwinding (throwing walks *up* the stack, popping frames and running destructors until a handler is found) all ride on the one stack every program owns.
+- **Undo/redo** — every edit pushed onto an undo stack; redo is a second stack. Ctrl-Z is `pop`.
+- **Browser back/forward** — two stacks. Visiting a page pushes onto "back"; hitting back pops it and pushes onto "forward."
+- **Graph traversal** — **DFS uses a stack** (go deep, backtrack), **BFS uses a queue** (explore level by level). Picking the wrong one gives you the wrong traversal, not a slow one.
+- **OS schedulers** — the kernel keeps run-queues of ready threads and pulls the next one to run.
+- **Message brokers and task queues** — Kafka, RabbitMQ, SQS, and Redis lists are queues at scale: FIFO work distribution that lets producers and consumers run at different speeds without losing work.
+- **Ring buffers in the kernel and in audio** — network packet rings (NIC ↔ kernel) and lock-free single-producer/single-consumer audio queues, where an allocation or a lock on the hot path would mean a dropped packet or an audible glitch.
+- **Expression evaluation and parsing** — the shunting-yard algorithm uses a stack to turn infix math into postfix; compilers and calculators lean on it constantly.
+</InProduction>
+
+## Interview checklist
+
+<InterviewChecklist>
+**Say this, not that.** "A stack is LIFO and a queue is FIFO" is the definition, not an answer. The
+engineer's version: "Both are O(1) restricted-access wrappers over an array — a `vector` for a stack,
+a ring buffer for a queue — and the restriction is the feature: it makes every operation constant-time
+and impossible to misuse."
+
+**Problems that are really "use a stack or a queue"**
+- **Implement a queue with two stacks** (and a stack with two queues) — the classic amortized-analysis warm-up.
+- **Min-stack** — support `push`, `pop`, and `getMin` all in O(1) by pushing the running minimum alongside each value on a second stack.
+- **Valid parentheses** — push openers, pop and match on closers; the canonical stack problem.
+- **Monotonic stack** — next-greater-element and daily-temperatures: keep the stack sorted and pop while the invariant breaks, turning an O(n²) scan into O(n).
+- **Sliding-window maximum** — a monotonic *deque*, the double-ended cousin that both ends can touch.
+- **BFS** — remember it's a **queue**; DFS is a **stack** (or recursion, which is the call stack).
+
+**Common mistakes**
+- Forgetting the empty check — `top()`/`pop()`/`front()` on an empty container is undefined behavior.
+- Off-by-one in a ring buffer's full-vs-empty test — both give `head == tail`; disambiguate with a count or a wasted slot.
+- Reaching for the wrong discipline — LIFO where you needed FIFO silently reverses your ordering (and your traversal).
+</InterviewChecklist>
+
+## Takeaways
+
+- Stacks and queues are **restrictions, not new memory** — one-ended (LIFO) and two-ended (FIFO)
+  interfaces over an array. The restriction is what buys you O(1) operations and code that's safe to
+  reason about.
+- Back a stack with a `std::vector`; back a queue with a **ring buffer** — a fixed array and two
+  wrapping indices — for a bounded, allocation-free FIFO with the cache behavior the OS and
+  low-latency code depend on.
+- The **call stack** is the one every program runs on: frames push on call, pop on return, recursion
+  depth *is* stack usage, and a stack overflow is that region filling up.
+- At scale the same shapes reappear as message brokers, scheduler run-queues, undo stacks, and the
+  ring buffers moving your packets and audio.
+
+Next, [trees and binary trees](/chapters/trees-and-binary-trees) — where the sequence finally
+branches, and one restriction (sorted order) turns a search into a series of halvings.

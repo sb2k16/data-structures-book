@@ -1,0 +1,42 @@
+---
+/**
+ * "Practice this on Codexa" CTA. Codexa is the companion adaptive-practice
+ * platform; the book is its top-of-funnel. Renders only when PUBLIC_CODEXA_URL
+ * is set, so the book stands alone until Codexa is wired up — same pattern as
+ * the newsletter and ad slots.
+ *
+ * `topic` (optional) deep-links into the matching track via ?topic=<slug>.
+ */
+const base = import.meta.env.PUBLIC_CODEXA_URL;
+const { topic } = Astro.props;
+const href = base ? (topic ? `${base}?topic=${encodeURIComponent(topic)}` : base) : null;
+---
+{href && (
+  <aside
+    class="not-prose my-8 flex flex-col gap-3 rounded-xl border p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6"
+    style="border-color: color-mix(in srgb, var(--series-5, #4a3aa7) 40%, var(--border)); background: color-mix(in srgb, var(--series-5, #4a3aa7) 7%, var(--surface-2))"
+    aria-label="Practice on Codexa"
+  >
+    <div>
+      <div class="flex items-center gap-2">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--series-5, #4a3aa7)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 20h9"></path>
+          <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+        </svg>
+        <span class="text-xs font-semibold uppercase tracking-wider" style="color: var(--series-5, #4a3aa7)">Practice</span>
+      </div>
+      <p class="mt-1.5 text-sm leading-relaxed" style="color: var(--text-secondary)">
+        Turn this chapter into reps. <strong style="color: var(--text-primary)">Codexa</strong> gives you
+        adaptive drills and interview problems on exactly this topic.
+      </p>
+    </div>
+    <a
+      href={href}
+      rel="noopener"
+      class="shrink-0 rounded-lg px-4 py-2.5 text-sm font-semibold no-underline"
+      style="background: var(--series-5, #4a3aa7); color: #fff"
+    >
+      Practice on Codexa →
+    </a>
+  </aside>
+)}

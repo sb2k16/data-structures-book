@@ -1,0 +1,111 @@
+---
+layout: ../../layouts/MdxChapter.astro
+slug: b-trees
+description: The binary search tree is O(log n) and still too slow, because every level is a cache miss. The B-tree fixes that with wide, cache-line-sized nodes — and it's why every database index on earth is a B-tree, not a binary tree. Measured live.
+---
+
+import Compare from '../../components/bench/Compare';
+import InProduction from '../../components/InProduction.astro';
+import InterviewChecklist from '../../components/InterviewChecklist.astro';
+
+The [previous chapter](/chapters/trees-and-binary-trees) left a loose thread. A balanced binary
+search tree is `O(log n)` for lookup — asymptotically excellent — and yet no database in the world
+uses one for its indexes. They all use a B-tree instead. Understanding why is one of the most
+clarifying moments in systems programming, because the reason is not in the algorithm. Both trees
+are `O(log n)`. The reason is the memory hierarchy, and it is the same lesson this whole book keeps
+returning to: **the number of levels you touch matters far less than whether touching each one is a
+cache hit or a cache miss.**
+
+## The problem: a binary tree is all misses
+
+Walk a balanced binary search tree of a million keys and you descend about 20 levels. Each level is
+a single comparison — trivial work — followed by a pointer to one of two children. But those
+children were allocated whenever they were inserted, so each lives at some unpredictable address on
+the heap. Every step down the tree is therefore a **cache miss**: the CPU stalls ~100 cycles
+fetching a line from main memory just to read one key and one pointer, then does it again, twenty
+times. The tree is `O(log n)` in comparisons and `O(log n)` in *cache misses*, and on modern
+hardware the second number is the one that hurts.
+
+The fix is almost obvious once you see the problem. A cache miss brings in a whole 64-byte line
+whether you use one key or sixteen. So — use sixteen. Or thirty-two. Put *many* keys in each node,
+sized to a cache line (or, on disk, a page), and do a small linear or binary scan within the node
+before descending. Now each expensive memory fetch does real work, and because each node has many
+children instead of two, the tree is dramatically **shallower**: a B-tree with 32 keys per node
+holds a million keys in about four levels instead of twenty. Fewer levels, and each level is one
+cache line instead of a scattered pointer. That is the entire idea of a **B-tree**.
+
+## The payoff, measured
+
+Here are both structures holding the same two million sorted keys, answering the same million random
+lookups. Both are `O(log n)`. The only difference is node width — binary versus 32 keys per node:
+
+<Compare
+  client:visible
+  bench="btreeVsBst"
+  title="Binary search tree vs. B-tree"
+  blurb="Two million keys, one million random lookups, both O(log n). The binary tree chases a scattered pointer at each of ~21 levels; the B-tree packs 32 keys into each cache-line-sized node and is only ~4 levels deep. Same keys, same asymptotics."
+  seconds={5}
+  unit="ns per lookup"
+/>
+
+Roughly **8× faster**, for the same keys and the same complexity class, purely because the B-tree
+turned twenty cache misses into a handful. When the data lives on disk instead of in RAM the effect
+is even more extreme — a disk seek is not 100 cycles but ten *million* — which is why the idea was
+invented for disks in 1970 and never left.
+
+## Why databases are built on this
+
+A database index has to answer two kinds of question fast: "find the row with id = X" (a point
+lookup) and "find all rows with id between X and Y" (a range scan). A hash index (the
+[hash-table](/chapters/hash-tables-and-hashing) chapter) nails the first and cannot do the second at
+all — it threw away order. A B-tree does both: point lookups in `O(log n)` shallow steps, and range
+scans by walking the sorted leaves, which in a **B+ tree** (the variant every database actually uses)
+are linked together precisely so a range scan is a sequential walk. Ordered data, logarithmic
+lookup, sequential ranges, and a shape that matches how disks and caches move data — a B-tree is what
+you get when you design a search tree for the machine it actually runs on.
+
+The one place B-trees strain is **write-heavy** workloads. Every insert has to find its leaf and
+update it in place, and at scale those leaf updates are random writes scattered across the disk —
+exactly the access pattern storage hardware is worst at. Holding the tree balanced under a high
+write rate becomes the bottleneck. That pressure is what motivates the [next chapter's
+structure](/chapters/lsm-trees), which turns random writes into sequential ones.
+
+<InProduction>
+- **Every relational database index** — PostgreSQL, MySQL/InnoDB, SQL Server, Oracle. The default index type is a B+ tree, and its node size is tuned to the storage page size (commonly 8–16 KB) for exactly the cache/disk reason above. When you "add an index," you build a B-tree.
+- **Filesystems** — ext4 (HTrees), NTFS, Btrfs (the "B" is literal), APFS, and XFS all use B-trees to map file names and offsets to disk blocks, because a filesystem is a database of where things are.
+- **Key-value and embedded stores** — LMDB and BoltDB are B+ trees memory-mapped straight off disk; SQLite stores every table and index as a B-tree.
+- **Search engines** — Lucene, which powers OpenSearch and Elasticsearch, uses block-based, B-tree-like structures (BKD-trees) for numeric and geo fields, so range and point queries over billions of documents stay logarithmic and cache-friendly.
+</InProduction>
+
+## Engineering judgment
+
+- **You rarely implement a B-tree; you rely on one.** The practical skill is knowing that your database's index *is* a B-tree and reasoning accordingly — that lookups and range scans are cheap, that an index makes reads fast and writes a little slower, and why.
+- **Match node size to the hardware.** In memory, a cache line (64 bytes). On disk, a page (a few KB). The whole point is one expensive fetch per level, so the node should be exactly as big as one fetch delivers.
+- **Reach for a B-tree (or its database) when you need ordered data with fast lookup *and* range queries.** If you only ever do exact-key point lookups and never range or sorted access, a hash index is faster — use that instead.
+- **If your workload is write-dominated at scale, a B-tree's in-place random writes become the bottleneck** — and that's the signal to look at an LSM tree.
+
+## Interview checklist
+
+<InterviewChecklist>
+**Say this, not that.** "A B-tree is a balanced search tree with many keys per node" is correct but misses the point. The answer that lands: "It's a search tree designed for the memory hierarchy — wide nodes sized to a cache line or disk page, so each expensive fetch does lots of work and the tree stays shallow. Same `O(log n)` as a binary tree, far fewer cache misses. It's why database indexes are B-trees and not binary trees."
+
+**Concepts to be ready for**
+- Why a B-tree over a binary search tree? (Cache/disk: fewer, wider levels; fewer misses per lookup.)
+- B-tree vs B+ tree: in a B+ tree all values live in the leaves and the leaves are linked, making range scans a sequential walk — which is why databases use the B+ variant.
+- How a B-tree stays balanced: nodes split when full and merge when under-full, and the tree grows and shrinks from the root, so height stays `O(log n)` with all leaves at the same depth.
+- Why an index speeds up reads but slows down writes.
+
+**Common mistakes**
+- Confusing a B-tree with a binary tree ("B" does not mean "binary").
+- Claiming a hash index can serve range queries — it can't; that's the B-tree's job.
+- Forgetting that the shallow-tree benefit is about *cache/disk fetches*, not about comparison count.
+</InterviewChecklist>
+
+## Takeaways
+
+- A binary search tree is `O(log n)` but pays a **cache miss per level** — ~20 misses for a million keys — which is slow on real hardware despite the good asymptotics.
+- A **B-tree** packs many keys into cache-line- or page-sized nodes, so the tree is shallow and each level is one fetch. Same `O(log n)`, an order of magnitude fewer misses — you measured ~8× above.
+- It gives ordered data, logarithmic point lookups, and sequential range scans (in the B+ variant), which is why **every database index and filesystem is a B-tree**.
+- Its weakness is write-heavy workloads, where in-place random writes bottleneck — the problem the next structure solves.
+
+Next, [LSM trees](/chapters/lsm-trees) — the structure that gives up in-place updates entirely to turn random writes into sequential ones, and powers the write-optimized databases behind modern data infrastructure.

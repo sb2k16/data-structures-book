@@ -16,6 +16,7 @@
   --text-muted: #78776f;
   --series-1: #2a78d6;
   --series-2: #1baf7a;
+  --series-5: #4a3aa7;
   --accent: #2a78d6;
   --band: #0b0b0b;
   --band-alpha: 0.035;
@@ -43,6 +44,7 @@
     --text-muted: #918f85;
     --series-1: #3987e5;
     --series-2: #199e70;
+    --series-5: #9085e9;
     --accent: #3987e5;
     --band: #ffffff;
     --band-alpha: 0.05;
@@ -62,6 +64,7 @@
   --text-muted: #918f85;
   --series-1: #3987e5;
   --series-2: #199e70;
+  --series-5: #9085e9;
   --accent: #3987e5;
   --band: #ffffff;
   --band-alpha: 0.05;
@@ -79,6 +82,7 @@
   --text-muted: #78776f;
   --series-1: #2a78d6;
   --series-2: #1baf7a;
+  --series-5: #4a3aa7;
   --accent: #2a78d6;
   --band: #0b0b0b;
   --band-alpha: 0.035;

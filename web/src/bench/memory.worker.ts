@@ -28,7 +28,8 @@ export type BenchId =
   | 'rowCol'
   | 'constantFactor'
   | 'arrayVsList'
-  | 'hashProbe';
+  | 'hashProbe'
+  | 'btreeVsBst';
 export type { CacheLevel, CachePoint };
 
 export interface BarPoint {
@@ -365,6 +366,169 @@ function runHashProbe() {
   post({ type: 'done', bench: 'hashProbe' });
 }
 
+function runBtreeVsBst() {
+  // Same 2M sorted keys in both structures. Both lookups are O(log n). A binary
+  // search tree does one comparison per node and follows a pointer to a
+  // heap-scattered child — a cache miss on every level, ~21 levels deep. A
+  // B-tree packs 32 keys into a flat, cache-line-sized node, so it does a
+  // handful of comparisons per cache line and its tree is only ~4 levels deep.
+  const n = 2_000_000;
+  const B = 32;
+  const keys = new Int32Array(n);
+  for (let i = 0; i < n; i++) keys[i] = i * 2 + 1; // sorted, distinct, non-zero
+
+  let s = 0x1234567;
+  const rng = () => {
+    s = (s + 0x6d2b79f5) >>> 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const shuffle = (a: Int32Array) => {
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      const t = a[i];
+      a[i] = a[j];
+      a[j] = t;
+    }
+  };
+
+  // Binary search tree with nodes placed at SHUFFLED slots, so parent→child
+  // jumps around memory the way heap-allocated tree nodes really do.
+  const bKey = new Int32Array(n);
+  const bLeft = new Int32Array(n).fill(-1);
+  const bRight = new Int32Array(n).fill(-1);
+  const slot = new Int32Array(n);
+  for (let i = 0; i < n; i++) slot[i] = i;
+  shuffle(slot);
+  let bstRoot = -1;
+  let alloced = 0;
+  const insertOrder = Int32Array.from(keys);
+  shuffle(insertOrder); // random insertion → roughly balanced, avoids a degenerate chain
+  for (let q = 0; q < n; q++) {
+    const k = insertOrder[q];
+    if (bstRoot === -1) {
+      bstRoot = slot[alloced++];
+      bKey[bstRoot] = k;
+      continue;
+    }
+    let cur = bstRoot;
+    for (;;) {
+      if (k < bKey[cur]) {
+        if (bLeft[cur] === -1) { const nn = slot[alloced++]; bKey[nn] = k; bLeft[cur] = nn; break; }
+        cur = bLeft[cur];
+      } else {
+        if (bRight[cur] === -1) { const nn = slot[alloced++]; bKey[nn] = k; bRight[cur] = nn; break; }
+        cur = bRight[cur];
+      }
+    }
+  }
+
+  // Static B-tree, bulk-loaded bottom-up into flat typed arrays.
+  const keysPer = B;
+  const childPer = B + 1;
+  const nk: number[] = [];
+  const nc: number[] = [];
+  const nch: number[] = [];
+  const newNode = () => {
+    const id = nc.length;
+    nc.push(0);
+    for (let i = 0; i < keysPer; i++) nk.push(0);
+    for (let i = 0; i < childPer; i++) nch.push(-1);
+    return id;
+  };
+  let level: { min: number; id: number }[] = [];
+  for (let i = 0; i < n; ) {
+    const id = newNode();
+    const take = Math.min(keysPer, n - i);
+    for (let c = 0; c < take; c++) nk[id * keysPer + c] = keys[i + c];
+    nc[id] = take;
+    level.push({ min: keys[i], id });
+    i += take;
+  }
+  while (level.length > 1) {
+    const parents: { min: number; id: number }[] = [];
+    for (let i = 0; i < level.length; ) {
+      const id = newNode();
+      const take = Math.min(childPer, level.length - i);
+      let cnt = 0;
+      for (let c = 0; c < take; c++) {
+        nch[id * childPer + c] = level[i + c].id;
+        if (c > 0) { nk[id * keysPer + (c - 1)] = level[i + c].min; cnt++; }
+      }
+      nc[id] = cnt;
+      parents.push({ min: level[i].min, id });
+      i += take;
+    }
+    level = parents;
+  }
+  const btRoot = level[0].id;
+  const nodeKeys = Int32Array.from(nk);
+  const nodeCount = Int32Array.from(nc);
+  const nodeChild = Int32Array.from(nch);
+
+  const Q = 1_000_000;
+  const queries = new Int32Array(Q);
+  for (let i = 0; i < Q; i++) queries[i] = keys[Math.floor(rng() * n)];
+
+  const lookupBst = () => {
+    let hits = 0;
+    for (let i = 0; i < Q; i++) {
+      const target = queries[i];
+      let cur = bstRoot;
+      while (cur !== -1) {
+        const k = bKey[cur];
+        if (target === k) { hits++; break; }
+        cur = target < k ? bLeft[cur] : bRight[cur];
+      }
+    }
+    return hits;
+  };
+  const lookupBtree = () => {
+    let hits = 0;
+    for (let i = 0; i < Q; i++) {
+      const target = queries[i];
+      let node = btRoot;
+      for (;;) {
+        const cnt = nodeCount[node];
+        const base = node * keysPer;
+        let j = 0;
+        while (j < cnt && target > nodeKeys[base + j]) j++;
+        if (j < cnt && target === nodeKeys[base + j]) { hits++; break; }
+        const child = nodeChild[node * childPer + j];
+        if (child === -1) break;
+        node = child;
+      }
+    }
+    return hits;
+  };
+
+  const bstMs = timeFn(lookupBst);
+  post({
+    type: 'point',
+    bench: 'btreeVsBst',
+    point: {
+      label: 'Binary search tree',
+      nsPerOp: (bstMs * 1e6) / Q,
+      detail: 'one comparison per node, chasing a scattered pointer — a cache miss on every level, ~21 deep',
+    },
+  });
+  post({ type: 'progress', bench: 'btreeVsBst', done: 1, total: 2 });
+
+  const btMs = timeFn(lookupBtree);
+  post({
+    type: 'point',
+    bench: 'btreeVsBst',
+    point: {
+      label: 'B-tree (32 keys / node)',
+      nsPerOp: (btMs * 1e6) / Q,
+      detail: 'many keys per cache-line-sized node — a shallow tree, a few misses per lookup',
+    },
+  });
+  post({ type: 'progress', bench: 'btreeVsBst', done: 2, total: 2 });
+  post({ type: 'done', bench: 'btreeVsBst' });
+}
+
 const RUNNERS: Record<BenchId, () => void> = {
   cacheCliff: runCacheCliff,
   seqVsRand: runSeqVsRand,
@@ -373,6 +537,7 @@ const RUNNERS: Record<BenchId, () => void> = {
   constantFactor: runConstantFactor,
   arrayVsList: runArrayVsList,
   hashProbe: runHashProbe,
+  btreeVsBst: runBtreeVsBst,
 };
 
 self.onmessage = (e: MessageEvent<{ bench: BenchId }>) => {

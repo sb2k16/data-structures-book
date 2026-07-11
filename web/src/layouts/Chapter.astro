@@ -2,6 +2,7 @@
 import Base from './Base.astro';
 import AdSlot from '../components/AdSlot.astro';
 import EmailCapture from '../components/EmailCapture.astro';
+import PracticeOnCodexa from '../components/PracticeOnCodexa.astro';
 import { neighbors, type ChapterMeta } from '../lib/book';
 import type { MarkdownHeading } from 'astro';
 
@@ -58,7 +59,11 @@ const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
         )}
       </nav>
 
-      <div class="mt-14">
+      <div class="mt-10">
+        <PracticeOnCodexa topic={chapter.slug} />
+      </div>
+
+      <div class="mt-8">
         <EmailCapture />
       </div>
     </article>
