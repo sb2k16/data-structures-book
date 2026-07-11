@@ -44,7 +44,15 @@ class RabinKarp {
 private:
     static const int BASE = 256;
     static const int MOD = 1000000007;
-    
+
+    long long recalculateHash(long long oldHash, char oldChar, char newChar, long long power) {
+        long long newHash = (oldHash - oldChar * power) % MOD;
+        newHash = (newHash * BASE + newChar) % MOD;
+        return (newHash + MOD) % MOD;
+    }
+
+public:
+    // Public so demos can display window hashes; it computes, it doesn't mutate.
     long long calculateHash(const string& str, int length) {
         long long hash = 0;
         for (int i = 0; i < length; i++) {
@@ -52,14 +60,7 @@ private:
         }
         return hash;
     }
-    
-    long long recalculateHash(long long oldHash, char oldChar, char newChar, long long power) {
-        long long newHash = (oldHash - oldChar * power) % MOD;
-        newHash = (newHash * BASE + newChar) % MOD;
-        return (newHash + MOD) % MOD;
-    }
-    
-public:
+
     vector<int> search(const string& text, const string& pattern) {
         vector<int> matches;
         int n = text.length();

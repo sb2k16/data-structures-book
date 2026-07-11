@@ -10,6 +10,7 @@
  */
 
 #include <iostream>
+#include <iomanip>
 #include <memory>
 #include <algorithm>
 #include <stdexcept>
@@ -273,6 +274,9 @@ private:
     int value;
     
 public:
+    // Needed because CustomVector's new T[capacity] default-constructs its slots.
+    DemoObject() : value(0) {}
+
     DemoObject(int v) : value(v) {
         cout << "DemoObject(" << value << ") constructed" << endl;
     }

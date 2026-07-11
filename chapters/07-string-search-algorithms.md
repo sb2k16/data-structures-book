@@ -1,120 +1,5 @@
 # Chapter 7: String Search Algorithms
 
-## Table of Contents
-
-- [7.1 Problem Statement & Motivation](#problem-statement-motivation)
-  - [What Problem Do String Search Algorithms Solve?](#what-problem-do-string-search-algorithms-solve)
-  - [When to Use String Search Algorithms](#when-to-use-string-search-algorithms)
-  - [When NOT to Use Advanced String Search](#when-not-to-use-advanced-string-search)
-- [7.2 Conceptual Overview](#conceptual-overview)
-  - [Intuitive Explanation](#intuitive-explanation)
-  - [Key Concepts](#key-concepts)
-  - [Problem Statement](#problem-statement)
-  - [Algorithm Categories](#algorithm-categories)
-- [7.3 Abstract Model & Invariants ⭐ (Mandatory)](#abstract-model-invariants-mandatory)
-  - [Abstract Model](#abstract-model)
-  - [Core Invariants](#core-invariants)
-  - [Algorithm-Specific Invariants](#algorithm-specific-invariants)
-  - [Assumptions](#assumptions)
-- [7.4 Operations & Interface](#operations-interface)
-  - [Behavioral Guarantees](#behavioral-guarantees)
-- [7.5 Time & Space Complexity](#time-space-complexity)
-  - [Time Complexity Comparison](#time-complexity-comparison)
-  - [Space Complexity](#space-complexity)
-  - [Detailed Analysis](#detailed-analysis)
-- [7.6 Pseudocode (Language-Neutral) ⭐ (Mandatory)](#pseudocode-language-neutral-mandatory)
-  - [Generic String Search Pattern](#generic-string-search-pattern)
-  - [Naive String Search](#naive-string-search)
-  - [KMP Algorithm](#kmp-algorithm)
-  - [Boyer-Moore Algorithm (Simplified)](#boyer-moore-algorithm-simplified)
-- [7.7 Implementation (Reference Language: C++) ⭐](#implementation-reference-language-c)
-- [7.8 Correctness Argument](#correctness-argument)
-  - [Invariant Preservation](#invariant-preservation)
-  - [Algorithm-Specific Correctness](#algorithm-specific-correctness)
-  - [Termination Guarantee](#termination-guarantee)
-- [7.9 Edge Cases & Failure Modes](#edge-cases-failure-modes)
-  - [Empty Strings](#empty-strings)
-  - [Pattern Longer Than Text](#pattern-longer-than-text)
-  - [Single Character Cases](#single-character-cases)
-  - [Repeated Characters](#repeated-characters)
-  - [Special Characters](#special-characters)
-  - [Memory Issues](#memory-issues)
-  - [Common Failure Patterns](#common-failure-patterns)
-- [7.10 Performance & System Considerations ⭐ (Differentiator)](#performance-system-considerations-differentiator)
-  - [Cache Locality](#cache-locality)
-  - [Memory Access Optimization](#memory-access-optimization)
-  - [Branch Prediction](#branch-prediction)
-  - [Real-World Performance](#real-world-performance)
-- [7.11 String Search Algorithms (Detailed)](#string-search-algorithms-detailed)
-  - [7.11.1 Naive String Search Algorithm](#1-naive-string-search-algorithm)
-  - [Algorithm Description](#algorithm-description)
-  - [7.2.1 Core Invariants](#1-core-invariants)
-  - [Detailed Example Walkthrough](#detailed-example-walkthrough)
-  - [Visual Representation](#visual-representation)
-  - [Key Observations](#key-observations)
-  - [Time and Space Complexity](#time-and-space-complexity)
-  - [7.11.2 Rabin-Karp Algorithm](#2-rabin-karp-algorithm)
-  - [Algorithm Description](#algorithm-description)
-  - [7.3.1 Core Invariants](#1-core-invariants)
-  - [Detailed Example Walkthrough](#detailed-example-walkthrough)
-  - [Visual Representation](#visual-representation)
-  - [Key Observations](#key-observations)
-  - [Time and Space Complexity](#time-and-space-complexity)
-  - [7.11.3 Knuth-Morris-Pratt (KMP) Algorithm](#3-knuth-morris-pratt-kmp-algorithm)
-  - [Algorithm Description](#algorithm-description)
-  - [7.4.1 Core Invariants](#1-core-invariants)
-  - [Understanding the LPS Array](#understanding-the-lps-array)
-  - [Detailed Example Walkthrough](#detailed-example-walkthrough)
-  - [Visual Representation](#visual-representation)
-  - [Key Observations](#key-observations)
-  - [Time and Space Complexity](#time-and-space-complexity)
-  - [7.11.4 Boyer-Moore Algorithm](#4-boyer-moore-algorithm)
-  - [Algorithm Description](#algorithm-description)
-  - [7.5.1 Core Invariants](#1-core-invariants)
-  - [Understanding the Bad Character Rule](#understanding-the-bad-character-rule)
-  - [Understanding the Good Suffix Rule](#understanding-the-good-suffix-rule)
-  - [Detailed Example Walkthrough](#detailed-example-walkthrough)
-  - [Visual Representation](#visual-representation)
-  - [Key Observations](#key-observations)
-  - [Time and Space Complexity](#time-and-space-complexity)
-  - [7.11.5 Z-Algorithm](#5-z-algorithm)
-  - [Algorithm Description](#algorithm-description)
-  - [Time and Space Complexity](#time-and-space-complexity)
-  - [7.11.6 Aho-Corasick Algorithm](#6-aho-corasick-algorithm)
-  - [Algorithm Description](#algorithm-description)
-  - [Understanding the Trie Construction](#understanding-the-trie-construction)
-  - [Understanding Failure Links (Suffix Links)](#understanding-failure-links-suffix-links)
-  - [Complete Automaton with Failure Links](#complete-automaton-with-failure-links)
-  - [7.7.1 Core Invariants](#1-core-invariants)
-  - [Step-by-Step Example: Searching Text "shers"](#step-by-step-example-searching-text-shers)
-  - [Implementation](#implementation)
-  - [Time and Space Complexity](#time-and-space-complexity)
-- [7.12 Performance Comparison](#performance-comparison)
-  - [Comprehensive Algorithm Comparison Table](#comprehensive-algorithm-comparison-table)
-  - [Detailed Complexity Analysis](#detailed-complexity-analysis)
-  - [Performance Characteristics Summary](#performance-characteristics-summary)
-- [7.13 Choosing the Right String Search Algorithm](#choosing-the-right-string-search-algorithm)
-  - [Decision Factors](#decision-factors)
-  - [Practical Recommendations](#practical-recommendations)
-  - [Real-World Usage](#real-world-usage)
-- [7.14 Concurrency Considerations](#concurrency-considerations)
-  - [7.10.1 Shared-State Invariants](#1-shared-state-invariants)
-  - [7.10.2 Stateless String Search is Embarrassingly Parallel](#2-stateless-string-search-is-embarrassingly-parallel)
-  - [7.10.3 Shared Pattern Preprocessing Must Be Immutable](#3-shared-pattern-preprocessing-must-be-immutable)
-  - [7.10.4 Rolling Hashes Must Avoid Shared Mutable State](#4-rolling-hashes-must-avoid-shared-mutable-state)
-  - [7.10.5 Streaming Inputs Require Boundary Handling Across Chunks](#5-streaming-inputs-require-boundary-handling-across-chunks)
-  - [7.10.6 Practical Recommendations](#6-practical-recommendations)
-- [7.15 Practical Applications and Use Cases](#practical-applications-and-use-cases)
-  - [Detailed Use Cases by Algorithm](#detailed-use-cases-by-algorithm)
-  - [Text Processing](#text-processing)
-  - [DNA Sequence Analysis](#dna-sequence-analysis)
-- [7.16 Real-World Systems](#real-world-systems)
-- [7.17 Key Takeaways](#key-takeaways)
-- [7.18 Exercises](#exercises)
-- [7.19 Summary](#summary)
-
-
-
 ## 7.1 Problem Statement & Motivation
 
 ### What Problem Do String Search Algorithms Solve?
@@ -135,32 +20,7 @@ Finding patterns in text is a fundamental operation in computing:
 
 **The String Search Solution**: Advanced algorithms optimize pattern matching by preprocessing the pattern, skipping impossible positions, and leveraging pattern structure to achieve O(n+m) or even sublinear performance.
 
-### When to Use String Search Algorithms
-
-✅ **Use string search when**:
-- Need to find patterns in text
-- Pattern matching is performance-critical
-- Searching large texts repeatedly
-- Multiple pattern searches needed
-- Real-time search requirements
-
-✅ **Real-world applications**:
-- Text editors (Ctrl+F)
-- Search engines (keyword matching)
-- Virus scanners (signature matching)
-- DNA sequence analysis
-- Log file analysis
-- Network packet inspection
-
-### When NOT to Use Advanced String Search
-
-❌ **Avoid advanced algorithms when**:
-- Text is very small (< 100 characters)
-- Pattern is very short (< 5 characters)
-- Single search operation (preprocessing overhead not worth it)
-- Simple substring search suffices
-
-**Key Trade-off**: Advanced algorithms trade preprocessing time and space for faster search performance.
+Reach for an advanced algorithm when pattern matching is performance-critical, the text is large, or the same pattern (or many patterns) is searched repeatedly — text editors (Ctrl+F), search engines, virus scanners, DNA analysis, log scanning, and network packet inspection all qualify. For very small texts (< 100 characters), very short patterns (< 5 characters), or a single one-off search, a plain substring scan is fine: the preprocessing cost of advanced algorithms is not worth it. The core trade-off is preprocessing time and space in exchange for faster search.
 
 ## 7.2 Conceptual Overview
 
@@ -195,9 +55,7 @@ Given a text string `T` of length `n` and a pattern string `P` of length `m`, fi
 4. **Skip-Based**: Skip impossible positions (Boyer-Moore, O(n/m) best case)
 5. **Suffix-Based**: Preprocess text (Suffix Tree/Array, O(n+m) preprocessing)
 
-## 7.3 Abstract Model & Invariants ⭐ (Mandatory)
-
-**Purpose**: Define correctness independent of implementation.
+## 7.3 Abstract Model & Invariants
 
 ### Abstract Model
 
@@ -277,11 +135,7 @@ For position i, comparison checks:
 4. **Finite Alphabet**: Alphabet size is finite (affects hash-based algorithms)
 5. **Valid Indices**: All array accesses are within bounds
 
-This abstract model provides the intellectual backbone for understanding string search correctness.
-
 ## 7.4 Operations & Interface
-
-**Purpose**: Define what operations are supported.
 
 String search algorithms support the following conceptual operations:
 
@@ -302,8 +156,6 @@ String search algorithms support the following conceptual operations:
 4. **Efficiency**: Time complexity meets algorithm guarantees
 
 ## 7.5 Time & Space Complexity
-
-**Purpose**: Make trade-offs explicit.
 
 ### Time Complexity Comparison
 
@@ -343,189 +195,11 @@ Where:
 **Z-Algorithm**: When Z-array needed, pattern preprocessing
 **Aho-Corasick**: Multiple patterns simultaneously
 
-## 7.6 Pseudocode (Language-Neutral) ⭐ (Mandatory)
+## 7.7 Implementation (Reference Language: C++)
 
-**Purpose**: Bridge theory → implementation.
-
-**Rules**: No language syntax, no pointers/templates, focus on logic only.
-
-### Generic String Search Pattern
-
-```
-FUNCTION search(text, pattern):
-  n ← length of text
-  m ← length of pattern
-  results ← empty list
-  
-  FOR i FROM 0 TO n - m:
-    IF matchAtPosition(text, pattern, i):
-      results.add(i)
-    END IF
-  END FOR
-  
-  RETURN results
-END FUNCTION
-
-FUNCTION matchAtPosition(text, pattern, position):
-  FOR j FROM 0 TO length(pattern) - 1:
-    IF text[position + j] ≠ pattern[j]:
-      RETURN false
-    END IF
-  END FOR
-  RETURN true
-END FUNCTION
-```
-
-### Naive String Search
-
-```
-FUNCTION naiveSearch(text, pattern):
-  n ← length of text
-  m ← length of pattern
-  results ← empty list
-  
-  FOR i FROM 0 TO n - m:
-    match ← true
-    FOR j FROM 0 TO m - 1:
-      IF text[i + j] ≠ pattern[j]:
-        match ← false
-        BREAK
-      END IF
-    END FOR
-    
-    IF match:
-      results.add(i)
-    END IF
-  END FOR
-  
-  RETURN results
-END FUNCTION
-```
-
-### KMP Algorithm
-
-```
-FUNCTION buildLPS(pattern):
-  m ← length of pattern
-  lps ← array of size m, initialized to 0
-  len ← 0
-  i ← 1
-  
-  WHILE i < m:
-    IF pattern[i] = pattern[len]:
-      len ← len + 1
-      lps[i] ← len
-      i ← i + 1
-    ELSE:
-      IF len ≠ 0:
-        len ← lps[len - 1]
-      ELSE:
-        lps[i] ← 0
-        i ← i + 1
-      END IF
-    END IF
-  END WHILE
-  
-  RETURN lps
-END FUNCTION
-
-FUNCTION kmpSearch(text, pattern):
-  n ← length of text
-  m ← length of pattern
-  lps ← buildLPS(pattern)
-  results ← empty list
-  i ← 0  // index for text
-  j ← 0  // index for pattern
-  
-  WHILE i < n:
-    IF text[i] = pattern[j]:
-      i ← i + 1
-      j ← j + 1
-    END IF
-    
-    IF j = m:
-      results.add(i - j)  // match found
-      j ← lps[j - 1]
-    ELSE IF i < n AND text[i] ≠ pattern[j]:
-      IF j ≠ 0:
-        j ← lps[j - 1]
-      ELSE:
-        i ← i + 1
-      END IF
-    END IF
-  END WHILE
-  
-  RETURN results
-END FUNCTION
-```
-
-### Boyer-Moore Algorithm (Simplified)
-
-```
-FUNCTION buildBadCharTable(pattern):
-  m ← length of pattern
-  table ← array of size alphabet_size, initialized to -1
-  
-  FOR i FROM 0 TO m - 1:
-    table[pattern[i]] ← i
-  END FOR
-  
-  RETURN table
-END FUNCTION
-
-FUNCTION boyerMooreSearch(text, pattern):
-  n ← length of text
-  m ← length of pattern
-  badChar ← buildBadCharTable(pattern)
-  results ← empty list
-  shift ← 0
-  
-  WHILE shift ≤ n - m:
-    j ← m - 1
-    
-    WHILE j ≥ 0 AND pattern[j] = text[shift + j]:
-      j ← j - 1
-    END WHILE
-    
-    IF j < 0:
-      results.add(shift)
-      IF shift + m < n:
-        shift ← shift + m - badChar[text[shift + m]]
-      ELSE:
-        shift ← shift + 1
-      END IF
-    ELSE:
-      shift ← shift + max(1, j - badChar[text[shift + j]])
-    END IF
-  END WHILE
-  
-  RETURN results
-END FUNCTION
-```
-
-This pseudocode should be readable by any engineer, regardless of their programming language background.
-
-## 7.7 Implementation (Reference Language: C++) ⭐
-
-**Note to Reader**: This section provides concrete C++ implementations. The correctness relies on the invariants defined in Section 7.3 and the pseudocode in Section 7.6.
-
-Detailed C++ implementations for each algorithm are provided in Section 7.11 (String Search Algorithms - Detailed). Each implementation includes:
-- Complete working code
-- Comments mapping to pseudocode from Section 7.6
-- Edge case handling
-- Performance considerations
-
-See Section 7.11 for:
-- 7.11.1: Naive String Search Implementation
-- 7.11.2: Rabin-Karp Implementation
-- 7.11.3: KMP Implementation
-- 7.11.4: Boyer-Moore Implementation
-- 7.11.5: Z-Algorithm Implementation
-- 7.11.6: Aho-Corasick Implementation
+Complete, compilable C++ implementations for every algorithm covered here — Naive, Rabin-Karp, KMP, Boyer-Moore, the Z-Algorithm, and Aho-Corasick — appear inline in Section 7.11, each paired with its walkthrough, complexity, and edge-case handling. Their correctness rests on the invariants defined in Section 7.3.
 
 ## 7.8 Correctness Argument
-
-**Purpose**: Explain why the implementations work.
 
 ### Invariant Preservation
 
@@ -585,11 +259,7 @@ String search algorithms preserve the core invariants defined in Section 7.3:
 - Each iteration makes progress (either match found or position advanced)
 - Eventually all positions are checked or search completes
 
-This correctness argument provides engineers with confidence that string search implementations work correctly.
-
 ## 7.9 Edge Cases & Failure Modes
-
-**Purpose**: Build defensive thinking.
 
 ### Empty Strings
 
@@ -731,11 +401,7 @@ if (pattern.length() > text.length()) {
 4. **Empty String Handling**: Not handling empty text/pattern
 5. **Unicode Issues**: Incorrect character comparison for multi-byte characters
 
-This section maps directly to production bugs and helps engineers write robust string search code.
-
-## 7.10 Performance & System Considerations ⭐ (Differentiator)
-
-**Purpose**: Connect algorithms to real machines.
+## 7.10 Performance & System Considerations
 
 ### Cache Locality
 
@@ -812,8 +478,6 @@ This section maps directly to production bugs and helps engineers write robust s
 - Fast, predictable performance
 - Good for interactive use
 
-This section connects string search algorithms to real system performance.
-
 ## 7.11 String Search Algorithms (Detailed)
 
 ### 7.11.1 Naive String Search Algorithm
@@ -854,104 +518,7 @@ Let's trace through the naive algorithm with a concrete example:
 
 #### Step-by-Step Execution:
 
-**Step 1: Position 0**
-```
-Text:    ABABCABABDABABCABAB
-Pattern: ABABCABAB
-         ↑
-         Match: A=A ✓, B=B ✓, A=A ✓, B=B ✓, C=C ✓, A=A ✓, B=B ✓, A=A ✓, B=B ✓
-Result: MATCH at position 0
-```
-
-**Step 2: Position 1**
-```
-Text:    ABABCABABDABABCABAB
-Pattern:  ABABCABAB
-          ↑
-          Match: B≠A ✗
-Result: No match
-```
-
-**Step 3: Position 2**
-```
-Text:    ABABCABABDABABCABAB
-Pattern:   ABABCABAB
-           ↑
-           Match: A=A ✓, B=B ✓, A=A ✓, B=B ✓, C≠A ✗
-Result: No match
-```
-
-**Step 4: Position 3**
-```
-Text:    ABABCABABDABABCABAB
-Pattern:    ABABCABAB
-            ↑
-            Match: B≠A ✗
-Result: No match
-```
-
-**Step 5: Position 4**
-```
-Text:    ABABCABABDABABCABAB
-Pattern:     ABABCABAB
-             ↑
-             Match: C≠A ✗
-Result: No match
-```
-
-**Step 6: Position 5**
-```
-Text:    ABABCABABDABABCABAB
-Pattern:      ABABCABAB
-              ↑
-              Match: A=A ✓, B=B ✓, A=A ✓, B=B ✓, C=C ✓, A=A ✓, B=B ✓, A=A ✓, B=B ✓
-Result: MATCH at position 5
-```
-
-**Step 7: Position 6**
-```
-Text:    ABABCABABDABABCABAB
-Pattern:       ABABCABAB
-               ↑
-               Match: B≠A ✗
-Result: No match
-```
-
-**Step 8: Position 7**
-```
-Text:    ABABCABABDABABCABAB
-Pattern:        ABABCABAB
-                ↑
-                Match: A=A ✓, B=B ✓, A=A ✓, B=B ✓, C≠A ✗
-Result: No match
-```
-
-**Step 9: Position 8**
-```
-Text:    ABABCABABDABABCABAB
-Pattern:         ABABCABAB
-                 ↑
-                 Match: B≠A ✗
-Result: No match
-```
-
-**Step 10: Position 9**
-```
-Text:    ABABCABABDABABCABAB
-Pattern:          ABABCABAB
-                  ↑
-                  Match: D≠A ✗
-Result: No match
-```
-
-**Step 11: Position 10**
-```
-Text:    ABABCABABDABABCABAB
-Pattern:           ABABCABAB
-                   ↑
-                   Match: A=A ✓, B=B ✓, A=A ✓, B=B ✓, C=C ✓, A=A ✓, B=B ✓, A=A ✓, B=B ✓
-Result: MATCH at position 10
-```
+At position 0 all nine characters match, giving a match. Position 1 fails immediately (`B≠A`). Position 2 matches four characters before failing at `C≠A`. Continuing this way, the pattern matches again at positions 5 and 10.
 
 **Final Result**: Matches found at positions 0, 5, and 10.
 
@@ -1013,30 +580,6 @@ vector<int> naiveSearch(const string& text, const string& pattern) {
         
         // If we reached the end of pattern, it's a match
         if (j == m) {
-            matches.push_back(i);
-        }
-    }
-    
-    return matches;
-}
-
-// Optimized naive search with early termination
-vector<int> naiveSearchOptimized(const string& text, const string& pattern) {
-    vector<int> matches;
-    int n = text.length();
-    int m = pattern.length();
-    
-    for (int i = 0; i <= n - m; i++) {
-        bool found = true;
-        
-        for (int j = 0; j < m; j++) {
-            if (text[i + j] != pattern[j]) {
-                found = false;
-                break;
-            }
-        }
-        
-        if (found) {
             matches.push_back(i);
         }
     }
@@ -1108,133 +651,7 @@ We'll use a simple hash function: `hash = (c₁ × 10^(m-1) + c₂ × 10^(m-2) +
 
 #### Step-by-Step Execution:
 
-**Step 1: Calculate Pattern Hash**
-```
-Pattern: "26535"
-Hash = (2×10⁴ + 6×10³ + 5×10² + 3×10¹ + 5×10⁰) mod 101
-     = (20000 + 6000 + 500 + 30 + 5) mod 101
-     = 26535 mod 101
-     = 88
-```
-
-**Step 2: Calculate First Window Hash**
-```
-Text: "3141592653589793"
-First window: "31415"
-Hash = (3×10⁴ + 1×10³ + 4×10² + 1×10¹ + 5×10⁰) mod 101
-     = (30000 + 1000 + 400 + 10 + 5) mod 101
-     = 31415 mod 101
-     = 12
-```
-
-**Step 3: Compare Hashes**
-```
-Pattern hash: 88
-First window hash: 12
-88 ≠ 12 → No match
-```
-
-**Step 4: Slide Window and Update Hash**
-```
-Old window: "31415"
-New window: "14159"
-
-Rolling hash update:
-- Remove leftmost digit: 3 × 10⁴ = 30000
-- Add new rightmost digit: 9
-- New hash = (31415 - 30000 + 9) mod 101
-           = 1424 mod 101
-           = 8
-
-Text: "3141592653589793"
-Window:  "14159"
-Hash: 8 ≠ 88 → No match
-```
-
-**Step 5: Continue Sliding**
-```
-Window: "41592"
-Hash = (8 - 1×10⁴ + 2) mod 101
-     = (8 - 10000 + 2) mod 101
-     = -9990 mod 101
-     = 88
-
-Text: "3141592653589793"
-Window:  "41592"
-Hash: 88 = 88 → Potential match!
-
-Verify character by character:
-"41592" vs "26535"
-4≠2, 1≠6, 5≠5, 9≠3, 2≠5 → No match
-```
-
-**Step 6: Continue Sliding**
-```
-Window: "15926"
-Hash = (88 - 4×10⁴ + 6) mod 101
-     = (88 - 40000 + 6) mod 101
-     = -39906 mod 101
-     = 88
-
-Text: "3141592653589793"
-Window:  "15926"
-Hash: 88 = 88 → Potential match!
-
-Verify character by character:
-"15926" vs "26535"
-1≠2, 5≠6, 9≠5, 2≠3, 6≠5 → No match
-```
-
-**Step 7: Continue Sliding**
-```
-Window: "59265"
-Hash = (88 - 1×10⁴ + 5) mod 101
-     = (88 - 10000 + 5) mod 101
-     = -9907 mod 101
-     = 88
-
-Text: "3141592653589793"
-Window:  "59265"
-Hash: 88 = 88 → Potential match!
-
-Verify character by character:
-"59265" vs "26535"
-5≠2, 9≠6, 2≠5, 6≠3, 5≠5 → No match
-```
-
-**Step 8: Continue Sliding**
-```
-Window: "92653"
-Hash = (88 - 5×10⁴ + 3) mod 101
-     = (88 - 50000 + 3) mod 101
-     = -49909 mod 101
-     = 88
-
-Text: "3141592653589793"
-Window:  "92653"
-Hash: 88 = 88 → Potential match!
-
-Verify character by character:
-"92653" vs "26535"
-9≠2, 2≠6, 6≠5, 5≠3, 3≠5 → No match
-```
-
-**Step 9: Continue Sliding**
-```
-Window: "26535"
-Hash = (88 - 9×10⁴ + 5) mod 101
-     = (88 - 90000 + 5) mod 101
-     = -89907 mod 101
-     = 88
-
-Text: "3141592653589793"
-Window:  "26535"
-Hash: 88 = 88 → Potential match!
-
-Verify character by character:
-"26535" vs "26535"
-2=2, 6=6, 5=5, 3=3, 5=5 → MATCH!
-```
+The pattern hash is `26535 mod 101 = 88`. The first window `"31415"` hashes to `12` — no match. Sliding the window updates the hash in O(1): subtract the leftmost digit's contribution, multiply through by the base, and fold in the new rightmost digit. Several later windows collide on hash `88` but fail character-by-character verification — a hash match is necessary, not sufficient. The window `"26535"` finally matches on both hash and verification.
 
 **Final Result**: Match found at position 5.
 
@@ -1277,72 +694,15 @@ Step 7:  3 1 4 1 5 9 [2 6 5 3 5] 8 9 7 9 3
 ```cpp
 #include <string>
 #include <vector>
-#include <cmath>
 using namespace std;
 
 class RabinKarp {
 private:
-    static const int BASE = 256;  // Base for hash calculation
-    static const int MOD = 101;   // Modulo to prevent overflow
-    
-    // Calculate hash value for a string
-    long long calculateHash(const string& str, int length) {
-        long long hash = 0;
-        for (int i = 0; i < length; i++) {
-            hash = (hash * BASE + str[i]) % MOD;
-        }
-        return hash;
-    }
-    
-    // Calculate hash for next window using rolling hash
-    long long recalculateHash(long long oldHash, char oldChar, char newChar, int patternLength) {
-        long long newHash = (oldHash - oldChar * pow(BASE, patternLength - 1)) % MOD;
-        newHash = (newHash * BASE + newChar) % MOD;
-        return (newHash + MOD) % MOD;  // Ensure positive
-    }
-    
-public:
-    vector<int> search(const string& text, const string& pattern) {
-        vector<int> matches;
-        int n = text.length();
-        int m = pattern.length();
-        
-        if (m == 0 || m > n) {
-            return matches;
-        }
-        
-        // Calculate hash of pattern and first window
-        long long patternHash = calculateHash(pattern, m);
-        long long textHash = calculateHash(text, m);
-        
-        // Check first window
-        if (patternHash == textHash && text.substr(0, m) == pattern) {
-            matches.push_back(0);
-        }
-        
-        // Slide the window
-        for (int i = 1; i <= n - m; i++) {
-            // Calculate hash for current window
-            textHash = recalculateHash(textHash, text[i - 1], text[i + m - 1], m);
-            
-            // If hashes match, verify character by character
-            if (patternHash == textHash && text.substr(i, m) == pattern) {
-                matches.push_back(i);
-            }
-        }
-        
-        return matches;
-    }
-};
+    static const int BASE = 256;        // Alphabet size
+    static const int MOD  = 1000000007; // Large prime keeps collisions rare
 
-// Optimized Rabin-Karp with better hash function
-class OptimizedRabinKarp {
-private:
-    static const int BASE = 256;
-    static const int MOD = 1000000007;  // Large prime number
-    
-    long long power;
-    
+    long long power;  // BASE^(m-1) mod MOD, precomputed for the rolling update
+
     long long calculateHash(const string& str, int length) {
         long long hash = 0;
         for (int i = 0; i < length; i++) {
@@ -1350,44 +710,44 @@ private:
         }
         return hash;
     }
-    
+
+    // Roll the window: drop oldChar's contribution, fold in newChar. O(1).
     long long recalculateHash(long long oldHash, char oldChar, char newChar) {
-        long long newHash = (oldHash - oldChar * power) % MOD;
+        long long newHash = (oldHash - oldChar * power % MOD + MOD) % MOD;
         newHash = (newHash * BASE + newChar) % MOD;
-        return (newHash + MOD) % MOD;
+        return newHash;
     }
-    
+
 public:
     vector<int> search(const string& text, const string& pattern) {
         vector<int> matches;
         int n = text.length();
         int m = pattern.length();
-        
         if (m == 0 || m > n) {
             return matches;
         }
-        
-        // Precompute power for rolling hash
+
+        // Precompute BASE^(m-1) mod MOD modularly (never floating-point pow)
         power = 1;
         for (int i = 0; i < m - 1; i++) {
             power = (power * BASE) % MOD;
         }
-        
+
         long long patternHash = calculateHash(pattern, m);
-        long long textHash = calculateHash(text, m);
-        
-        if (patternHash == textHash && text.substr(0, m) == pattern) {
+        long long textHash    = calculateHash(text, m);
+
+        // Verify on hash hit to guard against collisions
+        if (patternHash == textHash && text.compare(0, m, pattern) == 0) {
             matches.push_back(0);
         }
-        
+
         for (int i = 1; i <= n - m; i++) {
             textHash = recalculateHash(textHash, text[i - 1], text[i + m - 1]);
-            
-            if (patternHash == textHash && text.substr(i, m) == pattern) {
+            if (patternHash == textHash && text.compare(i, m, pattern) == 0) {
                 matches.push_back(i);
             }
         }
-        
+
         return matches;
     }
 };
@@ -1441,59 +801,9 @@ Index:   0 1 2 3 4 5 6 7 8
 LPS:     0 0 1 2 0 1 2 3 4
 ```
 
-#### LPS Array Construction:
+#### LPS Array Construction
 
-**Position 0**: `"A"`
-- No proper prefix (prefix must be shorter than the string)
-- LPS[0] = 0
-
-**Position 1**: `"AB"`
-- Proper prefixes: `"A"`
-- Proper suffixes: `"B"`
-- No common prefix and suffix
-- LPS[1] = 0
-
-**Position 2**: `"ABA"`
-- Proper prefixes: `"A"`, `"AB"`
-- Proper suffixes: `"A"`, `"BA"`
-- Longest common: `"A"` (length 1)
-- LPS[2] = 1
-
-**Position 3**: `"ABAB"`
-- Proper prefixes: `"A"`, `"AB"`, `"ABA"`
-- Proper suffixes: `"B"`, `"AB"`, `"BAB"`
-- Longest common: `"AB"` (length 2)
-- LPS[3] = 2
-
-**Position 4**: `"ABABC"`
-- Proper prefixes: `"A"`, `"AB"`, `"ABA"`, `"ABAB"`
-- Proper suffixes: `"C"`, `"BC"`, `"ABC"`, `"BABC"`
-- No common prefix and suffix
-- LPS[4] = 0
-
-**Position 5**: `"ABABCA"`
-- Proper prefixes: `"A"`, `"AB"`, `"ABA"`, `"ABAB"`, `"ABABC"`
-- Proper suffixes: `"A"`, `"CA"`, `"BCA"`, `"ABCA"`, `"BABCA"`
-- Longest common: `"A"` (length 1)
-- LPS[5] = 1
-
-**Position 6**: `"ABABCAB"`
-- Proper prefixes: `"A"`, `"AB"`, `"ABA"`, `"ABAB"`, `"ABABC"`, `"ABABCA"`
-- Proper suffixes: `"B"`, `"AB"`, `"CAB"`, `"BCAB"`, `"ABCAB"`, `"BABCAB"`
-- Longest common: `"AB"` (length 2)
-- LPS[6] = 2
-
-**Position 7**: `"ABABCABA"`
-- Proper prefixes: `"A"`, `"AB"`, `"ABA"`, `"ABAB"`, `"ABABC"`, `"ABABCA"`, `"ABABCAB"`
-- Proper suffixes: `"A"`, `"BA"`, `"ABA"`, `"CABA"`, `"BCABA"`, `"ABCABA"`, `"BABCABA"`
-- Longest common: `"ABA"` (length 3)
-- LPS[7] = 3
-
-**Position 8**: `"ABABCABAB"`
-- Proper prefixes: `"A"`, `"AB"`, `"ABA"`, `"ABAB"`, `"ABABC"`, `"ABABCA"`, `"ABABCAB"`, `"ABABCABA"`
-- Proper suffixes: `"B"`, `"AB"`, `"BAB"`, `"ABAB"`, `"CABAB"`, `"BCABAB"`, `"ABCABAB"`, `"BABCABAB"`
-- Longest common: `"ABAB"` (length 4)
-- LPS[8] = 4
+Each entry `LPS[i]` is the length of the longest proper prefix of `pattern[0..i]` that is also a suffix. Working left to right: `A`→0 and `AB`→0 (no prefix equals a suffix); `ABA`→1 (`A`); `ABAB`→2 (`AB`); `ABABC`→0 (the `C` breaks the run); then `ABABCA`→1, `ABABCAB`→2, `ABABCABA`→3, and `ABABCABAB`→4 as the `ABAB` prefix re-accumulates. These values are exactly the fallback positions the search uses on a mismatch.
 
 ### Detailed Example Walkthrough
 
@@ -1504,261 +814,7 @@ Let's trace through the KMP algorithm with a concrete example:
 
 #### Step-by-Step Execution:
 
-**Step 1: Initialize**
-```
-Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
-Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern: A B A B C A B A B
-LPS:     0 0 1 2 0 1 2 3 4
-i=0, j=0
-```
-
-**Step 2: First Character Match**
-```
-Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
-Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern: A B A B C A B A B
-         ↑
-i=0, j=0: A=A ✓
-i=1, j=1
-```
-
-**Step 3: Second Character Match**
-```
-Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
-Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern: A B A B C A B A B
-           ↑
-i=1, j=1: B=B ✓
-i=2, j=2
-```
-
-**Step 4: Third Character Match**
-```
-Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
-Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern: A B A B C A B A B
-             ↑
-i=2, j=2: A=A ✓
-i=3, j=3
-```
-
-**Step 5: Fourth Character Match**
-```
-Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
-Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern: A B A B C A B A B
-               ↑
-i=3, j=3: B=B ✓
-i=4, j=4
-```
-
-**Step 6: Mismatch - Use LPS Array**
-```
-Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
-Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern: A B A B C A B A B
-                 ↑
-i=4, j=4: D≠C ✗
-
-Mismatch at j=4, LPS[4-1] = LPS[3] = 2
-Move pattern to align with the longest proper prefix that is also a suffix
-j = LPS[3] = 2
-```
-
-**Step 7: Continue from j=2**
-```
-Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
-Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern:     A B A B C A B A B
-               ↑
-i=4, j=2: D≠A ✗
-
-Mismatch at j=2, LPS[2-1] = LPS[1] = 0
-j = LPS[1] = 0
-```
-
-**Step 8: Continue from j=0**
-```
-Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
-Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern:       A B A B C A B A B
-               ↑
-i=4, j=0: D≠A ✗
-
-j=0, so move to next character in text
-i=5, j=0
-```
-
-**Step 9: New Starting Position**
-```
-Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
-Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern:         A B A B C A B A B
-                 ↑
-i=5, j=0: A=A ✓
-i=6, j=1
-```
-
-**Step 10: Continue Matching**
-```
-Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
-Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern:         A B A B C A B A B
-                   ↑
-i=6, j=1: B=B ✓
-i=7, j=2
-```
-
-**Step 11: Continue Matching**
-```
-Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
-Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern:         A B A B C A B A B
-                     ↑
-i=7, j=2: A=A ✓
-i=8, j=3
-```
-
-**Step 12: Continue Matching**
-```
-Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
-Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern:         A B A B C A B A B
-                       ↑
-i=8, j=3: C≠B ✗
-
-Mismatch at j=3, LPS[3-1] = LPS[2] = 1
-j = LPS[2] = 1
-Pattern shifts: pattern[1] now aligns with text[8]
-```
-
-**Step 13: Continue from j=1**
-```
-Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
-Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern:           A B A B C  A  B  A  B
-                     ↑
-i=8, j=1: C≠B ✗
-
-Mismatch at j=1, LPS[1-1] = LPS[0] = 0
-j = LPS[0] = 0
-Pattern shifts: pattern[0] now aligns with text[8]
-```
-
-**Step 14: Continue from j=0**
-```
-Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
-Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern:             A B A B  C  A  B  A  B
-                     ↑
-i=8, j=0: C≠A ✗
-
-j=0, so move to next character in text
-i=9, j=0
-```
-
-**Step 15: New Starting Position**
-```
-Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
-Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern:              A B A B  C  A  B  A  B
-                      ↑
-i=9, j=0: D≠A ✗
-
-j=0, so move to next character in text
-i=10, j=0
-```
-
-**Step 16: New Starting Position**
-```
-Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
-Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern:                      A  B  A  B  C  A  B  A  B
-                              ↑
-i=10, j=0: A=A ✓
-i=11, j=1
-```
-
-**Step 17: Continue Matching**
-```
-Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
-Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern:                      A  B  A  B  C  A  B  A  B
-                                ↑
-i=11, j=1: B=B ✓
-i=12, j=2
-```
-
-**Step 18: Continue Matching**
-```
-Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
-Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern:                      A  B  A  B  C  A  B  A  B
-                                  ↑
-i=12, j=2: A=A ✓
-i=13, j=3
-```
-
-**Step 19: Continue Matching**
-```
-Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
-Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern:                      A  B  A  B  C  A  B  A  B
-                                    ↑
-i=13, j=3: B=B ✓
-i=14, j=4
-```
-
-**Step 20: Continue Matching**
-```
-Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
-Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern:                      A  B  A  B  C  A  B  A  B
-                                      ↑
-i=14, j=4: C=C ✓
-i=15, j=5
-```
-
-**Step 21: Continue Matching**
-```
-Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
-Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern:                      A  B  A  B  C  A  B  A  B
-                                        ↑
-i=15, j=5: A=A ✓
-i=16, j=6
-```
-
-**Step 22: Continue Matching**
-```
-Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
-Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern:                      A  B  A  B  C  A  B  A  B
-                                          ↑
-i=16, j=6: B=B ✓
-i=17, j=7
-```
-
-**Step 23: Continue Matching**
-```
-Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
-Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern:                      A  B  A  B  C  A  B  A  B
-                                            ↑
-i=17, j=7: A=A ✓
-i=18, j=8
-```
-
-**Step 24: Continue Matching**
-```
-Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
-Text:    A B A B D A B A C D  A  B  A  B  C  A  B  A  B
-Pattern:                      A  B  A  B  C  A  B  A  B
-                                              ↑
-i=18, j=8: B=B ✓
-j=8 (pattern length), so we found a match!
-```
+Starting at `i=0, j=0`, the pattern matches `ABAB` (through `i=4, j=4`) before hitting `D≠C`. Rather than restart, KMP consults `LPS[3]=2` and resets `j=2`, leaving the text pointer `i` fixed — the already-matched `AB` prefix is reused. `D` still fails against `pattern[2]` and then `pattern[0]`, so `i` advances. The scan realigns at `i=10`, where all nine characters match. Crucially, `i` never moves backward.
 
 **Final Result**: Match found at position 10.
 
@@ -1864,40 +920,6 @@ public:
         vector<int> matches = search(text, pattern);
         return matches.size();
     }
-    
-    // Find all overlapping occurrences
-    vector<int> findAllOccurrences(const string& text, const string& pattern) {
-        vector<int> matches;
-        int n = text.length();
-        int m = pattern.length();
-        
-        if (m == 0) {
-            return matches;
-        }
-        
-        vector<int> lps = buildLPS(pattern);
-        int i = 0, j = 0;
-        
-        while (i < n) {
-            if (pattern[j] == text[i]) {
-                i++;
-                j++;
-            }
-            
-            if (j == m) {
-                matches.push_back(i - j);
-                j = lps[j - 1];  // Continue searching for overlapping matches
-            } else if (i < n && pattern[j] != text[i]) {
-                if (j != 0) {
-                    j = lps[j - 1];
-                } else {
-                    i++;
-                }
-            }
-        }
-        
-        return matches;
-    }
 };
 ```
 
@@ -1981,121 +1003,7 @@ Let's trace through the Boyer-Moore algorithm with a concrete example:
 
 #### Step-by-Step Execution:
 
-**Step 1: Initialize**
-```
-Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17
-Text:    G C A A T G C C T A  T  G  T  G  A  C  C
-Pattern: T A T G T G
-Bad Char Table: T=4, A=1, G=5
-i=0, j=5 (start comparing from rightmost character)
-```
-
-**Step 2: Compare from Right to Left**
-```
-Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17
-Text:    G C A A T G C C T A  T  G  T  G  A  C  C
-Pattern: T A T G T G
-                             ↑
-i=0, j=5: text[5]='G', pattern[5]='G' ✓ Match
-Continue to j=4
-```
-
-**Step 3: Continue Comparison**
-```
-Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17
-Text:    G C A A T G C C T A  T  G  T  G  A  C  C
-Pattern: T A T G T G
-                         ↑
-i=0, j=4: text[4]='T', pattern[4]='T' ✓ Match
-Continue to j=3
-```
-
-**Step 4: Continue Comparison - Mismatch Found**
-```
-Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17
-Text:    G C A A T G C C T A  T  G  T  G  A  C  C
-Pattern: T A T G T G
-                     ↑
-i=0, j=3: text[3]='A', pattern[3]='G' ✗ Mismatch
-
-Mismatch at j=3, character 'A' in text
-Bad Character Rule: Shift by max(1, j - badChar['A'])
-Shift = max(1, 3 - 1) = max(1, 2) = 2
-i = i + 2 = 2
-```
-
-**Step 5: New Position**
-```
-Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17
-Text:    G C A A T G C C T A  T  G  T  G  A  C  C
-Pattern:     T A T G T G
-             ↑
-i=2, j=5: text[7]='C', pattern[5]='G' ✗ Mismatch
-
-Mismatch at j=5, character 'C' in text
-Bad Character Rule: 'C' not in pattern, shift by j+1 = 6
-i = i + 6 = 8
-```
-
-**Step 6: New Position**
-```
-Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17
-Text:    G C A A T G C C T A  T  G  T  G  A  C  C
-Pattern:           T A T G T G
-                   ↑
-i=8, j=5: text[13]='G', pattern[5]='G' ✓ Match
-Continue to j=4
-```
-
-**Step 7: Continue Comparison**
-```
-Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17
-Text:    G C A A T G C C T A  T  G  T  G  A  C  C
-Pattern:           T A T G T G
-                       ↑
-i=8, j=4: text[12]='T', pattern[4]='T' ✓ Match
-Continue to j=3
-```
-
-**Step 8: Continue Comparison**
-```
-Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17
-Text:    G C A A T G C C T A  T  G  T  G  A  C  C
-Pattern:           T A T G T G
-                   ↑
-i=8, j=3: text[11]='G', pattern[3]='G' ✓ Match
-Continue to j=2
-```
-
-**Step 9: Continue Comparison**
-```
-Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17
-Text:    G C A A T G C C T A  T  G  T  G  A  C  C
-Pattern:           T A T G T G
-                 ↑
-i=8, j=2: text[10]='T', pattern[2]='T' ✓ Match
-Continue to j=1
-```
-
-**Step 10: Continue Comparison**
-```
-Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17
-Text:    G C A A T G C C T A  T  G  T  G  A  C  C
-Pattern:           T A T G T G
-               ↑
-i=8, j=1: text[9]='A', pattern[1]='A' ✓ Match
-Continue to j=0
-```
-
-**Step 11: Complete Match**
-```
-Index:   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17
-Text:    G C A A T G C C T A  T  G  T  G  A  C  C
-Pattern:           T A T G T G
-             ↑
-i=8, j=0: text[8]='T', pattern[0]='T' ✓ Match
-All characters matched! Pattern found at position 8.
-```
+Comparison runs right-to-left. At `i=0` the last two characters (`G`, `T`) match before `text[3]='A'` mismatches `pattern[3]='G'`; the bad-character rule shifts by `max(1, 3 - badChar['A']) = 2`. At the next alignment `text[7]='C'` mismatches and, since `C` is absent from the pattern, the whole pattern jumps past it. The alignment at `i=8` then matches all six characters right-to-left.
 
 **Final Result**: Match found at position 8.
 
@@ -2114,116 +1022,43 @@ The algorithm successfully finds the pattern "TATGTG" at position 8 in the text 
 ```cpp
 class BoyerMoore {
 private:
-    // Bad Character Rule: create a table of the rightmost occurrence of each character
+    // Bad Character Rule: last index at which each byte occurs in the pattern
     vector<int> buildBadCharTable(const string& pattern) {
         vector<int> badChar(256, -1);
-        int m = pattern.length();
-        
-        for (int i = 0; i < m; i++) {
-            badChar[pattern[i]] = i;
+        for (int i = 0; i < (int)pattern.length(); i++) {
+            badChar[(unsigned char)pattern[i]] = i;  // cast avoids negative index on non-ASCII
         }
-        
         return badChar;
     }
-    
-    // Good Suffix Rule: create suffix array
-    vector<int> buildSuffixArray(const string& pattern) {
-        int m = pattern.length();
-        vector<int> suffix(m, 0);
-        vector<int> border(m, 0);
-        
-        // Find borders
-        int i = m, j = m + 1;
-        border[i] = j;
-        
-        while (i > 0) {
-            while (j <= m && pattern[i - 1] != pattern[j - 1]) {
-                if (suffix[j] == 0) {
-                    suffix[j] = j - i;
-                }
-                j = border[j];
-            }
-            i--;
-            j--;
-            border[i] = j;
-        }
-        
-        // Fill remaining entries
-        j = border[0];
-        for (i = 0; i <= m; i++) {
-            if (suffix[i] == 0) {
-                suffix[i] = j;
-            }
-            if (i == j) {
-                j = border[j];
-            }
-        }
-        
-        return suffix;
-    }
-    
+
 public:
+    // Boyer-Moore with the bad-character heuristic. The good-suffix rule can be
+    // layered on for a guaranteed better worst case; it is omitted here for clarity.
     vector<int> search(const string& text, const string& pattern) {
         vector<int> matches;
         int n = text.length();
         int m = pattern.length();
-        
-        if (m == 0) {
+        if (m == 0 || m > n) {
             return matches;
         }
-        
+
         vector<int> badChar = buildBadCharTable(pattern);
-        vector<int> suffix = buildSuffixArray(pattern);
-        
-        int s = 0;  // Shift of pattern with respect to text
-        
+        int s = 0;  // Alignment of the pattern against the text
+
         while (s <= n - m) {
             int j = m - 1;
-            
-            // Keep reducing index j while characters match
             while (j >= 0 && pattern[j] == text[s + j]) {
                 j--;
             }
-            
+
             if (j < 0) {
                 matches.push_back(s);
-                s += (s + m < n) ? m - badChar[text[s + m]] : 1;
+                s += (s + m < n) ? m - badChar[(unsigned char)text[s + m]] : 1;
             } else {
-                s += max(1, j - badChar[text[s + j]]);
+                s += max(1, j - badChar[(unsigned char)text[s + j]]);
             }
         }
-        
-        return matches;
-    }
-    
-    // Simplified Boyer-Moore with only Bad Character Rule
-    vector<int> searchSimple(const string& text, const string& pattern) {
-        vector<int> matches;
-        int n = text.length();
-        int m = pattern.length();
-        
-        if (m == 0) {
-            return matches;
-        }
-        
-        vector<int> badChar = buildBadCharTable(pattern);
-        int s = 0;
-        
-        while (s <= n - m) {
-            int j = m - 1;
-            
-            while (j >= 0 && pattern[j] == text[s + j]) {
-                j--;
-            }
-            
-            if (j < 0) {
-                matches.push_back(s);
-                s += (s + m < n) ? m - badChar[text[s + m]] : 1;
-            } else {
-                s += max(1, j - badChar[text[s + j]]);
-            }
-        }
-        
+
         return matches;
     }
 };
@@ -2687,8 +1522,6 @@ public:
   - z = number of matches found
 - **Space Complexity**: O(m) for the automaton
 
-**Key Insight**: The algorithm processes the text in a single pass, and with proper output link optimization, each match is found in O(1) time, leading to the O(n + m + z) complexity.
-
 ## 7.12 Performance Comparison
 
 ### Comprehensive Algorithm Comparison Table
@@ -2967,148 +1800,14 @@ void processChunks(const string& text, const string& pattern,
 
 ### Detailed Use Cases by Algorithm
 
-#### Naive String Search
+The comparison table in Section 7.12 and the decision guide in Section 7.13 cover selection; these notes highlight where each algorithm is deployed in practice.
 
-**When to Use**:
-- **Teaching and Learning**: Simplest algorithm to understand string search concepts
-- **Small Inputs**: When text length < 1000 characters and pattern < 10 characters
-- **Single Search**: When you only need to search once (preprocessing overhead not worth it)
-- **Prototyping**: Quick implementation for testing
-
-**Real-World Examples**:
-- Simple text editors for small documents
-- Basic search functionality in small applications
-- Educational purposes and algorithm demonstrations
-
-**Limitations**:
-- Not suitable for large texts or repeated searches
-- Performance degrades significantly with longer patterns
-
-#### Rabin-Karp Algorithm
-
-**When to Use**:
-- **Multiple Pattern Search**: Searching for multiple patterns simultaneously
-- **Streaming/Online Search**: When text arrives in chunks or streams
-- **Plagiarism Detection**: Comparing documents for similar content
-- **Rolling Hash Applications**: When you need to compute hashes for sliding windows
-
-**Real-World Examples**:
-- **Plagiarism Detection Systems**: Compare documents for similar passages
-- **File Deduplication**: Find duplicate files by content hashing
-- **Network Packet Inspection**: Search for patterns in network traffic
-- **DNA Sequence Comparison**: Find similar subsequences in genetic data
-
-**Advantages**:
-- Efficient for multiple patterns
-- Can handle streaming input
-- Simple to implement
-- Good average-case performance
-
-**Limitations**:
-- Hash collisions can degrade to O(n*m)
-- Requires good hash function
-- Not as fast as Boyer-Moore for single pattern
-
-#### KMP (Knuth-Morris-Pratt) Algorithm
-
-**When to Use**:
-- **Single Pattern, Repeated Searches**: Preprocess once, search many times
-- **General-Purpose Search**: Reliable performance for most cases
-- **DNA Sequence Matching**: Finding patterns in genetic sequences
-- **Text Editors**: Search functionality (Ctrl+F)
-
-**Real-World Examples**:
-- **Text Editors**: Sublime Text, VS Code search functionality
-- **DNA Sequence Analysis**: Finding gene sequences in genomes
-- **Log Analysis**: Searching log files for specific patterns
-- **Code Search**: Finding function/class names in codebases (GitHub, Sourcegraph)
-
-**Advantages**:
-- Guaranteed O(n+m) worst-case performance
-- No performance degradation
-- Good for repeated searches
-- Works well with patterns containing repeated substrings
-
-**Limitations**:
-- Requires O(m) preprocessing space
-- Not as fast as Boyer-Moore for large alphabets
-- More complex than Naive algorithm
-
-#### Boyer-Moore Algorithm
-
-**When to Use**:
-- **Large Texts**: Text length > 1 million characters
-- **Long Patterns**: Pattern length > 100 characters
-- **Large Alphabets**: Text with many distinct characters (Unicode, natural language)
-- **Production Systems**: High-performance search requirements
-
-**Real-World Examples**:
-- **`grep` and `ripgrep`**: Command-line text search tools
-- **Search Engines**: Indexing and searching large document collections
-- **Database Systems**: Full-text search in databases
-- **Code Search Tools**: `ag` (The Silver Searcher), `rg` (ripgrep)
-- **Text Processing Pipelines**: Log analysis, data mining
-
-**Advantages**:
-- Often fastest in practice (sublinear average case)
-- Excellent for large alphabets
-- Used in production systems
-- Can skip many characters in best case
-
-**Limitations**:
-- Worst case can degrade to O(n*m) for small alphabets
-- More complex implementation
-- Requires O(m) preprocessing space
-
-#### Z-Algorithm
-
-**When to Use**:
-- **Pattern Preprocessing**: When you need the Z-array for other operations
-- **Finding All Occurrences**: Efficiently finding all pattern matches
-- **String Periodicity**: Detecting periodic patterns in strings
-- **Prefix Matching**: Finding longest common prefix
-
-**Real-World Examples**:
-- **String Matching Libraries**: Used internally in some search libraries
-- **Pattern Analysis**: Analyzing string patterns and periodicity
-- **Algorithm Competitions**: Competitive programming problems
-
-**Advantages**:
-- Guaranteed O(n+m) performance
-- Useful for string analysis
-- Can find all occurrences efficiently
-
-**Limitations**:
-- Higher space complexity O(n+m)
-- Less commonly used than KMP or Boyer-Moore
-- Specialized use cases
-
-#### Aho-Corasick Algorithm
-
-**When to Use**:
-- **Multiple Patterns Simultaneously**: Searching for hundreds or thousands of patterns
-- **Intrusion Detection**: Network security systems detecting attack patterns
-- **Virus Scanners**: Searching for virus signatures in files
-- **Keyword Filtering**: Content moderation, spam detection
-- **Bioinformatics**: Finding multiple gene sequences
-
-**Real-World Examples**:
-- **Intrusion Detection Systems (IDS)**: Snort, Suricata detecting attack patterns
-- **Antivirus Software**: Scanning files for virus signatures
-- **Content Moderation**: Filtering inappropriate content
-- **Search Engines**: Multi-keyword search in documents
-- **DNA Analysis**: Finding multiple gene sequences in genomes
-
-**Advantages**:
-- Optimal for multiple pattern search
-- Single pass through text
-- Efficient preprocessing
-- Used in production security systems
-
-**Limitations**:
-- More complex implementation
-- Requires O(m) space for automaton
-- Overkill for single pattern search
+- **Naive** — teaching, prototyping, and small one-off searches (short text and pattern).
+- **Rabin-Karp** — multiple-pattern and streaming search where a rolling hash helps: plagiarism detection, file deduplication, network packet inspection. Watch for collision-driven O(n·m) worst cases.
+- **KMP** — a single pattern searched repeatedly under a guaranteed O(n+m) bound: editor find, log scanning, code search, DNA matching.
+- **Boyer-Moore** — large texts and large alphabets where its sublinear average case shines: `grep`, `ripgrep`, `ag`, full-text and database search.
+- **Z-Algorithm** — when the Z-array itself is useful (periodicity, longest common prefix, competitive programming), at O(n+m) space.
+- **Aho-Corasick** — hundreds or thousands of patterns matched in one pass: intrusion detection (Snort, Suricata), virus scanners, content moderation.
 
 ### Text Processing
 ```cpp

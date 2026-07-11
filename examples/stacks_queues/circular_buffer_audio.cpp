@@ -10,7 +10,7 @@ class AudioBuffer {
 private:
     vector<int16_t> buffer;  // 16-bit audio samples
     int front, rear, size, capacity;
-    mutex mtx;
+    mutable mutex mtx;  // mutable so const observers (getBufferLevel) can lock
     
 public:
     AudioBuffer(int cap) : capacity(cap), front(0), rear(-1), size(0) {

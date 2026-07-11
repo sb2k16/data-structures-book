@@ -1,117 +1,5 @@
 # Chapter 11: Graphs
 
-## Table of Contents
-
-- [11.1 Problem Statement & Motivation](#problem-statement-motivation)
-  - [What Problem Do Graphs Solve?](#what-problem-do-graphs-solve)
-  - [When to Use Graphs](#when-to-use-graphs)
-  - [When NOT to Use Graphs](#when-not-to-use-graphs)
-- [11.2 Conceptual Overview](#conceptual-overview)
-  - [Intuitive Explanation](#intuitive-explanation)
-  - [Key Characteristics](#key-characteristics)
-  - [Graph vs. Trees](#graph-vs-trees)
-  - [11.1.1 Core Invariants](#1-core-invariants)
-- [11.3 Abstract Model & Invariants ⭐](#abstract-model-invariants)
-  - [Abstract Model](#abstract-model)
-  - [Core Invariants](#core-invariants)
-  - [How Operations Preserve Invariants](#how-operations-preserve-invariants)
-- [11.4 Operations & Interface](#operations-interface)
-  - [Behavioral Guarantees](#behavioral-guarantees)
-- [11.5 Time & Space Complexity](#time-space-complexity)
-  - [Graph Representation Complexity](#graph-representation-complexity)
-  - [Graph Algorithm Complexity](#graph-algorithm-complexity)
-- [11.6 Pseudocode (Language-Neutral) ⭐](#pseudocode-language-neutral)
-  - [Graph Representation (Abstract)](#graph-representation-abstract)
-  - [Depth-First Search (DFS)](#depth-first-search-dfs)
-  - [Breadth-First Search (BFS)](#breadth-first-search-bfs)
-  - [Dijkstra's Shortest Path](#dijkstras-shortest-path)
-  - [Kruskal's MST](#kruskals-mst)
-  - [Topological Sort (Kahn's Algorithm)](#topological-sort-kahns-algorithm)
-- [11.7 Graph Terminology and Types](#graph-terminology-and-types)
-  - [Basic Terms](#basic-terms)
-  - [Graph Types](#graph-types)
-- [11.3 Graph Representations](#graph-representations)
-  - [11.3.1 Adjacency Matrix](#1-adjacency-matrix)
-  - [11.3.1.1 Systems Perspective: Memory Layout and Cache Behavior](#11-systems-perspective-memory-layout-and-cache-behavior)
-  - [11.3.2 Adjacency List](#2-adjacency-list)
-  - [11.3.3 Comparison](#3-comparison)
-- [11.4 Graph Traversal](#graph-traversal)
-  - [11.4.1 Depth-First Search (DFS)](#1-depth-first-search-dfs)
-  - [11.4.2 Breadth-First Search (BFS)](#2-breadth-first-search-bfs)
-  - [11.4.3 DFS vs BFS](#3-dfs-vs-bfs)
-- [11.5 Shortest Path Algorithms](#shortest-path-algorithms)
-  - [11.5.1 Dijkstra's Algorithm](#1-dijkstras-algorithm)
-  - [11.5.2 Bellman-Ford Algorithm](#2-bellman-ford-algorithm)
-  - [11.5.3 Floyd-Warshall Algorithm](#3-floyd-warshall-algorithm)
-- [11.6 Disjoint Sets (Union-Find Data Structure)](#disjoint-sets-union-find-data-structure)
-  - [Why Disjoint Sets Matter](#why-disjoint-sets-matter)
-  - [Basic Operations](#basic-operations)
-  - [Naive Implementation](#naive-implementation)
-  - [Optimized Implementation with Path Compression](#optimized-implementation-with-path-compression)
-  - [Union by Rank (or Union by Size)](#union-by-rank-or-union-by-size)
-  - [Union by Size (Alternative)](#union-by-size-alternative)
-  - [Applications in Graph Algorithms](#applications-in-graph-algorithms)
-  - [Time Complexity Analysis](#time-complexity-analysis)
-  - [Key Takeaways](#key-takeaways)
-- [11.7 Minimum Spanning Tree (MST)](#minimum-spanning-tree-mst)
-  - [11.7.1 Kruskal's Algorithm](#1-kruskals-algorithm)
-  - [11.7.2 Prim's Algorithm](#2-prims-algorithm)
-- [11.8 Topological Sorting](#topological-sorting)
-  - [Implementation](#implementation)
-  - [Applications](#applications)
-- [11.9 Finding Bridges in a Graph](#finding-bridges-in-a-graph)
-  - [Algorithm Overview](#algorithm-overview)
-  - [Understanding the Bridge Condition: `low[v] > disc[u]`](#understanding-the-bridge-condition-lowv-discu)
-  - [Implementation](#implementation)
-  - [Time Complexity](#time-complexity)
-  - [Applications](#applications)
-- [11.10 Finding Articulation Points](#finding-articulation-points)
-  - [Algorithm Overview](#algorithm-overview)
-  - [Understanding the Articulation Point Condition: `low[v] >= disc[u]`](#understanding-the-articulation-point-condition-lowv-discu)
-  - [Implementation](#implementation)
-  - [Time Complexity](#time-complexity)
-  - [Applications](#applications)
-- [11.11 Strongly Connected Components](#strongly-connected-components)
-  - [Kosaraju's Algorithm](#kosarajus-algorithm)
-  - [Tarjan's Algorithm (Alternative)](#tarjans-algorithm-alternative)
-  - [Time Complexity](#time-complexity)
-  - [Applications](#applications)
-- [11.12 0-1 BFS](#0-1-bfs)
-  - [Algorithm Overview](#algorithm-overview)
-  - [Implementation](#implementation)
-  - [Time Complexity](#time-complexity)
-  - [When to Use](#when-to-use)
-  - [Applications](#applications)
-- [11.13 Graph Applications](#graph-applications)
-  - [11.13.1 Finding Connected Components](#1-finding-connected-components)
-  - [11.13.2 Cycle Detection](#2-cycle-detection)
-  - [11.13.3 Bipartite Graph Check](#3-bipartite-graph-check)
-- [11.14 Key Takeaways](#key-takeaways)
-- [11.15 Exercises](#exercises)
-- [11.14 A* Algorithm](#a-algorithm)
-  - [How A* Works](#how-a-works)
-  - [Key Properties](#key-properties)
-  - [Implementation](#implementation)
-  - [When to Use A*](#when-to-use-a)
-  - [Ford-Fulkerson Algorithm](#ford-fulkerson-algorithm)
-  - [Implementation](#implementation)
-  - [Applications](#applications)
-  - [Time Complexity](#time-complexity)
-  - [Applications](#applications)
-  - [Greedy Coloring Algorithm](#greedy-coloring-algorithm)
-  - [Backtracking for Optimal Coloring](#backtracking-for-optimal-coloring)
-  - [When to Use](#when-to-use)
-- [11.18 Concurrency Considerations](#concurrency-considerations)
-  - [11.16.1 Shared-State Invariants](#1-shared-state-invariants)
-  - [11.16.2 Operations That Must Be Atomic](#2-operations-that-must-be-atomic)
-  - [11.16.3 Naïve Approaches and Why They Fail](#3-naïve-approaches-and-why-they-fail)
-  - [11.16.4 Locking Strategies](#4-locking-strategies)
-  - [11.16.5 Performance and Scalability Implications](#5-performance-and-scalability-implications)
-  - [11.16.6 When Not to Do This Yourself](#6-when-not-to-do-this-yourself)
-- [11.19 Summary](#summary)
-
-
-
 ## 11.1 Problem Statement & Motivation
 
 ### What Problem Do Graphs Solve?
@@ -132,32 +20,9 @@ Many real-world problems involve **relationships** and **connections**:
 
 **The Graph Solution**: Graphs provide a flexible structure to model any relationship pattern - directed/undirected, weighted/unweighted, cyclic/acyclic - enabling efficient algorithms for traversal, shortest paths, and connectivity analysis.
 
-### When to Use Graphs
+Use graphs whenever the problem is fundamentally about relationships or connectivity: modeling networks (social, computer, transportation), finding paths or reachability, analyzing dependencies (topological ordering), or optimizing routes (shortest path). Real systems built on graphs include GPS navigation over road networks, web crawlers following page links, build systems resolving task dependencies, internet routing, and recommendation engines over user-item graphs.
 
-✅ **Use graphs when**:
-- Modeling relationships between entities
-- Need to find paths or connections
-- Representing networks (social, computer, transportation)
-- Dependency analysis (topological sort)
-- Route optimization (shortest path)
-
-✅ **Real-world applications**:
-- Social media (friend networks)
-- GPS navigation (road networks)
-- Web crawling (page links)
-- Task scheduling (dependencies)
-- Network routing (internet topology)
-- Recommendation systems (user-item graphs)
-
-### When NOT to Use Graphs
-
-❌ **Avoid graphs when**:
-- Data is hierarchical (use trees)
-- No relationships to model (use arrays/lists)
-- Simple key-value mapping (use hash tables)
-- Ordered sequences (use arrays/linked lists)
-
-**Key Trade-off**: Graphs provide flexibility but require more complex algorithms than simpler structures.
+Reach for a simpler structure when there are no real relationships to model: arrays or linked lists for ordered sequences, hash tables for key-value lookups, and trees for strictly hierarchical data. Graphs buy flexibility at the cost of more complex algorithms.
 
 ## 11.2 Conceptual Overview
 
@@ -189,108 +54,35 @@ Think of a graph like a map:
 | Parent-Child | Hierarchical | No hierarchy |
 | Edges | n-1 edges (n nodes) | Can have any number |
 
-### 11.1.1 Core Invariants
+## 11.3 Abstract Model & Invariants
 
-Understanding graph invariants helps reason about graph algorithms and representations.
-
-#### Core Invariants of a Graph
-
-1. **Edge Consistency Invariant**:
-   - If edge (u, v) exists in undirected graph, then (v, u) must be represented
-   - If edge (u, v) exists in directed graph, (v, u) may or may not exist
-   - Edge representation matches graph type (directed/undirected)
-
-2. **Vertex-Edge Relationship Invariant**:
-   - Every edge connects exactly two vertices (or one vertex to itself for self-loops)
-   - Vertices referenced by edges must exist in the graph
-   - No dangling edges (edges pointing to non-existent vertices)
-
-3. **Representation Consistency Invariant**:
-   - Adjacency list/matrix accurately reflects all edges
-   - No duplicate edges (unless multigraph)
-   - Graph representation matches graph structure
-
-4. **Weight Invariant** (for weighted graphs):
-   - All edges have valid weights
-   - Weight values are consistent with graph semantics (distances, costs, etc.)
-
-#### What Breaks Invariants
-
-- **Inconsistent edge representation**: Undirected graph with only one direction stored → breaks edge consistency
-- **Dangling references**: Edge points to deleted vertex → breaks vertex-edge relationship
-- **Stale adjacency data**: Vertex deleted but edges remain → breaks representation consistency
-- **Invalid weights**: Negative weights in distance graph → breaks weight invariant
-
-#### How Operations Restore Invariants
-
-- **Add edge**: Update both vertices' adjacency lists/matrix → preserves edge consistency
-- **Remove vertex**: Remove all incident edges first → preserves vertex-edge relationship
-- **Update representation**: Rebuild adjacency structure → restores representation consistency
-
-**Example**: When adding an edge (u, v) to an undirected graph:
-1. Add v to u's adjacency list (preserves edge consistency)
-2. Add u to v's adjacency list (preserves edge consistency for undirected graph)
-3. Update adjacency matrix if used (preserves representation consistency)
-
-Note: This builds on the **connectivity invariant** we established in Chapter 6 (Trees), but graphs relax the acyclicity constraint. Unlike trees, graphs can have cycles and multiple paths between vertices, which requires different representation strategies (adjacency matrix vs. list) as we'll see next.
-
-## 11.3 Abstract Model & Invariants ⭐
-
-Understanding graph invariants helps reason about graph algorithms and representations. This section defines correctness **independent of any implementation**.
+This section defines graph correctness independent of any implementation.
 
 ### Abstract Model
 
 A graph G = (V, E) consists of:
-- **Set of vertices V**: The nodes
-- **Set of edges E**: The connections between vertices
-- **Edge representation**: (u, v) for undirected, (u→v) for directed
-- **Weight function** (optional): w: E → ℝ for weighted graphs
+- **Set of vertices V**: the nodes.
+- **Set of edges E**: the connections, written (u, v) for undirected and (u→v) for directed.
+- **Weight function** (optional): w: E → ℝ for weighted graphs.
+
+This builds on the connectivity invariant from Chapter 6 (Trees), but graphs relax the acyclicity constraint: they may contain cycles and multiple paths between vertices, which is why they need different representation strategies (adjacency matrix vs. list) than trees.
 
 ### Core Invariants
 
-These invariants must **always** hold for a graph to be correct:
+These must always hold for a graph to be correct:
 
-#### 1. Edge Consistency Invariant
-
-- **Undirected graphs**: If edge (u, v) exists, then (v, u) must be represented
-- **Directed graphs**: If edge (u→v) exists, (v→u) may or may not exist
-- **Representation**: Edge representation matches graph type (directed/undirected)
-
-**What breaks it**: Inconsistent edge representation, missing reverse edges in undirected graphs
-
-#### 2. Vertex-Edge Relationship Invariant
-
-- Every edge connects exactly two vertices (or one vertex to itself for self-loops)
-- Vertices referenced by edges must exist in the graph
-- No dangling edges (edges pointing to non-existent vertices)
-
-**What breaks it**: Dangling references, edges to deleted vertices
-
-#### 3. Representation Consistency Invariant
-
-- Adjacency list/matrix accurately reflects all edges
-- No duplicate edges (unless multigraph)
-- Graph representation matches graph structure
-
-**What breaks it**: Stale adjacency data, vertex deleted but edges remain
-
-#### 4. Weight Invariant (for weighted graphs)
-
-- All edges have valid weights
-- Weight values are consistent with graph semantics (distances, costs, etc.)
-
-**What breaks it**: Invalid weights, negative weights in distance graphs
+1. **Edge Consistency** — In an undirected graph, if (u, v) exists then (v, u) must be represented; in a directed graph (v→u) is independent of (u→v). The stored representation must match the graph's type. *Breaks when* reverse edges are missing in an undirected graph.
+2. **Vertex-Edge Relationship** — Every edge connects two existing vertices (or one vertex to itself for a self-loop); there are no dangling edges to non-existent vertices. *Breaks when* an edge references a deleted vertex.
+3. **Representation Consistency** — The adjacency list/matrix reflects exactly the current edge set, with no duplicates (unless a multigraph). *Breaks when* a vertex is deleted but its incident edges remain.
+4. **Weight Validity** (weighted graphs) — Every edge carries a weight consistent with the graph's semantics (distance, cost, etc.). *Breaks when*, for example, a negative weight appears in a distance graph.
 
 ### How Operations Preserve Invariants
 
-- **Add edge**: Update both vertices' adjacency lists/matrix → preserves edge consistency
-- **Remove vertex**: Remove all incident edges first → preserves vertex-edge relationship
-- **Update representation**: Rebuild adjacency structure → restores representation consistency
+- **Add edge (u, v)**: update both endpoints' adjacency entries (both directions for undirected), preserving edge and representation consistency.
+- **Remove vertex**: remove all incident edges first, preserving the vertex-edge relationship.
+- **Rebuild representation**: restores representation consistency after bulk changes.
 
-**Example**: When adding an edge (u, v) to an undirected graph:
-1. Add v to u's adjacency list (preserves edge consistency)
-2. Add u to v's adjacency list (preserves edge consistency for undirected graph)
-3. Update adjacency matrix if used (preserves representation consistency)
+For example, adding edge (u, v) to an undirected graph adds v to u's list and u to v's list (and updates the matrix if used), leaving all four invariants intact.
 
 ## 11.4 Operations & Interface
 
@@ -341,154 +133,7 @@ A graph supports the following core operations:
 
 **Key Insight**: Most graph algorithms are O(V + E) for sparse graphs, but representation choice affects constant factors significantly.
 
-## 11.6 Pseudocode (Language-Neutral) ⭐
-
-This section presents graph algorithms in language-neutral pseudocode. The logic is independent of any programming language.
-
-### Graph Representation (Abstract)
-
-```
-GRAPH:
-  vertices: set of vertices
-  edges: set of edges
-  For each vertex v: neighbors(v) = {u | (v, u) ∈ edges}
-```
-
-### Depth-First Search (DFS)
-
-```
-DFS(graph, start_vertex):
-  visited ← empty set
-  stack ← empty stack
-  stack.push(start_vertex)
-  
-  while stack is not empty:
-    current ← stack.pop()
-    
-    if current not in visited:
-      visited.add(current)
-      process(current)  // Visit vertex
-      
-      for each neighbor in graph.neighbors(current):
-        if neighbor not in visited:
-          stack.push(neighbor)
-  
-  return visited
-```
-
-**Recursive DFS**:
-```
-DFS_RECURSIVE(graph, vertex, visited):
-  visited.add(vertex)
-  process(vertex)
-  
-  for each neighbor in graph.neighbors(vertex):
-    if neighbor not in visited:
-      DFS_RECURSIVE(graph, neighbor, visited)
-```
-
-### Breadth-First Search (BFS)
-
-```
-BFS(graph, start_vertex):
-  visited ← empty set
-  queue ← empty queue
-  queue.enqueue(start_vertex)
-  visited.add(start_vertex)
-  
-  while queue is not empty:
-    current ← queue.dequeue()
-    process(current)  // Visit vertex
-    
-    for each neighbor in graph.neighbors(current):
-      if neighbor not in visited:
-        visited.add(neighbor)
-        queue.enqueue(neighbor)
-  
-  return visited
-```
-
-### Dijkstra's Shortest Path
-
-```
-DIJKSTRA(graph, start):
-  dist ← map: vertex → distance (all ∞ except start = 0)
-  prev ← map: vertex → previous vertex (all null)
-  unvisited ← set of all vertices
-  priority_queue ← empty min-heap
-  priority_queue.insert(start, 0)
-  
-  while unvisited is not empty:
-    current ← priority_queue.extract_min()
-    
-    if current not in unvisited:
-      continue
-    
-    unvisited.remove(current)
-    
-    for each neighbor in graph.neighbors(current):
-      edge_weight ← graph.weight(current, neighbor)
-      new_dist ← dist[current] + edge_weight
-      
-      if new_dist < dist[neighbor]:
-        dist[neighbor] ← new_dist
-        prev[neighbor] ← current
-        priority_queue.insert(neighbor, new_dist)
-  
-  return dist, prev
-```
-
-### Kruskal's MST
-
-```
-KRUSKAL(graph):
-  mst ← empty set of edges
-  sort all edges by weight
-  union_find ← new UnionFind(graph.vertices)
-  
-  for each edge (u, v, weight) in sorted_edges:
-    if union_find.find(u) ≠ union_find.find(v):
-      mst.add(edge)
-      union_find.union(u, v)
-      
-      if mst.size() == graph.vertices.size() - 1:
-        break  // MST complete
-  
-  return mst
-```
-
-### Topological Sort (Kahn's Algorithm)
-
-```
-TOPOLOGICAL_SORT(graph):
-  in_degree ← map: vertex → in-degree count
-  queue ← empty queue
-  result ← empty list
-  
-  // Initialize in-degrees
-  for each vertex v in graph.vertices:
-    in_degree[v] ← count of incoming edges to v
-    if in_degree[v] == 0:
-      queue.enqueue(v)
-  
-  while queue is not empty:
-    current ← queue.dequeue()
-    result.append(current)
-    
-    for each neighbor in graph.neighbors(current):
-      in_degree[neighbor] ← in_degree[neighbor] - 1
-      if in_degree[neighbor] == 0:
-        queue.enqueue(neighbor)
-  
-  if result.size() < graph.vertices.size():
-    error "Cycle detected - not a DAG"
-  
-  return result
-```
-
-**Note**: This pseudocode is language-agnostic and focuses on the logic. The C++ implementation in the next section maps directly to these algorithms.
-
-## 11.7 Graph Terminology and Types
+## 11.6 Graph Terminology and Types
 
 ### Basic Terms
 
@@ -547,9 +192,9 @@ Every pair of vertices is connected by an edge.
 #### 6. Bipartite Graph
 Vertices can be divided into two sets such that no edges exist within the same set.
 
-## 11.3 Graph Representations
+## 11.7 Graph Representations
 
-### 11.3.1 Adjacency Matrix
+### 11.7.1 Adjacency Matrix
 
 An **adjacency matrix** is a 2D array where `matrix[i][j]` indicates if there's an edge between vertex `i` and vertex `j`.
 
@@ -625,20 +270,9 @@ public:
 };
 ```
 
-#### Advantages and Disadvantages
+The matrix trades space for speed: edge lookup and edge insert/delete are O(1) and the code is trivially simple, but it costs O(V²) space regardless of edge count, wasting memory on sparse graphs and making vertex insertion/removal expensive. It shines on dense graphs.
 
-**Advantages:**
-- O(1) edge lookup
-- Simple to implement
-- Easy to check if edge exists
-- Good for dense graphs
-
-**Disadvantages:**
-- O(V²) space complexity
-- Inefficient for sparse graphs
-- Adding/removing vertices is expensive
-
-### 11.3.1.1 Systems Perspective: Memory Layout and Cache Behavior
+### 11.7.1.1 Systems Perspective: Memory Layout and Cache Behavior
 
 Understanding graph representation at the system level reveals critical performance trade-offs. This section applies the memory hierarchy concepts from [Chapter 3.6](03.6-memory-hierarchy-and-performance.md) to graph representations.
 
@@ -687,7 +321,7 @@ Cache Misses       | 0-1 per query    | 2-5 per neighbor
 - **Complete Graphs**: Dense (all pairs connected) → Adjacency Matrix
 - **Road Networks**: Sparse (each intersection connects to ~4 roads) → Adjacency List
 
-### 11.3.2 Adjacency List
+### 11.7.2 Adjacency List
 
 An **adjacency list** stores each vertex's neighbors in a list or array.
 
@@ -783,7 +417,7 @@ public:
 - Slightly more complex implementation
 - Less cache-friendly than matrix
 
-### 11.3.3 Comparison
+### 11.7.3 Comparison
 
 | Operation | Adjacency Matrix | Adjacency List |
 |-----------|-----------------|----------------|
@@ -794,17 +428,16 @@ public:
 | Iterate Neighbors | O(V) | O(degree) |
 | Best For | Dense graphs | Sparse graphs |
 
-## 11.4 Graph Traversal
+## 11.8 Graph Traversal
 
-### 11.4.1 Depth-First Search (DFS)
+### 11.8.1 Depth-First Search (DFS)
 
 **Depth-First Search** explores as far as possible along each branch before backtracking. Think of it like exploring a maze: you go as deep as possible down one path, and only when you hit a dead end do you backtrack to try another path.
 
 #### How DFS Works: Step-by-Step Example
 
-Let's trace through DFS on the following graph, starting from vertex A:
+Trace DFS from vertex A on this graph:
 
-**Graph:**
 ```mermaid
 graph TD
     A --> B
@@ -814,189 +447,25 @@ graph TD
     C --> F
 ```
 
-**Step-by-Step Traversal:**
+Using an explicit stack, we push a vertex's unvisited neighbors and always pop the most recently pushed one, so exploration dives deep before fanning out:
 
-**Step 1: Start at A**
-```
-Visited: [A]
-Stack: [A]
-Current: A
-```
+| Step | Pop | Visited so far | Stack after |
+|------|-----|----------------|-------------|
+| 1 | A | A | C, B |
+| 2 | B | A, B | C, E, D |
+| 3 | D | A, B, D | C, E |
+| 4 | E | A, B, D, E | C |
+| 5 | C | A, B, D, E, C | F |
+| 6 | F | A, B, D, E, C, F | (empty) |
 
-```mermaid
-graph TD
-    A[Start: A<br/>visited] 
-    A --> B
-    A --> C
-    B --> D
-    B --> E
-    C --> F
-    
-    style A fill:#90EE90,stroke:#333,stroke-width:3px
-    style B fill:#FFE4E1,stroke:#333,stroke-width:2px
-    style C fill:#FFE4E1,stroke:#333,stroke-width:2px
-    style D fill:#E6E6FA,stroke:#333,stroke-width:2px
-    style E fill:#E6E6FA,stroke:#333,stroke-width:2px
-    style F fill:#E6E6FA,stroke:#333,stroke-width:2px
-```
+**Traversal order:** A → B → D → E → C → F
 
-**Step 2: Visit A's neighbors (B, C) - push to stack**
-```
-Visited: [A]
-Stack: [A, C, B]  (push in reverse order for correct traversal)
-Current: A
-```
-We push C first, then B, so B is on top (will be explored first).
+DFS goes deep before wide, uses a stack (implicit in recursion, explicit in the iterative form), and backtracks when a vertex has no unvisited neighbors — visiting every vertex in the connected component.
 
-**Step 3: Pop B, mark visited, explore its neighbors**
-```
-Visited: [A, B]
-Stack: [A, C]
-Current: B
-```
+#### DFS vs BFS on the Same Graph
 
-```mermaid
-graph TD
-    A[A<br/>visited] 
-    A --> B
-    A --> C
-    B --> D
-    B --> E
-    C --> F
-    
-    style A fill:#90EE90,stroke:#333,stroke-width:3px
-    style B fill:#90EE90,stroke:#333,stroke-width:3px
-    style C fill:#FFE4E1,stroke:#333,stroke-width:2px
-    style D fill:#E6E6FA,stroke:#333,stroke-width:2px
-    style E fill:#E6E6FA,stroke:#333,stroke-width:2px
-    style F fill:#E6E6FA,stroke:#333,stroke-width:2px
-```
+DFS plunges down one branch and backtracks; BFS expands level by level.
 
-**Step 4: Visit B's neighbors (D, E) - push to stack**
-```
-Visited: [A, B]
-Stack: [A, C, E, D]  (E on top)
-Current: B
-```
-
-**Step 5: Pop D, mark visited**
-```
-Visited: [A, B, D]
-Stack: [A, C, E]
-Current: D
-```
-
-```mermaid
-graph TD
-    A[A<br/>visited] --> B[B<br/>visited]
-    A --> C[C<br/>in stack]
-    B --> D[D<br/>visited]
-    B --> E[E<br/>in stack]
-    C --> F[F<br/>unvisited]
-    
-    style A fill:#90EE90,stroke:#333,stroke-width:3px
-    style B fill:#90EE90,stroke:#333,stroke-width:3px
-    style D fill:#90EE90,stroke:#333,stroke-width:3px
-    style C fill:#FFE4E1,stroke:#333,stroke-width:2px
-    style E fill:#FFE4E1,stroke:#333,stroke-width:2px
-    style F fill:#E6E6FA,stroke:#333,stroke-width:2px
-```
-
-**Step 6: Pop E, mark visited**
-```
-Visited: [A, B, D, E]
-Stack: [A, C]
-Current: E
-```
-
-```mermaid
-graph TD
-    A[A<br/>visited] --> B[B<br/>visited]
-    A --> C[C<br/>in stack]
-    B --> D[D<br/>visited]
-    B --> E[E<br/>visited]
-    C --> F[F<br/>unvisited]
-    
-    style A fill:#90EE90,stroke:#333,stroke-width:3px
-    style B fill:#90EE90,stroke:#333,stroke-width:3px
-    style D fill:#90EE90,stroke:#333,stroke-width:3px
-    style E fill:#90EE90,stroke:#333,stroke-width:3px
-    style C fill:#FFE4E1,stroke:#333,stroke-width:2px
-    style F fill:#E6E6FA,stroke:#333,stroke-width:2px
-```
-
-**Step 7: Pop C, mark visited, explore its neighbors**
-```
-Visited: [A, B, D, E, C]
-Stack: [A]
-Current: C
-```
-
-```mermaid
-graph TD
-    A[A<br/>visited] --> B[B<br/>visited]
-    A --> C[C<br/>visited]
-    B --> D[D<br/>visited]
-    B --> E[E<br/>visited]
-    C --> F[F<br/>unvisited]
-    
-    style A fill:#90EE90,stroke:#333,stroke-width:3px
-    style B fill:#90EE90,stroke:#333,stroke-width:3px
-    style C fill:#90EE90,stroke:#333,stroke-width:3px
-    style D fill:#90EE90,stroke:#333,stroke-width:3px
-    style E fill:#90EE90,stroke:#333,stroke-width:3px
-    style F fill:#E6E6FA,stroke:#333,stroke-width:2px
-```
-
-**Step 8: Visit C's neighbor (F) - push to stack**
-```
-Visited: [A, B, D, E, C]
-Stack: [A, F]
-Current: C
-```
-
-**Step 9: Pop F, mark visited**
-```
-Visited: [A, B, D, E, C, F]
-Stack: [A]
-Current: F
-```
-
-```mermaid
-graph TD
-    A[A<br/>visited] 
-    A --> B
-    A --> C
-    B --> D
-    B --> E
-    C --> F
-    
-    style A fill:#90EE90,stroke:#333,stroke-width:3px
-    style B fill:#90EE90,stroke:#333,stroke-width:3px
-    style C fill:#90EE90,stroke:#333,stroke-width:3px
-    style D fill:#90EE90,stroke:#333,stroke-width:3px
-    style E fill:#90EE90,stroke:#333,stroke-width:3px
-    style F fill:#90EE90,stroke:#333,stroke-width:3px
-```
-
-**Step 10: Pop A (already visited, stack empty)**
-```
-Visited: [A, B, D, E, C, F]
-Stack: []
-DFS Complete!
-```
-
-**Final Traversal Order:** A → B → D → E → C → F
-
-**Key Observations:**
-- DFS goes **deep** before going **wide**
-- Uses a **stack** (implicit in recursion, explicit in iterative)
-- Backtracks when no unvisited neighbors remain
-- Visits all vertices in a connected component
-
-#### Visual Comparison: DFS vs BFS
-
-**Same Graph, DFS (starting from A):**
 ```mermaid
 graph LR
     A[Start: A] --> B[Visit B]
@@ -1007,7 +476,7 @@ graph LR
     B -.->|backtrack| A
     A --> C[Visit C]
     C --> F[Visit F]
-    
+
     style A fill:#90EE90
     style B fill:#FFB6C1
     style C fill:#87CEEB
@@ -1016,7 +485,6 @@ graph LR
     style F fill:#DDA0DD
 ```
 
-**Same Graph, BFS (starting from A):**
 ```mermaid
 graph TD
     A[Level 0: A] --> B[Level 1: B]
@@ -1024,7 +492,7 @@ graph TD
     B --> D[Level 2: D]
     B --> E[Level 2: E]
     C --> F[Level 2: F]
-    
+
     style A fill:#90EE90,stroke:#333,stroke-width:3px
     style B fill:#FFB6C1,stroke:#333,stroke-width:2px
     style C fill:#FFB6C1,stroke:#333,stroke-width:2px
@@ -1127,228 +595,26 @@ vector<int> dfsIterative(int start) {
 - Solving mazes
 - Path finding
 
-### 11.4.2 Breadth-First Search (BFS)
+### 11.8.2 Breadth-First Search (BFS)
 
 **Breadth-First Search** explores all neighbors at the current depth before moving to the next level. Think of it like ripples in water: it expands outward level by level, exploring all vertices at distance 1, then all at distance 2, and so on.
 
 #### How BFS Works: Step-by-Step Example
 
-Let's trace through BFS on the following graph, starting from vertex A:
+Trace BFS from vertex A on the same graph. BFS marks a vertex visited when it is *enqueued*, then processes the queue in FIFO order, so every vertex at distance k is visited before any at distance k+1:
 
-**Graph:**
-```mermaid
-graph TD
-    A --> B
-    A --> C
-    B --> D
-    B --> E
-    C --> F
-```
+| Step | Dequeue | Enqueue | Queue after |
+|------|---------|---------|-------------|
+| 1 | A | B, C | B, C |
+| 2 | B | D, E | C, D, E |
+| 3 | C | F | D, E, F |
+| 4 | D | — | E, F |
+| 5 | E | — | F |
+| 6 | F | — | (empty) |
 
-**Step-by-Step Traversal:**
+**Traversal order:** A → B → C → D → E → F — Level 0: A; Level 1: B, C; Level 2: D, E, F.
 
-**Step 1: Start at A, mark visited, enqueue**
-```
-Visited: [A]
-Queue: [A]
-Current Level: 0
-```
-
-```mermaid
-graph TD
-    A[Start: A<br/>visited, level 0] --> B[unvisited]
-    A --> C[unvisited]
-    B --> D[unvisited]
-    B --> E[unvisited]
-    C --> F[unvisited]
-    
-    style A fill:#90EE90,stroke:#333,stroke-width:3px
-    style B fill:#FFE4E1,stroke:#333,stroke-width:2px
-    style C fill:#FFE4E1,stroke:#333,stroke-width:2px
-    style D fill:#E6E6FA,stroke:#333,stroke-width:2px
-    style E fill:#E6E6FA,stroke:#333,stroke-width:2px
-    style F fill:#E6E6FA,stroke:#333,stroke-width:2px
-```
-
-**Step 2: Dequeue A, visit its neighbors (B, C)**
-```
-Visited: [A]
-Queue: [B, C]  (enqueue neighbors)
-Current Level: 0 → 1
-```
-
-```mermaid
-graph TD
-    A[A<br/>processed, level 0] --> B[B<br/>in queue, level 1]
-    A --> C[C<br/>in queue, level 1]
-    B --> D[D<br/>unvisited]
-    B --> E[E<br/>unvisited]
-    C --> F[F<br/>unvisited]
-    
-    style A fill:#90EE90,stroke:#333,stroke-width:3px
-    style B fill:#FFB6C1,stroke:#333,stroke-width:2px
-    style C fill:#FFB6C1,stroke:#333,stroke-width:2px
-    style D fill:#E6E6FA,stroke:#333,stroke-width:2px
-    style E fill:#E6E6FA,stroke:#333,stroke-width:2px
-    style F fill:#E6E6FA,stroke:#333,stroke-width:2px
-```
-
-**Step 3: Dequeue B, mark visited, enqueue its neighbors (D, E)**
-```
-Visited: [A, B]
-Queue: [C, D, E]
-Current Level: 1
-```
-
-```mermaid
-graph TD
-    A[A<br/>visited, level 0] --> B[B<br/>visited, level 1]
-    A --> C[C<br/>in queue, level 1]
-    B --> D[D<br/>in queue, level 2]
-    B --> E[E<br/>in queue, level 2]
-    C --> F[F<br/>unvisited]
-    
-    style A fill:#90EE90,stroke:#333,stroke-width:3px
-    style B fill:#90EE90,stroke:#333,stroke-width:3px
-    style C fill:#FFB6C1,stroke:#333,stroke-width:2px
-    style D fill:#FFB6C1,stroke:#333,stroke-width:2px
-    style E fill:#FFB6C1,stroke:#333,stroke-width:2px
-    style F fill:#E6E6FA,stroke:#333,stroke-width:2px
-```
-
-**Step 4: Dequeue C, mark visited, enqueue its neighbor (F)**
-```
-Visited: [A, B, C]
-Queue: [D, E, F]
-Current Level: 1
-```
-
-```mermaid
-graph TD
-    A[A<br/>visited, level 0] --> B[B<br/>visited, level 1]
-    A --> C[C<br/>visited, level 1]
-    B --> D[D<br/>in queue, level 2]
-    B --> E[E<br/>in queue, level 2]
-    C --> F[F<br/>in queue, level 2]
-    
-    style A fill:#90EE90,stroke:#333,stroke-width:3px
-    style B fill:#90EE90,stroke:#333,stroke-width:3px
-    style C fill:#90EE90,stroke:#333,stroke-width:3px
-    style D fill:#FFB6C1,stroke:#333,stroke-width:2px
-    style E fill:#FFB6C1,stroke:#333,stroke-width:2px
-    style F fill:#FFB6C1,stroke:#333,stroke-width:2px
-```
-
-**Step 5: Dequeue D, mark visited (no neighbors to enqueue)**
-```
-Visited: [A, B, C, D]
-Queue: [E, F]
-Current Level: 2
-```
-
-```mermaid
-graph TD
-    A[A<br/>visited] --> B[B<br/>visited]
-    A --> C[C<br/>visited]
-    B --> D[D<br/>visited, level 2]
-    B --> E[E<br/>in queue, level 2]
-    C --> F[F<br/>in queue, level 2]
-    
-    style A fill:#90EE90,stroke:#333,stroke-width:3px
-    style B fill:#90EE90,stroke:#333,stroke-width:3px
-    style C fill:#90EE90,stroke:#333,stroke-width:3px
-    style D fill:#90EE90,stroke:#333,stroke-width:3px
-    style E fill:#FFB6C1,stroke:#333,stroke-width:2px
-    style F fill:#FFB6C1,stroke:#333,stroke-width:2px
-```
-
-**Step 6: Dequeue E, mark visited (no neighbors to enqueue)**
-```
-Visited: [A, B, C, D, E]
-Queue: [F]
-Current Level: 2
-```
-
-```mermaid
-graph TD
-    A[A<br/>visited] --> B[B<br/>visited]
-    A --> C[C<br/>visited]
-    B --> D[D<br/>visited]
-    B --> E[E<br/>visited, level 2]
-    C --> F[F<br/>in queue, level 2]
-    
-    style A fill:#90EE90,stroke:#333,stroke-width:3px
-    style B fill:#90EE90,stroke:#333,stroke-width:3px
-    style C fill:#90EE90,stroke:#333,stroke-width:3px
-    style D fill:#90EE90,stroke:#333,stroke-width:3px
-    style E fill:#90EE90,stroke:#333,stroke-width:3px
-    style F fill:#FFB6C1,stroke:#333,stroke-width:2px
-```
-
-**Step 7: Dequeue F, mark visited (no neighbors to enqueue)**
-```
-Visited: [A, B, C, D, E, F]
-Queue: []
-Current Level: 2
-BFS Complete!
-```
-
-```mermaid
-graph TD
-    A[A<br/>visited] --> B[B<br/>visited]
-    A --> C[C<br/>visited]
-    B --> D[D<br/>visited]
-    B --> E[E<br/>visited]
-    C --> F[F<br/>visited, level 2]
-    
-    style A fill:#90EE90,stroke:#333,stroke-width:3px
-    style B fill:#90EE90,stroke:#333,stroke-width:3px
-    style C fill:#90EE90,stroke:#333,stroke-width:3px
-    style D fill:#90EE90,stroke:#333,stroke-width:3px
-    style E fill:#90EE90,stroke:#333,stroke-width:3px
-    style F fill:#90EE90,stroke:#333,stroke-width:3px
-```
-
-**Final Traversal Order:** A → B → C → D → E → F
-
-**Level Structure:**
-- **Level 0:** A
-- **Level 1:** B, C
-- **Level 2:** D, E, F
-
-**Key Observations:**
-- BFS explores **level by level** (breadth-first)
-- Uses a **queue** (FIFO: First In, First Out)
-- Finds **shortest path** in unweighted graphs
-- All vertices at distance k are visited before vertices at distance k+1
-
-#### Why BFS Finds Shortest Path in Unweighted Graphs
-
-**Example:** Find shortest path from A to F
-
-```mermaid
-graph TD
-    A[Start: A] --> B
-    A --> C
-    B --> D
-    B --> E
-    C --> F[Target: F]
-    
-    style A fill:#90EE90,stroke:#333,stroke-width:3px
-    style F fill:#FFB6C1,stroke:#333,stroke-width:3px
-```
-
-**BFS Process:**
-1. **Level 0:** A (distance 0)
-2. **Level 1:** B, C (distance 1 from A)
-3. **Level 2:** D, E, F (distance 2 from A)
-
-Since BFS visits vertices in order of their distance from the source, when we first reach F at level 2, we've found the shortest path: A → C → F (length 2).
-
-**Why DFS might not find shortest path:**
-- DFS might take A → B → D → (backtrack) → E → (backtrack) → C → F
-- This path has length 2, but DFS doesn't guarantee finding it first
-- BFS guarantees finding the shortest path because it explores by distance
+Because BFS visits vertices in order of distance from the source, the first time it reaches a vertex it has already found a shortest path (in edges) to it. Reaching F at level 2 yields the shortest path A → C → F of length 2. DFS could reach F through a longer exploration order, so it offers no such guarantee.
 
 #### Implementation
 ```cpp
@@ -1439,7 +705,7 @@ public:
 - Web crawling
 - Broadcasting in networks
 
-### 11.4.3 DFS vs BFS
+### 11.8.3 DFS vs BFS
 
 | Aspect | DFS | BFS |
 |--------|-----|-----|
@@ -1449,17 +715,16 @@ public:
 | Use Case | Deep exploration | Level-by-level exploration |
 | Implementation | Recursive/Iterative | Iterative |
 
-## 11.5 Shortest Path Algorithms
+## 11.9 Shortest Path Algorithms
 
-### 11.5.1 Dijkstra's Algorithm
+### 11.9.1 Dijkstra's Algorithm
 
 **Dijkstra's algorithm** finds the shortest path from a source vertex to all other vertices in a weighted graph with non-negative edge weights. It uses a greedy approach: at each step, it selects the unvisited vertex with the smallest known distance and updates distances to its neighbors.
 
 #### How Dijkstra's Works: Step-by-Step Example
 
-Let's trace through Dijkstra's algorithm on the following weighted graph, starting from vertex A:
+Trace Dijkstra from A on this weighted graph:
 
-**Graph:**
 ```mermaid
 graph TD
     A[Start: A] -->|6| B
@@ -1470,213 +735,40 @@ graph TD
     C -->|2| F
     C -->|4| G
     D -->|2| G
-    
+
     style A fill:#90EE90,stroke:#333,stroke-width:3px
 ```
 
-**Step-by-Step Execution:**
+At each step we extract the unvisited vertex with the smallest tentative distance and relax its outgoing edges:
 
-**Initialization:**
-```
-Distances: A=0, B=∞, C=∞, D=∞, E=∞, F=∞, G=∞
-Visited: {}
-Priority Queue: [(0, A)]
-```
+| Processed | Distances updated |
+|-----------|-------------------|
+| A (0) | B=6, C=1, D=5 |
+| C (1) | F=3 (via C) |
+| F (3) | B=5 (via C→F) |
+| B (5) | E=8 |
+| D (5) | G=7 |
+| G (7) | — |
+| E (8) | — |
 
-**Step 1: Process A (distance = 0)**
-```
-Current: A (distance 0)
-Visited: {A}
-Distances: A=0, B=6, C=1, D=5, E=∞, F=∞, G=∞
-Queue: [(1, C), (5, D), (6, B)]
-```
+**Final distances from A:** A=0, C=1, F=3, B=5, D=5, G=7, E=8.
 
-```mermaid
-graph TD
-    A[A<br/>visited<br/>dist=0] -->|6| B[B<br/>dist=6]
-    A -->|1| C[C<br/>dist=1]
-    A -->|5| D[D<br/>dist=5]
-    B -->|3| E[E<br/>dist=∞]
-    B -->|2| F[F<br/>dist=∞]
-    C -->|2| F
-    C -->|4| G[G<br/>dist=∞]
-    D -->|2| G
-    
-    style A fill:#90EE90,stroke:#333,stroke-width:3px
-    style B fill:#FFB6C1,stroke:#333,stroke-width:2px
-    style C fill:#FFB6C1,stroke:#333,stroke-width:2px
-    style D fill:#FFB6C1,stroke:#333,stroke-width:2px
-    style E fill:#E6E6FA,stroke:#333,stroke-width:2px
-    style F fill:#E6E6FA,stroke:#333,stroke-width:2px
-    style G fill:#E6E6FA,stroke:#333,stroke-width:2px
-```
-
-**Step 2: Process C (distance = 1) - smallest unvisited**
-```
-Current: C (distance 1)
-Visited: {A, C}
-Distances: A=0, B=6, C=1, D=5, E=∞, F=3, G=∞
-Queue: [(3, F), (5, D), (6, B)]
-```
-
-```mermaid
-graph TD
-    A[A<br/>visited<br/>dist=0] -->|6| B[B<br/>dist=6]
-    A -->|1| C[C<br/>visited<br/>dist=1]
-    A -->|5| D[D<br/>dist=5]
-    B -->|3| E[E<br/>dist=∞]
-    B -->|2| F[F<br/>dist=3]
-    C -->|2| F
-    C -->|4| G[G<br/>dist=∞]
-    D -->|2| G
-    
-    style A fill:#90EE90,stroke:#333,stroke-width:3px
-    style C fill:#90EE90,stroke:#333,stroke-width:3px
-    style B fill:#FFB6C1,stroke:#333,stroke-width:2px
-    style D fill:#FFB6C1,stroke:#333,stroke-width:2px
-    style F fill:#FFB6C1,stroke:#333,stroke-width:2px
-    style E fill:#E6E6FA,stroke:#333,stroke-width:2px
-    style G fill:#E6E6FA,stroke:#333,stroke-width:2px
-```
-
-**Step 3: Process F (distance = 3) - smallest unvisited**
-```
-Current: F (distance 3)
-Visited: {A, C, F}
-Distances: A=0, B=5, C=1, D=5, E=∞, F=3, G=∞
-Queue: [(5, B), (5, D)]
-```
-
-```mermaid
-graph TD
-    A[A<br/>visited<br/>dist=0] -->|6| B[B<br/>dist=5<br/>updated!]
-    A -->|1| C[C<br/>visited<br/>dist=1]
-    A -->|5| D[D<br/>dist=5]
-    B -->|3| E[E<br/>dist=∞]
-    B -->|2| F[F<br/>visited<br/>dist=3]
-    C -->|2| F
-    C -->|4| G[G<br/>dist=∞]
-    D -->|2| G
-    
-    style A fill:#90EE90,stroke:#333,stroke-width:3px
-    style C fill:#90EE90,stroke:#333,stroke-width:3px
-    style F fill:#90EE90,stroke:#333,stroke-width:3px
-    style B fill:#FFB6C1,stroke:#333,stroke-width:2px
-    style D fill:#FFB6C1,stroke:#333,stroke-width:2px
-    style E fill:#E6E6FA,stroke:#333,stroke-width:2px
-    style G fill:#E6E6FA,stroke:#333,stroke-width:2px
-```
-
-**Step 4: Process B (distance = 5) - tie with D, pick B**
-```
-Current: B (distance 5)
-Visited: {A, C, F, B}
-Distances: A=0, B=5, C=1, D=5, E=8, F=3, G=∞
-Queue: [(5, D), (8, E)]
-```
-
-```mermaid
-graph TD
-    A[A<br/>visited<br/>dist=0] -->|6| B[B<br/>visited<br/>dist=5]
-    A -->|1| C[C<br/>visited<br/>dist=1]
-    A -->|5| D[D<br/>dist=5]
-    B -->|3| E[E<br/>dist=8<br/>updated!]
-    B -->|2| F[F<br/>visited<br/>dist=3]
-    C -->|2| F
-    C -->|4| G[G<br/>dist=∞]
-    D -->|2| G
-    
-    style A fill:#90EE90,stroke:#333,stroke-width:3px
-    style C fill:#90EE90,stroke:#333,stroke-width:3px
-    style F fill:#90EE90,stroke:#333,stroke-width:3px
-    style B fill:#90EE90,stroke:#333,stroke-width:3px
-    style D fill:#FFB6C1,stroke:#333,stroke-width:2px
-    style E fill:#FFB6C1,stroke:#333,stroke-width:2px
-    style G fill:#E6E6FA,stroke:#333,stroke-width:2px
-```
-
-**Step 5: Process D (distance = 5)**
-```
-Current: D (distance 5)
-Visited: {A, C, F, B, D}
-Distances: A=0, B=5, C=1, D=5, E=8, F=3, G=7
-Queue: [(7, G), (8, E)]
-```
-
-```mermaid
-graph TD
-    A[A<br/>visited<br/>dist=0] -->|6| B[B<br/>visited<br/>dist=5]
-    A -->|1| C[C<br/>visited<br/>dist=1]
-    A -->|5| D[D<br/>visited<br/>dist=5]
-    B -->|3| E[E<br/>dist=8]
-    B -->|2| F[F<br/>visited<br/>dist=3]
-    C -->|2| F
-    C -->|4| G[G<br/>dist=7<br/>updated!]
-    D -->|2| G
-    
-    style A fill:#90EE90,stroke:#333,stroke-width:3px
-    style C fill:#90EE90,stroke:#333,stroke-width:3px
-    style F fill:#90EE90,stroke:#333,stroke-width:3px
-    style B fill:#90EE90,stroke:#333,stroke-width:3px
-    style D fill:#90EE90,stroke:#333,stroke-width:3px
-    style E fill:#FFB6C1,stroke:#333,stroke-width:2px
-    style G fill:#FFB6C1,stroke:#333,stroke-width:2px
-```
-
-**Step 6: Process G (distance = 7)**
-```
-Current: G (distance 7)
-Visited: {A, C, F, B, D, G}
-Distances: A=0, B=5, C=1, D=5, E=8, F=3, G=7
-Queue: [(8, E)]
-```
-No updates (G has no unvisited neighbors).
-
-**Step 7: Process E (distance = 8)**
-```
-Current: E (distance 8)
-Visited: {A, C, F, B, D, G, E}
-Distances: A=0, B=5, C=1, D=5, E=8, F=3, G=7
-Queue: []
-Algorithm Complete!
-```
-
-**Final Shortest Distances from A:**
-- A: 0
-- C: 1 (A → C)
-- F: 3 (A → C → F)
-- B: 5 (A → C → F → B)
-- D: 5 (A → D)
-- G: 7 (A → D → G)
-- E: 8 (A → C → F → B → E)
-
-**Key Observations:**
-1. **Greedy Choice**: Always process the unvisited vertex with smallest distance
-2. **Relaxation**: Update distances if a shorter path is found
-3. **Non-negative weights**: Algorithm fails with negative weights
-4. **Optimal Substructure**: Once a vertex is processed, its distance is final
+Three properties drive the algorithm: the greedy choice always processes the smallest-distance unvisited vertex; relaxation lowers a neighbor's distance whenever a shorter path is found; and once a vertex is processed its distance is final — which is exactly why non-negative weights are required.
 
 #### Why Dijkstra's Requires Non-Negative Weights
 
-**Counterexample with Negative Edge:**
 ```mermaid
 graph TD
     A[Start: A] -->|1| B
     A -->|-5| C
     B -->|1| D[Target: D]
     C -->|1| D
-    
+
     style A fill:#90EE90,stroke:#333,stroke-width:3px
     style D fill:#FFB6C1,stroke:#333,stroke-width:3px
 ```
 
-Starting from A:
-- Process A: distances B=1, C=-5
-- Process C (smallest): distance D=-4
-- Process B: distance D=2 (via B)
-- **Problem**: We already finalized D=-4, but A→B→D=2 is actually longer!
-
-With negative weights, we can't guarantee that processing a vertex means we've found its shortest path.
+Here Dijkstra processes C first (distance −5) and finalizes D = −4, committing to D before it can discover that another route is cheaper. With negative weights, finalizing a vertex the moment it is extracted is no longer safe — use Bellman-Ford instead.
 
 #### Implementation
 ```cpp
@@ -1784,7 +876,7 @@ public:
 - Only works with non-negative edge weights
 - Does not work with negative cycles
 
-### 11.5.2 Bellman-Ford Algorithm
+### 11.9.2 Bellman-Ford Algorithm
 
 **Bellman-Ford algorithm** finds shortest paths even with negative edge weights (but not negative cycles).
 
@@ -1862,7 +954,7 @@ public:
 - Can detect negative cycles
 - Simpler than Dijkstra for some cases
 
-### 11.5.3 Floyd-Warshall Algorithm
+### 11.9.3 Floyd-Warshall Algorithm
 
 **Floyd-Warshall algorithm** finds shortest paths between all pairs of vertices.
 
@@ -1924,7 +1016,7 @@ public:
 - Transitive closure
 - Detecting negative cycles
 
-## 11.6 Disjoint Sets (Union-Find Data Structure)
+## 11.10 Disjoint Sets (Union-Find Data Structure)
 
 A **Disjoint Set** (also called Union-Find) is a data structure that tracks a set of elements partitioned into disjoint (non-overlapping) subsets. It provides efficient operations to:
 - **Find**: Determine which subset an element belongs to
@@ -2109,55 +1201,7 @@ public:
 
 ### Union by Size (Alternative)
 
-```cpp
-class UnionFindBySize {
-private:
-    vector<int> parent;
-    vector<int> size; // Size of each set
-    int n;
-    
-public:
-    UnionFindBySize(int size) : n(size) {
-        parent.resize(n);
-        this->size.resize(n, 1);
-        
-        for (int i = 0; i < n; i++) {
-            parent[i] = i;
-        }
-    }
-    
-    int find(int x) {
-        if (parent[x] != x) {
-            parent[x] = find(parent[x]);
-        }
-        return parent[x];
-    }
-    
-    void unite(int x, int y) {
-        int rootX = find(x);
-        int rootY = find(y);
-        
-        if (rootX == rootY) return;
-        
-        // Attach smaller set to larger set
-        if (size[rootX] < size[rootY]) {
-            parent[rootX] = rootY;
-            size[rootY] += size[rootX];
-        } else {
-            parent[rootY] = rootX;
-            size[rootX] += size[rootY];
-        }
-    }
-    
-    bool connected(int x, int y) {
-        return find(x) == find(y);
-    }
-    
-    int getSize(int x) {
-        return size[find(x)];
-    }
-};
-```
+Union by size is equivalent to union by rank: instead of tracking tree height, store each set's element count, attach the smaller set under the larger, and add the sizes. It gives the same O(α(n)) bound and makes a `getSize(x)` query trivial (return `size[find(x)]`).
 
 ### Applications in Graph Algorithms
 
@@ -2235,25 +1279,20 @@ Where α(n) is the inverse Ackermann function, which grows extremely slowly and 
 
 ### Key Takeaways
 
-1. **Disjoint Sets** efficiently track partitions of elements
-2. **Path Compression** flattens trees during find operations
-3. **Union by Rank/Size** keeps trees balanced
-4. **Amortized Complexity** is nearly constant with optimizations
-5. **Essential for** Kruskal's algorithm, cycle detection, and connected components
+Path compression flattens trees during `find`, and union by rank/size keeps them shallow; together they give near-constant O(α(n)) amortized operations. Union-Find underpins Kruskal's MST, connected-component labeling, and undirected cycle detection.
 
-## 11.7 Minimum Spanning Tree (MST)
+## 11.11 Minimum Spanning Tree (MST)
 
 A **Minimum Spanning Tree** is a subset of edges that connects all vertices with minimum total weight.
 
-### 11.7.1 Kruskal's Algorithm
+### 11.11.1 Kruskal's Algorithm
 
 **Kruskal's algorithm** builds MST by adding edges in increasing order of weight, skipping edges that would create cycles. It uses Union-Find (Disjoint Set) to efficiently check for cycles.
 
 #### How Kruskal's Works: Step-by-Step Example
 
-Let's trace through Kruskal's algorithm on the following weighted graph:
+Trace Kruskal on this weighted graph:
 
-**Graph:**
 ```mermaid
 graph TD
     A -->|2| B
@@ -2265,183 +1304,23 @@ graph TD
     C -->|7| E
     D -->|2| F
     E -->|3| F
-    
-    style A fill:#E6E6FA,stroke:#333,stroke-width:2px
-    style B fill:#E6E6FA,stroke:#333,stroke-width:2px
-    style C fill:#E6E6FA,stroke:#333,stroke-width:2px
-    style D fill:#E6E6FA,stroke:#333,stroke-width:2px
-    style E fill:#E6E6FA,stroke:#333,stroke-width:2px
-    style F fill:#E6E6FA,stroke:#333,stroke-width:2px
 ```
 
-**Step-by-Step Execution:**
+Sort every edge by weight, then add each edge whose endpoints lie in different components (checked with Union-Find), skipping any edge that would close a cycle:
 
-**Step 1: Sort all edges by weight**
-```
-Edges sorted: (A-B:2), (B-D:1), (D-F:2), (E-F:3), (A-C:3), (A-D:4), (B-C:5), (C-D:6), (C-E:7)
-```
+| Edge | Weight | Endpoints joined? | Action |
+|------|--------|-------------------|--------|
+| B-D | 1 | different | add |
+| A-B | 2 | different | add |
+| D-F | 2 | different | add |
+| E-F | 3 | different | add |
+| A-C | 3 | different | add (V−1 edges reached) |
+| A-D | 4 | same | skip (cycle) |
+| B-C, C-D, C-E | 5, 6, 7 | same | skip |
 
-**Step 2: Initialize Union-Find**
-```
-Each vertex is its own component:
-A: {A}, B: {B}, C: {C}, D: {D}, E: {E}, F: {F}
-MST edges: []
-```
+**MST edges:** B-D, A-B, D-F, E-F, A-C — total weight 1+2+2+3+3 = 11.
 
-**Step 3: Process edge (B-D:1) - smallest weight**
-```
-Check: B and D in different components? Yes
-Action: Add edge, union B and D
-Components: {A}, {B,D}, {C}, {E}, {F}
-MST: [B-D:1]
-```
-
-```mermaid
-graph TD
-    A[A] 
-    B[B] -->|1| D[D]
-    C[C]
-    E[E]
-    F[F]
-    
-    style B fill:#90EE90,stroke:#333,stroke-width:3px
-    style D fill:#90EE90,stroke:#333,stroke-width:3px
-    style A fill:#E6E6FA,stroke:#333,stroke-width:2px
-    style C fill:#E6E6FA,stroke:#333,stroke-width:2px
-    style E fill:#E6E6FA,stroke:#333,stroke-width:2px
-    style F fill:#E6E6FA,stroke:#333,stroke-width:2px
-```
-
-**Step 4: Process edge (A-B:2)**
-```
-Check: A and B in different components? Yes (A vs {B,D})
-Action: Add edge, union A with {B,D}
-Components: {A,B,D}, {C}, {E}, {F}
-MST: [B-D:1, A-B:2]
-```
-
-```mermaid
-graph TD
-    A[A] -->|2| B[B]
-    B -->|1| D[D]
-    C[C]
-    E[E]
-    F[F]
-    
-    style A fill:#90EE90,stroke:#333,stroke-width:3px
-    style B fill:#90EE90,stroke:#333,stroke-width:3px
-    style D fill:#90EE90,stroke:#333,stroke-width:3px
-    style C fill:#E6E6FA,stroke:#333,stroke-width:2px
-    style E fill:#E6E6FA,stroke:#333,stroke-width:2px
-    style F fill:#E6E6FA,stroke:#333,stroke-width:2px
-```
-
-**Step 5: Process edge (D-F:2)**
-```
-Check: D and F in different components? Yes ({A,B,D} vs {F})
-Action: Add edge, union {A,B,D} with {F}
-Components: {A,B,D,F}, {C}, {E}
-MST: [B-D:1, A-B:2, D-F:2]
-```
-
-```mermaid
-graph TD
-    A[A] -->|2| B[B]
-    B -->|1| D[D]
-    D -->|2| F[F]
-    C[C]
-    E[E]
-    
-    style A fill:#90EE90,stroke:#333,stroke-width:3px
-    style B fill:#90EE90,stroke:#333,stroke-width:3px
-    style D fill:#90EE90,stroke:#333,stroke-width:3px
-    style F fill:#90EE90,stroke:#333,stroke-width:3px
-    style C fill:#E6E6FA,stroke:#333,stroke-width:2px
-    style E fill:#E6E6FA,stroke:#333,stroke-width:2px
-```
-
-**Step 6: Process edge (E-F:3)**
-```
-Check: E and F in different components? Yes ({E} vs {A,B,D,F})
-Action: Add edge, union E with {A,B,D,F}
-Components: {A,B,D,E,F}, {C}
-MST: [B-D:1, A-B:2, D-F:2, E-F:3]
-```
-
-```mermaid
-graph TD
-    A[A] -->|2| B[B]
-    B -->|1| D[D]
-    D -->|2| F[F]
-    E[E] -->|3| F
-    C[C]
-    
-    style A fill:#90EE90,stroke:#333,stroke-width:3px
-    style B fill:#90EE90,stroke:#333,stroke-width:3px
-    style D fill:#90EE90,stroke:#333,stroke-width:3px
-    style F fill:#90EE90,stroke:#333,stroke-width:3px
-    style E fill:#90EE90,stroke:#333,stroke-width:3px
-    style C fill:#E6E6FA,stroke:#333,stroke-width:2px
-```
-
-**Step 7: Process edge (A-C:3)**
-```
-Check: A and C in different components? Yes ({A,B,D,E,F} vs {C})
-Action: Add edge, union {A,B,D,E,F} with {C}
-Components: {A,B,C,D,E,F} (all connected!)
-MST: [B-D:1, A-B:2, D-F:2, E-F:3, A-C:3]
-```
-
-```mermaid
-graph TD
-    A[A] -->|2| B[B]
-    A -->|3| C[C]
-    B -->|1| D[D]
-    D -->|2| F[F]
-    E[E] -->|3| F
-    
-    style A fill:#90EE90,stroke:#333,stroke-width:3px
-    style B fill:#90EE90,stroke:#333,stroke-width:3px
-    style C fill:#90EE90,stroke:#333,stroke-width:3px
-    style D fill:#90EE90,stroke:#333,stroke-width:3px
-    style E fill:#90EE90,stroke:#333,stroke-width:3px
-    style F fill:#90EE90,stroke:#333,stroke-width:3px
-```
-
-**Step 8: Check remaining edges**
-```
-Edge (A-D:4): A and D in same component → Skip (would create cycle)
-Edge (B-C:5): B and C in same component → Skip
-Edge (C-D:6): C and D in same component → Skip
-Edge (C-E:7): C and E in same component → Skip
-```
-
-**Final MST:**
-- Total weight: 1 + 2 + 2 + 3 + 3 = 11
-- Edges: B-D, A-B, D-F, E-F, A-C
-
-**Key Observations:**
-1. **Greedy Strategy**: Always add the smallest edge that doesn't create a cycle
-2. **Union-Find**: Efficiently checks if two vertices are in the same component
-3. **Cycle Detection**: If find(u) == find(v), adding edge (u,v) would create a cycle
-4. **Stops Early**: When we have V-1 edges, we have a spanning tree
-
-#### Visual: Why We Skip Edges That Create Cycles
-
-**Before adding (A-D:4):**
-```mermaid
-graph TD
-    A[A] -->|2| B[B]
-    A -->|3| C[C]
-    B -->|1| D[D]
-    
-    style A fill:#90EE90,stroke:#333,stroke-width:3px
-    style B fill:#90EE90,stroke:#333,stroke-width:3px
-    style C fill:#90EE90,stroke:#333,stroke-width:3px
-    style D fill:#90EE90,stroke:#333,stroke-width:3px
-```
-
-A and D are already connected via A→B→D. Adding A-D would create cycle A-B-D-A.
+Kruskal is greedy: it adds the smallest edge that does not create a cycle. `find(u) == find(v)` detects a would-be cycle (the endpoints already share a component), and the tree is complete once it holds V−1 edges.
 
 #### Implementation
 ```cpp
@@ -2536,180 +1415,25 @@ public:
 - **Time**: O(E log E) = O(E log V)
 - **Space**: O(V)
 
-### 11.7.2 Prim's Algorithm
+### 11.11.2 Prim's Algorithm
 
 **Prim's algorithm** builds MST by starting from a vertex and growing the tree. At each step, it adds the minimum-weight edge that connects a vertex in the MST to a vertex outside the MST.
 
 #### How Prim's Works: Step-by-Step Example
 
-Let's trace through Prim's algorithm on the same graph, starting from vertex A:
+Trace Prim on the same graph, starting from A. Prim grows a single tree, at each step taking the minimum-weight edge that crosses from the tree to a vertex outside it (via a priority queue):
 
-**Graph:**
-```mermaid
-graph TD
-    A -->|2| B
-    A -->|3| C
-    A -->|4| D
-    B -->|1| D
-    B -->|5| C
-    C -->|6| D
-    C -->|7| E
-    D -->|2| F
-    E -->|3| F
-    
-    style A fill:#E6E6FA,stroke:#333,stroke-width:2px
-    style B fill:#E6E6FA,stroke:#333,stroke-width:2px
-    style C fill:#E6E6FA,stroke:#333,stroke-width:2px
-    style D fill:#E6E6FA,stroke:#333,stroke-width:2px
-    style E fill:#E6E6FA,stroke:#333,stroke-width:2px
-    style F fill:#E6E6FA,stroke:#333,stroke-width:2px
-```
+| Step | Edge added | Tree vertices |
+|------|-----------|---------------|
+| 1 | A-B (2) | A, B |
+| 2 | B-D (1) | A, B, D |
+| 3 | D-F (2) | A, B, D, F |
+| 4 | A-C (3) | A, B, D, F, C |
+| 5 | E-F (3) | A, B, D, F, C, E |
 
-**Step-by-Step Execution:**
+**MST edges:** A-B, B-D, D-F, A-C, E-F — total weight 11, the same tree Kruskal found.
 
-**Step 1: Start with vertex A**
-```
-MST vertices: {A}
-MST edges: []
-Priority queue: [(A-C:3), (A-B:2), (A-D:4)]
-```
-
-```mermaid
-graph TD
-    A[A<br/>in MST] -->|3| C[C<br/>candidate]
-    A -->|2| B[B<br/>candidate]
-    A -->|4| D[D<br/>candidate]
-    
-    style A fill:#90EE90,stroke:#333,stroke-width:3px
-    style B fill:#FFB6C1,stroke:#333,stroke-width:2px
-    style C fill:#FFB6C1,stroke:#333,stroke-width:2px
-    style D fill:#FFB6C1,stroke:#333,stroke-width:2px
-```
-
-**Step 2: Add minimum edge (A-B:2)**
-```
-MST vertices: {A, B}
-MST edges: [A-B:2]
-Priority queue: [(A-C:3), (A-D:4), (B-D:1), (B-C:5)]
-```
-
-```mermaid
-graph TD
-    A[A<br/>in MST] -->|2| B[B<br/>in MST]
-    A -->|3| C[C<br/>candidate]
-    A -->|4| D[D<br/>candidate]
-    B -->|1| D
-    B -->|5| C
-    
-    style A fill:#90EE90,stroke:#333,stroke-width:3px
-    style B fill:#90EE90,stroke:#333,stroke-width:3px
-    style C fill:#FFB6C1,stroke:#333,stroke-width:2px
-    style D fill:#FFB6C1,stroke:#333,stroke-width:2px
-```
-
-**Step 3: Add minimum edge (B-D:1)**
-```
-MST vertices: {A, B, D}
-MST edges: [A-B:2, B-D:1]
-Priority queue: [(A-C:3), (A-D:4), (B-C:5), (D-F:2)]
-```
-
-```mermaid
-graph TD
-    A[A<br/>in MST] -->|2| B[B<br/>in MST]
-    A -->|3| C[C<br/>candidate]
-    A -->|4| D[D<br/>in MST]
-    B -->|1| D
-    B -->|5| C
-    D -->|2| F[F<br/>candidate]
-    
-    style A fill:#90EE90,stroke:#333,stroke-width:3px
-    style B fill:#90EE90,stroke:#333,stroke-width:3px
-    style D fill:#90EE90,stroke:#333,stroke-width:3px
-    style C fill:#FFB6C1,stroke:#333,stroke-width:2px
-    style F fill:#FFB6C1,stroke:#333,stroke-width:2px
-```
-
-**Step 4: Add minimum edge (D-F:2)**
-```
-MST vertices: {A, B, D, F}
-MST edges: [A-B:2, B-D:1, D-F:2]
-Priority queue: [(A-C:3), (A-D:4), (B-C:5), (E-F:3)]
-```
-
-```mermaid
-graph TD
-    A[A<br/>in MST] -->|2| B[B<br/>in MST]
-    A -->|3| C[C<br/>candidate]
-    A -->|4| D[D<br/>in MST]
-    B -->|1| D
-    B -->|5| C
-    D -->|2| F[F<br/>in MST]
-    E[E<br/>candidate] -->|3| F
-    
-    style A fill:#90EE90,stroke:#333,stroke-width:3px
-    style B fill:#90EE90,stroke:#333,stroke-width:3px
-    style D fill:#90EE90,stroke:#333,stroke-width:3px
-    style F fill:#90EE90,stroke:#333,stroke-width:3px
-    style C fill:#FFB6C1,stroke:#333,stroke-width:2px
-    style E fill:#FFB6C1,stroke:#333,stroke-width:2px
-```
-
-**Step 5: Add minimum edge (A-C:3)**
-```
-MST vertices: {A, B, D, F, C}
-MST edges: [A-B:2, B-D:1, D-F:2, A-C:3]
-Priority queue: [(A-D:4), (B-C:5), (C-D:6), (C-E:7), (E-F:3)]
-```
-
-```mermaid
-graph TD
-    A[A<br/>in MST] -->|2| B[B<br/>in MST]
-    A -->|3| C[C<br/>in MST]
-    B -->|1| D[D<br/>in MST]
-    D -->|2| F[F<br/>in MST]
-    E[E<br/>candidate] -->|3| F
-    
-    style A fill:#90EE90,stroke:#333,stroke-width:3px
-    style B fill:#90EE90,stroke:#333,stroke-width:3px
-    style C fill:#90EE90,stroke:#333,stroke-width:3px
-    style D fill:#90EE90,stroke:#333,stroke-width:3px
-    style F fill:#90EE90,stroke:#333,stroke-width:3px
-    style E fill:#FFB6C1,stroke:#333,stroke-width:2px
-```
-
-**Step 6: Add minimum edge (E-F:3)**
-```
-MST vertices: {A, B, D, F, C, E}
-MST edges: [A-B:2, B-D:1, D-F:2, A-C:3, E-F:3]
-All vertices included! MST complete.
-```
-
-```mermaid
-graph TD
-    A[A<br/>in MST] -->|2| B[B<br/>in MST]
-    A -->|3| C[C<br/>in MST]
-    B -->|1| D[D<br/>in MST]
-    D -->|2| F[F<br/>in MST]
-    E[E<br/>in MST] -->|3| F
-    
-    style A fill:#90EE90,stroke:#333,stroke-width:3px
-    style B fill:#90EE90,stroke:#333,stroke-width:3px
-    style C fill:#90EE90,stroke:#333,stroke-width:3px
-    style D fill:#90EE90,stroke:#333,stroke-width:3px
-    style E fill:#90EE90,stroke:#333,stroke-width:3px
-    style F fill:#90EE90,stroke:#333,stroke-width:3px
-```
-
-**Final MST:**
-- Total weight: 2 + 1 + 2 + 3 + 3 = 11
-- Edges: A-B, B-D, D-F, A-C, E-F
-
-**Key Observations:**
-1. **Greedy Strategy**: Always add the minimum-weight edge connecting MST to outside
-2. **Grows from One Vertex**: Starts with one vertex and expands outward
-3. **Priority Queue**: Maintains minimum-weight edges from MST to outside vertices
-4. **Similar to Dijkstra's**: Uses similar structure but different edge selection criteria
+Prim starts from one vertex and expands outward, always adding the cheapest edge leaving the tree. Its priority-queue structure mirrors Dijkstra's, differing only in the key used (edge weight rather than accumulated path distance).
 
 #### Kruskal vs Prim: When to Use Which?
 
@@ -2790,151 +1514,35 @@ public:
 - **Time**: O((V + E) log V) with binary heap
 - **Space**: O(V)
 
-## 11.8 Topological Sorting
+## 11.12 Topological Sorting
 
 **Topological sorting** is a linear ordering of vertices in a directed acyclic graph (DAG) such that for every directed edge (u, v), u comes before v. Think of it as arranging tasks with dependencies: if task A depends on task B, then B must come before A in the ordering.
 
 #### How Topological Sort Works: Step-by-Step Example
 
-Let's trace through topological sorting on the following DAG:
+Consider these task dependencies (an edge u → v means u must finish before v):
 
-**Graph (Task Dependencies):**
 ```
     A → B → D
     ↓   ↓   ↓
     C → E → F
 ```
 
-**Interpretation:**
-- A must complete before B and C
-- B must complete before D and E
-- C must complete before E
-- E must complete before F
+**Kahn's algorithm (BFS-based)** repeatedly emits a vertex with in-degree 0, then decrements the in-degree of its successors:
 
-**Method 1: Kahn's Algorithm (BFS-based)**
+| Step | Emit | In-degree drops to 0 | Queue after |
+|------|------|----------------------|-------------|
+| start | — | A | A |
+| 1 | A | B, C | B, C |
+| 2 | B | D | C, D |
+| 3 | C | E | D, E |
+| 4 | D | — | E |
+| 5 | E | F | F |
+| 6 | F | — | (empty) |
 
-**Step-by-Step Execution:**
+**One valid ordering:** A → B → C → D → E → F. A DAG generally has several valid orderings (e.g. A → C → B → E → D → F): sources appear first, sinks last. If any vertices remain unemitted when the queue empties, the graph has a cycle and no ordering exists.
 
-**Step 1: Calculate in-degrees**
-```
-A: 0, B: 1, C: 1, D: 1, E: 2, F: 1
-```
-
-**Step 2: Initialize queue with vertices having in-degree 0**
-```
-Queue: [A]
-In-degrees: A=0, B=1, C=1, D=1, E=2, F=1
-Result: []
-```
-```
-    A* → B    (A has in-degree 0, process first)
-    ↓   ↓
-    C → E → F
-```
-
-**Step 3: Process A, remove outgoing edges, update in-degrees**
-```
-Queue: []
-In-degrees: A=0 (processed), B=0, C=0, D=1, E=2, F=1
-Result: [A]
-Add to queue: B, C (now have in-degree 0)
-Queue: [B, C]
-```
-```
-    A* → B*   (A processed, B now has in-degree 0)
-    ↓   ↓
-    C* → E → F  (C now has in-degree 0)
-```
-
-**Step 4: Process B, remove outgoing edges**
-```
-Queue: [C]
-In-degrees: B=0 (processed), D=0, E=1, F=1
-Result: [A, B]
-Add to queue: D (now has in-degree 0)
-Queue: [C, D]
-```
-```
-    A* → B* → D*  (B processed, D now has in-degree 0)
-    ↓
-    C* → E → F
-```
-
-**Step 5: Process C, remove outgoing edges**
-```
-Queue: [D]
-In-degrees: C=0 (processed), E=0, F=1
-Result: [A, B, C]
-Add to queue: E (now has in-degree 0)
-Queue: [D, E]
-```
-```
-    A* → B* → D*
-    ↓
-    C* → E*  (C processed, E now has in-degree 0)
-         ↓
-         F
-```
-
-**Step 6: Process D (no outgoing edges)**
-```
-Queue: [E]
-In-degrees: D=0 (processed)
-Result: [A, B, C, D]
-Queue: [E]
-```
-
-**Step 7: Process E**
-```
-Queue: []
-In-degrees: E=0 (processed), F=0
-Result: [A, B, C, D, E]
-Add to queue: F (now has in-degree 0)
-Queue: [F]
-```
-```
-    A* → B* → D*
-    ↓
-    C* → E* → F*  (E processed, F now has in-degree 0)
-```
-
-**Step 8: Process F**
-```
-Queue: []
-In-degrees: F=0 (processed)
-Result: [A, B, C, D, E, F]
-Topological Sort Complete!
-```
-
-**Final Ordering:** A → B → C → D → E → F
-
-**Valid Alternative Orderings:**
-- A → C → B → D → E → F
-- A → B → C → D → E → F
-- A → C → B → E → D → F
-
-**Key Observations:**
-1. **Multiple Valid Orderings**: A DAG can have multiple topological orderings
-2. **No Cycles**: If graph has cycles, topological sort is impossible
-3. **Source First**: Vertices with no incoming edges (sources) appear first
-4. **Sink Last**: Vertices with no outgoing edges (sinks) appear last
-
-#### Method 2: DFS-based Topological Sort
-
-**DFS Approach:**
-1. Perform DFS on the graph
-2. When a vertex finishes (all neighbors processed), add it to result
-3. Reverse the result to get topological order
-
-**Why Reverse?**
-- DFS finishes sinks first (no outgoing edges)
-- We want sources first, so we reverse
-
-**Example with same graph:**
-```
-DFS order (finish times): F, E, D, C, B, A
-Reversed: A, B, C, D, E, F
-```
+**DFS-based alternative:** run DFS and push each vertex onto a list when it *finishes* (all its successors are done), then reverse the list. DFS finishes sinks first, so reversing yields sources first.
 
 ### Implementation
 ```cpp
@@ -3036,7 +1644,7 @@ public:
 - Course prerequisites
 - Event ordering
 
-## 11.9 Finding Bridges in a Graph
+## 11.13 Finding Bridges in a Graph
 
 A **bridge** (also called a cut edge) is an edge whose removal increases the number of connected components in the graph. Bridges are critical edges that, if removed, disconnect the graph.
 
@@ -3110,18 +1718,7 @@ Consider this graph:
 - If we remove (1, 3), vertex 3 can still reach 0 via: 3 → 4 → 2 → 0
 - The back edge (3-4) provides an alternative path
 
-#### Step-by-Step Reasoning
-
-1. **During DFS**, we traverse from u to v
-2. **After exploring v's subtree**, we check `low[v]`
-3. **If `low[v] > disc[u]`**:
-   - v's earliest reachable vertex was discovered **after** u
-   - This means v cannot reach u or any ancestor of u
-   - The only connection from v's subtree to the rest of the graph is through edge (u, v)
-   - Removing (u, v) would disconnect v's entire subtree
-4. **Therefore**, (u, v) is a bridge
-
-**Key Insight**: A bridge is an edge that is the **only path** connecting two parts of the graph. If there's any alternative path (back edge), the edge is not a bridge.
+**Key insight:** a bridge is an edge that is the *only* path connecting two parts of the graph. If `low[v] > disc[u]`, v's subtree can reach nothing discovered before u, so edge (u, v) is its sole link to the rest of the graph and is therefore a bridge. Any back edge to an ancestor would make `low[v] ≤ disc[u]` and disqualify it.
 
 ### Implementation
 ```cpp
@@ -3205,7 +1802,7 @@ public:
 - Finding critical connections
 - Graph connectivity analysis
 
-## 11.10 Finding Articulation Points
+## 11.14 Finding Articulation Points
 
 An **articulation point** (also called a cut vertex) is a vertex whose removal increases the number of connected components in the graph. Unlike bridges (which are edges), articulation points are vertices that are critical to graph connectivity.
 
@@ -3305,17 +1902,7 @@ Consider this graph:
 - Removing u disconnects v's subtree
 - **u is an articulation point**
 
-#### Step-by-Step Reasoning
-
-1. **During DFS**, we traverse from u to v
-2. **After exploring v's subtree**, we check `low[v]`
-3. **If `low[v] >= disc[u]`**:
-   - v's earliest reachable vertex was discovered at time `>= disc[u]`
-   - This means v cannot reach any ancestor of u (or can only reach u itself)
-   - Removing u would disconnect v's entire subtree
-4. **Therefore**, u is an articulation point
-
-**Key Insight**: An articulation point is a vertex that is the **only connection** between its parent and at least one of its child subtrees. If there's any alternative path (back edge to an ancestor), the vertex is not an articulation point.
+**Key insight:** an articulation point is a vertex that is the *only* connection between its parent and at least one child subtree. If `low[v] >= disc[u]`, that subtree cannot reach any ancestor of u, so removing u disconnects it. The condition uses `>=` (not the bridge's strict `>`) because even a subtree that can reach u *itself* is still severed when u is removed.
 
 #### Comparison: Bridges vs. Articulation Points
 
@@ -3423,7 +2010,7 @@ public:
 - Finding critical nodes
 - Social network analysis
 
-## 11.11 Strongly Connected Components
+## 11.15 Strongly Connected Components
 
 A **Strongly Connected Component (SCC)** in a directed graph is a maximal set of vertices where every vertex is reachable from every other vertex.
 
@@ -3599,7 +2186,7 @@ public:
 - Web page ranking
 - Dependency resolution
 
-## 11.12 0-1 BFS
+## 11.16 0-1 BFS
 
 **0-1 BFS** is a special case of BFS for graphs where edge weights are either 0 or 1. It's more efficient than Dijkstra's algorithm for this case.
 
@@ -3729,9 +2316,9 @@ public:
 - Problems with "teleportation" edges (weight 0)
 - Network routing with binary costs
 
-## 11.13 Graph Applications
+## 11.17 Graph Applications
 
-### 11.13.1 Finding Connected Components
+### 11.17.1 Finding Connected Components
 ```cpp
 vector<vector<int>> findConnectedComponents(const vector<list<int>>& graph) {
     int n = graph.size();
@@ -3760,7 +2347,7 @@ vector<vector<int>> findConnectedComponents(const vector<list<int>>& graph) {
 }
 ```
 
-### 11.13.2 Cycle Detection
+### 11.17.2 Cycle Detection
 ```cpp
 bool hasCycle(const vector<list<int>>& graph) {
     int n = graph.size();
@@ -3793,7 +2380,7 @@ bool hasCycle(const vector<list<int>>& graph) {
 }
 ```
 
-### 11.13.3 Bipartite Graph Check
+### 11.17.3 Bipartite Graph Check
 ```cpp
 bool isBipartite(const vector<list<int>>& graph) {
     int n = graph.size();
@@ -3825,7 +2412,7 @@ bool isBipartite(const vector<list<int>>& graph) {
 }
 ```
 
-## 11.14 Key Takeaways
+## 11.18 Key Takeaways
 
 1. **Graphs** represent relationships and connections between entities
 2. **Adjacency matrix** is good for dense graphs, **adjacency list** for sparse graphs
@@ -3840,7 +2427,7 @@ bool isBipartite(const vector<list<int>>& graph) {
 11. **0-1 BFS** efficiently handles graphs with binary edge weights
 12. Graphs have many real-world applications
 
-## 11.15 Exercises
+## 11.19 Exercises
 
 1. Implement a graph class that supports both adjacency matrix and adjacency list representations.
 
@@ -3862,7 +2449,7 @@ bool isBipartite(const vector<list<int>>& graph) {
 
 10. Create a graph visualization tool that can display small graphs.
 
-## 11.14 A* Algorithm
+## 11.20 A* Algorithm
 
 **A\* (A-star)** is an informed search algorithm that finds the shortest path between nodes in a weighted graph. It combines Dijkstra's algorithm with a heuristic function to guide the search more efficiently.
 
@@ -3904,6 +2491,11 @@ struct Node {
     }
 };
 
+// Order by the pointed-to node's f, not by pointer address
+struct CompareNode {
+    bool operator()(const Node* a, const Node* b) const { return a->f > b->f; }
+};
+
 class AStar {
 private:
     vector<vector<int>> grid;
@@ -3940,7 +2532,7 @@ public:
     }
     
     vector<pair<int, int>> findPath(pair<int, int> start, pair<int, int> goal) {
-        priority_queue<Node*, vector<Node*>, greater<Node*>> openSet;
+        priority_queue<Node*, vector<Node*>, CompareNode> openSet;
         unordered_map<string, Node*> allNodes;
         unordered_map<string, bool> closedSet;
         
@@ -4295,11 +2887,11 @@ vector<int> graphColoringBacktracking(vector<vector<int>>& graph, int maxColors)
 - Graph is small
 - Exact chromatic number required
 
-## 11.18 Concurrency Considerations
+## 11.21 Concurrency Considerations
 
 This section applies the concurrency fundamentals from [Chapter 3.5](03.5-concurrency-fundamentals.md) to graph traversal (BFS/DFS). See Section 3.5.3 for invariant-based reasoning and Section 3.5.4 for race conditions.
 
-### 11.16.1 Shared-State Invariants
+### 11.21.1 Shared-State Invariants
 
 **Graph Structure Invariants** (see Section 3.5.3):
 1. **Adjacency Invariant**: "Adjacency lists/matrix correctly represent edges"
@@ -4311,7 +2903,7 @@ This section applies the concurrency fundamentals from [Chapter 3.5](03.5-concur
 - Distance values during concurrent shortest path computation
 - Adjacency list modifications during traversal
 
-### 11.16.2 Operations That Must Be Atomic
+### 11.21.2 Operations That Must Be Atomic
 
 **BFS Traversal** (see Section 3.5.4):
 ```cpp
@@ -4353,7 +2945,7 @@ for (int v : adj[u]) {  // Reading adjacency list
 - **Distance updates**: Read-modify-write must be atomic
 - **Graph modification**: Entire edge addition/removal must be atomic (or use immutable graph)
 
-### 11.16.3 Naïve Approaches and Why They Fail
+### 11.21.3 Naïve Approaches and Why They Fail
 
 **1. Partial Updates**:
 ```cpp
@@ -4386,7 +2978,7 @@ for (int v : adj[u]) {  // Race condition!
 ```
 **Why It Fails**: Traversal and modification are not mutually exclusive. Invariant violation: **Adjacency Invariant** broken.
 
-### 11.16.4 Locking Strategies
+### 11.21.4 Locking Strategies
 
 **Coarse-Grained Lock** (see Section 3.5.8):
 ```cpp
@@ -4435,7 +3027,7 @@ if (!visited[v].exchange(true)) {  // Atomic check-and-set
 - ✅ Lock-free for visited flags
 - ✅ Good for parallel BFS
 
-### 11.16.5 Performance and Scalability Implications
+### 11.21.5 Performance and Scalability Implications
 
 **Contention** (see Section 3.5.8):
 - Coarse-grained locking: Very high contention, throughput collapses
@@ -4451,7 +3043,7 @@ if (!visited[v].exchange(true)) {  // Atomic check-and-set
 - **Component-based parallelization**: Process different connected components in parallel
 - **Edge-based parallelization**: Process edges in parallel (for algorithms like MST)
 
-### 11.16.6 When Not to Do This Yourself
+### 11.21.6 When Not to Do This Yourself
 
 **Use Library Implementations**:
 - Graph processing frameworks (e.g., GraphX, Pregel) that handle concurrency
@@ -4465,7 +3057,7 @@ if (!visited[v].exchange(true)) {  // Atomic check-and-set
 
 **For Production**: Consider graph processing frameworks that handle concurrency, or use immutable graphs for read-heavy workloads. See Section 3.5.10 for guidance on using libraries.
 
-## 11.19 Summary
+## 11.22 Summary
 
 Graphs are fundamental data structures that model relationships and connections. Understanding graph representations, traversal algorithms, shortest path algorithms, and minimum spanning tree algorithms is essential for solving many computational problems. The choice of representation and algorithm depends on the specific problem requirements, graph characteristics, and performance constraints.
 

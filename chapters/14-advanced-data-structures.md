@@ -1,826 +1,99 @@
 # Chapter 14: Advanced Data Structures
 
-## Table of Contents
-
-- [14.1 Problem Statement & Motivation](#problem-statement-motivation)
-  - [What Problems Do Advanced Data Structures Solve?](#what-problems-do-advanced-data-structures-solve)
-  - [When to Use Advanced Data Structures](#when-to-use-advanced-data-structures)
-  - [When NOT to Use Advanced Data Structures](#when-not-to-use-advanced-data-structures)
-- [14.2 Conceptual Overview](#conceptual-overview)
-  - [Intuitive Explanation](#intuitive-explanation)
-  - [Key Categories](#key-categories)
-  - [Data Structures Covered](#data-structures-covered)
-- [14.3 Abstract Model & Invariants ⭐ (Mandatory)](#abstract-model-invariants-mandatory)
-  - [Abstract Model](#abstract-model)
-  - [Core Invariants (Unified)](#core-invariants-unified)
-  - [Structure-Specific Invariants](#structure-specific-invariants)
-  - [Assumptions](#assumptions)
-- [14.4 Operations & Interface](#operations-interface)
-  - [Heap Operations](#heap-operations)
-  - [Range Query Operations (Segment Tree, Fenwick Tree)](#range-query-operations-segment-tree-fenwick-tree)
-  - [Trie Operations](#trie-operations)
-  - [Behavioral Guarantees](#behavioral-guarantees)
-- [14.5 Time & Space Complexity](#time-space-complexity)
-  - [Time Complexity Summary](#time-complexity-summary)
-  - [Space Complexity](#space-complexity)
-  - [Trade-offs](#trade-offs)
-- [14.6 Pseudocode (Language-Neutral) ⭐ (Mandatory)](#pseudocode-language-neutral-mandatory)
-  - [Heap Operations](#heap-operations)
-  - [Segment Tree Operations](#segment-tree-operations)
-  - [Trie Operations](#trie-operations)
-  - [Fenwick Tree Operations](#fenwick-tree-operations)
-- [14.7 Implementation (Reference Language: C++) ⭐](#implementation-reference-language-c)
-- [14.8 Correctness Argument](#correctness-argument)
-  - [Invariant Preservation](#invariant-preservation)
-  - [Informal Proof Sketch](#informal-proof-sketch)
-- [14.9 Edge Cases & Failure Modes](#edge-cases-failure-modes)
-  - [Heap Edge Cases](#heap-edge-cases)
-  - [Segment Tree Edge Cases](#segment-tree-edge-cases)
-  - [Trie Edge Cases](#trie-edge-cases)
-  - [Common Failure Patterns](#common-failure-patterns)
-- [14.10 Performance & System Considerations ⭐ (Differentiator)](#performance-system-considerations-differentiator)
-  - [Cache Locality](#cache-locality)
-  - [Memory Allocation](#memory-allocation)
-  - [Practical Recommendations](#practical-recommendations)
-- [14.11 Heaps](#heaps)
-  - [Heap Properties](#heap-properties)
-  - [14.2.1 Core Invariants](#1-core-invariants)
-  - [Array Representation](#array-representation)
-  - [14.2.2 Systems Perspective: Cache Performance and Memory Layout](#2-systems-perspective-cache-performance-and-memory-layout)
-  - [Max Heap Implementation](#max-heap-implementation)
-  - [Min Heap Implementation](#min-heap-implementation)
-  - [Priority Queue Implementation](#priority-queue-implementation)
-  - [Heap Sort](#heap-sort)
-  - [Time Complexity](#time-complexity)
-- [14.12 Tries (Prefix Trees)](#tries-prefix-trees)
-  - [Trie Node Structure](#trie-node-structure)
-  - [Compact Trie (Array-based)](#compact-trie-array-based)
-  - [Applications](#applications)
-- [14.13 Segment Trees](#segment-trees)
-  - [Implementation](#implementation)
-  - [Range Minimum Query Segment Tree](#range-minimum-query-segment-tree)
-  - [Time Complexity](#time-complexity)
-- [14.14 Fenwick Trees (Binary Indexed Trees)](#fenwick-trees-binary-indexed-trees)
-  - [Implementation](#implementation)
-  - [Time Complexity](#time-complexity)
-  - [Advantages over Segment Tree](#advantages-over-segment-tree)
-- [14.15 Sparse Table](#sparse-table)
-  - [Key Properties](#key-properties)
-  - [Implementation](#implementation)
-  - [Time Complexity](#time-complexity)
-  - [When to Use](#when-to-use)
-  - [Limitations](#limitations)
-- [14.16 Sqrt Decomposition](#sqrt-decomposition)
-  - [Key Idea](#key-idea)
-  - [Implementation](#implementation)
-  - [Optimized Sqrt Decomposition with Block Sums](#optimized-sqrt-decomposition-with-block-sums)
-  - [Time Complexity](#time-complexity)
-  - [When to Use](#when-to-use)
-  - [Comparison with Other Structures](#comparison-with-other-structures)
-- [14.17 Skip Lists](#skip-lists)
-  - [14.8.1 Introduction to Skip Lists](#1-introduction-to-skip-lists)
-  - [14.8.2 Skip List Structure](#2-skip-list-structure)
-  - [14.8.3 Skip List Implementation](#3-skip-list-implementation)
-  - [14.8.4 Performance Analysis](#4-performance-analysis)
-  - [14.8.5 Applications](#5-applications)
-- [14.18 Bloom Filters](#bloom-filters)
-  - [14.9.1 Introduction to Bloom Filters](#1-introduction-to-bloom-filters)
-  - [14.9.2 How Bloom Filters Work](#2-how-bloom-filters-work)
-  - [14.9.3 Bloom Filter Implementation](#3-bloom-filter-implementation)
-  - [14.9.4 Performance Analysis](#4-performance-analysis)
-  - [14.9.5 Applications](#5-applications)
-  - [14.9.6 Counting Bloom Filters](#6-counting-bloom-filters)
-- [14.19 Count-Min Sketch](#count-min-sketch)
-  - [14.10.1 Introduction to Count-Min Sketch](#1-introduction-to-count-min-sketch)
-  - [14.10.2 How Count-Min Sketch Works](#2-how-count-min-sketch-works)
-  - [14.10.3 Count-Min Sketch Implementation](#3-count-min-sketch-implementation)
-  - [14.10.4 Performance Analysis](#4-performance-analysis)
-  - [14.10.5 Applications](#5-applications)
-  - [14.10.6 Comparison with Other Structures](#6-comparison-with-other-structures)
-  - [14.10.7 Variants and Extensions](#7-variants-and-extensions)
-- [14.20 Fibonacci Heap](#fibonacci-heap)
-  - [Why Fibonacci Heap?](#why-fibonacci-heap)
-  - [Structure](#structure)
-  - [Key Operations](#key-operations)
-  - [Implementation Overview](#implementation-overview)
-  - [When to Use Fibonacci Heap](#when-to-use-fibonacci-heap)
-  - [Real-World Application: Dijkstra's Algorithm](#real-world-application-dijkstras-algorithm)
-- [14.21 Suffix Array and Suffix Tree](#suffix-array-and-suffix-tree)
-  - [Suffix Array](#suffix-array)
-  - [Suffix Tree](#suffix-tree)
-  - [When to Use](#when-to-use)
-- [14.22 Persistent Data Structures](#persistent-data-structures)
-  - [Types of Persistence](#types-of-persistence)
-  - [Persistent Segment Tree Example](#persistent-segment-tree-example)
-  - [Applications](#applications)
-  - [When to Use](#when-to-use)
-- [14.23 Failure Modes and Common Pitfalls](#failure-modes-and-common-pitfalls)
-- [14.24 Key Takeaways](#key-takeaways)
-- [14.25 Exercises](#exercises)
-- [14.26 Concurrency Considerations](#concurrency-considerations)
-  - [14.14.1 Shared-State Invariants](#1-shared-state-invariants)
-  - [14.14.2 Operations That Must Be Atomic](#2-operations-that-must-be-atomic)
-  - [14.14.3 Naïve Approaches and Why They Fail](#3-naïve-approaches-and-why-they-fail)
-  - [14.14.4 Locking Strategies](#4-locking-strategies)
-  - [14.14.5 Performance and Scalability Implications](#5-performance-and-scalability-implications)
-  - [14.14.6 When Not to Do This Yourself](#6-when-not-to-do-this-yourself)
-- [14.27 Summary](#summary)
-
-
-
 ## 14.1 Problem Statement & Motivation
 
-### What Problems Do Advanced Data Structures Solve?
+Basic structures (arrays, linked lists, balanced trees) leave specific operations expensive:
 
-Basic data structures (arrays, linked lists, trees) have limitations for specialized operations:
+- **Range queries** (sum/min/max over `[l, r]`): O(n) per query with a plain array.
+- **Prefix operations**: recomputing a prefix sum is O(n).
+- **Priority operations**: finding and removing the min/max is O(n) with linear search.
+- **String prefix / substring search**: O(n×m) brute force.
+- **Approximate membership at scale**: an exact set costs O(n) space.
+- **Version history**: naively snapshotting a structure costs O(n) per version.
 
-- **Range Queries**: Need O(1) or O(log n) range sum/min/max queries
-- **Prefix Operations**: Need efficient prefix sum queries
-- **Priority Operations**: Need efficient min/max extraction with updates
-- **String Operations**: Need efficient prefix matching, substring search
-- **Probabilistic Membership**: Need space-efficient approximate membership testing
-- **Version History**: Need to maintain multiple versions of data structure
-
-**Naive Approaches and Their Limitations**:
-
-- **Arrays for Range Queries**: O(n) time per query
-- **Linear Search for Priority**: O(n) time for min/max
-- **Brute Force String Search**: O(n×m) for pattern matching
-- **Exact Membership Testing**: Requires O(n) space for n elements
-
-**The Advanced Data Structures Solution**: Specialized structures optimize for specific operations - heaps for priority queues, segment trees for range queries, tries for string operations, probabilistic structures for space efficiency.
-
-### When to Use Advanced Data Structures
-
-✅ **Use advanced structures when**:
-- Need specialized operations (range queries, prefix operations)
-- Performance is critical for specific operations
-- Space efficiency matters (probabilistic structures)
-- Problem requires maintaining multiple versions
-- Standard structures don't provide needed operations efficiently
-
-✅ **Real-world applications**:
-- Priority queues (task scheduling, Dijkstra's algorithm)
-- Range queries (database systems, analytics)
-- String operations (autocomplete, spell checkers)
-- Probabilistic structures (distributed systems, caching)
-- Version control (functional programming, time-travel queries)
-
-### When NOT to Use Advanced Data Structures
-
-❌ **Avoid when**:
-- Simple structures suffice
-- Overhead not worth it for problem size
-- Operations don't match structure's strengths
-- Complexity not justified
-
-**Key Trade-off**: Advanced structures trade general-purpose flexibility for specialized performance.
+Each structure in this chapter specializes one of these: heaps for priority, segment and Fenwick trees for range queries, tries and suffix structures for strings, Bloom filters and Count-Min sketches for space-efficient approximation, persistent structures for history. The trade is generality for specialized performance — reach for them only when a simpler structure genuinely can't meet the requirement.
 
 ## 14.2 Conceptual Overview
 
-**Advanced Data Structures** are specialized structures optimized for specific operations beyond what basic structures provide efficiently.
+Think of each structure as a specialized tool: a heap is a hospital triage queue (most urgent first), a segment tree is a building directory answering "any floor range" quickly, a trie is a phone book organized by prefix, and a Bloom filter is a membership card that may say "maybe" but never wrongly says "not a member."
 
-### Intuitive Explanation
+The chapter groups them as:
 
-Think of advanced data structures like specialized tools:
-- **Heaps**: Like a priority queue at a hospital (most urgent first)
-- **Segment Trees**: Like a building directory (quickly find info for any floor range)
-- **Tries**: Like a phone book organized by prefix
-- **Bloom Filters**: Like a membership card (might say "maybe member" but never wrong when says "not member")
+- **Priority**: binary heaps, Fibonacci heaps.
+- **Range query**: segment trees, Fenwick trees, sparse tables, sqrt decomposition.
+- **String**: tries, suffix arrays/trees.
+- **Probabilistic**: Bloom filters, Count-Min sketch, skip lists.
+- **Versioned**: persistent structures.
 
-### Key Categories
+## 14.3 Abstract Model & Invariants
 
-1. **Priority Structures**: Heaps, Fibonacci Heaps
-2. **Range Query Structures**: Segment Trees, Fenwick Trees, Sparse Tables
-3. **String Structures**: Tries, Suffix Trees/Arrays
-4. **Probabilistic Structures**: Bloom Filters, Count-Min Sketch
-5. **Specialized Structures**: Skip Lists, Persistent Structures
+Each structure is defined by its state, its supported operations, and the **invariants** every operation must preserve. Correctness is exactly "no operation ever leaves an invariant broken."
 
-### Data Structures Covered
+**Heap.** (1) *Heap property*: `parent ≥ children` (max-heap) or `parent ≤ children` (min-heap), recursively. (2) *Complete tree*: all levels full except the last, which fills left to right. (3) *Array mapping*: root at index 0, and for node `i`, parent `(i-1)/2`, children `2i+1` and `2i+2`, with no gaps. The complete-tree shape bounds the height at ⌊log₂ n⌋.
 
-1. **Heaps**: Priority queues and heap operations
-2. **Tries**: Prefix trees for string operations
-3. **Segment Trees**: Range query and update operations
-4. **Fenwick Trees**: Binary Indexed Trees for prefix sums
-5. **Sparse Table**: O(1) range queries on static arrays
-6. **Sqrt Decomposition**: Simple range queries and updates
-7. **Skip Lists**: Probabilistic alternative to balanced trees
-8. **Bloom Filters**: Space-efficient probabilistic membership testing
-9. **Count-Min Sketch**: Probabilistic frequency counting for data streams
-10. **Fibonacci Heap**: Advanced heap with O(1) amortized decrease-key
-11. **Suffix Array/Tree**: Efficient string operations and pattern matching
-12. **Persistent Data Structures**: Maintain all versions of data structure
+**Segment tree.** Each node owns a range `[l, r]`; an internal node's value is the combination of its two children's values, so any query decomposes into O(log n) node values.
 
-## 14.3 Abstract Model & Invariants ⭐ (Mandatory)
+**Trie.** The path from the root to a node spells a prefix; each edge is labeled with one character; an end-of-word marker distinguishes stored words from mere prefixes.
 
-**Purpose**: Define correctness independent of implementation.
-
-### Abstract Model
-
-Advanced data structures can be abstracted as:
-
-1. **State**: Current configuration of the structure
-2. **Operations**: Supported operations (insert, query, update, etc.)
-3. **Invariants**: Properties that must always hold
-4. **Representation**: How structure is stored (array, tree, etc.)
-
-### Core Invariants (Unified)
-
-While each structure has specific invariants, common patterns include:
-
-#### 1. Structural Invariant
-
-```
-Structure maintains its shape property:
-  - Heap: Complete binary tree shape
-  - Trie: Tree structure with character edges
-  - Segment Tree: Balanced binary tree
-```
-
-#### 2. Ordering Invariant
-
-```
-Elements maintain ordering property:
-  - Heap: Parent-child ordering (heap property)
-  - Segment Tree: Range partitioning
-  - Fenwick Tree: Prefix sum ordering
-```
-
-#### 3. Completeness Invariant
-
-```
-Structure is complete and consistent:
-  - All nodes properly linked
-  - No orphaned nodes
-  - Representation matches abstract structure
-```
-
-### Structure-Specific Invariants
-
-#### Heap Invariants
-
-1. **Heap Property**: Parent ≥ children (max-heap) or Parent ≤ children (min-heap)
-2. **Complete Tree**: All levels filled except last, last level left-to-right
-3. **Array Representation**: `parent(i) = (i-1)/2`, `left(i) = 2i+1`, `right(i) = 2i+2`
-
-#### Segment Tree Invariants
-
-1. **Range Partitioning**: Each node covers a range [l, r]
-2. **Tree Structure**: Balanced binary tree
-3. **Query Invariance**: Query result combines child results correctly
-
-#### Trie Invariants
-
-1. **Prefix Property**: Path from root to node represents prefix
-2. **Character Edges**: Each edge labeled with character
-3. **Termination**: Markers indicate word endings
-
-### Assumptions
-
-1. **Finite Data**: Structures handle finite datasets
-2. **Comparable Elements**: Elements can be compared/ordered
-3. **Valid Operations**: Operations called with valid parameters
-4. **Memory Available**: Sufficient memory for structure
-
-This abstract model provides the intellectual backbone for understanding advanced data structure correctness.
+These assume finite data, comparable/orderable elements, valid operation arguments, and sufficient memory.
 
 ## 14.4 Operations & Interface
 
-**Purpose**: Define what operations are supported.
+**Heap** — `insert(v)` O(log n), `extractMin/Max()` O(log n), `peek()` O(1), `decreaseKey(i, v)` O(log n). Extraction and peek require a non-empty heap.
 
-Advanced data structures support specialized operations:
+**Range structures (segment/Fenwick tree)** — `query(l, r)` returns the aggregate over `[l, r]`; `update(i, v)` sets one element; segment trees also support `rangeUpdate(l, r, v)` with lazy propagation. All require `0 ≤ l ≤ r < n`.
 
-### Heap Operations
+**Trie** — `insert(word)`, `search(word)` (exact word), `startsWith(prefix)` (any word with that prefix).
 
-| Operation | Description | Precondition | Postcondition |
-|-----------|-------------|--------------|---------------|
-| `insert(value)` | Add element | Value is valid | Element added, heap property maintained |
-| `extractMin()/extractMax()` | Remove min/max | Heap is non-empty | Min/max removed, heap property maintained |
-| `peek()` | Get min/max without removal | Heap is non-empty | Returns min/max value |
-| `decreaseKey(index, newValue)` | Update element | Index valid, newValue < current | Element updated, heap property maintained |
-
-### Range Query Operations (Segment Tree, Fenwick Tree)
-
-| Operation | Description | Precondition | Postcondition |
-|-----------|-------------|--------------|---------------|
-| `query(l, r)` | Query range [l, r] | 0 ≤ l ≤ r < n | Returns aggregate (sum/min/max) for range |
-| `update(index, value)` | Update element at index | Index valid | Element updated, structure maintained |
-| `rangeUpdate(l, r, value)` | Update range [l, r] | Valid range | All elements in range updated |
-
-### Trie Operations
-
-| Operation | Description | Precondition | Postcondition |
-|-----------|-------------|--------------|---------------|
-| `insert(word)` | Add word to trie | Word is valid | Word added, trie structure maintained |
-| `search(word)` | Check if word exists | Word is valid | Returns true if word exists |
-| `startsWith(prefix)` | Find words with prefix | Prefix is valid | Returns all words with prefix |
-
-### Behavioral Guarantees
-
-1. **Correctness**: Operations return correct results
-2. **Invariant Preservation**: All operations maintain structure invariants
-3. **Efficiency**: Operations meet complexity guarantees
-4. **Consistency**: Structure remains consistent after operations
+Every operation must return the correct result, preserve the structure's invariants, and meet its complexity bound.
 
 ## 14.5 Time & Space Complexity
 
-**Purpose**: Make trade-offs explicit.
+| Structure | Insert | Delete | Search | Query | Update | Space |
+|-----------|--------|--------|--------|-------|--------|-------|
+| Heap | O(log n) | O(log n) | O(n) | O(1) peek | O(log n) | O(n) |
+| Trie | O(m) | O(m) | O(m) | O(m) prefix | O(m) | O(Σ·N·M) |
+| Segment tree | O(log n) | O(log n) | O(log n) | O(log n) | O(log n) | O(n) |
+| Fenwick tree | O(log n) | O(log n) | O(log n) | O(log n) | O(log n) | O(n) |
+| Sparse table | O(n log n) build | — | O(1) | O(1) | — | O(n log n) |
+| Skip list | O(log n) | O(log n) | O(log n) | O(log n) | O(log n) | O(n) exp. |
+| Bloom filter | O(k) | — | O(k) | O(1) | — | O(m) bits |
 
-### Time Complexity Summary
+(m = word/pattern length, k = number of hash functions, Σ = alphabet size, N words of average length M.) The recurring trade-off: heaps give fast priority ops but O(n) search; segment trees give flexible O(log n) range queries at O(n) space; tries give O(m) string ops at high space; Bloom filters are tiny but admit false positives.
 
-| Structure | Insert | Delete | Search | Query | Update | Notes |
-|----------|--------|--------|--------|-------|--------|-------|
-| **Heap** | O(log n) | O(log n) | O(n) | O(1) peek | O(log n) | Priority queue |
-| **Trie** | O(m) | O(m) | O(m) | O(m) prefix | O(m) | m = word length |
-| **Segment Tree** | O(log n) | O(log n) | O(log n) | O(log n) range | O(log n) | Range queries |
-| **Fenwick Tree** | O(log n) | O(log n) | O(log n) | O(log n) prefix | O(log n) | Prefix sums |
-| **Sparse Table** | O(n log n) build | N/A | O(1) | O(1) range | N/A | Static arrays |
-| **Skip List** | O(log n) | O(log n) | O(log n) | O(log n) | O(log n) | Probabilistic |
-| **Bloom Filter** | O(k) | N/A | O(k) | O(1) | N/A | Probabilistic |
+## 14.6 Correctness
 
-### Space Complexity
+Each operation is correct because it restores every invariant before returning. For a **heap insert**, appending at the end preserves completeness and the array mapping, and bubble-up restores the heap property along the single path to the root; **extract** moves the last element into the root (preserving completeness) and heapify-down restores the heap property. The argument is inductive: a one-element heap is trivially valid, and each operation maps a valid heap to a valid heap. For a **segment tree**, leaves hold array elements and every internal node holds the combination of its children, so `build` is correct bottom-up and `query` is correct because the visited nodes exactly partition `[l, r]`. **Trie** insert creates the character path and marks the terminal node; search follows the same path and checks the marker.
 
-| Structure | Space Complexity | Notes |
-|-----------|------------------|-------|
-| **Heap** | O(n) | Array representation |
-| **Trie** | O(ALPHABET_SIZE × N × M) | N words, M avg length |
-| **Segment Tree** | O(n) | 4n nodes typically |
-| **Fenwick Tree** | O(n) | Array of size n+1 |
-| **Sparse Table** | O(n log n) | Precomputed table |
-| **Skip List** | O(n) expected | Probabilistic structure |
-| **Bloom Filter** | O(m) | m bits, independent of n |
+## 14.7 Edge Cases & Failure Modes
 
-### Trade-offs
+- **Empty-heap access**: `extractMax()`/`peek()` on an empty heap must throw rather than read `heap[0]`.
+- **Out-of-range segment-tree query**: reject or clamp `l < 0`, `r ≥ n`, or `l > r` before recursing.
+- **Empty string in a trie**: decide explicitly whether `""` is a valid word (the marker on the root node).
+- **Recurring bugs**: index-out-of-bounds from unchecked child indices, heap-property violations from an incomplete heapify, off-by-one range splits (`mid` vs `mid+1`), Fenwick 0-vs-1-based confusion, and un-freed trie nodes. Section 14.21 shows each as a concrete wrong/right pair.
 
-**Heap**: Fast priority operations, but no efficient search
-**Segment Tree**: Fast range queries, but O(n) space and build time
-**Trie**: Fast string operations, but high space usage
-**Bloom Filter**: Space-efficient, but probabilistic (false positives)
+## 14.8 Performance & System Considerations
 
-## 14.6 Pseudocode (Language-Neutral) ⭐ (Mandatory)
+This is where the choice of structure meets the machine.
 
-**Purpose**: Bridge theory → implementation.
+**Array-backed structures win on cache.** A binary heap stores everything in one contiguous `vector`: parent and children are a few array slots apart, prefetching works, and there are no per-node pointers. A pointer-based priority queue (a balanced tree from Chapter 6) chases 2–5 cache lines per level. Same O(log n), but the heap is typically 2–3× faster and uses ~50% less memory. This is the Chapter 3 lesson again: contiguous layout beats pointer-chasing.
 
-**Rules**: No language syntax, no pointers/templates, focus on logic only.
+| Heap operation | Cache misses | Why |
+|----------------|--------------|-----|
+| heapifyUp | 0–1 | sequential parent access |
+| heapifyDown | 0–2 | children are adjacent |
+| buildHeap | ~log n | bottom-up construction |
 
-### Heap Operations
+**Pointer-based structures (tries, skip lists) pay for allocation.** Many small nodes fragment the heap and scatter across memory, causing a cache miss on nearly every traversal step. Mitigate with memory pools or pre-allocation, and prefer an array-backed representation (for instance a d-ary heap, which trades more children per node for fewer levels) when the access pattern allows. Profile before optimizing — measure the actual miss rate rather than guessing.
 
-#### Insert into Heap
+## 14.9 Heaps
 
-```
-FUNCTION heapInsert(heap, value):
-  heap.append(value)
-  index ← heap.size() - 1
-  
-  WHILE index > 0 AND heap[parent(index)] < heap[index]:  // For max-heap
-    swap(heap[parent(index)], heap[index])
-    index ← parent(index)
-  END WHILE
-END FUNCTION
-```
+A **heap** is a complete binary tree satisfying the heap property (Section 14.3): in a max-heap every parent is ≥ its children; in a min-heap every parent is ≤ its children. Because the tree is complete it lives in a flat array with no pointers — the layout responsible for its cache advantage (Section 14.8). For a node at index `i`: parent `(i-1)/2`, left `2i+1`, right `2i+2`.
 
-#### Extract Max from Heap
+Insertion appends at the end (preserving completeness) then bubbles up; extraction returns the root, moves the last element into the root, and heapifies down. Each touches one root-to-leaf path, so both are O(log n).
 
-```
-FUNCTION heapExtractMax(heap):
-  IF heap is empty:
-    ERROR "Heap is empty"
-  END IF
-  
-  max_value ← heap[0]
-  heap[0] ← heap[heap.size() - 1]
-  heap.removeLast()
-  
-  IF heap is not empty:
-    heapifyDown(heap, 0)
-  END IF
-  
-  RETURN max_value
-END FUNCTION
+### Max-Heap
 
-FUNCTION heapifyDown(heap, index):
-  largest ← index
-  
-  left ← 2 * index + 1
-  right ← 2 * index + 2
-  
-  IF left < heap.size() AND heap[left] > heap[largest]:
-    largest ← left
-  END IF
-  
-  IF right < heap.size() AND heap[right] > heap[largest]:
-    largest ← right
-  END IF
-  
-  IF largest ≠ index:
-    swap(heap[index], heap[largest])
-    heapifyDown(heap, largest)
-  END IF
-END FUNCTION
-```
-
-### Segment Tree Operations
-
-#### Build Segment Tree
-
-```
-FUNCTION buildSegmentTree(array, tree, node, start, end):
-  IF start = end:
-    tree[node] ← array[start]
-    RETURN
-  END IF
-  
-  mid ← (start + end) / 2
-  buildSegmentTree(array, tree, 2*node+1, start, mid)
-  buildSegmentTree(array, tree, 2*node+2, mid+1, end)
-  tree[node] ← combine(tree[2*node+1], tree[2*node+2])
-END FUNCTION
-```
-
-#### Query Segment Tree
-
-```
-FUNCTION querySegmentTree(tree, node, start, end, l, r):
-  IF r < start OR l > end:
-    RETURN identity_element  // Outside range
-  END IF
-  
-  IF l ≤ start AND end ≤ r:
-    RETURN tree[node]  // Completely inside range
-  END IF
-  
-  mid ← (start + end) / 2
-  left_result ← querySegmentTree(tree, 2*node+1, start, mid, l, r)
-  right_result ← querySegmentTree(tree, 2*node+2, mid+1, end, l, r)
-  
-  RETURN combine(left_result, right_result)
-END FUNCTION
-```
-
-### Trie Operations
-
-#### Insert into Trie
-
-```
-FUNCTION trieInsert(root, word):
-  current ← root
-  
-  FOR EACH character IN word:
-    IF current.children[character] does not exist:
-      current.children[character] ← new TrieNode()
-    END IF
-    current ← current.children[character]
-  END FOR
-  
-  current.isEndOfWord ← true
-END FUNCTION
-```
-
-#### Search in Trie
-
-```
-FUNCTION trieSearch(root, word):
-  current ← root
-  
-  FOR EACH character IN word:
-    IF current.children[character] does not exist:
-      RETURN false
-    END IF
-    current ← current.children[character]
-  END FOR
-  
-  RETURN current.isEndOfWord
-END FUNCTION
-```
-
-### Fenwick Tree Operations
-
-#### Update Fenwick Tree
-
-```
-FUNCTION fenwickUpdate(tree, index, delta):
-  index ← index + 1  // Convert to 1-based
-  
-  WHILE index ≤ tree.size():
-    tree[index] ← tree[index] + delta
-    index ← index + (index AND -index)  // Add lowest set bit
-  END WHILE
-END FUNCTION
-```
-
-#### Query Fenwick Tree (Prefix Sum)
-
-```
-FUNCTION fenwickQuery(tree, index):
-  index ← index + 1  // Convert to 1-based
-  sum ← 0
-  
-  WHILE index > 0:
-    sum ← sum + tree[index]
-    index ← index - (index AND -index)  // Remove lowest set bit
-  END WHILE
-  
-  RETURN sum
-END FUNCTION
-```
-
-This pseudocode should be readable by any engineer, regardless of their programming language background.
-
-## 14.7 Implementation (Reference Language: C++) ⭐
-
-**Note to Reader**: This section provides concrete C++ implementations. The correctness relies on the invariants defined in Section 14.3 and the pseudocode in Section 14.6.
-
-Detailed C++ implementations for each advanced data structure are provided in the following sections:
-- Section 14.9: Heap Implementation
-- Section 14.10: Trie Implementation
-- Section 14.11: Segment Tree Implementation
-- Section 14.12: Fenwick Tree Implementation
-- And other structures in subsequent sections
-
-## 14.8 Correctness Argument
-
-**Purpose**: Explain why the implementations work.
-
-### Invariant Preservation
-
-Advanced data structure implementations preserve their core invariants:
-
-#### Heap Invariant Preservation
-
-**For Insert**:
-- New element added at end (preserves complete tree)
-- Bubble up maintains heap property
-- **Preserves**: Heap property and complete tree structure
-
-**For Extract**:
-- Root replaced with last element (preserves complete tree)
-- Heapify down maintains heap property
-- **Preserves**: Heap property and complete tree structure
-
-#### Segment Tree Invariant Preservation
-
-**For Build**:
-- Tree built bottom-up
-- Each node combines children correctly
-- **Preserves**: Range partitioning and query correctness
-
-**For Query**:
-- Range decomposed into tree nodes
-- Results combined correctly
-- **Preserves**: Query returns correct aggregate
-
-#### Trie Invariant Preservation
-
-**For Insert**:
-- Path created character by character
-- End marker set at word end
-- **Preserves**: Prefix property and word representation
-
-**For Search**:
-- Path followed character by character
-- End marker checked at word end
-- **Preserves**: Correct word detection
-
-### Informal Proof Sketch
-
-**For Heap**:
-1. **Base Case**: Single element heap satisfies heap property
-2. **Inductive Step**: Insert/extract maintain heap property
-3. **Conclusion**: Heap operations preserve invariants
-
-**For Segment Tree**:
-1. **Base Case**: Leaf nodes contain array elements
-2. **Inductive Step**: Internal nodes combine children correctly
-3. **Conclusion**: Queries return correct results
-
-This correctness argument provides engineers with confidence that advanced data structure implementations work correctly.
-
-## 14.9 Edge Cases & Failure Modes
-
-**Purpose**: Build defensive thinking.
-
-### Heap Edge Cases
-
-#### Empty Heap Operations
-
-**Problem**: Operations on empty heap.
-
-**Edge Cases**:
-- `extractMax()` on empty heap
-- `peek()` on empty heap
-
-**Handling**:
-```cpp
-if (heap.empty()) {
-    throw runtime_error("Heap is empty");
-}
-```
-
-**Failure Mode**: Accessing `heap[0]` when empty causes crash.
-
-#### Heap Property Violation
-
-**Problem**: Operations break heap property.
-
-**Edge Cases**:
-- Incorrect bubble up/down
-- Wrong comparison in heapify
-
-**Handling**: Carefully implement heapify operations, test with examples.
-
-### Segment Tree Edge Cases
-
-#### Invalid Range Queries
-
-**Problem**: Query range outside array bounds.
-
-**Edge Cases**:
-- `query(-1, 5)` - negative start
-- `query(0, n)` - end beyond array
-- `query(5, 3)` - start > end
-
-**Handling**:
-```cpp
-if (l < 0 || r >= n || l > r) {
-    throw invalid_argument("Invalid range");
-}
-```
-
-### Trie Edge Cases
-
-#### Empty String
-
-**Problem**: Inserting or searching empty string.
-
-**Edge Cases**:
-- `insert("")` - empty string
-- `search("")` - empty string
-
-**Handling**: Define behavior (empty string as valid word or not).
-
-### Common Failure Patterns
-
-1. **Index Out of Bounds**: Accessing array elements beyond size
-2. **Heap Property Violation**: Not maintaining parent-child ordering
-3. **Range Errors**: Invalid range in segment tree queries
-4. **Memory Leaks**: Not freeing nodes in tree structures
-5. **Off-by-One Errors**: Incorrect index calculations
-
-This section maps directly to production bugs and helps engineers write robust code.
-
-## 14.10 Performance & System Considerations ⭐ (Differentiator)
-
-**Purpose**: Connect algorithms to real machines.
-
-### Cache Locality
-
-#### Array-Based Structures (Heap, Segment Tree)
-
-**Advantages**:
-- Contiguous memory layout
-- Good cache locality
-- Prefetching works well
-
-**Performance**: Array-based structures are cache-friendly.
-
-#### Tree-Based Structures (Trie, Segment Tree nodes)
-
-**Disadvantages**:
-- Nodes allocated separately
-- Random memory access
-- Cache misses
-
-**Mitigation**: Use array-based representation when possible (heaps use arrays).
-
-### Memory Allocation
-
-#### Frequent Allocations (Trie, Skip List)
-
-**Problem**: Many small allocations fragment heap.
-
-**Impact**: Slower allocation, increased memory usage.
-
-**Mitigation**: Use memory pools, pre-allocate nodes.
-
-### Practical Recommendations
-
-1. **Use Array-Based When Possible**: Better cache performance
-2. **Consider Memory Pools**: For frequent allocations
-3. **Profile Before Optimizing**: Measure actual performance
-4. **Choose Right Structure**: Match structure to operation needs
-
-This section connects advanced data structures to real system performance.
-
-## 14.11 Heaps
-
-A **heap** is a complete binary tree that satisfies the heap property. In a max-heap, parent nodes are greater than or equal to their children. In a min-heap, parent nodes are less than or equal to their children.
-
-### Heap Properties
-
-- **Complete Binary Tree**: All levels are filled except possibly the last
-- **Heap Property**: Parent-child relationship maintained
-- **Array Representation**: Efficiently stored in an array
-
-### 14.2.1 Core Invariants
-
-Heaps maintain critical invariants that must be preserved by all operations.
-
-#### Core Invariants of a Heap
-
-1. **Heap Property Invariant**:
-   - **Max-Heap**: For every node, `parent >= all children`
-   - **Min-Heap**: For every node, `parent <= all children`
-   - This property holds recursively for all subtrees
-
-2. **Complete Binary Tree Invariant**:
-   - All levels are completely filled except possibly the last level
-   - Last level is filled from left to right
-   - No gaps exist in the tree structure
-
-3. **Array Representation Invariant**:
-   - `heap[0]` is the root
-   - For node at index `i`: parent at `(i-1)/2`, children at `2i+1` and `2i+2`
-   - Array size equals number of elements (no unused slots)
-
-4. **Shape Invariant**:
-   - Tree height is always ⌊log₂(n)⌋ or ⌊log₂(n)⌋ + 1
-   - Adding elements maintains left-to-right filling order
-
-#### Why Invariants Matter
-
-- **Extract Operations**: Heap property ensures root is max/min
-- **Insert Operations**: Must maintain both shape and heap property
-- **Heapify**: Restores invariants after violations
-- **Correctness**: All operations must preserve invariants
-
-**Example**: When inserting a value:
-1. Add to end (preserves shape invariant)
-2. Heapify up (restores heap property invariant)
-3. If heapify fails, heap property is violated → invalid heap
-
-**Example**: When extracting max:
-1. Remove root, move last element to root (may violate heap property)
-2. Heapify down (restores heap property invariant)
-3. If heapify fails, result is not a valid heap
-
-### Array Representation
-
-For a node at index `i`:
-- Parent: `(i - 1) / 2`
-- Left child: `2 * i + 1`
-- Right child: `2 * i + 2`
-
-### 14.2.2 Systems Perspective: Cache Performance and Memory Layout
-
-Heaps excel at cache performance due to their array representation, similar to the cache benefits we discussed for arrays in Chapter 3.
-
-#### Memory Layout and Cache Behavior
-
-**Array-Based Storage:**
-- **Contiguous Memory**: All elements stored in single array (like arrays from Chapter 3)
-- **Cache Locality**: Excellent - parent and children are nearby in memory
-- **Memory Overhead**: Minimal - only data, no pointers (unlike trees from Chapter 6)
-- **Access Pattern**: Heapify operations access parent → children → grandchildren (spatial locality)
-
-**Cache Performance Analysis:**
-```
-Operation          | Cache Misses | Notes
--------------------|---------------|------------------
-heapifyUp          | 0-1           | Sequential parent access
-heapifyDown        | 0-2           | Children are adjacent
-insert            | 0-1           | Append + heapifyUp
-extractMax        | 0-2           | Swap + heapifyDown
-buildHeap         | ~log n        | Bottom-up construction
-```
-
-**Why Heaps Beat Tree-Based Priority Queues:**
-- **Trees** (Chapter 6): Pointer chasing → 2-5 cache misses per level
-- **Heaps**: Array access → 0-1 cache misses per operation
-- **Real Impact**: Heaps are 2-3x faster in practice despite same O(log n) complexity
-
-#### When Heaps Become a Bottleneck
-
-1. **Large Heap Operations**:
-   - Heapify traverses O(log n) levels → cache misses accumulate
-   - Solution: Use d-ary heaps (more children, fewer levels) for better cache behavior
-
-2. **Frequent Resizing**:
-   - Vector reallocation (like arrays in Chapter 3) → O(n) cost
-   - Solution: Pre-allocate capacity if size is known
-
-3. **Memory Fragmentation**:
-   - Many small heaps → fragmentation
-   - Solution: Use memory pools or fewer, larger heaps
-
-**Comparison with Balanced Trees:**
-While balanced trees (Chapter 6) also provide O(log n) operations, heaps win in practice:
-- **Memory**: Heaps use ~50% less memory (no pointers)
-- **Cache**: Heaps have better cache locality (contiguous array, as we saw in Chapter 3)
-- **Overhead**: Heaps have lower constant factors
-
-This demonstrates the same principle we established in Chapter 3: contiguous memory layouts (arrays) provide superior cache performance compared to pointer-based structures (trees from Chapter 6).
-
-### Max Heap Implementation
 ```cpp
 #include <iostream>
 #include <vector>
@@ -831,284 +104,147 @@ using namespace std;
 class MaxHeap {
 private:
     vector<int> heap;
-    
+
     void heapifyUp(int index) {
         while (index > 0) {
             int parent = (index - 1) / 2;
-            if (heap[parent] >= heap[index]) {
-                break;
-            }
+            if (heap[parent] >= heap[index]) break;
             swap(heap[parent], heap[index]);
             index = parent;
         }
     }
-    
+
     void heapifyDown(int index) {
         int size = heap.size();
-        
         while (true) {
             int largest = index;
             int left = 2 * index + 1;
             int right = 2 * index + 2;
-            
-            if (left < size && heap[left] > heap[largest]) {
-                largest = left;
-            }
-            
-            if (right < size && heap[right] > heap[largest]) {
-                largest = right;
-            }
-            
-            if (largest == index) {
-                break;
-            }
-            
+
+            if (left < size && heap[left] > heap[largest])  largest = left;
+            if (right < size && heap[right] > heap[largest]) largest = right;
+            if (largest == index) break;
+
             swap(heap[index], heap[largest]);
             index = largest;
         }
     }
-    
+
 public:
     void insert(int value) {
         heap.push_back(value);
         heapifyUp(heap.size() - 1);
     }
-    
+
     int extractMax() {
-        if (heap.empty()) {
-            throw runtime_error("Heap is empty");
-        }
-        
+        if (heap.empty()) throw runtime_error("Heap is empty");
         int max = heap[0];
         heap[0] = heap.back();
         heap.pop_back();
-        
-        if (!heap.empty()) {
-            heapifyDown(0);
-        }
-        
+        if (!heap.empty()) heapifyDown(0);
         return max;
     }
-    
+
     int peek() const {
-        if (heap.empty()) {
-            throw runtime_error("Heap is empty");
-        }
+        if (heap.empty()) throw runtime_error("Heap is empty");
         return heap[0];
     }
-    
-    bool empty() const {
-        return heap.empty();
-    }
-    
-    size_t size() const {
-        return heap.size();
-    }
-    
+
+    bool empty() const { return heap.empty(); }
+    size_t size() const { return heap.size(); }
+
+    // Bottom-up O(n) construction: heapify every internal node.
     void buildHeap(const vector<int>& arr) {
         heap = arr;
-        for (int i = (heap.size() - 2) / 2; i >= 0; i--) {
+        for (int i = (int)heap.size() / 2 - 1; i >= 0; i--) {
             heapifyDown(i);
         }
     }
-    
-    void print() const {
-        for (int val : heap) {
-            cout << val << " ";
-        }
-        cout << endl;
-    }
 };
 ```
 
-### Min Heap Implementation
-```cpp
-class MinHeap {
-private:
-    vector<int> heap;
-    
-    void heapifyUp(int index) {
-        while (index > 0) {
-            int parent = (index - 1) / 2;
-            if (heap[parent] <= heap[index]) {
-                break;
-            }
-            swap(heap[parent], heap[index]);
-            index = parent;
-        }
-    }
-    
-    void heapifyDown(int index) {
-        int size = heap.size();
-        
-        while (true) {
-            int smallest = index;
-            int left = 2 * index + 1;
-            int right = 2 * index + 2;
-            
-            if (left < size && heap[left] < heap[smallest]) {
-                smallest = left;
-            }
-            
-            if (right < size && heap[right] < heap[smallest]) {
-                smallest = right;
-            }
-            
-            if (smallest == index) {
-                break;
-            }
-            
-            swap(heap[index], heap[smallest]);
-            index = smallest;
-        }
-    }
-    
-public:
-    void insert(int value) {
-        heap.push_back(value);
-        heapifyUp(heap.size() - 1);
-    }
-    
-    int extractMin() {
-        if (heap.empty()) {
-            throw runtime_error("Heap is empty");
-        }
-        
-        int min = heap[0];
-        heap[0] = heap.back();
-        heap.pop_back();
-        
-        if (!heap.empty()) {
-            heapifyDown(0);
-        }
-        
-        return min;
-    }
-    
-    int peek() const {
-        if (heap.empty()) {
-            throw runtime_error("Heap is empty");
-        }
-        return heap[0];
-    }
-    
-    bool empty() const {
-        return heap.empty();
-    }
-    
-    size_t size() const {
-        return heap.size();
-    }
-};
-```
+A **min-heap** is identical with the comparisons reversed (`<=` in `heapifyUp`, `<` in `heapifyDown`). Rather than duplicate the class, parameterize the comparison to get a reusable priority queue — `PriorityQueue<int, greater<int>>` is a min-heap:
 
-### Priority Queue Implementation
 ```cpp
 template<typename T, typename Compare = less<T>>
 class PriorityQueue {
 private:
     vector<T> heap;
     Compare comp;
-    
+
     void heapifyUp(int index) {
         while (index > 0) {
             int parent = (index - 1) / 2;
-            if (!comp(heap[parent], heap[index])) {
-                break;
-            }
+            if (!comp(heap[parent], heap[index])) break;
             swap(heap[parent], heap[index]);
             index = parent;
         }
     }
-    
+
     void heapifyDown(int index) {
         int size = heap.size();
-        
         while (true) {
             int extreme = index;
             int left = 2 * index + 1;
             int right = 2 * index + 2;
-            
-            if (left < size && comp(heap[extreme], heap[left])) {
-                extreme = left;
-            }
-            
-            if (right < size && comp(heap[extreme], heap[right])) {
-                extreme = right;
-            }
-            
-            if (extreme == index) {
-                break;
-            }
-            
+
+            if (left < size && comp(heap[extreme], heap[left]))   extreme = left;
+            if (right < size && comp(heap[extreme], heap[right])) extreme = right;
+            if (extreme == index) break;
+
             swap(heap[index], heap[extreme]);
             index = extreme;
         }
     }
-    
+
 public:
     void push(const T& value) {
         heap.push_back(value);
         heapifyUp(heap.size() - 1);
     }
-    
+
     void pop() {
-        if (heap.empty()) {
-            throw runtime_error("Priority queue is empty");
-        }
-        
+        if (heap.empty()) throw runtime_error("Priority queue is empty");
         heap[0] = heap.back();
         heap.pop_back();
-        
-        if (!heap.empty()) {
-            heapifyDown(0);
-        }
+        if (!heap.empty()) heapifyDown(0);
     }
-    
+
     T top() const {
-        if (heap.empty()) {
-            throw runtime_error("Priority queue is empty");
-        }
+        if (heap.empty()) throw runtime_error("Priority queue is empty");
         return heap[0];
     }
-    
-    bool empty() const {
-        return heap.empty();
-    }
-    
-    size_t size() const {
-        return heap.size();
-    }
+
+    bool empty() const { return heap.empty(); }
+    size_t size() const { return heap.size(); }
 };
 ```
 
 ### Heap Sort
+
+Build a max-heap, then repeatedly extract the maximum into the back of the array. Extraction yields values in descending order, filling the array ascending:
+
 ```cpp
 void heapSort(vector<int>& arr) {
     MaxHeap heap;
     heap.buildHeap(arr);
-    
     for (int i = arr.size() - 1; i >= 0; i--) {
         arr[i] = heap.extractMax();
     }
 }
 ```
 
-### Time Complexity
-
-| Operation | Time Complexity |
-|-----------|----------------|
-| Insert | O(log n) |
-| Extract Max/Min | O(log n) |
+| Operation | Time |
+|-----------|------|
+| Insert / Extract | O(log n) |
 | Peek | O(1) |
-| Build Heap | O(n) |
-| Heap Sort | O(n log n) |
+| Build heap | O(n) |
+| Heap sort | O(n log n) |
 
-## 14.12 Tries (Prefix Trees)
+## 14.10 Tries (Prefix Trees)
 
-A **trie** (prefix tree) is a tree-like data structure for storing strings. It's particularly efficient for prefix-based searches.
+A **trie** stores strings along tree paths: the path from the root to a node spells a prefix, and a per-node flag marks where a stored word ends. Lookups and inserts cost O(m) in the word length, independent of how many words are stored. The map-based node handles any alphabet:
 
-### Trie Node Structure
 ```cpp
 #include <unordered_map>
 #include <string>
@@ -1117,175 +253,128 @@ class TrieNode {
 public:
     unordered_map<char, TrieNode*> children;
     bool isEndOfWord;
-    
     TrieNode() : isEndOfWord(false) {}
 };
 
 class Trie {
 private:
     TrieNode* root;
-    
+
     void deleteNode(TrieNode* node) {
         if (!node) return;
-        
-        for (auto& pair : node->children) {
-            deleteNode(pair.second);
-        }
+        for (auto& pair : node->children) deleteNode(pair.second);
         delete node;
     }
-    
-public:
-    Trie() {
-        root = new TrieNode();
-    }
-    
-    ~Trie() {
-        deleteNode(root);
-    }
-    
-    void insert(const string& word) {
-        TrieNode* current = root;
-        
-        for (char c : word) {
-            if (current->children.find(c) == current->children.end()) {
-                current->children[c] = new TrieNode();
-            }
-            current = current->children[c];
-        }
-        
-        current->isEndOfWord = true;
-    }
-    
-    bool search(const string& word) {
-        TrieNode* current = root;
-        
-        for (char c : word) {
-            if (current->children.find(c) == current->children.end()) {
-                return false;
-            }
-            current = current->children[c];
-        }
-        
-        return current->isEndOfWord;
-    }
-    
-    bool startsWith(const string& prefix) {
-        TrieNode* current = root;
-        
-        for (char c : prefix) {
-            if (current->children.find(c) == current->children.end()) {
-                return false;
-            }
-            current = current->children[c];
-        }
-        
-        return true;
-    }
-    
-    bool deleteWord(const string& word) {
-        return deleteHelper(root, word, 0);
-    }
-    
-private:
+
+    // Returns true if the child at `node` can be pruned after deletion.
     bool deleteHelper(TrieNode* node, const string& word, int index) {
         if (!node) return false;
-        
         if (index == word.length()) {
-            if (!node->isEndOfWord) {
-                return false;
-            }
+            if (!node->isEndOfWord) return false;
             node->isEndOfWord = false;
             return node->children.empty();
         }
-        
         char c = word[index];
-        if (node->children.find(c) == node->children.end()) {
-            return false;
-        }
-        
+        if (node->children.find(c) == node->children.end()) return false;
+
         bool shouldDelete = deleteHelper(node->children[c], word, index + 1);
-        
         if (shouldDelete) {
             delete node->children[c];
             node->children.erase(c);
             return node->children.empty() && !node->isEndOfWord;
         }
-        
         return false;
     }
+
+public:
+    Trie() { root = new TrieNode(); }
+    ~Trie() { deleteNode(root); }   // recursive cleanup avoids leaks
+
+    void insert(const string& word) {
+        TrieNode* current = root;
+        for (char c : word) {
+            if (current->children.find(c) == current->children.end())
+                current->children[c] = new TrieNode();
+            current = current->children[c];
+        }
+        current->isEndOfWord = true;
+    }
+
+    bool search(const string& word) {
+        TrieNode* current = root;
+        for (char c : word) {
+            if (current->children.find(c) == current->children.end())
+                return false;
+            current = current->children[c];
+        }
+        return current->isEndOfWord;
+    }
+
+    bool startsWith(const string& prefix) {
+        TrieNode* current = root;
+        for (char c : prefix) {
+            if (current->children.find(c) == current->children.end())
+                return false;
+            current = current->children[c];
+        }
+        return true;   // reached the end of the prefix path
+    }
+
+    bool deleteWord(const string& word) { return deleteHelper(root, word, 0); }
 };
 ```
 
-### Compact Trie (Array-based)
+When the alphabet is small and fixed (e.g. lowercase `a`–`z`), replace the hash map with a fixed array of child pointers. This removes the per-lookup hashing and stores children contiguously, improving cache behavior at the cost of `26 × sizeof(ptr)` per node even when sparse:
+
 ```cpp
 class CompactTrie {
 private:
     struct TrieNode {
         TrieNode* children[26];
         bool isEndOfWord;
-        
         TrieNode() : isEndOfWord(false) {
-            for (int i = 0; i < 26; i++) {
-                children[i] = nullptr;
-            }
+            for (int i = 0; i < 26; i++) children[i] = nullptr;
         }
     };
-    
     TrieNode* root;
-    
+
 public:
-    CompactTrie() {
-        root = new TrieNode();
-    }
-    
+    CompactTrie() { root = new TrieNode(); }
+
     void insert(const string& word) {
         TrieNode* current = root;
-        
         for (char c : word) {
             int index = c - 'a';
-            if (!current->children[index]) {
-                current->children[index] = new TrieNode();
-            }
+            if (!current->children[index]) current->children[index] = new TrieNode();
             current = current->children[index];
         }
-        
         current->isEndOfWord = true;
     }
-    
+
     bool search(const string& word) {
         TrieNode* current = root;
-        
         for (char c : word) {
             int index = c - 'a';
-            if (!current->children[index]) {
-                return false;
-            }
+            if (!current->children[index]) return false;
             current = current->children[index];
         }
-        
         return current->isEndOfWord;
     }
 };
 ```
 
-### Applications
-- Autocomplete
-- Spell checker
-- IP routing
-- Prefix matching
-- String dictionary
+Tries power autocomplete, spell checkers, IP-prefix routing, and any dictionary keyed by prefix.
 
-## 14.13 Segment Trees
+## 14.11 Segment Trees
 
-A **segment tree** is a data structure for range queries and updates.
+A **segment tree** answers range aggregate queries and point updates in O(log n). Each node covers a contiguous range and stores the aggregate of its children; a query walks down only the O(log n) nodes whose ranges partition `[l, r]`. The tree is stored in an array sized `4n` (enough to hold every node of the recursive layout). The version below aggregates by sum:
 
-### Implementation
 ```cpp
 class SegmentTree {
 private:
     vector<int> tree;
     int n;
-    
+
     void build(const vector<int>& arr, int node, int start, int end) {
         if (start == end) {
             tree[node] = arr[start];
@@ -1296,205 +385,95 @@ private:
             tree[node] = tree[2 * node] + tree[2 * node + 1];
         }
     }
-    
+
     void update(int node, int start, int end, int idx, int val) {
         if (start == end) {
             tree[node] = val;
         } else {
             int mid = (start + end) / 2;
-            if (idx <= mid) {
-                update(2 * node, start, mid, idx, val);
-            } else {
-                update(2 * node + 1, mid + 1, end, idx, val);
-            }
+            if (idx <= mid) update(2 * node, start, mid, idx, val);
+            else            update(2 * node + 1, mid + 1, end, idx, val);
             tree[node] = tree[2 * node] + tree[2 * node + 1];
         }
     }
-    
+
     int query(int node, int start, int end, int l, int r) {
-        if (r < start || end < l) {
-            return 0;
-        }
-        if (l <= start && end <= r) {
-            return tree[node];
-        }
-        
+        if (r < start || end < l) return 0;              // identity for sum
+        if (l <= start && end <= r) return tree[node];    // fully inside
         int mid = (start + end) / 2;
         return query(2 * node, start, mid, l, r) +
                query(2 * node + 1, mid + 1, end, l, r);
     }
-    
+
 public:
     SegmentTree(const vector<int>& arr) {
         n = arr.size();
         tree.resize(4 * n);
         build(arr, 1, 0, n - 1);
     }
-    
-    void update(int idx, int val) {
-        update(1, 0, n - 1, idx, val);
-    }
-    
-    int query(int l, int r) {
-        return query(1, 0, n - 1, l, r);
-    }
+    void update(int idx, int val) { update(1, 0, n - 1, idx, val); }
+    int query(int l, int r)       { return query(1, 0, n - 1, l, r); }
 };
 ```
 
-### Range Minimum Query Segment Tree
-```cpp
-class RMQSegmentTree {
-private:
-    vector<int> tree;
-    int n;
-    const int INF = numeric_limits<int>::max();
-    
-    void build(const vector<int>& arr, int node, int start, int end) {
-        if (start == end) {
-            tree[node] = arr[start];
-        } else {
-            int mid = (start + end) / 2;
-            build(arr, 2 * node, start, mid);
-            build(arr, 2 * node + 1, mid + 1, end);
-            tree[node] = min(tree[2 * node], tree[2 * node + 1]);
-        }
-    }
-    
-    void update(int node, int start, int end, int idx, int val) {
-        if (start == end) {
-            tree[node] = val;
-        } else {
-            int mid = (start + end) / 2;
-            if (idx <= mid) {
-                update(2 * node, start, mid, idx, val);
-            } else {
-                update(2 * node + 1, mid + 1, end, idx, val);
-            }
-            tree[node] = min(tree[2 * node], tree[2 * node + 1]);
-        }
-    }
-    
-    int query(int node, int start, int end, int l, int r) {
-        if (r < start || end < l) {
-            return INF;
-        }
-        if (l <= start && end <= r) {
-            return tree[node];
-        }
-        
-        int mid = (start + end) / 2;
-        return min(query(2 * node, start, mid, l, r),
-                   query(2 * node + 1, mid + 1, end, l, r));
-    }
-    
-public:
-    RMQSegmentTree(const vector<int>& arr) {
-        n = arr.size();
-        tree.resize(4 * n);
-        build(arr, 1, 0, n - 1);
-    }
-    
-    void update(int idx, int val) {
-        update(1, 0, n - 1, idx, val);
-    }
-    
-    int query(int l, int r) {
-        return query(1, 0, n - 1, l, r);
-    }
-};
-```
+To answer a different aggregate, change only the combine step and the out-of-range identity. For range-minimum, replace `+` with `min(...)` and return `numeric_limits<int>::max()` (instead of `0`) for a range that lies entirely outside the query. Build is O(n); query and update are O(log n); space is O(n).
 
-### Time Complexity
-- **Build**: O(n)
-- **Query**: O(log n)
-- **Update**: O(log n)
-- **Space**: O(n)
+## 14.12 Fenwick Trees (Binary Indexed Trees)
 
-## 14.14 Fenwick Trees (Binary Indexed Trees)
+A **Fenwick tree** supports prefix sums and point updates in O(log n) using a single array and bit tricks, with roughly half the memory and better cache behavior than a segment tree. The key operation `index & (-index)` isolates the lowest set bit, which is how each node reaches its parent (query) or next responsible node (update). Indices are 1-based internally:
 
-A **Fenwick Tree** (Binary Indexed Tree) is efficient for prefix sum queries and point updates.
-
-### Implementation
 ```cpp
 class FenwickTree {
 private:
     vector<int> tree;
     int n;
-    
-    int getSum(int index) {
+
+    int getSum(int index) {         // prefix sum of arr[0..index]
         int sum = 0;
-        index = index + 1;
-        
+        index += 1;                 // to 1-based
         while (index > 0) {
             sum += tree[index];
-            index -= index & (-index); // Get parent
+            index -= index & (-index);
         }
-        
         return sum;
     }
-    
+
     void update(int index, int delta) {
-        index = index + 1;
-        
+        index += 1;                 // to 1-based
         while (index <= n) {
             tree[index] += delta;
-            index += index & (-index); // Get next node
+            index += index & (-index);
         }
     }
-    
+
 public:
     FenwickTree(const vector<int>& arr) {
         n = arr.size();
         tree.resize(n + 1, 0);
-        
-        for (int i = 0; i < n; i++) {
-            update(i, arr[i]);
-        }
+        for (int i = 0; i < n; i++) update(i, arr[i]);
     }
-    
-    int rangeSum(int l, int r) {
-        return getSum(r) - getSum(l - 1);
-    }
-    
+
+    int rangeSum(int l, int r) { return getSum(r) - getSum(l - 1); }
+
     void updateValue(int index, int newValue) {
-        int oldValue = rangeSum(index, index);
-        int delta = newValue - oldValue;
+        int delta = newValue - rangeSum(index, index);
         update(index, delta);
     }
-    
-    int prefixSum(int index) {
-        return getSum(index);
-    }
+
+    int prefixSum(int index) { return getSum(index); }
 };
 ```
 
-### Time Complexity
-- **Build**: O(n log n)
-- **Query**: O(log n)
-- **Update**: O(log n)
-- **Space**: O(n)
+Build is O(n log n), query and update O(log n), space O(n). Compared with a segment tree it uses less memory, is simpler to code, and is faster in practice — but it only supports invertible aggregates (sums, not min/max) without extra machinery.
 
-### Advantages over Segment Tree
-- Less memory
-- Simpler implementation
-- Faster in practice
-- Better cache performance
+## 14.13 Sparse Table
 
-## 14.15 Sparse Table
+A **sparse table** answers idempotent range queries (min, max, GCD — any `f` with `f(x, x) = x`) in O(1) after O(n log n) preprocessing, provided the array never changes. It precomputes the answer for every interval whose length is a power of two; a query covers `[l, r]` with two overlapping such intervals, and overlap is harmless because the operation is idempotent.
 
-A **Sparse Table** is a data structure that allows range minimum/maximum queries (RMQ) on a static array in O(1) time after O(n log n) preprocessing. It's particularly useful when the array doesn't change.
-
-### Key Properties
-
-- **Static Data**: Array must be immutable (no updates)
-- **Idempotent Operations**: Works for min, max, GCD (operations where f(x, x) = x)
-- **Fast Queries**: O(1) query time after preprocessing
-- **Memory**: O(n log n) space
-
-### Implementation
 ```cpp
 #include <vector>
 #include <cmath>
+#include <functional>
 #include <algorithm>
 using namespace std;
 
@@ -1503,101 +482,46 @@ private:
     vector<vector<int>> table;
     vector<int> logTable;
     int n;
-    function<int(int, int)> op; // Operation (min, max, gcd)
-    
+    function<int(int, int)> op;   // min, max, gcd, ...
+
     void buildTable(const vector<int>& arr) {
         int maxLog = log2(n) + 1;
-        table.resize(n, vector<int>(maxLog));
+        table.assign(n, vector<int>(maxLog));
         logTable.resize(n + 1);
-        
-        // Precompute logarithms
         logTable[1] = 0;
-        for (int i = 2; i <= n; i++) {
-            logTable[i] = logTable[i / 2] + 1;
-        }
-        
-        // Initialize first column (length 1)
-        for (int i = 0; i < n; i++) {
-            table[i][0] = arr[i];
-        }
-        
-        // Build table for lengths 2^j
-        for (int j = 1; j < maxLog; j++) {
-            for (int i = 0; i + (1 << j) <= n; i++) {
-                table[i][j] = op(table[i][j - 1], 
+        for (int i = 2; i <= n; i++) logTable[i] = logTable[i / 2] + 1;
+
+        for (int i = 0; i < n; i++) table[i][0] = arr[i];   // length 1
+
+        for (int j = 1; j < maxLog; j++)
+            for (int i = 0; i + (1 << j) <= n; i++)
+                table[i][j] = op(table[i][j - 1],
                                  table[i + (1 << (j - 1))][j - 1]);
-            }
-        }
     }
-    
+
 public:
-    SparseTable(const vector<int>& arr, function<int(int, int)> operation) 
+    SparseTable(const vector<int>& arr, function<int(int, int)> operation)
         : n(arr.size()), op(operation) {
         buildTable(arr);
     }
-    
-    // Range query [l, r] (inclusive)
-    int query(int l, int r) {
+
+    int query(int l, int r) {   // inclusive [l, r]
         int j = logTable[r - l + 1];
         return op(table[l][j], table[r - (1 << j) + 1][j]);
     }
 };
 
-// Convenience classes
-class RMQSparseTable {
-private:
-    SparseTable st;
-    
-public:
-    RMQSparseTable(const vector<int>& arr) 
-        : st(arr, [](int a, int b) { return min(a, b); }) {}
-    
-    int query(int l, int r) {
-        return st.query(l, r);
-    }
-};
-
-class MaxSparseTable {
-private:
-    SparseTable st;
-    
-public:
-    MaxSparseTable(const vector<int>& arr) 
-        : st(arr, [](int a, int b) { return max(a, b); }) {}
-    
-    int query(int l, int r) {
-        return st.query(l, r);
-    }
-};
+// Usage: range-minimum
+//   SparseTable rmq(arr, [](int a, int b) { return min(a, b); });
+//   rmq.query(l, r);
 ```
 
-### Time Complexity
-- **Preprocessing**: O(n log n)
-- **Query**: O(1)
-- **Space**: O(n log n)
+Preprocessing is O(n log n), queries O(1), space O(n log n). Use it for static arrays with many queries and an idempotent operation; it cannot handle updates and uses more memory than a segment tree.
 
-### When to Use
-- Static arrays (no updates)
-- Many range queries
-- Need O(1) query time
-- Idempotent operations (min, max, GCD)
+## 14.14 Sqrt Decomposition
 
-### Limitations
-- Cannot handle updates efficiently
-- Only works for idempotent operations
-- Higher memory usage than segment trees
+**Sqrt decomposition** splits the array into √n blocks and precomputes an answer per block. A query combines whole-block answers with the individual elements of the two partial end blocks, giving O(√n) queries and updates — simpler than a segment tree and a good stepping stone to it. The version below maintains block minima:
 
-## 14.16 Sqrt Decomposition
-
-**Sqrt Decomposition** is a simple technique that divides an array into √n blocks, allowing range queries and updates in O(√n) time.
-
-### Key Idea
-
-Divide array into blocks of size √n:
-- Precompute answers for each block
-- For queries spanning multiple blocks, combine block answers with individual elements
-
-### Implementation
 ```cpp
 #include <vector>
 #include <cmath>
@@ -1608,226 +532,93 @@ using namespace std;
 class SqrtDecomposition {
 private:
     vector<int> arr;
-    vector<int> blocks;
-    int blockSize;
-    int n;
-    
-    int getBlockIndex(int index) {
-        return index / blockSize;
-    }
-    
-    int getBlockStart(int blockIndex) {
-        return blockIndex * blockSize;
-    }
-    
-    int getBlockEnd(int blockIndex) {
-        return min((blockIndex + 1) * blockSize - 1, n - 1);
-    }
-    
+    vector<int> blocks;   // minimum of each block
+    int blockSize, n;
+
+    int blockIndex(int i)  { return i / blockSize; }
+    int blockStart(int b)  { return b * blockSize; }
+    int blockEnd(int b)    { return min((b + 1) * blockSize - 1, n - 1); }
+
 public:
     SqrtDecomposition(const vector<int>& input) : arr(input), n(input.size()) {
         blockSize = sqrt(n);
-        int numBlocks = (n + blockSize - 1) / blockSize;
-        blocks.resize(numBlocks, INT_MAX);
-        
-        // Precompute minimum for each block
-        for (int i = 0; i < n; i++) {
-            int blockIdx = getBlockIndex(i);
-            blocks[blockIdx] = min(blocks[blockIdx], arr[i]);
-        }
+        blocks.assign((n + blockSize - 1) / blockSize, INT_MAX);
+        for (int i = 0; i < n; i++)
+            blocks[blockIndex(i)] = min(blocks[blockIndex(i)], arr[i]);
     }
-    
-    // Range minimum query [l, r]
+
     int rangeMin(int l, int r) {
         int minVal = INT_MAX;
-        int leftBlock = getBlockIndex(l);
-        int rightBlock = getBlockIndex(r);
-        
-        if (leftBlock == rightBlock) {
-            // Query within single block
-            for (int i = l; i <= r; i++) {
-                minVal = min(minVal, arr[i]);
-            }
+        int lb = blockIndex(l), rb = blockIndex(r);
+        if (lb == rb) {
+            for (int i = l; i <= r; i++) minVal = min(minVal, arr[i]);
         } else {
-            // Query spans multiple blocks
-            // Left partial block
-            for (int i = l; i <= getBlockEnd(leftBlock); i++) {
-                minVal = min(minVal, arr[i]);
-            }
-            
-            // Complete blocks
-            for (int i = leftBlock + 1; i < rightBlock; i++) {
-                minVal = min(minVal, blocks[i]);
-            }
-            
-            // Right partial block
-            for (int i = getBlockStart(rightBlock); i <= r; i++) {
-                minVal = min(minVal, arr[i]);
-            }
+            for (int i = l; i <= blockEnd(lb); i++)     minVal = min(minVal, arr[i]);
+            for (int b = lb + 1; b < rb; b++)           minVal = min(minVal, blocks[b]);
+            for (int i = blockStart(rb); i <= r; i++)   minVal = min(minVal, arr[i]);
         }
-        
         return minVal;
     }
-    
-    // Update value at index
+
     void update(int index, int value) {
         arr[index] = value;
-        int blockIdx = getBlockIndex(index);
-        
-        // Recompute block minimum
-        blocks[blockIdx] = INT_MAX;
-        int start = getBlockStart(blockIdx);
-        int end = getBlockEnd(blockIdx);
-        
-        for (int i = start; i <= end; i++) {
-            blocks[blockIdx] = min(blocks[blockIdx], arr[i]);
-        }
-    }
-    
-    // Range sum query [l, r]
-    int rangeSum(int l, int r) {
-        int sum = 0;
-        int leftBlock = getBlockIndex(l);
-        int rightBlock = getBlockIndex(r);
-        
-        if (leftBlock == rightBlock) {
-            for (int i = l; i <= r; i++) {
-                sum += arr[i];
-            }
-        } else {
-            // Left partial block
-            for (int i = l; i <= getBlockEnd(leftBlock); i++) {
-                sum += arr[i];
-            }
-            
-            // Complete blocks
-            for (int i = leftBlock + 1; i < rightBlock; i++) {
-                // Would need to precompute block sums
-                int start = getBlockStart(i);
-                int end = getBlockEnd(i);
-                for (int j = start; j <= end; j++) {
-                    sum += arr[j];
-                }
-            }
-            
-            // Right partial block
-            for (int i = getBlockStart(rightBlock); i <= r; i++) {
-                sum += arr[i];
-            }
-        }
-        
-        return sum;
+        int b = blockIndex(index);
+        blocks[b] = INT_MAX;                    // recompute this block's minimum
+        for (int i = blockStart(b); i <= blockEnd(b); i++)
+            blocks[b] = min(blocks[b], arr[i]);
     }
 };
 ```
 
-### Optimized Sqrt Decomposition with Block Sums
+For an invertible aggregate like sum, store a running block total so updates become O(1) and queries stay O(√n):
+
 ```cpp
 class SqrtDecompositionSum {
 private:
     vector<int> arr;
     vector<long long> blockSums;
-    int blockSize;
-    int n;
-    
-    int getBlockIndex(int index) {
-        return index / blockSize;
-    }
-    
-    int getBlockStart(int blockIndex) {
-        return blockIndex * blockSize;
-    }
-    
-    int getBlockEnd(int blockIndex) {
-        return min((blockIndex + 1) * blockSize - 1, n - 1);
-    }
-    
+    int blockSize, n;
+    int blockIndex(int i) { return i / blockSize; }
+    int blockStart(int b) { return b * blockSize; }
+    int blockEnd(int b)   { return min((b + 1) * blockSize - 1, n - 1); }
+
 public:
     SqrtDecompositionSum(const vector<int>& input) : arr(input), n(input.size()) {
         blockSize = sqrt(n);
-        int numBlocks = (n + blockSize - 1) / blockSize;
-        blockSums.resize(numBlocks, 0);
-        
-        // Precompute block sums
-        for (int i = 0; i < n; i++) {
-            blockSums[getBlockIndex(i)] += arr[i];
-        }
+        blockSums.assign((n + blockSize - 1) / blockSize, 0);
+        for (int i = 0; i < n; i++) blockSums[blockIndex(i)] += arr[i];
     }
-    
+
     long long rangeSum(int l, int r) {
         long long sum = 0;
-        int leftBlock = getBlockIndex(l);
-        int rightBlock = getBlockIndex(r);
-        
-        if (leftBlock == rightBlock) {
-            for (int i = l; i <= r; i++) {
-                sum += arr[i];
-            }
+        int lb = blockIndex(l), rb = blockIndex(r);
+        if (lb == rb) {
+            for (int i = l; i <= r; i++) sum += arr[i];
         } else {
-            // Left partial block
-            for (int i = l; i <= getBlockEnd(leftBlock); i++) {
-                sum += arr[i];
-            }
-            
-            // Complete blocks
-            for (int i = leftBlock + 1; i < rightBlock; i++) {
-                sum += blockSums[i];
-            }
-            
-            // Right partial block
-            for (int i = getBlockStart(rightBlock); i <= r; i++) {
-                sum += arr[i];
-            }
+            for (int i = l; i <= blockEnd(lb); i++)   sum += arr[i];
+            for (int b = lb + 1; b < rb; b++)         sum += blockSums[b];
+            for (int i = blockStart(rb); i <= r; i++) sum += arr[i];
         }
-        
         return sum;
     }
-    
+
     void update(int index, int value) {
-        int blockIdx = getBlockIndex(index);
-        blockSums[blockIdx] += (value - arr[index]);
+        blockSums[blockIndex(index)] += (value - arr[index]);
         arr[index] = value;
     }
 };
 ```
 
-### Time Complexity
-- **Preprocessing**: O(n)
-- **Query**: O(√n)
-- **Update**: O(√n)
-- **Space**: O(n)
+| Structure | Query | Update | Space | Notes |
+|-----------|-------|--------|-------|-------|
+| Sparse table | O(1) | — | O(n log n) | static, idempotent only |
+| Segment tree | O(log n) | O(log n) | O(n) | full support |
+| Fenwick tree | O(log n) | O(log n) | O(n) | prefix/point, invertible |
+| Sqrt decomp | O(√n) | O(√n) | O(n) | simplest |
 
-### When to Use
-- Need both queries and updates
-- Simpler than segment trees
-- O(√n) performance is acceptable
-- Learning step before advanced structures
+## 14.15 Skip Lists
 
-### Comparison with Other Structures
-
-| Structure | Query | Update | Space | Complexity |
-|-----------|-------|--------|-------|------------|
-| Sparse Table | O(1) | N/A | O(n log n) | Static only |
-| Segment Tree | O(log n) | O(log n) | O(n) | Full support |
-| Fenwick Tree | O(log n) | O(log n) | O(n) | Prefix/point |
-| Sqrt Decomp | O(√n) | O(√n) | O(n) | Simple |
-
-## 14.17 Skip Lists
-
-A **skip list** is a probabilistic data structure that provides O(log n) average-case performance for search, insertion, and deletion operations. It's simpler to implement than balanced trees (Chapter 6) while offering similar performance characteristics.
-
-### 14.8.1 Introduction to Skip Lists
-
-Skip lists use multiple sorted linked lists (Chapter 4) with different levels of "express lanes" to skip over elements. Higher levels contain fewer elements, allowing fast navigation.
-
-#### Key Characteristics
-
-- **Probabilistic Structure**: Height determined probabilistically
-- **O(log n) Average Performance**: Similar to balanced trees
-- **Simpler than Trees**: Easier to implement than AVL/Red-Black trees
-- **Dynamic**: Supports efficient insertions and deletions
-
-### 14.8.2 Skip List Structure
+A **skip list** is a probabilistic alternative to a balanced tree (Chapter 6): it layers several sorted linked lists (Chapter 4), where higher "express lane" levels contain progressively fewer nodes. A node's height is chosen randomly, giving O(log n) expected search, insert, and delete without the rotation logic of AVL or red-black trees. Redis uses skip lists for sorted sets, partly because they are easier to make concurrent than trees.
 
 ```
 Level 3:  [1] --------------------------> [9]
@@ -1836,15 +627,9 @@ Level 1:  [1] -> [3] -> [5] -> [7] -> [9]
 Level 0:  [1] [2] [3] [4] [5] [6] [7] [8] [9]
 ```
 
-Each node has:
-- **Data**: The value stored
-- **Forward pointers**: Array of pointers to next nodes at each level
-- **Level**: Maximum level this node appears in
-
-### 14.8.3 Skip List Implementation
+Each node stores its value and a `forward` array of next-pointers, one per level it participates in.
 
 ```cpp
-#include <iostream>
 #include <vector>
 #include <random>
 #include <climits>
@@ -1854,797 +639,376 @@ class SkipListNode {
 public:
     int value;
     vector<SkipListNode*> forward;
-    int level;
-    
-    SkipListNode(int val, int lvl) : value(val), level(lvl) {
-        forward.resize(lvl + 1, nullptr);
-    }
+    SkipListNode(int val, int lvl) : value(val), forward(lvl + 1, nullptr) {}
 };
 
 class SkipList {
 private:
     SkipListNode* header;
-    int maxLevel;
-    int currentLevel;
-    random_device rd;
+    int maxLevel, currentLevel;
     mt19937 gen;
     uniform_real_distribution<> dis;
-    
+
     int randomLevel() {
         int level = 0;
-        while (dis(gen) < 0.5 && level < maxLevel) {
-            level++;
-        }
+        while (dis(gen) < 0.5 && level < maxLevel) level++;
         return level;
     }
-    
+
 public:
-    SkipList(int maxLvl = 16) : maxLevel(maxLvl), currentLevel(0), gen(rd()), dis(0.0, 1.0) {
+    SkipList(int maxLvl = 16)
+        : maxLevel(maxLvl), currentLevel(0), gen(random_device{}()), dis(0.0, 1.0) {
         header = new SkipListNode(INT_MIN, maxLevel);
     }
-    
+
     bool search(int target) {
         SkipListNode* current = header;
-        
-        // Start from highest level
-        for (int i = currentLevel; i >= 0; i--) {
-            while (current->forward[i] != nullptr && 
-                   current->forward[i]->value < target) {
+        for (int i = currentLevel; i >= 0; i--)
+            while (current->forward[i] && current->forward[i]->value < target)
                 current = current->forward[i];
-            }
-        }
-        
         current = current->forward[0];
-        return (current != nullptr && current->value == target);
+        return current && current->value == target;
     }
-    
+
     void insert(int value) {
         vector<SkipListNode*> update(maxLevel + 1, nullptr);
         SkipListNode* current = header;
-        
-        // Find insertion point at each level
         for (int i = currentLevel; i >= 0; i--) {
-            while (current->forward[i] != nullptr && 
-                   current->forward[i]->value < value) {
+            while (current->forward[i] && current->forward[i]->value < value)
                 current = current->forward[i];
-            }
             update[i] = current;
         }
-        
         current = current->forward[0];
-        
-        // If value already exists, don't insert
-        if (current == nullptr || current->value != value) {
-            int newLevel = randomLevel();
-            
-            // Update max level if needed
-            if (newLevel > currentLevel) {
-                for (int i = currentLevel + 1; i <= newLevel; i++) {
-                    update[i] = header;
-                }
-                currentLevel = newLevel;
-            }
-            
-            // Create new node
-            SkipListNode* newNode = new SkipListNode(value, newLevel);
-            
-            // Insert at each level
-            for (int i = 0; i <= newLevel; i++) {
-                newNode->forward[i] = update[i]->forward[i];
-                update[i]->forward[i] = newNode;
-            }
+        if (current && current->value == value) return;   // no duplicates
+
+        int newLevel = randomLevel();
+        if (newLevel > currentLevel) {
+            for (int i = currentLevel + 1; i <= newLevel; i++) update[i] = header;
+            currentLevel = newLevel;
+        }
+        SkipListNode* newNode = new SkipListNode(value, newLevel);
+        for (int i = 0; i <= newLevel; i++) {
+            newNode->forward[i] = update[i]->forward[i];
+            update[i]->forward[i] = newNode;
         }
     }
-    
+
     void remove(int value) {
         vector<SkipListNode*> update(maxLevel + 1, nullptr);
         SkipListNode* current = header;
-        
-        // Find node to delete
         for (int i = currentLevel; i >= 0; i--) {
-            while (current->forward[i] != nullptr && 
-                   current->forward[i]->value < value) {
+            while (current->forward[i] && current->forward[i]->value < value)
                 current = current->forward[i];
-            }
             update[i] = current;
         }
-        
         current = current->forward[0];
-        
-        // If found, remove from all levels
-        if (current != nullptr && current->value == value) {
-            for (int i = 0; i <= currentLevel; i++) {
-                if (update[i]->forward[i] != current) {
-                    break;
-                }
-                update[i]->forward[i] = current->forward[i];
-            }
-            
-            delete current;
-            
-            // Update current level
-            while (currentLevel > 0 && header->forward[currentLevel] == nullptr) {
-                currentLevel--;
-            }
+        if (!current || current->value != value) return;
+
+        for (int i = 0; i <= currentLevel; i++) {
+            if (update[i]->forward[i] != current) break;
+            update[i]->forward[i] = current->forward[i];
         }
-    }
-    
-    void print() {
-        for (int i = currentLevel; i >= 0; i--) {
-            SkipListNode* node = header->forward[i];
-            cout << "Level " << i << ": ";
-            while (node != nullptr) {
-                cout << node->value << " ";
-                node = node->forward[i];
-            }
-            cout << endl;
-        }
+        delete current;
+        while (currentLevel > 0 && header->forward[currentLevel] == nullptr)
+            currentLevel--;
     }
 };
 ```
 
-### 14.8.4 Performance Analysis
+Search, insert, and delete are O(log n) expected and O(n) worst case; space is O(n) (each element appears in ~2 levels on average). Skip lists trade the deterministic guarantees of balanced trees for a far simpler implementation.
 
-**Time Complexity:**
-- **Search**: O(log n) average, O(n) worst case
-- **Insert**: O(log n) average
-- **Delete**: O(log n) average
+## 14.16 Bloom Filters
 
-**Space Complexity:** O(n) average (each element appears in ~2 levels on average)
-
-**Comparison with Balanced Trees:**
-- **Skip Lists**: Simpler implementation, probabilistic guarantees
-- **Balanced Trees** (Chapter 6): Deterministic guarantees, more complex
-
-### 14.8.5 Applications
-
-- **Redis**: Uses skip lists for sorted sets
-- **Concurrent Data Structures**: Easier to make thread-safe than trees
-- **Alternative to Balanced Trees**: When simplicity matters
-
-## 14.18 Bloom Filters
-
-A **Bloom filter** is a space-efficient probabilistic data structure that tests whether an element is a member of a set. It can have false positives but never false negatives.
-
-### 14.9.1 Introduction to Bloom Filters
-
-Bloom filters provide O(1) insertion and lookup with minimal space overhead, making them ideal for large-scale systems where approximate membership testing is acceptable.
-
-#### Key Characteristics
-
-- **Probabilistic**: May return false positives (but never false negatives)
-- **Space Efficient**: Uses much less memory than hash tables (Chapter 10)
-- **Fast Operations**: O(k) where k is number of hash functions (typically small)
-- **No Deletion**: Standard Bloom filters don't support deletion
-
-### 14.9.2 How Bloom Filters Work
-
-1. **Initialization**: Create a bit array of size m (all bits set to 0)
-2. **Insertion**: Hash element with k hash functions, set corresponding bits to 1
-3. **Lookup**: Hash element with k hash functions, check if all bits are 1
+A **Bloom filter** is a bit array plus k hash functions that tests set membership in O(k) time and a fraction of the space of an exact set. It can report a false positive but never a false negative: if it says "not present," the element is definitely absent. Insertion sets the k hashed bits; a lookup passes only if all k bits are set. Standard Bloom filters cannot delete (clearing a bit could evict other elements).
 
 ```
-Insert "apple":
-  hash1("apple") = 3  → set bit[3] = 1
-  hash2("apple") = 7  → set bit[7] = 1
-  hash3("apple") = 12 → set bit[12] = 1
-
-Check "apple":
-  hash1("apple") = 3  → bit[3] = 1 ✓
-  hash2("apple") = 7  → bit[7] = 1 ✓
-  hash3("apple") = 12 → bit[12] = 1 ✓
-  → "apple" is probably in set
+Insert "apple":  bits[3], bits[7], bits[12] ← 1
+Check  "apple":  bits[3] && bits[7] && bits[12] ?  → "probably present"
 ```
-
-### 14.9.3 Bloom Filter Implementation
 
 ```cpp
-#include <iostream>
 #include <vector>
-#include <functional>
-#include <bitset>
+#include <string>
 #include <cmath>
 using namespace std;
 
 class BloomFilter {
 private:
     vector<bool> bits;
-    int size;
-    int numHashFunctions;
-    
-    // Simple hash functions
-    size_t hash1(const string& key) const {
-        hash<string> hasher;
-        return hasher(key) % size;
-    }
-    
-    size_t hash2(const string& key) const {
-        hash<string> hasher;
-        return (hasher(key) * 31) % size;
-    }
-    
-    size_t hash3(const string& key) const {
-        hash<string> hasher;
-        return (hasher(key) * 17 + 7) % size;
-    }
-    
+    int size, numHashFunctions;
+
+    size_t hash1(const string& k) const { return hash<string>{}(k) % size; }
+    size_t hash2(const string& k) const { return (hash<string>{}(k) * 31) % size; }
+    size_t hash3(const string& k) const { return (hash<string>{}(k) * 17 + 7) % size; }
+
 public:
     BloomFilter(int expectedElements, double falsePositiveRate) {
-        // Calculate optimal size: m = -n * ln(p) / (ln(2)^2)
-        size = static_cast<int>(-expectedElements * log(falsePositiveRate) / (log(2) * log(2)));
-        
-        // Calculate optimal number of hash functions: k = (m/n) * ln(2)
-        numHashFunctions = static_cast<int>((size / expectedElements) * log(2));
-        
-        bits.resize(size, false);
-        
-        cout << "Bloom Filter initialized:" << endl;
-        cout << "  Size: " << size << " bits" << endl;
-        cout << "  Hash functions: " << numHashFunctions << endl;
+        // Optimal size m = -n·ln(p)/(ln 2)^2, hash count k = (m/n)·ln 2.
+        size = (int)(-expectedElements * log(falsePositiveRate) / (log(2) * log(2)));
+        numHashFunctions = (int)((size / (double)expectedElements) * log(2));
+        bits.assign(size, false);
     }
-    
+
     void insert(const string& key) {
-        bits[hash1(key)] = true;
-        bits[hash2(key)] = true;
-        bits[hash3(key)] = true;
-        
-        // Add more hash functions if needed
-        for (int i = 3; i < numHashFunctions; i++) {
-            size_t h = (hash1(key) + i * hash2(key)) % size;
-            bits[h] = true;
-        }
+        bits[hash1(key)] = bits[hash2(key)] = bits[hash3(key)] = true;
+        for (int i = 3; i < numHashFunctions; i++)
+            bits[(hash1(key) + i * hash2(key)) % size] = true;
     }
-    
+
     bool contains(const string& key) const {
-        if (!bits[hash1(key)]) return false;
-        if (!bits[hash2(key)]) return false;
-        if (!bits[hash3(key)]) return false;
-        
-        // Check additional hash functions
-        for (int i = 3; i < numHashFunctions; i++) {
-            size_t h = (hash1(key) + i * hash2(key)) % size;
-            if (!bits[h]) return false;
-        }
-        
-        return true; // Probably in set (may be false positive)
+        if (!bits[hash1(key)] || !bits[hash2(key)] || !bits[hash3(key)]) return false;
+        for (int i = 3; i < numHashFunctions; i++)
+            if (!bits[(hash1(key) + i * hash2(key)) % size]) return false;
+        return true;   // may be a false positive
     }
-    
+
+    // False-positive rate ≈ (1 - e^(-kn/m))^k for n inserted elements.
     double getFalsePositiveRate(int numElements) const {
-        // p = (1 - e^(-kn/m))^k
-        double exponent = -numHashFunctions * numElements / (double)size;
+        double exponent = -numHashFunctions * (double)numElements / size;
         return pow(1 - exp(exponent), numHashFunctions);
     }
 };
 ```
 
-### 14.9.4 Performance Analysis
+Insert and lookup are O(k); space is O(m) bits, independent of element size. Bloom filters guard expensive lookups (database blocks, web caches, network routers) by cheaply ruling out absent keys.
 
-**Time Complexity:**
-- **Insert**: O(k) where k is number of hash functions (typically 3-10)
-- **Lookup**: O(k)
-- **Space**: O(m) where m is bit array size
-
-**False Positive Rate:**
-- Depends on size m, number of elements n, and hash functions k
-- Optimal k ≈ (m/n) * ln(2)
-- False positive rate ≈ (1 - e^(-kn/m))^k
-
-### 14.9.5 Applications
-
-- **Database Systems**: Avoid expensive disk lookups
-- **Web Caches**: Check if URL is cached before expensive lookup
-- **Network Routers**: Fast packet routing decisions
-- **Distributed Systems**: Reduce network queries
-- **Spell Checkers**: Quick word existence check
-
-### 14.9.6 Counting Bloom Filters
-
-Standard Bloom filters don't support deletion. **Counting Bloom Filters** use counters instead of bits to enable deletion:
+To support deletion, a **counting Bloom filter** replaces each bit with a small counter, incremented on insert and decremented on remove:
 
 ```cpp
 class CountingBloomFilter {
 private:
     vector<int> counters;
-    int size;
-    int numHashFunctions;
-    
+    int size, numHashFunctions;
+
+    size_t hash1(const string& k) const { return hash<string>{}(k) % size; }
+    size_t hash2(const string& k) const { return (hash<string>{}(k) * 31) % size; }
+    size_t hash3(const string& k) const { return (hash<string>{}(k) * 17 + 7) % size; }
+
 public:
     CountingBloomFilter(int expectedElements, double falsePositiveRate) {
-        size = static_cast<int>(-expectedElements * log(falsePositiveRate) / (log(2) * log(2)));
-        numHashFunctions = static_cast<int>((size / expectedElements) * log(2));
-        counters.resize(size, 0);
+        size = (int)(-expectedElements * log(falsePositiveRate) / (log(2) * log(2)));
+        numHashFunctions = (int)((size / (double)expectedElements) * log(2));
+        counters.assign(size, 0);
     }
-    
+
     void insert(const string& key) {
-        // Increment counters instead of setting bits
-        counters[hash1(key)]++;
-        counters[hash2(key)]++;
-        counters[hash3(key)]++;
+        counters[hash1(key)]++; counters[hash2(key)]++; counters[hash3(key)]++;
     }
-    
     void remove(const string& key) {
-        // Decrement counters
-        counters[hash1(key)]--;
-        counters[hash2(key)]--;
-        counters[hash3(key)]--;
+        counters[hash1(key)]--; counters[hash2(key)]--; counters[hash3(key)]--;
     }
-    
     bool contains(const string& key) const {
-        return counters[hash1(key)] > 0 &&
-               counters[hash2(key)] > 0 &&
-               counters[hash3(key)] > 0;
+        return counters[hash1(key)] > 0 && counters[hash2(key)] > 0
+            && counters[hash3(key)] > 0;
     }
 };
 ```
 
-## 14.19 Count-Min Sketch
+## 14.17 Count-Min Sketch
 
-A **Count-Min Sketch** is a probabilistic data structure that provides approximate frequency counts for elements in a stream. It's space-efficient and uses multiple hash functions, similar to Bloom Filters (Section 14.9), but designed for counting rather than membership testing.
-
-### 14.10.1 Introduction to Count-Min Sketch
-
-Count-Min Sketch estimates the frequency of elements in a data stream with guaranteed error bounds. It's particularly useful for:
-- **Heavy hitters**: Finding most frequent elements
-- **Frequency estimation**: Approximate counts in large datasets
-- **Stream processing**: Real-time frequency tracking
-- **Network monitoring**: Tracking packet frequencies
-
-#### Key Characteristics
-
-- **Probabilistic**: Provides approximate counts (may overestimate, never underestimate)
-- **Space Efficient**: Uses O(d × w) space where d is depth (hash functions) and w is width
-- **Fast Operations**: O(d) time for increment and query
-- **Guaranteed Bounds**: Error is bounded with high probability
-
-### 14.10.2 How Count-Min Sketch Works
-
-Count-Min Sketch uses a 2D array (d rows × w columns) and d independent hash functions:
-
-1. **Initialization**: Create d × w array, all initialized to 0
-2. **Increment**: For element x, hash it with each of d hash functions, increment corresponding cells
-3. **Query**: For element x, hash it with each hash function, return minimum count across all d cells
-
-**Why minimum?** Since we may have collisions, counts can only increase. Taking the minimum gives the best estimate (closest to true count).
+A **Count-Min sketch** estimates element frequencies in a stream using a `d × w` counter grid and d hash functions — the counting analogue of a Bloom filter. Increment hashes the element into one cell per row and bumps it; a query returns the *minimum* of those d cells. Because collisions only ever add to a cell, the minimum is the tightest estimate and the sketch may overestimate but never underestimates.
 
 ```
-Example with d=3, w=5:
-
-Increment "apple":
-  hash1("apple") = 2  → increment sketch[0][2]
-  hash2("apple") = 0  → increment sketch[1][0]
-  hash3("apple") = 4  → increment sketch[2][4]
-
-Query "apple":
-  hash1("apple") = 2  → sketch[0][2] = 1
-  hash2("apple") = 0  → sketch[1][0] = 1
-  hash3("apple") = 4  → sketch[2][4] = 1
-  → min(1, 1, 1) = 1 (true count)
+Increment "apple":  sketch[0][h0], sketch[1][h1], sketch[2][h2]  += 1
+Query     "apple":  min(sketch[0][h0], sketch[1][h1], sketch[2][h2])
 ```
-
-### 14.10.3 Count-Min Sketch Implementation
 
 ```cpp
-#include <iostream>
 #include <vector>
+#include <string>
 #include <functional>
 #include <algorithm>
 #include <climits>
-#include <cmath>
 using namespace std;
 
 class CountMinSketch {
 private:
     vector<vector<int>> sketch;
-    int depth;  // Number of hash functions (rows)
-    int width;  // Number of buckets per hash function (columns)
+    int depth, width;
     vector<function<size_t(const string&)>> hashFunctions;
-    
-    // Simple hash functions (in practice, use better ones)
-    size_t hash1(const string& key) const {
-        hash<string> hasher;
-        return hasher(key) % width;
-    }
-    
-    size_t hash2(const string& key) const {
-        hash<string> hasher;
-        return (hasher(key) * 31) % width;
-    }
-    
-    size_t hash3(const string& key) const {
-        hash<string> hasher;
-        return (hasher(key) * 17 + 7) % width;
-    }
-    
-    size_t hash4(const string& key) const {
-        hash<string> hasher;
-        return (hasher(key) * 13 + 11) % width;
-    }
-    
+
 public:
     CountMinSketch(int d, int w) : depth(d), width(w) {
-        sketch.resize(depth, vector<int>(width, 0));
-        
-        // Initialize hash functions
-        hashFunctions.push_back([this](const string& k) { return hash1(k); });
-        hashFunctions.push_back([this](const string& k) { return hash2(k); });
-        hashFunctions.push_back([this](const string& k) { return hash3(k); });
-        if (depth > 3) {
-            hashFunctions.push_back([this](const string& k) { return hash4(k); });
-        }
-    }
-    
-    // Increment count for an element
-    void increment(const string& key) {
+        sketch.assign(depth, vector<int>(width, 0));
+        // Build `depth` independent hashes from one base hash + per-row seed.
         for (int i = 0; i < depth; i++) {
-            size_t index = hashFunctions[i](key);
-            sketch[i][index]++;
+            size_t seed = i;
+            int w_ = width;
+            hashFunctions.push_back([seed, w_](const string& k) {
+                return (hash<string>{}(k) * (2 * seed + 1) + seed * 7) % w_;
+            });
         }
     }
-    
-    // Query approximate count
+
+    void increment(const string& key) {
+        for (int i = 0; i < depth; i++)
+            sketch[i][hashFunctions[i](key)]++;
+    }
+
     int query(const string& key) const {
         int minCount = INT_MAX;
-        for (int i = 0; i < depth; i++) {
-            size_t index = hashFunctions[i](key);
-            minCount = min(minCount, sketch[i][index]);
-        }
+        for (int i = 0; i < depth; i++)
+            minCount = min(minCount, sketch[i][hashFunctions[i](key)]);
         return minCount;
-    }
-    
-    // Get error bound (with probability 1 - δ)
-    // Error ≤ (ε × N) with probability ≥ (1 - δ)
-    // where N is total number of increments
-    double getErrorBound(int totalIncrements, double epsilon, double delta) const {
-        // width = ceil(e/ε), depth = ceil(ln(1/δ))
-        // Error ≤ ε × N with probability ≥ 1 - δ
-        return epsilon * totalIncrements;
-    }
-    
-    void print() const {
-        cout << "Count-Min Sketch (depth=" << depth << ", width=" << width << "):" << endl;
-        for (int i = 0; i < depth; i++) {
-            cout << "Row " << i << ": ";
-            for (int j = 0; j < width; j++) {
-                cout << sketch[i][j] << " ";
-            }
-            cout << endl;
-        }
     }
 };
 ```
 
-### 14.10.4 Performance Analysis
+Increment and query are O(d); space is O(d × w). With width `w = ⌈e/ε⌉` and depth `d = ⌈ln(1/δ)⌉`, the error is at most `ε·N` (N = total increments) with probability at least `1 − δ`. For ε = δ = 0.01 that is w = 272, d = 5 — about 1,360 counters regardless of stream size. More depth raises accuracy; more width lowers collisions.
 
-**Time Complexity:**
-- **Increment**: O(d) where d is number of hash functions
-- **Query**: O(d)
-- **Space**: O(d × w)
-
-**Error Analysis:**
-- **Guarantee**: With probability ≥ (1 - δ), error ≤ ε × N
-- **Parameters**: 
-  - Width w = ⌈e/ε⌉ (e ≈ 2.718)
-  - Depth d = ⌈ln(1/δ)⌉
-- **Example**: For ε = 0.01 (1% error), δ = 0.01 (1% failure probability):
-  - w = ⌈2.718/0.01⌉ = 272
-  - d = ⌈ln(100)⌉ = 5
-  - Space = 272 × 5 = 1,360 integers
-
-**Why It Works:**
-- Hash collisions cause overestimation (never underestimation)
-- Taking minimum across d independent hash functions reduces error
-- More hash functions (depth) → higher accuracy
-- More buckets (width) → lower collision probability
-
-### 14.10.5 Applications
-
-**1. Heavy Hitters Problem**
-Find elements with frequency > threshold:
+A common use is the **heavy-hitters** problem — elements exceeding a frequency threshold:
 
 ```cpp
-vector<string> findHeavyHitters(const vector<string>& stream, 
-                                 double threshold, 
-                                 int totalElements) {
-    CountMinSketch cms(5, 272); // ε=0.01, δ=0.01
-    
-    // Count all elements
-    for (const string& elem : stream) {
-        cms.increment(elem);
-    }
-    
-    // Find heavy hitters
+vector<string> findHeavyHitters(const vector<string>& stream,
+                                double threshold, int totalElements) {
+    CountMinSketch cms(5, 272);                 // ε≈0.01, δ≈0.01
+    for (const string& e : stream) cms.increment(e);
+
     vector<string> heavyHitters;
-    for (const string& elem : stream) {
-        int count = cms.query(elem);
-        if (count >= threshold * totalElements) {
-            heavyHitters.push_back(elem);
-        }
-    }
-    
+    for (const string& e : stream)
+        if (cms.query(e) >= threshold * totalElements)
+            heavyHitters.push_back(e);
     return heavyHitters;
 }
 ```
 
-**2. Network Traffic Monitoring**
-- Track packet frequencies
-- Identify DDoS attacks (unusual frequency patterns)
-- Monitor bandwidth usage
+Use a Count-Min sketch for large streams where approximate counts suffice and space is tight (network monitoring, trending items, query-frequency estimation); avoid it when exact counts are required or when the dataset is small enough that a hash table is cheaper. Variants include Count sketch (uses ±1 signs for lower average error, but can underestimate) and conservative-update (increments only the minimum cells to curb overestimation).
 
-**3. Database Query Optimization**
-- Estimate frequency of query patterns
-- Cache frequently accessed data
+## 14.18 Fibonacci Heap
 
-**4. Recommendation Systems**
-- Track item view frequencies
-- Identify trending items
+A **Fibonacci heap** is a collection of heap-ordered trees that defers restructuring work, achieving O(1) *amortized* insert, decrease-key, and merge, with O(log n) amortized extract-min. The decrease-key bound is what matters for Dijkstra's algorithm on dense graphs, lowering its cost from O((V+E) log V) to O(V log V + E).
 
-### 14.10.6 Comparison with Other Structures
-
-| Structure | Purpose | Space | Error | Notes |
-|-----------|---------|-------|-------|-------|
-| **Hash Table** (Chapter 10) | Exact counting | O(n) | None | Exact but uses more space |
-| **Count-Min Sketch** | Approximate counting | O(d×w) | Overestimate | Space-efficient, probabilistic |
-| **Bloom Filter** (Section 14.9) | Membership test | O(m) | False positives | Different purpose (membership vs. counting) |
-
-**When to Use Count-Min Sketch:**
-- ✅ Large data streams where exact counts aren't needed
-- ✅ Space is constrained
-- ✅ Approximate counts are acceptable
-- ✅ Need to handle high-frequency updates
-
-**When NOT to Use:**
-- ❌ Exact counts are required
-- ❌ Small datasets (overhead not worth it)
-- ❌ Need to decrement counts (standard CMS doesn't support)
-
-### 14.10.7 Variants and Extensions
-
-**1. Count Sketch**
-Similar to Count-Min but can have negative errors (more accurate on average):
-
-```cpp
-class CountSketch {
-    // Uses random signs (+1/-1) to reduce bias
-    // Better average error, but can underestimate
-};
-```
-
-**2. Hierarchical Count-Min Sketch**
-Tracks frequencies at multiple time scales (recent, hourly, daily).
-
-**3. Conservative Update**
-Only updates minimum cells, reducing overestimation.
-
-## 14.20 Fibonacci Heap
-
-**Fibonacci Heap** is an advanced heap data structure that provides better amortized time complexity for decrease-key and merge operations compared to binary heaps. It's particularly useful for algorithms like Dijkstra's shortest path.
-
-### Why Fibonacci Heap?
-
-While binary heaps are excellent for most applications, Fibonacci heaps offer:
-- **O(1) amortized decrease-key**: Critical for Dijkstra's algorithm
-- **O(1) amortized merge**: Efficient heap merging
-- **O(log n) extract-min**: Same as binary heap
-- **Lazy operations**: Defer work until necessary
-
-### Structure
-
-Fibonacci heaps are collections of heap-ordered trees (min-heap property) with:
-- **Root list**: Circular doubly-linked list of tree roots
-- **Min pointer**: Points to minimum root
-- **Degree array**: Tracks trees by degree
-- **Marked nodes**: Track nodes that lost a child (for decrease-key optimization)
-
-### Key Operations
-
-| Operation | Binary Heap | Fibonacci Heap |
+| Operation | Binary heap | Fibonacci heap |
 |-----------|-------------|----------------|
 | Insert | O(log n) | O(1) amortized |
-| Extract Min | O(log n) | O(log n) amortized |
-| Decrease Key | O(log n) | O(1) amortized |
+| Extract min | O(log n) | O(log n) amortized |
+| Decrease key | O(log n) | O(1) amortized |
 | Merge | O(n) | O(1) amortized |
-| Delete | O(log n)) | O(log n) amortized |
+| Delete | O(log n) | O(log n) amortized |
 
-### Implementation Overview
+The structure keeps a circular doubly-linked *root list* with a pointer to the minimum root, plus a *marked* bit per node tracking whether it has already lost a child (used to bound decrease-key's cascading cuts). Insert and merge just splice into the root list; the real work is deferred to `extractMin`, which promotes the removed node's children to roots and then **consolidates** trees of equal degree so no two roots share a degree.
 
 ```cpp
-#include <iostream>
 #include <vector>
 #include <list>
-#include <climits>
+#include <stdexcept>
 using namespace std;
 
 class FibonacciHeap {
 private:
     struct Node {
-        int key;
-        int degree;
+        int key, degree;
         bool marked;
-        Node* parent;
-        Node* child;
-        Node* left;
-        Node* right;
-        
+        Node *parent, *child, *left, *right;
         Node(int k) : key(k), degree(0), marked(false),
-                     parent(nullptr), child(nullptr),
-                     left(this), right(this) {}
+                      parent(nullptr), child(nullptr), left(this), right(this) {}
     };
-    
+
     Node* minNode;
     int numNodes;
-    
-    // Consolidate trees of same degree
-    void consolidate() {
-        vector<Node*> degreeTable(64, nullptr);  // Max degree ~64 for practical sizes
-        
-        Node* current = minNode;
-        list<Node*> roots;
-        
-        // Collect all roots
-        do {
-            roots.push_back(current);
-            current = current->right;
-        } while (current != minNode);
-        
-        // Process each root
-        for (Node* root : roots) {
-            int degree = root->degree;
-            
-            // Merge trees of same degree
-            while (degreeTable[degree] != nullptr) {
-                Node* other = degreeTable[degree];
-                
-                // Make root with smaller key the parent
-                if (root->key > other->key) {
-                    swap(root, other);
-                }
-                
-                // Link other as child of root
-                link(other, root);
-                degreeTable[degree] = nullptr;
-                degree++;
-            }
-            
-            degreeTable[degree] = root;
-        }
-        
-        // Rebuild root list and find new min
-        minNode = nullptr;
-        for (Node* node : degreeTable) {
-            if (node != nullptr) {
-                if (minNode == nullptr || node->key < minNode->key) {
-                    minNode = node;
-                }
-            }
-        }
-    }
-    
-    // Link node as child of parent
+
+    // Make `node` a child of `parent` (both currently roots).
     void link(Node* node, Node* parent) {
-        // Remove from root list
-        node->left->right = node->right;
+        node->left->right = node->right;      // unlink from root list
         node->right->left = node->left;
-        
-        // Add to parent's child list
         if (parent->child == nullptr) {
             parent->child = node;
-            node->left = node;
-            node->right = node;
+            node->left = node->right = node;
         } else {
             node->right = parent->child;
             node->left = parent->child->left;
             parent->child->left->right = node;
             parent->child->left = node;
         }
-        
         node->parent = parent;
         parent->degree++;
         node->marked = false;
     }
-    
+
+    void consolidate() {
+        vector<Node*> degreeTable(64, nullptr);   // 64 covers any practical n
+        list<Node*> roots;
+        Node* current = minNode;
+        do { roots.push_back(current); current = current->right; }
+        while (current != minNode);
+
+        for (Node* root : roots) {
+            int degree = root->degree;
+            while (degreeTable[degree] != nullptr) {
+                Node* other = degreeTable[degree];
+                if (root->key > other->key) swap(root, other);
+                link(other, root);                 // smaller key becomes parent
+                degreeTable[degree] = nullptr;
+                degree++;
+            }
+            degreeTable[degree] = root;
+        }
+
+        minNode = nullptr;
+        for (Node* node : degreeTable)
+            if (node && (minNode == nullptr || node->key < minNode->key))
+                minNode = node;
+    }
+
 public:
     FibonacciHeap() : minNode(nullptr), numNodes(0) {}
-    
+
     void insert(int key) {
         Node* node = new Node(key);
-        
         if (minNode == nullptr) {
             minNode = node;
         } else {
-            // Add to root list
             node->right = minNode;
             node->left = minNode->left;
             minNode->left->right = node;
             minNode->left = node;
-            
-            if (key < minNode->key) {
-                minNode = node;
-            }
+            if (key < minNode->key) minNode = node;
         }
-        
         numNodes++;
     }
-    
+
     int extractMin() {
-        if (minNode == nullptr) {
-            throw runtime_error("Heap is empty");
-        }
-        
+        if (minNode == nullptr) throw runtime_error("Heap is empty");
         Node* min = minNode;
         int minKey = min->key;
-        
-        // Add children to root list
-        if (min->child != nullptr) {
+
+        if (min->child != nullptr) {               // move children to root list
             Node* child = min->child;
             do {
                 Node* next = child->right;
                 child->parent = nullptr;
-                
-                // Add to root list
                 child->right = minNode;
                 child->left = minNode->left;
                 minNode->left->right = child;
                 minNode->left = child;
-                
                 child = next;
             } while (child != min->child);
         }
-        
-        // Remove min from root list
-        min->left->right = min->right;
+
+        min->left->right = min->right;             // unlink min
         min->right->left = min->left;
-        
         if (min == min->right) {
             minNode = nullptr;
         } else {
             minNode = min->right;
             consolidate();
         }
-        
         numNodes--;
         delete min;
         return minKey;
     }
-    
-    bool empty() const {
-        return minNode == nullptr;
-    }
+
+    bool empty() const { return minNode == nullptr; }
 };
 ```
 
-### When to Use Fibonacci Heap
+In practice Fibonacci heaps carry large constant factors and poor cache behavior (pointer-heavy nodes), so a plain binary heap — or a pairing heap — usually wins outside of graph algorithms dominated by decrease-key. Reach for a Fibonacci heap only when decrease-key or merge is genuinely the bottleneck.
 
-**Use Fibonacci Heap When**:
-- Implementing Dijkstra's algorithm with many decrease-key operations
-- Need frequent heap merging
-- Decrease-key is the dominant operation
+## 14.19 Suffix Array and Suffix Tree
 
-**Use Binary Heap When**:
-- Simplicity is important
-- Operations are balanced (not just decrease-key)
-- Memory overhead matters (Fibonacci heaps have higher constant factors)
-
-### Real-World Application: Dijkstra's Algorithm
+A **suffix array** is the sorted array of starting indices of all suffixes of a string. It supports substring search by binary search and underpins many string algorithms, at a fraction of the memory of a suffix tree. The construction below is the simple O(n² log n) comparison sort; production code uses O(n) or O(n log n) builders such as SA-IS or DC3. An accompanying LCP (longest-common-prefix) array records the overlap between adjacent suffixes.
 
 ```cpp
-// Dijkstra's with Fibonacci Heap - O(V log V + E) instead of O((V + E) log V)
-// Better when E >> V (dense graphs)
-```
-
-**Key Insight**: Fibonacci heaps shine when decrease-key operations dominate, as in Dijkstra's algorithm on dense graphs. For most applications, binary heaps are simpler and sufficient.
-
-## 14.21 Suffix Array and Suffix Tree
-
-**Suffix Array** and **Suffix Tree** are advanced data structures for efficient string operations, particularly substring search and pattern matching.
-
-### Suffix Array
-
-A **suffix array** is a sorted array of all suffixes of a string. It enables efficient substring search and many string algorithms.
-
-#### Construction
-
-```cpp
-#include <iostream>
 #include <vector>
 #include <string>
 #include <algorithm>
@@ -2654,179 +1018,82 @@ class SuffixArray {
 private:
     string text;
     vector<int> suffixArray;
-    vector<int> lcp;  // Longest Common Prefix array
-    
+    vector<int> lcp;
+
     void buildSuffixArray() {
         int n = text.length();
         suffixArray.resize(n);
-        
-        // Initialize with indices
-        for (int i = 0; i < n; i++) {
-            suffixArray[i] = i;
-        }
-        
-        // Sort by suffixes (naive O(n² log n) approach)
-        // In practice, use O(n log n) algorithms like DC3 or SA-IS
-        sort(suffixArray.begin(), suffixArray.end(), 
-             [this](int a, int b) {
-                 return text.substr(a) < text.substr(b);
-             });
+        for (int i = 0; i < n; i++) suffixArray[i] = i;
+        sort(suffixArray.begin(), suffixArray.end(),
+             [this](int a, int b) { return text.substr(a) < text.substr(b); });
     }
-    
+
     void buildLCP() {
         int n = text.length();
-        lcp.resize(n);
-        lcp[0] = 0;
-        
+        lcp.assign(n, 0);
         for (int i = 1; i < n; i++) {
-            int len = 0;
-            int a = suffixArray[i - 1];
-            int b = suffixArray[i];
-            
-            while (a + len < n && b + len < n && 
-                   text[a + len] == text[b + len]) {
-                len++;
-            }
-            
+            int len = 0, a = suffixArray[i - 1], b = suffixArray[i];
+            while (a + len < n && b + len < n && text[a + len] == text[b + len]) len++;
             lcp[i] = len;
         }
     }
-    
+
 public:
     SuffixArray(const string& s) : text(s) {
-        text += '$';  // Sentinel character
+        text += '$';               // sentinel smaller than any real char
         buildSuffixArray();
         buildLCP();
     }
-    
-    // Search for pattern - O(m log n) where m is pattern length
+
+    // O(m log n): binary-search for any suffix beginning with `pattern`.
     bool search(const string& pattern) {
         int left = 0, right = suffixArray.size() - 1;
-        
         while (left <= right) {
             int mid = left + (right - left) / 2;
-            int suffixIndex = suffixArray[mid];
-            string suffix = text.substr(suffixIndex);
-            
-            if (suffix.substr(0, pattern.length()) == pattern) {
-                return true;
-            } else if (suffix < pattern) {
-                left = mid + 1;
-            } else {
-                right = mid - 1;
-            }
+            string suffix = text.substr(suffixArray[mid]);
+            if (suffix.compare(0, pattern.length(), pattern) == 0) return true;
+            if (suffix < pattern) left = mid + 1;
+            else                  right = mid - 1;
         }
-        
         return false;
     }
-    
-    // Find all occurrences of pattern
+
     vector<int> findAllOccurrences(const string& pattern) {
-        vector<int> occurrences;
-        int left = 0, right = suffixArray.size() - 1;
-        
-        // Binary search for first occurrence
-        int first = -1;
-        while (left <= right) {
-            int mid = left + (right - left) / 2;
-            int suffixIndex = suffixArray[mid];
-            string suffix = text.substr(suffixIndex);
-            
-            if (suffix.substr(0, pattern.length()) == pattern) {
-                first = mid;
-                right = mid - 1;
-            } else if (suffix < pattern) {
-                left = mid + 1;
-            } else {
-                right = mid - 1;
-            }
+        vector<int> occ;
+        int lo = 0, hi = suffixArray.size() - 1, first = -1;
+        while (lo <= hi) {                         // first matching suffix
+            int mid = lo + (hi - lo) / 2;
+            string suffix = text.substr(suffixArray[mid]);
+            if (suffix.compare(0, pattern.length(), pattern) == 0) { first = mid; hi = mid - 1; }
+            else if (suffix < pattern) lo = mid + 1;
+            else                       hi = mid - 1;
         }
-        
-        if (first == -1) return occurrences;
-        
-        // Find last occurrence
-        left = first;
-        right = suffixArray.size() - 1;
+        if (first == -1) return occ;
+
+        lo = first; hi = suffixArray.size() - 1;
         int last = first;
-        
-        while (left <= right) {
-            int mid = left + (right - left) / 2;
-            int suffixIndex = suffixArray[mid];
-            string suffix = text.substr(suffixIndex);
-            
-            if (suffix.substr(0, pattern.length()) == pattern) {
-                last = mid;
-                left = mid + 1;
-            } else {
-                right = mid - 1;
-            }
+        while (lo <= hi) {                         // last matching suffix
+            int mid = lo + (hi - lo) / 2;
+            string suffix = text.substr(suffixArray[mid]);
+            if (suffix.compare(0, pattern.length(), pattern) == 0) { last = mid; lo = mid + 1; }
+            else hi = mid - 1;
         }
-        
-        // Collect all occurrences
-        for (int i = first; i <= last; i++) {
-            occurrences.push_back(suffixArray[i]);
-        }
-        
-        return occurrences;
+        for (int i = first; i <= last; i++) occ.push_back(suffixArray[i]);
+        return occ;
     }
-    
-    vector<int> getSuffixArray() const {
-        return suffixArray;
-    }
-    
-    vector<int> getLCP() const {
-        return lcp;
-    }
+
+    const vector<int>& getSuffixArray() const { return suffixArray; }
+    const vector<int>& getLCP() const { return lcp; }
 };
 ```
 
-### Suffix Tree
+A **suffix tree** is a compressed trie of all suffixes; with Ukkonen's algorithm it builds in O(n) and searches a pattern in O(m). It also solves longest-common-substring, longest-repeated-substring, and drives applications from LZ77 compression to DNA analysis. Suffix trees are intricate to implement correctly, so suffix arrays (plus LCP) are usually preferred in practice for comparable performance with far less code. Reach for either only when the same text is searched for many patterns or you need advanced string operations; for a single search over small text, a direct string search is simpler.
 
-A **suffix tree** is a compressed trie containing all suffixes of a string. It enables O(m) substring search where m is pattern length.
+## 14.20 Persistent Data Structures
 
-#### Key Properties
-
-- **Space**: O(n) with Ukkonen's algorithm
-- **Construction**: O(n) with Ukkonen's algorithm
-- **Search**: O(m) for pattern of length m
-- **Applications**: Longest common substring, longest repeated substring, substring search
-
-#### Applications
-
-1. **Substring Search**: O(m) time for pattern of length m
-2. **Longest Common Substring**: Between two strings
-3. **Longest Repeated Substring**: In a single string
-4. **String Compression**: LZ77 algorithm uses suffix trees
-5. **Bioinformatics**: DNA sequence analysis
-
-**Note**: Suffix trees are complex to implement. Suffix arrays are often preferred in practice due to simpler implementation and similar performance.
-
-### When to Use
-
-**Use Suffix Array/Tree When**:
-- Need to search for many patterns in same text
-- String processing is performance-critical
-- Need advanced string operations (LCS, repeated substrings)
-
-**Use Simple String Search When**:
-- Single pattern search
-- Text is small
-- Simplicity is important
-
-## 14.22 Persistent Data Structures
-
-**Persistent data structures** maintain all previous versions when modified. They're essential for functional programming and time-travel queries.
-
-### Types of Persistence
-
-1. **Partial Persistence**: Can access all previous versions, but only modify latest
-2. **Full Persistence**: Can access and modify any previous version
-3. **Confluent Persistence**: Can merge versions
-
-### Persistent Segment Tree Example
+A **persistent** structure keeps its previous versions when modified. Partial persistence allows reading any past version but modifying only the latest; full persistence allows modifying any version; confluent persistence allows merging versions. The standard technique is *path copying*: an update clones only the O(log n) nodes on the path it changes and shares the rest with the old version, so each version costs O(log n) extra space rather than O(n).
 
 ```cpp
-#include <iostream>
 #include <vector>
 using namespace std;
 
@@ -2834,577 +1101,178 @@ class PersistentSegmentTree {
 private:
     struct Node {
         int value;
-        Node* left;
-        Node* right;
-        
+        Node *left, *right;
         Node(int v) : value(v), left(nullptr), right(nullptr) {}
         Node(Node* l, Node* r) : value(0), left(l), right(r) {
             if (l) value += l->value;
             if (r) value += r->value;
         }
     };
-    
-    vector<Node*> roots;  // Store roots of all versions
+
+    vector<Node*> roots;   // one root per version
     int n;
-    
+
     Node* build(vector<int>& arr, int left, int right) {
-        if (left == right) {
-            return new Node(arr[left]);
-        }
-        
+        if (left == right) return new Node(arr[left]);
         int mid = left + (right - left) / 2;
-        Node* l = build(arr, left, mid);
-        Node* r = build(arr, mid + 1, right);
-        return new Node(l, r);
+        return new Node(build(arr, left, mid), build(arr, mid + 1, right));
     }
-    
+
     Node* update(Node* node, int left, int right, int index, int value) {
-        if (left == right) {
-            return new Node(value);
-        }
-        
+        if (left == right) return new Node(value);
         int mid = left + (right - left) / 2;
-        if (index <= mid) {
-            return new Node(update(node->left, left, mid, index, value), 
-                           node->right);
-        } else {
-            return new Node(node->left, 
-                           update(node->right, mid + 1, right, index, value));
-        }
+        if (index <= mid)
+            return new Node(update(node->left, left, mid, index, value), node->right);
+        else
+            return new Node(node->left, update(node->right, mid + 1, right, index, value));
     }
-    
-    int query(Node* node, int left, int right, int qLeft, int qRight) {
-        if (qRight < left || qLeft > right) return 0;
-        if (qLeft <= left && right <= qRight) return node->value;
-        
+
+    int query(Node* node, int left, int right, int qL, int qR) {
+        if (qR < left || qL > right) return 0;
+        if (qL <= left && right <= qR) return node->value;
         int mid = left + (right - left) / 2;
-        return query(node->left, left, mid, qLeft, qRight) +
-               query(node->right, mid + 1, right, qLeft, qRight);
+        return query(node->left, left, mid, qL, qR)
+             + query(node->right, mid + 1, right, qL, qR);
     }
-    
+
 public:
     PersistentSegmentTree(vector<int>& arr) {
         n = arr.size();
         roots.push_back(build(arr, 0, n - 1));
     }
-    
-    // Create new version by updating
+
+    // Create a new version from an existing one.
     void update(int version, int index, int value) {
-        Node* newRoot = update(roots[version], 0, n - 1, index, value);
-        roots.push_back(newRoot);
+        roots.push_back(update(roots[version], 0, n - 1, index, value));
     }
-    
-    // Query a specific version
+
     int query(int version, int left, int right) {
         return query(roots[version], 0, n - 1, left, right);
     }
-    
-    int getLatestVersion() {
-        return roots.size() - 1;
-    }
+
+    int getLatestVersion() { return roots.size() - 1; }
 };
 ```
 
-### Applications
+Persistent structures enable time-travel queries ("what was the sum at version t?"), immutable/functional data, and rollback. Use them when history matters; a regular structure is smaller and simpler when only the current state is needed.
 
-1. **Time-Travel Queries**: "What was the sum at time t?"
-2. **Functional Programming**: Immutable data structures
-3. **Version Control**: Track changes over time
-4. **Rollback Operations**: Revert to previous state
+## 14.21 Failure Modes and Common Pitfalls
 
-### When to Use
+Each pitfall below is a real production bug shown as a wrong/right pair.
 
-**Use Persistent Structures When**:
-- Need to access historical versions
-- Functional programming paradigm
-- Time-travel queries required
-
-**Use Regular Structures When**:
-- Only need current state
-- Memory is constrained
-- Simplicity is important
-
-## 14.23 Failure Modes and Common Pitfalls
-
-Understanding common failure modes helps avoid bugs and performance issues.
-
-#### 1. Heap Property Violation
+**1. Heap property not restored after mutation.**
 ```cpp
-// WRONG: Not maintaining heap property
-void insert(int value) {
-    heap.push_back(value);  // Violates heap property!
-    // Missing heapifyUp()
-}
-
-// CORRECT: Always restore heap property
-void insert(int value) {
-    heap.push_back(value);
-    heapifyUp(heap.size() - 1);  // Restore invariant
-}
+void insert(int value) { heap.push_back(value); }            // WRONG: no heapifyUp
+void insert(int value) { heap.push_back(value); heapifyUp(heap.size() - 1); }  // CORRECT
 ```
+Extract then returns a non-extreme element; the heap is silently invalid.
 
-**Why it happens**: Forgetting to restore heap property after modification
-**Impact**: Extract operations return wrong value, heap becomes invalid
+**2. Index out of bounds.** `parent(0)` computes `(0-1)/2`; heapify-up must guard `index > 0` before reading the parent. Unchecked child indices in heapify-down are the same class of bug.
 
-#### 2. Index Out of Bounds
+**3. Incomplete heapify-down.**
 ```cpp
-// WRONG: Not checking bounds
-int parent(int i) {
-    return (i - 1) / 2;  // Crashes if i == 0
-}
-
-void heapifyUp(int index) {
-    while (index > 0) {  // Must check!
-        int p = parent(index);
-        // ...
-    }
-}
+// WRONG: only compares the left child, ignores the right
+// CORRECT: pick the extreme of index, left, and right, then swap
 ```
+Comparing a single child breaks the heap property whenever the right child is the true extreme.
 
-**Why it happens**: Array indexing without bounds checking
-**Impact**: Out-of-bounds access, undefined behavior
+**4. Trie memory leaks.** A node's destructor must recursively delete its children; otherwise every inserted word leaks its trailing nodes.
 
-#### 3. Incorrect Heapify Logic
+**5. Segment-tree off-by-one range split.**
 ```cpp
-// WRONG: Only checking one child
-void heapifyDown(int index) {
-    int left = 2 * index + 1;
-    if (heap[index] < heap[left]) {
-        swap(heap[index], heap[left]);
-    }
-    // Missing right child check!
-}
-
-// CORRECT: Check both children
-void heapifyDown(int index) {
-    int largest = index;
-    int left = 2 * index + 1;
-    int right = 2 * index + 2;
-    
-    if (left < heap.size() && heap[left] > heap[largest])
-        largest = left;
-    if (right < heap.size() && heap[right] > heap[largest])
-        largest = right;
-    // ...
-}
+return query(2*node, start, mid, l, r) + query(2*node+1, mid, end, l, r);      // WRONG
+return query(2*node, start, mid, l, r) + query(2*node+1, mid + 1, end, l, r);  // CORRECT
 ```
+Overlapping `mid`/`mid` ranges double-count and can recurse forever.
 
-**Why it happens**: Incomplete comparison logic
-**Impact**: Heap property not maintained, incorrect results
+**6. Fenwick 0-vs-1-based confusion.** Both `update` and `query` must convert the incoming 0-based index to 1-based; forgetting it in one of them yields wrong prefix sums.
 
-#### 4. Trie Memory Leaks
-```cpp
-// WRONG: Not deleting children
-~TrieNode() {
-    // Children not deleted!
-}
+## 14.22 Key Takeaways
 
-// CORRECT: Recursive deletion
-~TrieNode() {
-    for (auto& pair : children) {
-        delete pair.second;  // Recursively delete
-    }
-}
-```
+- **Heaps** give O(log n) priority operations from a cache-friendly array.
+- **Tries** give O(m) prefix/word operations independent of dictionary size.
+- **Segment and Fenwick trees** answer range queries in O(log n); Fenwick is smaller and faster but limited to invertible aggregates.
+- **Sparse tables** give O(1) queries on static, idempotent data; **sqrt decomposition** is the simplest O(√n) all-rounder.
+- **Skip lists, Bloom filters, and Count-Min sketches** trade exactness or determinism for simplicity and space.
+- **Fibonacci heaps** and **suffix trees** have strong asymptotics but large constants — prefer simpler structures unless their specific strength is the bottleneck.
 
-**Why it happens**: Trees require recursive cleanup
-**Impact**: Memory leaks, especially with many words
+Match the structure to the dominant operation and the data's mutability.
 
-#### 5. Segment Tree Index Calculation Errors
-```cpp
-// WRONG: Incorrect segment tree indexing
-int query(int node, int start, int end, int l, int r) {
-    if (l > end || r < start) return 0;
-    if (l <= start && end <= r) return tree[node];
-    
-    int mid = (start + end) / 2;
-    return query(2 * node, start, mid, l, r) +  // Wrong: should be mid+1
-           query(2 * node + 1, mid, end, l, r);   // Wrong: should be mid+1
-}
-
-// CORRECT: Proper range splitting
-int query(int node, int start, int end, int l, int r) {
-    if (l > end || r < start) return 0;
-    if (l <= start && end <= r) return tree[node];
-    
-    int mid = (start + end) / 2;
-    return query(2 * node, start, mid, l, r) +
-           query(2 * node + 1, mid + 1, end, l, r);
-}
-```
-
-**Why it happens**: Off-by-one errors in range splitting
-**Impact**: Incorrect query results, infinite recursion
-
-#### 6. Fenwick Tree Index Confusion
-```cpp
-// WRONG: Using 0-based indexing directly
-void update(int index, int delta) {
-    index++;  // Convert to 1-based
-    while (index <= n) {
-        tree[index] += delta;
-        index += index & -index;  // Correct
-    }
-}
-
-int query(int index) {
-    // WRONG: Forgot to convert to 1-based
-    int sum = 0;
-    while (index > 0) {
-        sum += tree[index];
-        index -= index & -index;
-    }
-    return sum;
-}
-```
-
-**Why it happens**: Fenwick trees use 1-based indexing internally
-**Impact**: Incorrect prefix sums, wrong query results
-
-## 14.24 Key Takeaways
-
-1. **Heaps** provide efficient priority queue operations
-2. **Tries** excel at prefix-based string operations
-3. **Segment Trees** support range queries and updates
-4. **Fenwick Trees** are simpler and faster for prefix sums
-5. **Sparse Table** provides O(1) queries for static arrays
-6. **Sqrt Decomposition** offers simple O(√n) queries and updates
-7. Choose the right structure based on operation requirements and constraints
-
-## 14.25 Exercises
+## 14.23 Exercises
 
 1. Implement a k-way merge using a min-heap.
-
-2. Create a trie that supports wildcard matching.
-
-3. Implement a segment tree for range maximum query with lazy propagation.
-
+2. Create a trie that supports wildcard (`.`) matching.
+3. Implement a segment tree for range-maximum query with lazy propagation.
 4. Build a Fenwick tree that supports range updates.
-
-5. Implement a heap that supports decrease key operation.
-
-6. Create a trie that can find all words with a given prefix.
-
-7. Implement a segment tree for range sum with range updates.
-
+5. Implement a heap that supports a decrease-key operation.
+6. Return all words in a trie that share a given prefix.
+7. Implement a segment tree for range-sum with range updates.
 8. Build a priority queue that supports updating priorities.
-
 9. Create a trie-based autocomplete system.
-
 10. Implement a Fenwick tree for 2D prefix sums.
+11. Create a sparse table for range-GCD queries.
+12. Implement sqrt decomposition for range-sum with range updates.
+13. Benchmark sparse table vs segment tree on static arrays.
+14. Implement sqrt decomposition supporting both range-minimum and range-sum.
 
-11. Create a Sparse Table for range GCD queries.
+15. **Find All Duplicates in Array**: given `nums` of length `n` with values in `[1, n]`, each appearing at most twice, return the values that appear twice in O(n) time and O(1) auxiliary space.
 
-12. Implement Sqrt Decomposition for range sum with range updates.
-
-13. Compare the performance of Sparse Table vs Segment Tree for static arrays.
-
-14. Implement a Sqrt Decomposition that supports range minimum and range sum queries.
-
-15. **Find All Duplicates in Array**: Given an integer array `nums` of length `n` where all the integers of `nums` are in the range `[1, n]` and each integer appears at most twice, return an array of all the integers that appear twice.
-
-    You must write an algorithm that runs in O(n) time and uses only constant auxiliary space, excluding the space needed to store the output.
-
-    **Solution**:
     ```cpp
     vector<int> findDuplicates(vector<int>& nums) {
-        const int n = nums.size();
         vector<int> result;
-        for (int i=0; i<n; i++) {
-            const int idx = abs(nums[i]) - 1;
-            if (nums[idx] < 0) {
-                result.push_back(abs(nums[i]));
-            } else {
-                nums[idx] = -nums[idx];
-            }
+        for (int i = 0; i < (int)nums.size(); i++) {
+            int idx = abs(nums[i]) - 1;
+            if (nums[idx] < 0) result.push_back(abs(nums[i]));
+            else               nums[idx] = -nums[idx];
         }
         return result;
     }
     ```
 
-    **Explanation: How Array Elements Track Duplicates**
+    Because values lie in `[1, n]`, value `x` maps to index `x-1`, and the array doubles as its own hash table. The *sign* at index `x-1` records whether `x` has been seen: positive means unseen (flip it negative); already negative means `x` is a duplicate. Since each value appears at most twice, one bit of state (the sign) suffices, so no extra space is needed. Time O(n), auxiliary space O(1).
 
-    The key insight is that when numbers are in the range `[1, n]`, we can use the array itself as a hash table by treating each index as a "bucket" for a specific number.
+16. **Split Array Largest Sum**: split `nums` into `k` contiguous non-empty subarrays minimizing the largest subarray sum.
 
-    **The Technique**:
-    1. **Index Mapping**: For a number `x` in the range `[1, n]`, we map it to index `x - 1` (since arrays are 0-indexed).
-    2. **Sign as Marker**: We use the sign of the value at index `x - 1` to track whether we've seen the number `x` before:
-       - If `nums[x - 1]` is positive: we haven't seen `x` yet → mark it by making it negative
-       - If `nums[x - 1]` is negative: we've already seen `x` → it's a duplicate!
-
-    **Why This Works**:
-    - **Range Constraint `[1, n]`**: This ensures every number `x` maps to a valid index `x - 1` in the array `[0, n-1]`.
-    - **At Most Twice**: Since each number appears at most twice, we only need one bit of information (positive/negative) to track whether we've seen it.
-    - **In-Place Tracking**: Instead of using a separate hash set (O(n) space), we reuse the input array by flipping signs.
-
-    **Step-by-Step Example**:
-    ```
-    Input: nums = [4, 3, 2, 7, 8, 2, 3, 1]
-    
-    i=0: nums[0]=4 → idx=3, nums[3]=7 (positive) → mark: nums[3]=-7
-    i=1: nums[1]=3 → idx=2, nums[2]=2 (positive) → mark: nums[2]=-2
-    i=2: nums[2]=-2 → idx=1, nums[1]=3 (positive) → mark: nums[1]=-3
-    i=3: nums[3]=-7 → idx=6, nums[6]=3 (positive) → mark: nums[6]=-3
-    i=4: nums[4]=8 → idx=7, nums[7]=1 (positive) → mark: nums[7]=-1
-    i=5: nums[5]=2 → idx=1, nums[1]=-3 (negative!) → DUPLICATE! Add 2 to result
-    i=6: nums[6]=-3 → idx=2, nums[2]=-2 (negative!) → DUPLICATE! Add 3 to result
-    i=7: nums[7]=-1 → idx=0, nums[0]=4 (positive) → mark: nums[0]=-4
-    
-    Result: [2, 3]
-    ```
-
-    **Time Complexity**: O(n) - single pass through the array
-    **Space Complexity**: O(1) auxiliary space (excluding output array)
-
-16. **Split Array Largest Sum**: Given an integer array `nums` and an integer `k`, split `nums` into `k` non-empty subarrays such that the largest sum of any subarray is minimized.
-
-    Return the minimized largest sum of the split.
-
-    A subarray is a contiguous part of the array.
-
-    **Solution**:
     ```cpp
-    int splitArray(vector<int>& nums, int k) {
-        int low = nums[0]; int high = 0;
-        for (auto num: nums) {
-            low = max(low, num); high += num;
-        }
-        while (low < high) {
-            int mid = low + (high - low)/2;
-            if (count_less_than_k(nums, mid, k)) {
-                high = mid;
-            } else {
-                low = mid + 1;
-            }
-        }
-        return low;
-    }
-    
-    bool count_less_than_k(
-        vector<int>& nums, const int target, const int k
-    ){
-        const int n = nums.size();
-        int curr_sum = 0; int count = 1;
-        for (int i=0; i<n; i++) {
-            if (curr_sum + nums[i] > target) {
-                curr_sum = nums[i];
-                count++;
-            } else {
-                curr_sum += nums[i];
-            }
+    bool canSplit(vector<int>& nums, int target, int k) {
+        int curr_sum = 0, count = 1;
+        for (int x : nums) {
+            if (curr_sum + x > target) { curr_sum = x; count++; }
+            else                         curr_sum += x;
         }
         return count <= k;
     }
-    ```
 
-    **Explanation: Binary Search on Answer**
-
-    This problem uses the **binary search on answer** technique, where instead of searching for a value in a sorted array, we search for the minimum valid answer in a range of possible values.
-
-    **Key Insight**:
-    - The answer (minimized largest sum) must be between:
-      - **Lower bound (`low`)**: The maximum element (we need at least one subarray containing the largest element)
-      - **Upper bound (`high`)**: The sum of all elements (all elements in one subarray)
-    
-    **Binary Search Strategy**:
-    1. For each candidate value `mid` in the range `[low, high]`, check if it's possible to split the array into `k` subarrays where each subarray has sum ≤ `mid`.
-    2. If yes (`count_less_than_k` returns true), then `mid` is a valid answer, but we can try smaller values → set `high = mid`.
-    3. If no, we need a larger value → set `low = mid + 1`.
-    4. Continue until `low == high`, which gives us the minimum valid answer.
-
-    **The Greedy Validation Function (`count_less_than_k`)**:
-    - This function checks if we can split the array into at most `k` subarrays where each subarray sum ≤ `target`.
-    - **Greedy approach**: As we iterate through the array, we keep adding elements to the current subarray until adding the next element would exceed `target`. Then we start a new subarray.
-    - If we need more than `k` subarrays, the `target` is too small (return false).
-    - If we can do it with ≤ `k` subarrays, the `target` is valid (return true).
-
-    **Why Binary Search Works**:
-    - **Monotonicity**: If a value `x` is valid (can split into ≤ k subarrays), then any value > `x` is also valid. This monotonic property allows binary search.
-    - **Optimality**: We're searching for the minimum valid value, which binary search finds efficiently.
-
-    **Example**:
-    ```
-    Input: nums = [7, 2, 5, 10, 8], k = 2
-    
-    low = max(7, 2, 5, 10, 8) = 10
-    high = 7 + 2 + 5 + 10 + 8 = 32
-    
-    Binary search in [10, 32]:
-    - mid = 21: Can we split into ≤2 subarrays with max sum 21?
-      [7,2,5] (sum=14) + [10,8] (sum=18) → Yes! (2 subarrays)
-      high = 21
-    - mid = 15: Can we split into ≤2 subarrays with max sum 15?
-      [7,2,5] (sum=14) + [10] (sum=10) + [8] (sum=8) → No! (3 subarrays needed)
-      low = 16
-    - mid = 18: Can we split into ≤2 subarrays with max sum 18?
-      [7,2,5] (sum=14) + [10,8] (sum=18) → Yes! (2 subarrays)
-      high = 18
-    - mid = 17: Can we split into ≤2 subarrays with max sum 17?
-      [7,2,5] (sum=14) + [10] (sum=10) + [8] (sum=8) → No! (3 subarrays needed)
-      low = 18
-    - low == high == 18 → Answer is 18
-    ```
-
-    **Time Complexity**: O(n × log(sum)), where `sum` is the sum of all elements
-    - Binary search: O(log(sum)) iterations
-    - Each iteration: O(n) to validate
-    **Space Complexity**: O(1)
-
-## 14.26 Concurrency Considerations
-
-This section applies the concurrency fundamentals from [Chapter 3.5](03.5-concurrency-fundamentals.md) to heaps and priority queues. See Section 3.5.3 for invariant-based reasoning and Section 3.5.9 for producer-consumer patterns.
-
-### 14.14.1 Shared-State Invariants
-
-**Core Heap Invariants** (see Section 3.5.3):
-1. **Heap Property Invariant**: "Parent >= all children (max-heap) or Parent <= all children (min-heap)"
-2. **Complete Tree Invariant**: "Tree is complete (all levels filled except possibly last, left-to-right)"
-3. **Size Invariant**: "`size` equals number of elements"
-
-**What Must Not Be Observed Half-Updated**:
-- Heap property violations during bubble up/down
-- Size changes while elements are being inserted/extracted
-- Parent-child relationships during tree restructuring
-
-### 14.14.2 Operations That Must Be Atomic
-
-**Insert Operation** (see Section 3.5.4):
-```cpp
-void insert(int value) {
-    heap[size] = value;        // Step 1: Add to end
-    size++;                     // Step 2: Update size
-    bubbleUp(size - 1);         // Step 3: Restore heap property
-}
-```
-
-**Tie to Invariants**: Between steps, the **Size Invariant** and **Heap Property Invariant** are violated. Another thread may see incorrect size or inconsistent heap structure.
-
-**Extract Operation**:
-```cpp
-int extractMax() {
-    int max = heap[0];          // Step 1: Get root
-    heap[0] = heap[size - 1];   // Step 2: Move last to root
-    size--;                      // Step 3: Decrease size
-    bubbleDown(0);              // Step 4: Restore heap property
-    return max;
-}
-```
-
-**Tie to Invariants**: Similar race conditions, plus check-then-act bug (checking `size > 0` and extracting must be atomic).
-
-**Operations Requiring Atomicity**:
-- **Insert**: Entire operation (add element, update size, bubble up)
-- **Extract**: Entire operation (get root, move last, update size, bubble down)
-- **Empty Check + Extract**: Must be atomic (check-then-act)
-
-### 14.14.3 Naïve Approaches and Why They Fail
-
-**1. Partial Updates**:
-```cpp
-// Thread 1: Inserting 10, bubble up
-// Thread 2: Inserting 20, bubble up
-// Both may see inconsistent parent values during bubble up
-```
-**Why It Fails**: Insert is not atomic. Invariant violation: **Heap Property Invariant** broken.
-
-**2. Check-Then-Act Bugs**:
-```cpp
-if (size > 0) {        // Check
-    // Another thread extracts here!
-    return extractMax();  // May extract from empty heap
-}
-```
-**Why It Fails**: Check and extract are not atomic. Invariant violation: **Size Invariant** broken.
-
-**3. Locking Only Part of the Structure**:
-```cpp
-// Locking only during insert, not during extract
-void insert(int value) {
-    std::lock_guard<std::mutex> lock(mtx);
-    // insert operation
-}
-// But extract is unprotected!
-int extractMax() {
-    return heap[0];  // Race condition!
-}
-```
-**Why It Fails**: Operations are not mutually exclusive. Invariant violation: **Heap Property Invariant** broken.
-
-### 14.14.4 Locking Strategies
-
-**Coarse-Grained Lock** (see Section 3.5.8):
-```cpp
-class ThreadSafeHeap {
-    std::vector<int> heap;
-    std::mutex mtx;
-    
-public:
-    void insert(int value) {
-        std::lock_guard<std::mutex> lock(mtx);
-        // Entire operation atomic
+    int splitArray(vector<int>& nums, int k) {
+        int low = 0, high = 0;
+        for (int x : nums) { low = max(low, x); high += x; }
+        while (low < high) {
+            int mid = low + (high - low) / 2;
+            if (canSplit(nums, mid, k)) high = mid;
+            else                        low = mid + 1;
+        }
+        return low;
     }
-};
-```
-- ✅ Simple, prevents all race conditions
-- ❌ Very low parallelism (only one operation at a time)
+    ```
 
-**Fine-Grained Lock (Per-Node)**:
-- Not practical for heaps (operations traverse tree, need multiple locks)
-- High overhead, complex deadlock avoidance
-- **Not recommended**
+    This is *binary search on the answer*. The result lies in `[max(nums), sum(nums)]`: the lower bound must hold the largest single element, the upper bound puts everything in one subarray. For a candidate `mid`, a greedy pass (`canSplit`) counts how many subarrays are needed if each is capped at `mid`; feasibility is monotone in `mid`, so binary search converges on the smallest feasible cap. Time O(n·log(sum)), space O(1).
 
-**Read-Write Locks** (see Section 3.5.8):
-- Use `std::shared_mutex` for read-heavy workloads
-- Multiple readers, single writer
-- Less useful for heaps (operations are write-heavy)
+## 14.24 Concurrency Considerations
 
-**Lock-Free** (see Section 3.5.9):
-- Lock-free heaps are extremely complex
-- Lock-free skip lists can be used to implement priority queues
-- Lock-free binomial heaps are research-level implementations
-- **Recommendation**: Use lock-based approach. Lock-free heaps are rarely worth the complexity.
+This section applies the concurrency fundamentals from [Chapter 3.5](03.5-concurrency-fundamentals.md) to heaps and priority queues (see Section 3.5.3 for invariant-based reasoning and 3.5.9 for producer-consumer patterns).
 
-### 14.14.5 Performance and Scalability Implications
+A heap's invariants — the heap property, the complete-tree shape, and `size` matching the element count — must never be observed half-updated. But `insert` (append, increment size, bubble up) and `extractMax` (read root, move last element in, decrement size, bubble down) are multi-step: between the steps the invariants are temporarily broken. Any of these interleavings corrupts the heap or crashes:
 
-**Contention** (see Section 3.5.8):
-- Coarse-grained locking: Very high contention, throughput collapses
-- Fine-grained locking: Not practical for heaps
+- **Partial updates**: two concurrent inserts see each other's in-progress bubble-up and both write inconsistent parents.
+- **Check-then-act**: testing `size > 0` and then extracting is a race — another thread can empty the heap in between, so the pair must be atomic.
+- **Partial locking**: guarding `insert` but not `extractMax` leaves extraction racing against insertion.
 
-**Throughput Collapse Under Load**:
-- With many threads, coarse-grained locking becomes severe bottleneck
-- Consider multiple heaps (thread-local heaps, merge periodically)
+The practical answer is a **coarse-grained lock**: one `std::mutex` around each whole operation. It is simple and correct but serializes all access, so throughput collapses under contention. Per-node fine-grained locking is impractical for heaps (operations traverse the tree and would need many locks with deadlock risk); read-write locks help little because heap operations are write-heavy. If contention is the problem, prefer multiple thread-local heaps merged periodically, or a bounded priority queue using a `std::condition_variable` (always re-checking the predicate in a loop to handle spurious wakeups).
 
-**Producer-Consumer Pattern** (see Section 3.5.9):
-- Use `std::condition_variable` for bounded priority queues
-- Allows efficient blocking when queue is empty
-- Always check condition in loop (spurious wakeups)
+Lock-free heaps are research-grade and rarely worth it; lock-free skip lists are the usual route to a concurrent priority queue. For production, prefer `std::priority_queue` with external synchronization, or a proven thread-safe/lock-free library, and only reach for anything more exotic if profiling demands it.
 
-### 14.14.6 When Not to Do This Yourself
+## 14.25 Summary
 
-**Use Library Implementations**:
-- `std::priority_queue` with external synchronization
-- Thread-safe priority queues from well-tested libraries
-- Lock-free implementations from proven libraries (see Section 3.5.9)
+Advanced data structures each specialize one operation that basic structures handle poorly: heaps for priority, tries and suffix structures for strings, segment and Fenwick trees (and sparse tables, sqrt decomposition) for range queries, Bloom filters and Count-Min sketches for space-efficient approximation, and persistent structures for history. The systems lesson recurs throughout — array-backed layouts beat pointer-chasing on cache, and the asymptotically fanciest structure (Fibonacci heap, suffix tree) is often the wrong practical choice because of its constant factors. Choose by the dominant operation, the data's mutability, and whether approximate answers are acceptable.
 
-**Avoid Premature Optimization**:
-- Start with coarse-grained locking
-- Only consider lock-free if profiling shows it's necessary
-- Lock-free heaps are extremely complex (see Section 3.5.9 warning)
-
-**For Production**: Prefer `std::priority_queue` with external synchronization or thread-safe priority queues from proven libraries. See Section 3.5.10 for guidance on using libraries.
-
-## 14.27 Summary
-
-Advanced data structures provide specialized operations for specific use cases. Understanding when and how to use heaps, tries, segment trees, and Fenwick trees is essential for solving complex problems efficiently.
-
-**What We Learned:**
-- Heaps maintain heap property invariant for efficient priority queue operations
-- Tries enable fast prefix-based string operations
-- Segment Trees and Fenwick Trees support efficient range queries
-- Sparse Table and Sqrt Decomposition offer alternative approaches for range queries
-- Common pitfalls: heap property violations, index calculation errors, memory leaks
-- Concurrency considerations for thread-safe implementations
-
-**Why the Next Chapter Follows:**
-Now that we've covered advanced data structures, we'll explore **greedy algorithms** in Chapter 16. These algorithms make locally optimal choices at each step, and many greedy algorithms (like Huffman coding) rely on heaps and other advanced structures we've just learned.
-
+The next chapter turns to **greedy algorithms**, many of which (such as Huffman coding) are built directly on the heaps introduced here.

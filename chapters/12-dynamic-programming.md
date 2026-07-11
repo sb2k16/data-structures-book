@@ -1,690 +1,149 @@
 # Chapter 12: Dynamic Programming
 
-## Table of Contents
-
-- [12.1 Problem Statement & Motivation](#problem-statement-motivation)
-  - [What Problem Does Dynamic Programming Solve?](#what-problem-does-dynamic-programming-solve)
-  - [When to Use Dynamic Programming](#when-to-use-dynamic-programming)
-  - [When NOT to Use Dynamic Programming](#when-not-to-use-dynamic-programming)
-- [12.2 Conceptual Overview](#conceptual-overview)
-  - [Intuitive Explanation](#intuitive-explanation)
-  - [Key Principles of Dynamic Programming](#key-principles-of-dynamic-programming)
-  - [DP vs. Other Approaches](#dp-vs-other-approaches)
-- [12.3 Abstract Model & Invariants ⭐ (Mandatory)](#abstract-model-invariants-mandatory)
-  - [Abstract Representation](#abstract-representation)
-  - [Core Invariants](#core-invariants)
-  - [Assumptions](#assumptions)
-  - [State Representation](#state-representation)
-  - [Transition Function](#transition-function)
-- [12.4 Operations & Interface](#operations-interface)
-  - [Memoization Interface](#memoization-interface)
-  - [Tabulation Interface](#tabulation-interface)
-  - [Behavioral Guarantees](#behavioral-guarantees)
-- [12.5 Time & Space Complexity](#time-space-complexity)
-  - [General Complexity Analysis](#general-complexity-analysis)
-  - [Detailed Analysis by Problem Type](#detailed-analysis-by-problem-type)
-  - [Space Optimization Trade-offs](#space-optimization-trade-offs)
-  - [Amortized Analysis](#amortized-analysis)
-- [12.6 Pseudocode (Language-Neutral) ⭐ (Mandatory)](#pseudocode-language-neutral-mandatory)
-  - [Generic DP Memoization Pattern](#generic-dp-memoization-pattern)
-  - [Generic DP Tabulation Pattern](#generic-dp-tabulation-pattern)
-  - [Fibonacci - Memoization](#fibonacci-memoization)
-  - [Fibonacci - Tabulation](#fibonacci-tabulation)
-  - [Longest Common Subsequence (LCS)](#longest-common-subsequence-lcs)
-  - [Coin Change](#coin-change)
-  - [0/1 Knapsack](#01-knapsack)
-  - [Unique Paths (2D Grid)](#unique-paths-2d-grid)
-- [12.7 Implementation (Reference Language: C++) ⭐](#implementation-reference-language-c)
-  - [12.7.1 Fibonacci Sequence - The Classic Example](#1-fibonacci-sequence-the-classic-example)
-  - [Naive Recursive Approach](#naive-recursive-approach)
-  - [Memoization Approach (Top-Down)](#memoization-approach-top-down)
-  - [Tabulation Approach (Bottom-Up)](#tabulation-approach-bottom-up)
-  - [Performance Comparison](#performance-comparison)
-- [12.8 Correctness Argument](#correctness-argument)
-  - [Invariant Preservation](#invariant-preservation)
-  - [Edge Case Handling](#edge-case-handling)
-  - [Termination Guarantee](#termination-guarantee)
-  - [Informal Proof Sketch](#informal-proof-sketch)
-- [12.9 Edge Cases & Failure Modes](#edge-cases-failure-modes)
-  - [Empty Input Cases](#empty-input-cases)
-  - [Zero and Negative Values](#zero-and-negative-values)
-  - [Integer Overflow](#integer-overflow)
-  - [Memory Issues](#memory-issues)
-  - [Degenerate Inputs](#degenerate-inputs)
-  - [Invalid State Transitions](#invalid-state-transitions)
-  - [Common Failure Patterns](#common-failure-patterns)
-- [12.10 Performance & System Considerations ⭐ (Differentiator)](#performance-system-considerations-differentiator)
-  - [Cache Locality](#cache-locality)
-  - [Memory Allocation](#memory-allocation)
-  - [Branch Prediction](#branch-prediction)
-  - [Concurrency Implications](#concurrency-implications)
-  - [NUMA Considerations (Advanced)](#numa-considerations-advanced)
-  - [Disk/Network Effects (Advanced)](#disknetwork-effects-advanced)
-  - [Practical Recommendations](#practical-recommendations)
-- [12.11 Variants & Extensions](#variants-extensions)
-  - [Memoization vs Tabulation](#memoization-vs-tabulation)
-  - [Space Optimization Variants](#space-optimization-variants)
-  - [Problem Variants](#problem-variants)
-  - [Advanced DP Patterns](#advanced-dp-patterns)
-  - [When to Choose Which Variant](#when-to-choose-which-variant)
-- [12.12 Real-World Implementations](#real-world-implementations)
-  - [Standard Library Equivalents](#standard-library-equivalents)
-  - [Compiler Optimizations](#compiler-optimizations)
-  - [Database Query Optimization](#database-query-optimization)
-  - [Game Theory and AI](#game-theory-and-ai)
-  - [Text Processing](#text-processing)
-  - [Notable Trade-offs in Real Systems](#notable-trade-offs-in-real-systems)
-- [12.13 Common Pitfalls & Interview Traps](#common-pitfalls-interview-traps)
-  - [Misconceptions](#misconceptions)
-  - [Bad Assumptions](#bad-assumptions)
-  - [Interview Gotchas](#interview-gotchas)
-  - [Common Implementation Errors](#common-implementation-errors)
-  - [Debugging Tips](#debugging-tips)
-- [12.15 Classic DP Problems](#classic-dp-problems)
-  - [1. Climbing Stairs](#climbing-stairs)
-  - [2. House Robber](#house-robber)
-  - [3. Longest Common Subsequence (LCS)](#longest-common-subsequence-lcs)
-  - [4. Edit Distance (Levenshtein Distance)](#edit-distance-levenshtein-distance)
-  - [5. Coin Change](#coin-change)
-  - [6. Longest Increasing Subsequence (LIS)](#longest-increasing-subsequence-lis)
-- [12.16 2D Dynamic Programming](#2d-dynamic-programming)
-  - [Unique Paths](#unique-paths)
-  - [Maximum Path Sum](#maximum-path-sum)
-- [12.17 Backtracking with Memoization](#backtracking-with-memoization)
-  - [12.5.1 Understanding Backtracking in DP Context](#1-understanding-backtracking-in-dp-context)
-  - [12.5.2 Memoization Techniques and Implementation](#2-memoization-techniques-and-implementation)
-  - [12.5.3 Classic Backtracking Problems with Memoization](#3-classic-backtracking-problems-with-memoization)
-  - [12.5.4 Advanced Memoization Patterns](#4-advanced-memoization-patterns)
-- [12.18 10 Must-Know Dynamic Programming Patterns for Coding Interviews](#10-must-know-dynamic-programming-patterns-for-coding-interviews)
-  - [Pattern Recognition Strategy](#pattern-recognition-strategy)
-  - [Pattern 1: 1D DP (Linear DP) ⭐ Classic Starter](#pattern-1-1d-dp-linear-dp-classic-starter)
-  - [Pattern 2: 2D DP (Grid / Matrix DP) ⭐ Very Common in Interviews](#pattern-2-2d-dp-grid-matrix-dp-very-common-in-interviews)
-  - [Pattern 3: Knapsack Pattern (Pick or Not Pick) ⭐ Most DP Problems Reduce to This](#pattern-3-knapsack-pattern-pick-or-not-pick-most-dp-problems-reduce-to-this)
-  - [Pattern 4: Longest Subsequence / Subarray ⭐ Tricky Transitions, Very Popular](#pattern-4-longest-subsequence-subarray-tricky-transitions-very-popular)
-  - [Pattern 5: Interval DP ⭐ Usually O(n³), Scary but Powerful](#pattern-5-interval-dp-usually-on³-scary-but-powerful)
-  - [Pattern 6: DP on Strings ⭐ Edit Operations, Matching, Skipping](#pattern-6-dp-on-strings-edit-operations-matching-skipping)
-  - [Pattern 7: DP on Trees ⭐ Very Common in System Style Interviews](#pattern-7-dp-on-trees-very-common-in-system-style-interviews)
-  - [Pattern 8: DP on Graphs (DAG DP) ⭐ Only Works When No Cycles](#pattern-8-dp-on-graphs-dag-dp-only-works-when-no-cycles)
-  - [Pattern 9: Bitmask DP ⭐ Looks Hard, but Brute Force Optimized](#pattern-9-bitmask-dp-looks-hard-but-brute-force-optimized)
-  - [Pattern 10: State Machine DP ⭐ Very Common in Trading Style Questions](#pattern-10-state-machine-dp-very-common-in-trading-style-questions)
-  - [Summary: Pattern Recognition Guide](#summary-pattern-recognition-guide)
-- [12.19 DP vs Recursion vs Greedy](#dp-vs-recursion-vs-greedy)
-  - [When to Use Each Approach](#when-to-use-each-approach)
-  - [Comparison Table](#comparison-table)
-  - [Key Differences](#key-differences)
-- [12.20 Space Optimization Techniques](#space-optimization-techniques)
-  - [Technique 1: Rolling Array](#technique-1-rolling-array)
-  - [Technique 2: State Compression](#technique-2-state-compression)
-  - [Technique 3: Variable Optimization](#technique-3-variable-optimization)
-  - [Technique 4: Sliding Window for Intervals](#technique-4-sliding-window-for-intervals)
-- [12.21 Additional Classic DP Problems](#additional-classic-dp-problems)
-  - [Problem 1: Edit Distance (Levenshtein Distance)](#problem-1-edit-distance-levenshtein-distance)
-  - [Problem 2: Longest Palindromic Subsequence](#problem-2-longest-palindromic-subsequence)
-  - [Problem 3: Word Break](#problem-3-word-break)
-- [12.22 DP Patterns and Techniques (Continued)](#dp-patterns-and-techniques-continued)
-  - [Pattern 7: 0/1 Knapsack](#pattern-7-01-knapsack)
-  - [Pattern 2: Unbounded Knapsack](#pattern-2-unbounded-knapsack)
-  - [Pattern 3: Subset Sum](#pattern-3-subset-sum)
-- [12.23 Performance Analysis and Optimization](#performance-analysis-and-optimization)
-  - [Time and Space Complexity](#time-and-space-complexity)
-  - [Optimization Techniques](#optimization-techniques)
-- [12.24 Key Takeaways](#key-takeaways)
-- [12.25 Practice Problems](#practice-problems)
-  - [Easy Level Problems](#easy-level-problems)
-  - [Medium Level Problems](#medium-level-problems)
-  - [Hard Level Problems](#hard-level-problems)
-  - [Advanced Problems](#advanced-problems)
-  - [Problem-Solving Strategies](#problem-solving-strategies)
-- [12.26 Exercises](#exercises)
-- [12.27 Summary](#summary)
-
-
-
 ## 12.1 Problem Statement & Motivation
 
-### What Problem Does Dynamic Programming Solve?
+Many problems have **exponential** naive complexity because a straightforward recursion recomputes the same subproblems over and over: Fibonacci is O(2ⁿ), and brute-force Longest Common Subsequence, Coin Change, and Knapsack are all exponential.
 
-Many problems have **exponential time complexity** when solved naively:
+Dynamic Programming (DP) optimizes such recursive solutions by storing subproblem results, transforming exponential time into polynomial time (often O(n²) or O(n³)). The trade is space for time.
 
-- **Fibonacci Sequence**: Naive recursion is O(2^n)
-- **Longest Common Subsequence**: Brute force is exponential
-- **Coin Change**: Trying all combinations is exponential
-- **Knapsack Problem**: Checking all subsets is exponential
+Use DP when a problem has **optimal substructure** (its optimal solution is built from optimal solutions to subproblems) *and* **overlapping subproblems** (the same subproblems recur). Typical goals are optimization (min/max) or counting. If subproblems don't overlap, prefer divide & conquer; if a locally optimal choice is provably globally optimal, prefer greedy; if there is no optimal substructure, DP does not apply.
 
-**Naive Approaches and Their Limitations**:
-
-- **Brute Force**: Try all possibilities → exponential time
-- **Recursion**: Natural but recalculates same subproblems → exponential time
-- **Greedy**: Fast but doesn't always work → incorrect results
-
-**The Dynamic Programming Solution**: DP optimizes recursive solutions by storing results of subproblems, transforming exponential time to polynomial time (often O(n²) or O(n³)).
-
-### When to Use Dynamic Programming
-
-✅ **Use DP when**:
-- Problem has optimal substructure (optimal solution contains optimal subproblem solutions)
-- Problem has overlapping subproblems (same subproblems solved multiple times)
-- Need to optimize (minimize/maximize) or count possibilities
-- Brute force would be exponential
-
-✅ **Real-world applications**:
-- Sequence alignment (bioinformatics)
-- Resource allocation (knapsack variants)
-- Path finding (shortest paths with constraints)
-- Text processing (edit distance, longest common subsequence)
-- Game theory (optimal strategies)
-- Compiler optimization (code generation)
-
-### When NOT to Use Dynamic Programming
-
-❌ **Avoid DP when**:
-- No overlapping subproblems (use divide & conquer)
-- Greedy algorithm works (simpler and faster)
-- Problem doesn't have optimal substructure
-- Space constraints are severe (DP often uses O(n) or O(n²) space)
-
-**Key Trade-off**: DP trades space for time, storing subproblem results to avoid recalculation.
+Real-world uses include sequence alignment (bioinformatics), resource allocation (knapsack variants), constrained shortest paths, text processing (edit distance, LCS), optimal game strategy, and compiler code generation.
 
 ## 12.2 Conceptual Overview
 
-**Dynamic Programming (DP)** is a powerful algorithmic technique for solving complex problems by breaking them down into simpler subproblems. It's particularly effective for optimization problems where we need to find the best solution among many possible solutions.
+Dynamic Programming solves a complex problem by breaking it into simpler subproblems, solving each once, and reusing the results. Think of a jigsaw puzzle: subproblems are pieces, optimal substructure means each piece fits optimally with its neighbors, memoization means you never re-try a placement you've already worked out, and tabulation means you assemble the solution systematically from the bottom up.
 
-### Intuitive Explanation
+Three principles underpin every DP solution:
 
-Think of DP like solving a jigsaw puzzle:
-- **Subproblems**: Individual puzzle pieces
-- **Optimal Substructure**: Each piece fits optimally with adjacent pieces
-- **Memoization**: Remember where each piece goes (don't try same placement twice)
-- **Tabulation**: Build solution systematically from bottom up
+1. **Optimal Substructure**: the optimal solution contains optimal solutions to its subproblems.
+2. **Overlapping Subproblems**: the same subproblems are solved repeatedly in the naive recursion.
+3. **Memoization/Tabulation**: store subproblem results to avoid redundant work.
 
-### Key Principles of Dynamic Programming
+| Approach | Time | Space | When to Use |
+|----------|------|-------|-------------|
+| Brute Force | Exponential | O(n) | Tiny inputs |
+| Plain Recursion | Exponential | O(n) | Clear recursive structure, no overlap |
+| Memoization | Polynomial | O(n) | Top-down |
+| Tabulation | Polynomial | O(n) | Bottom-up |
 
-1. **Optimal Substructure**: The optimal solution to a problem contains optimal solutions to its subproblems
-2. **Overlapping Subproblems**: The same subproblems are solved multiple times in a recursive approach
-3. **Memoization/Tabulation**: Store results of subproblems to avoid redundant calculations
+## 12.3 Abstract Model & Invariants
 
-### DP vs. Other Approaches
-
-| Approach | Time Complexity | Space Complexity | When to Use |
-|----------|----------------|------------------|-------------|
-| Brute Force | Exponential | O(n) | Small input sizes |
-| Recursion | Exponential | O(n) | Clear recursive structure |
-| Memoization | Reduced | O(n) | Top-down approach |
-| Tabulation | Reduced | O(n) | Bottom-up approach |
-
-## 12.3 Abstract Model & Invariants ⭐ (Mandatory)
-
-**Purpose**: Define correctness independent of implementation.
-
-### Abstract Representation
-
-Dynamic Programming problems can be abstracted as:
-
-1. **State Space**: A set of subproblems, each identified by a state `S`
-2. **State Transition**: A function `f(S) → S'` that defines how to compute a state from previous states
-3. **Base Cases**: Terminal states with known solutions
-4. **Memoization Table**: A mapping `M: S → value` that stores computed results
+A DP problem can be modeled as a **state space** (subproblems, each identified by a state `S`), a **transition** `f(S) → {S₁,…,Sₖ}` mapping a state to the subproblems it depends on, **base cases** (terminal states with known values), and a **memo table** `M: S → value`.
 
 ### Core Invariants
 
-For any DP solution to be correct, the following invariants must hold:
-
-#### Invariant 1: Optimal Substructure
+**Invariant 1 — Optimal Substructure.**
 ```
-For any state S, if OPT(S) is the optimal solution for S, then:
 OPT(S) = combine(OPT(S₁), OPT(S₂), ..., OPT(Sₖ))
-where S₁, S₂, ..., Sₖ are the subproblems that S depends on.
 ```
+The optimal solution for `S` is composed from optimal solutions to the subproblems it depends on. For Fibonacci, `F(n) = F(n-1) + F(n-2)` with `F(0)=0, F(1)=1`.
 
-**Meaning**: The optimal solution to a problem contains optimal solutions to its subproblems.
+**Invariant 2 — Overlapping Subproblems.** Any state `S` that appears multiple times in the recursion tree is computed at most once; all later accesses read `M[S]`. `F(3)` recurs many times in the tree for `F(5)`; memoization computes it once.
 
-**Example (Fibonacci)**:
-- State: `F(n)` represents Fibonacci number at position n
-- Invariant: `F(n) = F(n-1) + F(n-2)` where `F(0) = 0` and `F(1) = 1`
-- The optimal solution for `F(n)` depends on optimal solutions for `F(n-1)` and `F(n-2)`
+**Invariant 3 — Memoization Consistency.** Once `M[S]` is set it holds the correct value for `S` and never changes; if it is unset it will be computed before use.
 
-#### Invariant 2: Overlapping Subproblems
-```
-For any state S that appears multiple times in the recursion tree:
-M[S] is computed at most once, and all subsequent accesses retrieve M[S].
-```
-
-**Meaning**: The same subproblems are solved multiple times, and memoization ensures each is solved only once.
-
-**Example (Fibonacci)**:
-- `F(3)` appears multiple times in the recursion tree for `F(5)`
-- Memoization ensures `F(3)` is computed once and reused
-
-#### Invariant 3: Memoization Consistency
-```
-For any state S:
-- If M[S] exists, it contains the correct optimal value for S
-- If M[S] doesn't exist, it will be computed before use
-- Once computed, M[S] remains valid for the duration of the algorithm
-```
-
-**Meaning**: The memoization table always contains correct, up-to-date values.
-
-#### Invariant 4: Base Case Correctness
-```
-For all base cases B:
-- B is defined and has a known optimal value
-- B is reachable from any valid initial state
-- B terminates the recursion (no infinite loops)
-```
-
-**Meaning**: Base cases are well-defined and provide termination conditions.
+**Invariant 4 — Base Case Correctness.** Every base case is defined, has a known value, is reachable, and terminates the recursion (no infinite loops).
 
 ### Assumptions
 
-1. **Problem Decomposition**: The problem can be decomposed into smaller subproblems
-2. **State Uniqueness**: Each state has a unique representation (no ambiguity)
-3. **Finite State Space**: The number of distinct states is finite (or bounded)
-4. **Deterministic Transitions**: State transitions are deterministic (same input → same output)
-5. **Monotonicity** (for optimization): The objective function is well-defined and can be optimized
+1. The problem decomposes into smaller subproblems.
+2. Each state has a unique, unambiguous representation.
+3. The state space is finite (or bounded).
+4. Transitions are deterministic.
+5. For optimization, the objective is well-defined.
 
-### State Representation
+### State and Transition
 
-The abstract state for a DP problem typically includes:
+The state captures exactly the information needed to identify a subproblem. Common encodings: `(i, j)` for grid or two-string problems, `(i, remaining)` for knapsack, `(mask, last)` for TSP.
 
-- **Problem Parameters**: Input size, constraints, indices
-- **Subproblem Identifier**: Which subproblem is being solved
-- **Context**: Any additional information needed to solve the subproblem
-
-**Example States**:
-- `(i, j)` for 2D grid problems (position in grid)
-- `(i, remaining)` for knapsack problems (item index, remaining capacity)
-- `(i, j)` for string problems (indices in two strings)
-- `(mask, last)` for TSP (visited cities mask, last city)
-
-### Transition Function
-
-The abstract transition function defines how states relate:
-
-```
-f: State → Set of States
-f(S) = {S₁, S₂, ..., Sₖ} where each Sᵢ is a subproblem that S depends on
-```
-
-**Properties**:
-- **Acyclic**: No cycles in the dependency graph (prevents infinite recursion)
-- **Well-founded**: All paths eventually reach base cases
-- **Complete**: All necessary subproblems are considered
-
-This abstract model provides the intellectual backbone for understanding DP correctness, independent of any specific implementation language or data structure.
+The transition graph must be **acyclic** (no infinite recursion), **well-founded** (all paths reach base cases), and **complete** (all needed subproblems are considered). This model defines correctness independent of any implementation.
 
 ## 12.4 Operations & Interface
 
-**Purpose**: Define what operations are supported in DP solutions.
-
-While Dynamic Programming is a technique rather than a data structure, DP solutions support the following conceptual operations:
+DP is a technique, not a data structure, but its solutions support a small conceptual interface:
 
 | Operation | Description | Precondition | Postcondition |
 |-----------|-------------|--------------|---------------|
-| `solve(state)` | Compute optimal solution for a given state | State is valid and reachable | Returns optimal value for state |
-| `memoize(state, value)` | Store computed result for a state | State is valid, value is optimal | State is cached in memoization table |
-| `lookup(state)` | Retrieve cached result for a state | State may or may not be in cache | Returns cached value if exists, else indicates miss |
-| `initialize()` | Set up base cases and initial state | Problem is well-defined | Base cases are stored, initial state is ready |
-| `reconstruct(state)` | Build actual solution from state values | State has been solved | Returns the actual solution (not just value) |
+| `solve(state)` | Compute optimal value for a state | State valid and reachable | Returns optimal value |
+| `memoize(state, value)` | Cache a computed result | Value is optimal for state | `memo[state] = value` |
+| `lookup(state)` | Retrieve a cached result | State valid | Returns cached value or MISS |
+| `initialize()` | Set up base cases | Problem well-defined | Base cases stored |
+| `reconstruct(state)` | Build the actual solution, not just its value | State has been solved | Returns the solution |
 
-### Memoization Interface
-
-For memoization-based DP (top-down):
-
-```
-MEMOIZE(state, value):
-  Precondition: state is valid, value is optimal for state
-  Postcondition: memo[state] = value
-  
-LOOKUP(state):
-  Precondition: state is valid
-  Postcondition: returns memo[state] if exists, else returns MISS
-```
-
-### Tabulation Interface
-
-For tabulation-based DP (bottom-up):
-
-```
-INITIALIZE():
-  Precondition: problem is well-defined
-  Postcondition: dp[base_cases] are set, dp table is ready
-  
-FILL_TABLE():
-  Precondition: base cases are initialized
-  Postcondition: dp[target_state] contains optimal solution
-```
-
-### Behavioral Guarantees
-
-1. **Correctness**: The solution returned is optimal (or correct for counting problems)
-2. **Completeness**: All necessary subproblems are considered
-3. **Efficiency**: Each subproblem is solved at most once (memoization) or exactly once (tabulation)
-4. **Termination**: The algorithm always terminates (finite state space, acyclic dependencies)
+Top-down (memoization) revolves around `lookup`/`memoize`; bottom-up (tabulation) revolves around `initialize` then filling the table in dependency order. Both guarantee correctness, completeness, that each subproblem is solved at most once, and termination (finite state space, acyclic dependencies).
 
 ## 12.5 Time & Space Complexity
 
-**Purpose**: Make trade-offs explicit.
+| DP Pattern | Time | Space | Notes |
+|------------|------|-------|-------|
+| 1D Linear | O(n) | O(n) | O(1) if only last k values needed |
+| 2D Grid | O(m×n) | O(m×n) | O(min(m,n)) with rolling array |
+| Subsequence (two seqs) | O(m×n) | O(m×n) | Lengths m, n |
+| Knapsack | O(n×W) | O(n×W) | n items, capacity W; O(W) optimized |
+| Interval | O(n³) | O(n²) | Intervals of length n |
+| State Machine | O(n×k) | O(n×k) | n positions, k states |
 
-### General Complexity Analysis
+Memoization costs O(unique_states × cost_per_state) time and O(unique_states) plus O(depth) recursion stack. Tabulation costs O(total_states × cost_per_state) with no recursion overhead. Amortized, each unique state is O(1) after its first computation (assuming constant-time transitions).
 
-| DP Pattern | Time Complexity | Space Complexity | Notes |
-|------------|----------------|------------------|-------|
-| **1D Linear DP** | O(n) | O(n) | Can optimize to O(1) if only need last k values |
-| **2D Grid DP** | O(m×n) | O(m×n) | Can optimize to O(min(m,n)) with rolling array |
-| **Subsequence DP** | O(m×n) | O(m×n) | For two sequences of length m and n |
-| **Knapsack DP** | O(n×W) | O(n×W) | n items, W capacity; can optimize to O(W) |
-| **Interval DP** | O(n³) | O(n²) | For intervals of length n |
-| **State Machine DP** | O(n×k) | O(n×k) | n positions, k states |
-| **Memoization (Top-Down)** | O(unique_states × cost_per_state) | O(unique_states) + O(depth) | Includes recursion stack |
-| **Tabulation (Bottom-Up)** | O(total_states × cost_per_state) | O(total_states) | No recursion overhead |
+The classic problems specialize this table:
 
-### Detailed Analysis by Problem Type
+| Problem | Naive | Memo/Tab | Space-Optimized |
+|---------|-------|----------|-----------------|
+| Fibonacci | O(2ⁿ) | O(n) | O(1) |
+| LCS | O(2^(m+n)) | O(m×n) | O(min(m,n)) |
+| 0/1 Knapsack | O(2ⁿ) | O(n×W) | O(W) |
 
-#### Fibonacci Sequence
+Space optimizations trade capability for footprint: a rolling array (O(m×n) → O(n)) or variable reduction (O(n) → O(1)) removes the ability to easily reconstruct the solution path; bitmask state compression keeps O(2ⁿ) states but shrinks the per-state constant.
 
-| Approach | Time | Space | Amortized |
-|----------|------|-------|-----------|
-| Naive Recursion | O(2ⁿ) | O(n) | N/A |
-| Memoization | O(n) | O(n) + O(n) stack | O(1) per call after first |
-| Tabulation | O(n) | O(n) | O(1) per iteration |
-| Space-Optimized | O(n) | O(1) | O(1) per iteration |
+## 12.6 Pseudocode: Generic Patterns
 
-#### Longest Common Subsequence (LCS)
+The two canonical shapes below are language-neutral templates; every concrete algorithm in this chapter is an instance of one of them.
 
-| Approach | Time | Space | Notes |
-|----------|------|-------|-------|
-| Naive Recursion | O(2^(m+n)) | O(m+n) | Exponential |
-| Memoization | O(m×n) | O(m×n) | Each state computed once |
-| Tabulation | O(m×n) | O(m×n) | All states computed |
-| Space-Optimized | O(m×n) | O(min(m,n)) | Only need previous row |
-
-#### 0/1 Knapsack
-
-| Approach | Time | Space | Notes |
-|----------|------|-------|-------|
-| Naive Recursion | O(2ⁿ) | O(n) | Try all subsets |
-| Memoization | O(n×W) | O(n×W) | n items, W capacity |
-| Tabulation | O(n×W) | O(n×W) | All states computed |
-| Space-Optimized | O(n×W) | O(W) | Only need previous row |
-
-### Space Optimization Trade-offs
-
-| Optimization | Space Reduction | Trade-off |
-|--------------|----------------|-----------|
-| Rolling Array | O(m×n) → O(n) | Cannot reconstruct path easily |
-| Variable Optimization | O(n) → O(1) | Lose access to all intermediate values |
-| State Compression | O(2ⁿ) → O(2ⁿ) with better constants | More complex state encoding |
-
-### Amortized Analysis
-
-For memoization:
-- **First call**: O(cost to compute state)
-- **Subsequent calls**: O(1) lookup
-- **Amortized**: O(1) per unique state
-
-For tabulation:
-- **Each state**: O(1) computation (assuming constant-time transitions)
-- **Total**: O(number of states)
-
-## 12.6 Pseudocode (Language-Neutral) ⭐ (Mandatory)
-
-**Purpose**: Bridge theory → implementation.
-
-**Rules**: No language syntax, no pointers/templates, focus on logic only.
-
-### Generic DP Memoization Pattern
-
+**Memoization (top-down):**
 ```
-FUNCTION solve_with_memoization(state):
-    IF state is base case:
-        RETURN base_case_value
-    
-    IF memo[state] exists:
-        RETURN memo[state]
-    
-    result ← compute from subproblems
+FUNCTION solve(state):
+    IF state is base case: RETURN base_value
+    IF memo[state] exists:  RETURN memo[state]
+    result ← identity
     FOR EACH subproblem S that state depends on:
-        sub_result ← solve_with_memoization(S)
-        result ← combine(result, sub_result)
-    
+        result ← combine(result, solve(S))
     memo[state] ← result
     RETURN result
-END FUNCTION
 ```
 
-### Generic DP Tabulation Pattern
-
+**Tabulation (bottom-up):**
 ```
-FUNCTION solve_with_tabulation():
-    INITIALIZE dp table with base cases
-    
-    FOR EACH state in dependency order (bottom-up):
-        IF state is base case:
-            CONTINUE
-        
-        result ← initial value
+FUNCTION solve():
+    INITIALIZE dp with base cases
+    FOR EACH state in dependency order:
+        result ← identity
         FOR EACH subproblem S that state depends on:
-            sub_result ← dp[S]
-            result ← combine(result, sub_result)
-        
+            result ← combine(result, dp[S])
         dp[state] ← result
-    
-    RETURN dp[target_state]
-END FUNCTION
+    RETURN dp[target]
 ```
 
-### Fibonacci - Memoization
+## 12.7 Implementation (Reference Language: C++)
 
-```
-FUNCTION fibonacci_memo(n, memo):
-    IF n ≤ 1:
-        RETURN n
-    
-    IF memo[n] is set:
-        RETURN memo[n]
-    
-    result ← fibonacci_memo(n-1, memo) + fibonacci_memo(n-2, memo)
-    memo[n] ← result
-    RETURN result
-END FUNCTION
+### 12.7.1 Fibonacci — The Classic Example
 
-FUNCTION fibonacci(n):
-    memo ← empty map
-    RETURN fibonacci_memo(n, memo)
-END FUNCTION
-```
+The naive recursion is the canonical illustration of overlapping subproblems:
 
-### Fibonacci - Tabulation
-
-```
-FUNCTION fibonacci_tab(n):
-    IF n ≤ 1:
-        RETURN n
-    
-    dp ← array of size n+1
-    dp[0] ← 0
-    dp[1] ← 1
-    
-    FOR i FROM 2 TO n:
-        dp[i] ← dp[i-1] + dp[i-2]
-    
-    RETURN dp[n]
-END FUNCTION
-```
-
-### Longest Common Subsequence (LCS)
-
-```
-FUNCTION lcs_memo(s1, s2, i, j, memo):
-    IF i = 0 OR j = 0:
-        RETURN 0
-    
-    IF memo[i][j] is set:
-        RETURN memo[i][j]
-    
-    IF s1[i-1] = s2[j-1]:
-        result ← 1 + lcs_memo(s1, s2, i-1, j-1, memo)
-    ELSE:
-        result ← MAX(
-            lcs_memo(s1, s2, i-1, j, memo),
-            lcs_memo(s1, s2, i, j-1, memo)
-        )
-    
-    memo[i][j] ← result
-    RETURN result
-END FUNCTION
-```
-
-```
-FUNCTION lcs_tab(s1, s2):
-    m ← length of s1
-    n ← length of s2
-    dp ← 2D array of size (m+1) × (n+1), initialized to 0
-    
-    FOR i FROM 1 TO m:
-        FOR j FROM 1 TO n:
-            IF s1[i-1] = s2[j-1]:
-                dp[i][j] ← 1 + dp[i-1][j-1]
-            ELSE:
-                dp[i][j] ← MAX(dp[i-1][j], dp[i][j-1])
-    
-    RETURN dp[m][n]
-END FUNCTION
-```
-
-### Coin Change
-
-```
-FUNCTION coin_change_memo(coins, amount, memo):
-    IF amount = 0:
-        RETURN 0
-    
-    IF amount < 0:
-        RETURN infinity (impossible)
-    
-    IF memo[amount] is set:
-        RETURN memo[amount]
-    
-    min_coins ← infinity
-    FOR EACH coin IN coins:
-        result ← coin_change_memo(coins, amount - coin, memo)
-        IF result ≠ infinity:
-            min_coins ← MIN(min_coins, result + 1)
-    
-    IF min_coins = infinity:
-        memo[amount] ← -1
-    ELSE:
-        memo[amount] ← min_coins
-    
-    RETURN memo[amount]
-END FUNCTION
-```
-
-```
-FUNCTION coin_change_tab(coins, amount):
-    dp ← array of size (amount+1), initialized to infinity
-    dp[0] ← 0
-    
-    FOR i FROM 1 TO amount:
-        FOR EACH coin IN coins:
-            IF coin ≤ i:
-                dp[i] ← MIN(dp[i], dp[i - coin] + 1)
-    
-    IF dp[amount] = infinity:
-        RETURN -1
-    ELSE:
-        RETURN dp[amount]
-END FUNCTION
-```
-
-### 0/1 Knapsack
-
-```
-FUNCTION knapsack_memo(weights, values, capacity, index, memo):
-    IF index < 0 OR capacity ≤ 0:
-        RETURN 0
-    
-    IF memo[index][capacity] is set:
-        RETURN memo[index][capacity]
-    
-    not_take ← knapsack_memo(weights, values, capacity, index-1, memo)
-    
-    take ← 0
-    IF weights[index] ≤ capacity:
-        take ← values[index] + knapsack_memo(
-            weights, values, capacity - weights[index], index-1, memo
-        )
-    
-    result ← MAX(not_take, take)
-    memo[index][capacity] ← result
-    RETURN result
-END FUNCTION
-```
-
-```
-FUNCTION knapsack_tab(weights, values, capacity):
-    n ← number of items
-    dp ← 2D array of size (n+1) × (capacity+1), initialized to 0
-    
-    FOR i FROM 1 TO n:
-        FOR w FROM 1 TO capacity:
-            IF weights[i-1] ≤ w:
-                dp[i][w] ← MAX(
-                    dp[i-1][w],
-                    dp[i-1][w - weights[i-1]] + values[i-1]
-                )
-            ELSE:
-                dp[i][w] ← dp[i-1][w]
-    
-    RETURN dp[n][capacity]
-END FUNCTION
-```
-
-### Unique Paths (2D Grid)
-
-```
-FUNCTION unique_paths_tab(m, n):
-    dp ← 2D array of size m × n, initialized to 1
-    
-    FOR i FROM 1 TO m-1:
-        FOR j FROM 1 TO n-1:
-            dp[i][j] ← dp[i-1][j] + dp[i][j-1]
-    
-    RETURN dp[m-1][n-1]
-END FUNCTION
-```
-
-This pseudocode should be readable by any engineer, regardless of their programming language background.
-
-## 12.7 Implementation (Reference Language: C++) ⭐
-
-**Note to Reader**: This section provides concrete C++ implementations. The correctness relies on the invariants defined in Section 12.3 and the pseudocode in Section 12.6.
-
-### 12.7.1 Fibonacci Sequence - The Classic Example
-
-### Naive Recursive Approach
 ```cpp
 #include <iostream>
 #include <vector>
 #include <unordered_map>
-#include <chrono>
 using namespace std;
 
-// Naive recursive Fibonacci - O(2^n) time complexity
+// Naive recursive Fibonacci - O(2^n) time
 long long fibonacciNaive(int n) {
-    if (n <= 1) {
-        return n;
-    }
+    if (n <= 1) return n;
     return fibonacciNaive(n - 1) + fibonacciNaive(n - 2);
 }
-
-// Example: fibonacciNaive(40) takes several seconds
 ```
 
-#### Understanding the Problem: Recursion Tree Analysis
-
-The naive recursive approach suffers from **exponential time complexity** because it recalculates the same subproblems repeatedly. Let's visualize this with a recursion tree for `fibonacci(5)`:
+The recursion tree for `fibonacci(5)` shows the waste:
 
 ```
                     fibonacci(5)
@@ -698,42 +157,15 @@ fib(2)  fib(1) fib(1) fib(0) fib(1) fib(0)
 fib(1) fib(0)
 ```
 
-**Observations from the recursion tree:**
+`fibonacci(3)` is computed twice, `fibonacci(2)` three times, `fibonacci(1)` five times, and this redundancy grows exponentially: `fibonacci(40)` makes ~1 trillion calls. Each call is O(1) work but there are O(2ⁿ) of them; recursion depth (and stack space) is O(n).
 
-1. **Redundant Calculations**: Notice that `fibonacci(3)` is calculated **2 times**, `fibonacci(2)` is calculated **3 times**, and `fibonacci(1)` is calculated **5 times**. This redundancy grows exponentially with larger inputs.
-
-2. **Exponential Growth**: For `fibonacci(n)`, the number of function calls is approximately O(2^n). This means:
-   - `fibonacci(20)` makes ~1 million calls
-   - `fibonacci(30)` makes ~1 billion calls
-   - `fibonacci(40)` makes ~1 trillion calls
-
-3. **Time Complexity**: Each function call does O(1) work, but there are exponentially many calls, resulting in O(2^n) total time complexity.
-
-4. **Space Complexity**: The maximum depth of recursion is O(n), so space complexity is O(n) for the call stack.
-
-**The Solution**: Memoization eliminates this redundancy by storing results of subproblems. With memoization, each subproblem (like `fibonacci(3)`) is calculated only **once**, and subsequent calls simply retrieve the cached result. This reduces time complexity from O(2^n) to O(n).
-
-### Memoization Approach (Top-Down)
-
-**Why Memoization?** The naive recursive approach recalculates the same subproblems multiple times. For example, when computing `fibonacci(5)`, we calculate `fibonacci(3)` multiple times. Memoization stores the results of subproblems in a cache (memo table) so that when we encounter the same subproblem again, we can simply look up the result instead of recalculating it. This transforms the exponential time complexity O(2^n) to linear O(n) time complexity.
-
-**Key Benefits:**
-- **Eliminates Redundant Calculations**: Each subproblem is solved only once
-- **Top-Down Approach**: Starts from the problem and breaks it down (natural recursive thinking)
-- **Lazy Evaluation**: Only computes subproblems that are actually needed
-- **Easy to Implement**: Minimal changes to recursive code (just add memoization check)
+**Memoization (top-down)** caches each subproblem so it is computed once, collapsing O(2ⁿ) to O(n) while keeping the natural recursive shape and only computing states that are actually needed:
 
 ```cpp
-// Memoized Fibonacci - O(n) time complexity
+// Memoized Fibonacci - O(n) time
 long long fibonacciMemo(int n, unordered_map<int, long long>& memo) {
-    if (n <= 1) {
-        return n;
-    }
-    
-    if (memo.find(n) != memo.end()) {
-        return memo[n];
-    }
-    
+    if (n <= 1) return n;
+    if (memo.find(n) != memo.end()) return memo[n];
     memo[n] = fibonacciMemo(n - 1, memo) + fibonacciMemo(n - 2, memo);
     return memo[n];
 }
@@ -742,1406 +174,348 @@ long long fibonacciMemo(int n) {
     unordered_map<int, long long> memo;
     return fibonacciMemo(n, memo);
 }
-
-// Alternative with vector
-long long fibonacciMemoVector(int n, vector<long long>& memo) {
-    if (n <= 1) {
-        return n;
-    }
-    
-    if (memo[n] != -1) {
-        return memo[n];
-    }
-    
-    memo[n] = fibonacciMemoVector(n - 1, memo) + fibonacciMemoVector(n - 2, memo);
-    return memo[n];
-}
-
-long long fibonacciMemoVector(int n) {
-    vector<long long> memo(n + 1, -1);
-    return fibonacciMemoVector(n, memo);
-}
 ```
 
-### Tabulation Approach (Bottom-Up)
-
-**Why Tabulation?** While memoization solves the redundancy problem, it still uses recursion which can lead to stack overflow for very large inputs. Tabulation (bottom-up approach) builds the solution iteratively from the base cases upward, eliminating the need for recursion entirely.
-
-**Key Advantages of Tabulation:**
-
-1. **No Recursion Overhead**: Iterative approach avoids function call overhead and potential stack overflow
-2. **Better Space Optimization**: Can often optimize space by only keeping necessary values (e.g., only last two values for Fibonacci)
-3. **Predictable Memory Access**: Iterative access patterns are more cache-friendly than recursive calls
-4. **Easier to Understand**: Some find iterative bottom-up approach more intuitive
-5. **No Function Call Stack**: Eliminates risk of stack overflow for deep recursions
-
-**Comparison: Memoization vs Tabulation**
-
-| Aspect | Memoization (Top-Down) | Tabulation (Bottom-Up) |
-|--------|----------------------|----------------------|
-| Approach | Recursive | Iterative |
-| Direction | Problem → Base Cases | Base Cases → Problem |
-| Stack Usage | Uses call stack | No call stack |
-| Space | O(n) for memo + O(n) stack | O(n) for table (can optimize) |
-| Computation | Only computes needed subproblems | Computes all subproblems |
-| Implementation | Easier to convert from recursion | Requires understanding of dependencies |
-
-**When to Use Tabulation:**
-- When recursion depth might cause stack overflow
-- When you need to optimize space further
-- When all subproblems need to be computed anyway
-- When iterative approach is more natural for the problem
+**Tabulation (bottom-up)** builds the answer iteratively from the base cases, avoiding recursion (and stack-overflow risk) entirely and giving a predictable, cache-friendly access pattern:
 
 ```cpp
 // Tabulated Fibonacci - O(n) time, O(n) space
 long long fibonacciTab(int n) {
-    if (n <= 1) {
-        return n;
-    }
-    
+    if (n <= 1) return n;
     vector<long long> dp(n + 1);
     dp[0] = 0;
     dp[1] = 1;
-    
-    for (int i = 2; i <= n; i++) {
-        dp[i] = dp[i - 1] + dp[i - 2];
-    }
-    
+    for (int i = 2; i <= n; i++) dp[i] = dp[i - 1] + dp[i - 2];
     return dp[n];
 }
 
-// Space-optimized Fibonacci - O(n) time, O(1) space
+// Space-optimized - O(n) time, O(1) space
 long long fibonacciOptimized(int n) {
-    if (n <= 1) {
-        return n;
-    }
-    
-    long long prev2 = 0;  // F(n-2)
-    long long prev1 = 1;  // F(n-1)
-    long long current;    // F(n)
-    
+    if (n <= 1) return n;
+    long long prev2 = 0, prev1 = 1, current = 0;
     for (int i = 2; i <= n; i++) {
         current = prev1 + prev2;
         prev2 = prev1;
         prev1 = current;
     }
-    
     return current;
 }
 ```
 
-### Performance Comparison
-
-To see a practical comparison of all Fibonacci approaches (Naive Recursive, Memoization, Tabulation, and Space-Optimized), run the performance comparison example:
-
-```bash
-cd examples/dynamic_programming
-g++ -std=c++17 -O2 -o fibonacci_comparison fibonacci_performance_comparison.cpp
-./fibonacci_comparison
-```
-
-This example demonstrates:
-- **Exponential time complexity** of the naive recursive approach
-- **Linear time complexity** of memoization and tabulation
-- **Space optimization** benefits
-- **Actual performance measurements** for different input sizes
-
-The code is available in `examples/dynamic_programming/fibonacci_performance_comparison.cpp`.
+Memoization and tabulation are the two faces of DP: top-down recurses from the problem toward base cases and is easiest to derive from a recursive solution; bottom-up iterates from base cases toward the problem, computes every state, and is easier to space-optimize and typically faster due to better cache behavior (see §12.10).
 
 ## 12.8 Correctness Argument
 
-**Purpose**: Explain why the implementation works.
+The implementations preserve the invariants of §12.3.
 
-### Invariant Preservation
+**Optimal substructure.** In memoization each recursive call solves its subproblem optimally before the `combine` step (`max`, `min`, `+`) merges them; base cases are optimal by definition. In tabulation, states are filled in dependency order, so every state is computed from already-optimal predecessors. For Fibonacci, `F(n)=F(n-1)+F(n-2)` is optimal whenever its two predecessors are.
 
-The DP implementations preserve the core invariants defined in Section 12.3:
+**Overlapping subproblems.** The `if memo[state] exists` guard (top-down) and the ordered single pass (bottom-up) both ensure each state is computed exactly once. For LCS, `(i,j)` is reachable from `(i-1,j)` and `(i,j-1)`; either strategy computes it once.
 
-#### 1. Optimal Substructure Invariant
+**Consistency.** A state is written after it is computed and never mutated afterward, so lookups are stable.
 
-**For Memoization**:
-- Each recursive call solves a subproblem optimally before combining results
-- The `combine` operation (e.g., `max`, `min`, `+`) preserves optimality
-- Base cases provide optimal solutions for terminal states
+**Termination.** The state space is finite (Fibonacci: `n+1` states; LCS: `(m+1)(n+1)`; Knapsack: `(n+1)(W+1)`) and dependencies are acyclic — each state depends only on strictly "smaller" states — so progress toward base cases is guaranteed.
 
-**For Tabulation**:
-- States are processed in dependency order (bottom-up)
-- Each state is computed from previously computed optimal subproblems
-- The recurrence relation ensures optimal combination of subproblem solutions
-
-**Example (Fibonacci)**:
-- `F(n) = F(n-1) + F(n-2)` where `F(0) = 0` and `F(1) = 1` are optimal base cases
-- If `F(n-1)` and `F(n-2)` are computed optimally, then `F(n)` is optimal
-- This holds by mathematical definition of Fibonacci numbers
-
-#### 2. Overlapping Subproblems Invariant
-
-**For Memoization**:
-- The `if (memo[state] exists)` check ensures each state is computed at most once
-- Subsequent accesses retrieve the cached value
-- This eliminates redundant calculations
-
-**For Tabulation**:
-- Each state in the DP table is computed exactly once
-- The iteration order ensures dependencies are resolved before use
-- No redundant calculations occur
-
-**Example (LCS)**:
-- State `(i, j)` may be reached via multiple paths: `(i-1, j)` → `(i, j)` or `(i, j-1)` → `(i, j)`
-- Memoization ensures `(i, j)` is computed once and reused
-- Tabulation computes `(i, j)` once in the correct order
-
-#### 3. Memoization Consistency Invariant
-
-**Guarantees**:
-- Once `memo[state]` is set, it contains the correct optimal value
-- The value never changes during the algorithm's execution
-- Lookups always return consistent results
-
-**Why this holds**:
-- States are computed before being stored
-- No state is modified after computation
-- The memoization table is read-only after initialization (for tabulation)
-
-### Edge Case Handling
-
-#### Base Cases
-
-**Fibonacci**:
-- `n ≤ 1`: Returns `n` directly (correct by definition)
-- Prevents negative indices and handles `F(0)` and `F(1)` correctly
-
-**LCS**:
-- `i = 0 OR j = 0`: Returns `0` (empty string has no common subsequence)
-- Prevents array out-of-bounds and handles empty string cases
-
-**Coin Change**:
-- `amount = 0`: Returns `0` (no coins needed)
-- `amount < 0`: Returns `-1` (impossible, handled in recursion)
-- Prevents infinite loops and handles impossible cases
-
-#### Boundary Conditions
-
-**2D Grid Problems**:
-- First row and column are initialized correctly
-- Prevents accessing `dp[-1][j]` or `dp[i][-1]`
-- Handles `1×1` grids correctly
-
-**Knapsack**:
-- `capacity ≤ 0`: Returns `0` (no value can be obtained)
-- `index < 0`: Returns `0` (no items left)
-- Prevents negative capacities and handles empty item sets
-
-### Termination Guarantee
-
-**Why the algorithm terminates**:
-
-1. **Finite State Space**: The number of distinct states is bounded
-   - Fibonacci: `n+1` states (0 to n)
-   - LCS: `(m+1)×(n+1)` states
-   - Knapsack: `(n+1)×(W+1)` states
-
-2. **Acyclic Dependencies**: The dependency graph has no cycles
-   - States only depend on "smaller" states (by some ordering)
-   - Base cases have no dependencies
-   - This ensures progress toward base cases
-
-3. **Well-founded Ordering**: States are ordered such that dependencies come first
-   - For tabulation: iteration order respects dependencies
-   - For memoization: recursion depth is bounded by state space size
-
-**Example (Fibonacci)**:
-- States: `{0, 1, 2, ..., n}`
-- Dependencies: `F(i)` depends on `F(i-1)` and `F(i-2)` where `i-1 < i` and `i-2 < i`
-- Ordering: `0 < 1 < 2 < ... < n`
-- Termination: Always reaches base cases `F(0)` or `F(1)`
-
-### Informal Proof Sketch
-
-**For optimization problems**:
-
-1. **Base Case Correctness**: Base cases are optimal by definition or trivial verification
-2. **Inductive Step**: If all subproblems are solved optimally, then the current problem is solved optimally
-3. **Combination Correctness**: The `combine` operation (max, min, sum) preserves optimality
-4. **Completeness**: All necessary subproblems are considered
-
-**For counting problems**:
-
-1. **Base Case Correctness**: Base cases count correctly (usually 0 or 1)
-2. **Counting Principle**: The recurrence correctly counts all possibilities
-3. **No Double Counting**: The state representation ensures each solution is counted once
-4. **Completeness**: All valid solutions are considered
-
-This correctness argument provides engineers with confidence that their DP implementations work correctly.
+Edge/base cases anchor the recurrence: Fibonacci returns `n` for `n≤1`; LCS returns 0 when either index is 0; Coin Change treats `amount=0` as 0 coins and `amount<0` as impossible; Knapsack returns 0 when out of items or capacity. In 2D problems the first row and column are initialized explicitly to avoid negative-index access.
 
 ## 12.9 Edge Cases & Failure Modes
 
-**Purpose**: Build defensive thinking.
+**Empty and tiny inputs.** Guard array/string DP before indexing:
 
-### Empty Input Cases
-
-#### Empty Arrays/Lists
-
-**Problem**: Many DP problems work with arrays or sequences.
-
-**Edge Cases**:
-- Empty array `[]`
-- Array with single element `[x]`
-- Array with two elements `[x, y]`
-
-**Handling**:
 ```cpp
-// Example: House Robber
+// House Robber
 if (nums.empty()) return 0;
 if (nums.size() == 1) return nums[0];
-// Normal DP for size >= 2
-```
-
-**Failure Mode**: Accessing `nums[1]` when `nums.size() == 1` causes out-of-bounds error.
-
-#### Empty Strings
-
-**Problem**: String DP problems (LCS, Edit Distance) work with strings.
-
-**Edge Cases**:
-- Empty string `""`
-- Single character `"a"`
-- Identical strings `"abc"` and `"abc"`
-
-**Handling**:
-```cpp
-// Example: LCS
+// LCS
 if (text1.empty() || text2.empty()) return 0;
-// Normal DP for non-empty strings
 ```
+Accessing `nums[1]` when `size()==1`, or `text1[0]` on an empty string, is undefined behavior.
 
-**Failure Mode**: Accessing `text1[0]` when `text1.empty()` causes undefined behavior.
+**Zero and negative values.** For Coin Change, `amount==0` is the base case (0 coins) and `amount<0` means impossible; forgetting the negative check can cause infinite recursion. Knapsack assumes non-negative weights — a negative weight makes `dp[capacity - weight]` index past `capacity` and corrupt results, so validate inputs.
 
-### Zero and Negative Values
+**Integer overflow.** DP accumulates values (large Fibonacci numbers, combinatorial path counts, big knapsack sums). Use `long long`, and check against limits when results may exceed the type's range.
 
-#### Zero Amount/Sum
+**Memory.** Deep recursion in memoization can overflow the call stack (typically 1–8 MB); prefer tabulation for large `n`. Conversely, large 2D tables (e.g. `dp[10000][10000]`) can exhaust the heap; use rolling arrays or memoize only the reachable subset.
 
-**Problem**: Problems like Coin Change, Subset Sum work with target values.
+**Invalid transitions.** Bounds-check before reading predecessors:
 
-**Edge Cases**:
-- Target is `0` (usually means "no coins needed" or "empty subset")
-- Target is negative (usually means "impossible")
-
-**Handling**:
 ```cpp
-// Example: Coin Change
-if (amount == 0) return 0;
-if (amount < 0) return -1; // or handle in recursion
+if (i > 0) result = max(result, dp[i-1][j] + value);
 ```
 
-**Failure Mode**: Infinite loop if negative values are not handled, or incorrect result if `0` is not handled as base case.
+The recurring failure patterns are off-by-one indexing (`dp[n]` vs `dp[n-1]`), missing base-case initialization, uninitialized first row/column in 2D DP, and negative-index access.
 
-#### Negative Weights/Values
+## 12.10 Performance & System Considerations
 
-**Problem**: Knapsack and similar problems assume non-negative weights/values.
+DP performance on real hardware is dominated by memory behavior, not by the abstract operation count.
 
-**Edge Cases**:
-- Negative weights (may cause array out-of-bounds)
-- Negative values (may cause incorrect optimization)
-- Zero weights/values (may cause division by zero or incorrect results)
+**Cache locality — tabulation vs memoization.** Tabulation walks the table sequentially (`dp[i][j]` in row-major order), which the prefetcher loves; memoization jumps around the recursion tree and, with a hash-map memo, incurs unpredictable cache misses. In practice tabulation is often 2–3× faster than memoization on large problems: a cache miss costs ~100–300 cycles, and sequential access is roughly 10× faster than random access. When memoizing, prefer a flat array over a hash map, and store 2D tables row-major to match row-wise iteration.
 
-**Handling**:
-```cpp
-// Validate input
-for (int w : weights) {
-    if (w < 0) throw invalid_argument("Negative weights not allowed");
-}
-```
+Shrinking the footprint helps twice over: a rolling array (O(m×n) → O(n)) not only saves memory but keeps the working set in cache, raising the hit rate.
 
-**Failure Mode**: Negative weights can cause accessing `dp[capacity - weight]` where `capacity - weight > capacity`, leading to incorrect results.
+**Stack vs heap.** Recursion uses the (small, ~1–8 MB) call stack and risks overflow at depth; iteration puts the table on the heap (bounded by system memory) with no overflow risk. Pre-allocate the table once rather than growing it repeatedly.
 
-### Integer Overflow
+**Branch prediction.** The `if (s1[i-1]==s2[j-1])` test in tight LCS/edit-distance loops is a branch: well-predicted it costs ~1 cycle, mispredicted ~10–20. Where the domain is small, branchless code or lookup tables can help; otherwise order conditions to favor the common case.
 
-**Problem**: DP solutions often accumulate values that can exceed integer limits.
+**Concurrency.** Tabulation can sometimes be parallelized across rows when dependencies allow (e.g. an `#pragma omp parallel for` over the outer loop of a computation whose cells depend only on earlier rows), but you must respect the dependency structure. Memoization is hard to parallelize: a shared memo table needs synchronization, and lock contention can dominate.
 
-**Edge Cases**:
-- Large Fibonacci numbers (exceed `INT_MAX` or `LONG_MAX`)
-- Large path counts (combinatorial explosion)
-- Large sums in knapsack problems
+**NUMA (advanced).** On NUMA systems, local memory access is ~100 ns versus ~200–300 ns remote. Allocate a DP table on the node that will process it (e.g. via first-touch or `numa_alloc_local()`).
 
-**Handling**:
-```cpp
-// Use larger integer types
-long long fibonacci(int n) { ... }
+**Out-of-core (advanced).** Tables too large for RAM force chunked/on-disk or distributed processing; disk I/O is ~1000× slower than memory, so this changes the algorithm's design, not just its constants.
 
-// Check for overflow
-if (result > INT_MAX) throw overflow_error("Result too large");
-```
-
-**Failure Mode**: Integer overflow causes incorrect results or undefined behavior.
-
-### Memory Issues
-
-#### Stack Overflow (Memoization)
-
-**Problem**: Deep recursion in memoization can cause stack overflow.
-
-**Edge Cases**:
-- Very large `n` in Fibonacci (recursion depth = n)
-- Deeply nested problems
-
-**Handling**:
-- Use tabulation instead of memoization for large inputs
-- Increase stack size (system-dependent)
-- Use iterative approach
-
-**Failure Mode**: Stack overflow crashes the program.
-
-#### Memory Exhaustion (Tabulation)
-
-**Problem**: Large DP tables can exhaust available memory.
-
-**Edge Cases**:
-- Very large 2D tables (e.g., `dp[10000][10000]`)
-- Multiple large DP tables in the same program
-
-**Handling**:
-- Use space optimization (rolling arrays, variable optimization)
-- Process in chunks if possible
-- Use memoization if only a subset of states is needed
-
-**Failure Mode**: Out-of-memory error or system slowdown.
-
-### Degenerate Inputs
-
-#### Single Element
-
-**Problem**: Many problems assume multiple elements.
-
-**Edge Cases**:
-- Array with one element
-- String with one character
-- Grid with one cell
-
-**Handling**:
-```cpp
-if (nums.size() == 1) return nums[0]; // or appropriate base case
-```
-
-#### All Same Values
-
-**Problem**: Problems may assume variation in input.
-
-**Edge Cases**:
-- All zeros `[0, 0, 0, 0]`
-- All same values `[5, 5, 5, 5]`
-- Sorted arrays (ascending or descending)
-
-**Handling**: Usually handled correctly by DP, but may have performance implications.
-
-### Invalid State Transitions
-
-**Problem**: State transitions may access invalid states.
-
-**Edge Cases**:
-- Accessing `dp[i-1]` when `i = 0`
-- Accessing `dp[i][j-1]` when `j = 0`
-- Accessing `dp[mask ^ (1<<k)]` when `k` is out of range
-
-**Handling**:
-```cpp
-// Check bounds before accessing
-if (i > 0) {
-    result = max(result, dp[i-1][j] + value);
-}
-```
-
-**Failure Mode**: Array out-of-bounds access causes undefined behavior or crashes.
-
-### Common Failure Patterns
-
-1. **Off-by-One Errors**: Accessing `dp[n]` instead of `dp[n-1]` or vice versa
-2. **Base Case Missing**: Forgetting to handle `n=0` or `n=1` cases
-3. **Initialization Errors**: Not initializing base cases correctly
-4. **Boundary Conditions**: Not handling first row/column in 2D DP
-5. **Negative Index Access**: Not checking for negative values before array access
-
-This section maps directly to production bugs and helps engineers write robust DP code.
-
-## 12.10 Performance & System Considerations ⭐ (Differentiator)
-
-**Purpose**: Connect algorithms to real machines.
-
-### Cache Locality
-
-#### Tabulation vs Memoization
-
-**Tabulation (Bottom-Up)**:
-- **Better Cache Locality**: Iterates through memory sequentially
-- **Predictable Access Pattern**: `dp[i][j]` accesses are predictable
-- **Prefetching Friendly**: CPU can prefetch next elements
-- **Example**: 2D grid DP with row-major order has excellent cache performance
-
-**Memoization (Top-Down)**:
-- **Worse Cache Locality**: Recursive calls may access memory non-sequentially
-- **Unpredictable Access**: Depends on recursion pattern
-- **Cache Misses**: Hash table lookups can cause cache misses
-- **Mitigation**: Use arrays instead of hash maps when possible
-
-**Performance Impact**:
-- Tabulation can be 2-3x faster than memoization for large problems
-- Cache misses can add 100-300 cycles per miss
-- Sequential access is ~10x faster than random access
-
-#### Memory Layout Optimization
-
-**2D Arrays**:
-```cpp
-// Row-major order (better for row-wise iteration)
-vector<vector<int>> dp(m, vector<int>(n));
-
-// Column-major order (better for column-wise iteration)
-// Usually not needed in C++ (row-major is default)
-```
-
-**Space-Optimized DP**:
-- Rolling arrays reduce memory footprint
-- Smaller memory footprint → better cache utilization
-- Example: `O(m×n)` → `O(n)` space improves cache hit rate
-
-### Memory Allocation
-
-#### Stack vs Heap
-
-**Memoization (Recursion)**:
-- Uses call stack (limited, typically 1-8 MB)
-- Stack overflow risk for deep recursion
-- Fast allocation/deallocation
-
-**Tabulation (Iteration)**:
-- Uses heap for DP table (larger, limited by system memory)
-- No stack overflow risk
-- Slower allocation but amortized
-
-**Recommendation**: Use tabulation for large problems to avoid stack overflow.
-
-#### Memory Fragmentation
-
-**Problem**: Large DP tables can cause memory fragmentation.
-
-**Mitigation**:
-- Pre-allocate DP table once
-- Use `reserve()` for vectors
-- Consider memory pools for repeated allocations
-
-**Example**:
-```cpp
-vector<vector<int>> dp;
-dp.reserve(m);  // Pre-allocate rows
-for (int i = 0; i < m; i++) {
-    dp[i].reserve(n);  // Pre-allocate columns
-}
-```
-
-### Branch Prediction
-
-#### Conditional Statements
-
-**Problem**: `if` statements in tight loops can hurt performance.
-
-**Example**:
-```cpp
-// Branch in inner loop
-for (int i = 1; i <= m; i++) {
-    for (int j = 1; j <= n; j++) {
-        if (s1[i-1] == s2[j-1]) {  // Branch prediction
-            dp[i][j] = dp[i-1][j-1] + 1;
-        } else {
-            dp[i][j] = max(dp[i-1][j], dp[i][j-1]);
-        }
-    }
-}
-```
-
-**Optimization**:
-- Use branchless code when possible
-- Reorder conditions to favor common cases
-- Use lookup tables for small domains
-
-**Impact**: Well-predicted branches cost ~1 cycle, mispredicted branches cost ~10-20 cycles.
-
-### Concurrency Implications
-
-#### Parallelization Opportunities
-
-**Tabulation**:
-- **Row-wise Parallelization**: Different rows can be computed in parallel (with care)
-- **Dependency Constraints**: Must respect state dependencies
-- **Example**: In some 2D DP, rows can be processed in parallel if dependencies allow
-
-**Memoization**:
-- **Harder to Parallelize**: Recursive structure makes parallelization difficult
-- **Race Conditions**: Multiple threads accessing memo table need synchronization
-- **Lock Contention**: Can become bottleneck
-
-**Example (Parallel LCS - Row-wise)**:
-```cpp
-// Can parallelize outer loop if dependencies allow
-#pragma omp parallel for
-for (int i = 1; i <= m; i++) {
-    for (int j = 1; j <= n; j++) {
-        // Compute dp[i][j]
-    }
-}
-```
-
-**Challenges**:
-- Must ensure dependencies are satisfied
-- Synchronization overhead
-- Load balancing
-
-### NUMA Considerations (Advanced)
-
-**Problem**: On NUMA systems, memory access time depends on location.
-
-**Impact**:
-- Local memory access: ~100 ns
-- Remote memory access: ~200-300 ns
-
-**Mitigation**:
-- Allocate DP table on the NUMA node that will use it
-- Use `numa_alloc_local()` for local allocation
-- Consider data layout for NUMA affinity
-
-### Disk/Network Effects (Advanced)
-
-**Problem**: Very large DP tables may not fit in memory.
-
-**Solutions**:
-- **Out-of-Core Algorithms**: Process in chunks, store intermediate results on disk
-- **Distributed DP**: Partition problem across multiple machines
-- **Streaming Algorithms**: Process data in streams when possible
-
-**Trade-offs**:
-- Disk I/O is ~1000x slower than memory access
-- Network communication adds latency
-- Complexity increases significantly
-
-### Practical Recommendations
-
-1. **Use Tabulation for Large Problems**: Better cache locality, no stack overflow risk
-2. **Optimize Memory Layout**: Row-major for row-wise iteration
-3. **Pre-allocate Memory**: Avoid repeated allocations
-4. **Consider Space Optimization**: Rolling arrays reduce memory and improve cache
-5. **Profile Before Optimizing**: Measure actual performance, don't guess
-6. **Use Appropriate Data Types**: `int` vs `long long` based on problem constraints
-
-This section connects DP algorithms to real system performance, making the book valuable for engineers working on production systems.
+Practical guidance: prefer tabulation for large problems, keep memory layout row-major, pre-allocate, apply space optimization, choose `int` vs `long long` deliberately, and profile before optimizing.
 
 ## 12.11 Variants & Extensions
 
-**Purpose**: Show evolution and alternatives.
+**Memoization vs tabulation.** Choose memoization for a natural recursive structure or when only a subset of states is reachable; choose tabulation when all states are needed anyway, when you want cache locality or space optimization, or to avoid stack overflow.
 
-### Memoization vs Tabulation
+**Space optimizations.** A *rolling array* reduces 2D DP to O(n) when the current row depends only on the previous one (Unique Paths, Edit Distance), at the cost of easy path reconstruction. *Variable reduction* takes 1D DP to O(1) by keeping only the needed previous values (Fibonacci, Climbing Stairs). *State compression* encodes sets as bitmasks (TSP, subset DP), bounded by ~32–64 bits.
 
-**When to Use Memoization (Top-Down)**:
-- Natural recursive structure
-- Only a subset of states is needed
-- Problem has many unreachable states
-- Easier to implement from recursive solution
+**Problem variants.** 0/1 Knapsack uses each item at most once; unbounded knapsack allows unlimited copies; fractional knapsack is solved greedily, not by DP. Problems may ask for an optimal value, a *count* of ways, or a *reconstructed* solution. Dimensionality ranges from 1D (Fibonacci) to 2D (LCS, grids) to multi-dimensional (3D knapsack, TSP).
 
-**When to Use Tabulation (Bottom-Up)**:
-- Need to compute all states anyway
-- Want better cache locality
-- Avoiding stack overflow risk
-- Need space optimization (easier with iteration)
-
-### Space Optimization Variants
-
-#### Rolling Array Technique
-- **2D DP → 1D**: Reduce `O(m×n)` to `O(n)` space
-- **Trade-off**: Cannot easily reconstruct solution path
-- **Example**: Unique Paths, Edit Distance
-
-#### Variable Optimization
-- **1D DP → O(1)**: Only keep necessary previous values
-- **Trade-off**: Lose access to all intermediate values
-- **Example**: Fibonacci, Climbing Stairs
-
-#### State Compression
-- **Bit Masks**: Represent sets as bit masks
-- **Trade-off**: Limited by number of bits (typically 32-64)
-- **Example**: Traveling Salesman Problem, Subset DP
-
-### Problem Variants
-
-#### Unbounded vs 0/1 Knapsack
-- **0/1 Knapsack**: Each item can be used at most once
-- **Unbounded Knapsack**: Items can be used unlimited times
-- **Fractional Knapsack**: Greedy algorithm works (not DP)
-
-#### Counting vs Optimization
-- **Optimization**: Find optimal value (min/max)
-- **Counting**: Count number of ways/possibilities
-- **Reconstruction**: Build actual solution (not just value)
-
-#### 1D vs 2D vs Multi-Dimensional
-- **1D DP**: Linear problems (Fibonacci, Climbing Stairs)
-- **2D DP**: Grid or two-sequence problems (LCS, Unique Paths)
-- **Multi-Dimensional**: Multiple constraints (3D Knapsack, TSP)
-
-### Advanced DP Patterns
-
-#### Interval DP
-- **Characteristic**: Process intervals `[i, j]`
-- **Iteration**: By interval length
-- **Examples**: Matrix Chain Multiplication, Burst Balloons, Palindrome Partitioning
-
-#### State Machine DP
-- **Characteristic**: Multiple states with transitions
-- **Modeling**: States represent different conditions
-- **Examples**: Buy/Sell Stock, String Matching with States
-
-#### Digit DP
-- **Characteristic**: Process numbers digit by digit
-- **Application**: Count numbers with certain properties
-- **Examples**: Count numbers with no consecutive digits, Count palindromic numbers
-
-### When to Choose Which Variant
-
-| Problem Characteristic | Recommended Approach |
-|------------------------|---------------------|
-| Small state space, natural recursion | Memoization |
-| Large state space, need all states | Tabulation |
-| Memory constraints | Space-optimized tabulation |
-| Need solution reconstruction | Full DP table (no space optimization) |
-| Only need final value | Space-optimized |
-| Multiple constraints | Multi-dimensional DP |
-| Interval-based problems | Interval DP |
-| State transitions | State Machine DP |
+**Advanced patterns.** *Interval DP* processes ranges `[i,j]` by increasing length (Matrix Chain, Burst Balloons). *State-machine DP* tracks distinct states and transitions (Buy/Sell Stock). *Digit DP* processes numbers digit by digit to count values with a property.
 
 ## 12.12 Real-World Implementations
 
-**Purpose**: Ground theory in practice.
+DP is problem-specific, so standard libraries rarely ship a generic DP, but the technique underlies many production algorithms.
 
-### Standard Library Equivalents
+**String and sequence algorithms.** Edit distance (Levenshtein) and LCS power `difflib`/`Levenshtein` in Python and Apache Commons `StringUtils` in Java (C++ typically rolls its own). Bioinformatics sequence alignment — Needleman–Wunsch (global) and Smith–Waterman (local), both in Biopython's `Bio.pairwise2` — is 2D DP over a scoring matrix.
 
-While most standard libraries don't provide generic DP implementations (since DP is problem-specific), several algorithms use DP concepts:
+**Compilers.** Common-subexpression elimination is DP-style caching of repeated computations; some functional languages memoize pure functions automatically. Instruction scheduling and register allocation use DP-based optimization over dependency structures.
 
-#### String Algorithms
+**Databases.** Join-order optimization in PostgreSQL and MySQL is DP over subsets of tables (state = set of tables joined so far), minimizing intermediate result size. Query-plan caching is memoization of plans keyed by normalized query structure.
 
-**Edit Distance (Levenshtein)**:
-- **Python**: `difflib.SequenceMatcher`, `Levenshtein` library
-- **C++**: Custom implementation (no standard library)
-- **Java**: Apache Commons `StringUtils.getLevenshteinDistance()`
+**Game AI and RL.** Chess/Go engines memoize board positions in transposition tables (Stockfish, AlphaZero). Reinforcement-learning value iteration is tabulation over states via the Bellman equation.
 
-**Longest Common Subsequence**:
-- **Python**: `difflib.SequenceMatcher.get_matching_blocks()`
-- **C++**: Custom implementation
-- **Java**: Apache Commons `StringUtils.getCommonSubsequence()`
+**Text processing.** Unix `diff` and Git use LCS-based diffing; spell checkers rank candidates by edit distance, often combined with a trie.
 
-#### Sequence Alignment (Bioinformatics)
-
-**Needleman-Wunsch Algorithm**:
-- **Python**: `Bio.pairwise2` (Biopython)
-- **C++**: Custom or specialized libraries
-- **Design Choice**: Uses 2D DP table for global alignment
-
-**Smith-Waterman Algorithm**:
-- **Python**: `Bio.pairwise2` (Biopython)
-- **Design Choice**: Similar to Needleman-Wunsch but for local alignment
-
-### Compiler Optimizations
-
-#### Memoization in Compilers
-
-**Function Memoization**:
-- Some functional languages (Haskell, OCaml) automatically memoize pure functions
-- **Trade-off**: Space vs time, when to memoize
-
-**Common Subexpression Elimination (CSE)**:
-- Similar to DP: avoid recomputing same expressions
-- **Implementation**: Compiler identifies and caches repeated computations
-
-#### Dynamic Programming in Code Generation
-
-**Instruction Scheduling**:
-- Optimize instruction order for pipeline efficiency
-- **DP Approach**: Model as optimization problem with dependencies
-
-**Register Allocation**:
-- Graph coloring with DP-based heuristics
-- **Challenge**: Balance register usage vs spill cost
-
-### Database Query Optimization
-
-#### Join Order Optimization
-
-**Problem**: Find optimal order to join tables
-- **DP Approach**: Consider all possible join orders
-- **State**: Set of tables joined so far
-- **Transition**: Add one more table
-- **Optimization**: Minimize intermediate result size
-
-**Real Systems**: PostgreSQL, MySQL use DP-based join ordering
-
-#### Query Plan Caching
-
-**Memoization Concept**: Cache query plans for similar queries
-- **State**: Query structure (normalized)
-- **Value**: Optimal execution plan
-- **Benefit**: Avoid recomputing plans for repeated queries
-
-### Game Theory and AI
-
-#### Minimax with Memoization (Alpha-Beta Pruning)
-
-**Chess/Checkers Engines**:
-- **DP Concept**: Memoize game states to avoid recomputation
-- **State**: Board position
-- **Value**: Best move evaluation
-- **Example**: Stockfish, AlphaZero use transposition tables (memoization)
-
-#### Reinforcement Learning
-
-**Value Iteration**:
-- **DP Concept**: Iteratively compute optimal values (like tabulation)
-- **State**: Environment state
-- **Value**: Expected future reward
-- **Algorithm**: Bellman equation (DP recurrence)
-
-### Text Processing
-
-#### Diff Algorithms
-
-**Unix `diff`**:
-- Uses DP for longest common subsequence
-- **Application**: File comparison, version control
-
-**Git Merge Algorithms**:
-- Use DP-based diff algorithms
-- **Challenge**: Handle three-way merges efficiently
-
-#### Spell Checkers
-
-**Edit Distance**:
-- Find closest matching words
-- **DP Approach**: Compute edit distance to dictionary words
-- **Optimization**: Use trie + DP for faster lookup
-
-### Notable Trade-offs in Real Systems
-
-1. **Space vs Time**: Real systems often choose space optimization to fit in memory
-2. **Approximation**: Sometimes use approximate DP for very large problems
-3. **Caching Strategy**: When to evict memoized results (LRU, LFU)
-4. **Parallelization**: How to parallelize DP for multi-core systems
-5. **Incremental Updates**: How to update DP table when input changes slightly
-
-This section shows how DP concepts appear in production systems, making the theory immediately applicable.
+Real systems weigh space against time (often choosing space-optimized DP to fit memory), sometimes accept approximate DP for very large inputs, and must decide cache-eviction policy and how to update a table when input changes incrementally.
 
 ## 12.13 Common Pitfalls & Interview Traps
 
-**Purpose**: Prevent common mistakes.
+**"DP is just memoization."** DP requires *optimal substructure*, not merely overlapping subproblems; tabulation is equally DP. Tree traversal has no overlap and is plain recursion, not DP.
 
-### Misconceptions
+**"All optimization problems are DP."** Greedy solves Activity Selection; divide & conquer solves Merge Sort. DP is needed only when both optimal substructure and overlapping subproblems are present (e.g. general Coin Change).
 
-#### 1. "DP is Just Memoization"
+**"Memoization always speeds things up."** It adds lookup overhead; without real overlap it only slows the code, and tabulation may win on cache locality regardless.
 
-**Misconception**: DP = adding memoization to recursion
+**Recurring bugs.** Assuming non-negative input (a Coin Change missing `if (amount<0) return -1`); off-by-one loop bounds and out-of-range predecessor access; and forgetting to initialize base cases:
 
-**Reality**: 
-- DP requires **optimal substructure** (not just overlapping subproblems)
-- Some problems have overlapping subproblems but no optimal substructure (not DP)
-- Tabulation is also DP (not just memoization)
-
-**Example**: 
-- Fibonacci has overlapping subproblems → DP works
-- Tree traversal has no overlapping subproblems → Not DP (just recursion)
-
-#### 2. "All Optimization Problems Use DP"
-
-**Misconception**: If it's optimization, use DP
-
-**Reality**:
-- Greedy algorithms work for many optimization problems
-- Divide & conquer works when no overlapping subproblems
-- DP is only needed when both optimal substructure AND overlapping subproblems exist
-
-**Example**:
-- Activity Selection → Greedy (not DP)
-- Merge Sort → Divide & Conquer (not DP)
-- Coin Change → DP (optimal substructure + overlapping subproblems)
-
-#### 3. "Memoization Always Improves Performance"
-
-**Misconception**: Adding memoization always makes code faster
-
-**Reality**:
-- Memoization adds overhead (hash table lookups)
-- If subproblems don't overlap much, memoization can be slower
-- Tabulation may be faster due to better cache locality
-
-**Example**:
-- Fibonacci with memoization: Good (many overlapping subproblems)
-- Tree traversal with memoization: Bad (no overlapping, just overhead)
-
-### Bad Assumptions
-
-#### 1. Assuming Non-Negative Inputs
-
-**Pitfall**: Not handling negative values
-
-**Example**:
 ```cpp
-// WRONG: Assumes non-negative
-int coinChange(vector<int>& coins, int amount) {
-    if (amount == 0) return 0;
-    // Missing: if (amount < 0) return -1;
-    // ...
-}
-```
-
-**Fix**: Always validate input and handle edge cases
-
-#### 2. Off-by-One Errors
-
-**Pitfall**: Incorrect array indexing
-
-**Example**:
-```cpp
-// WRONG: Off-by-one
-for (int i = 0; i <= n; i++) {  // Should be i < n
-    dp[i] = ...
-}
-
-// WRONG: Accessing out of bounds
-dp[i] = dp[i-1] + dp[i-2];  // Missing check for i >= 2
-```
-
-**Fix**: Carefully check array bounds and loop conditions
-
-#### 3. Forgetting Base Cases
-
-**Pitfall**: Not initializing base cases
-
-**Example**:
-```cpp
-// WRONG: Missing base case initialization
 vector<int> dp(n + 1);
-// Missing: dp[0] = 0; dp[1] = 1;
-for (int i = 2; i <= n; i++) {
-    dp[i] = dp[i-1] + dp[i-2];  // dp[0] and dp[1] are uninitialized!
-}
+// BUG: dp[0], dp[1] left uninitialized before the loop reads them
+for (int i = 2; i <= n; i++) dp[i] = dp[i-1] + dp[i-2];
 ```
 
-**Fix**: Always initialize base cases explicitly
+**Interview gotchas.** *"Optimize the space?"* — acknowledge the rolling-array/variable reductions and their trade-off (losing easy reconstruction). *"Time complexity?"* — for 2D DP it is O(m×n), not O(n²); count unique states × work per state, including data-structure costs. *"Reconstruct the solution?"* — store parent pointers or backtrack through the table rather than returning only the value. *"Reuse items unlimited times?"* — that switches 0/1 knapsack (`dp[i-1][w-wt]`) to unbounded (`dp[w-wt]`, same row).
 
-### Interview Gotchas
-
-#### 1. "Can You Optimize the Space?"
-
-**Trap**: Interviewer asks after you give O(n²) space solution
-
-**Response Strategy**:
-1. Acknowledge: "Yes, we can optimize to O(n) using rolling array"
-2. Explain trade-off: "But we lose ability to reconstruct the solution"
-3. Implement if time permits
-
-**Common Optimizations**:
-- 2D → 1D (rolling array)
-- 1D → O(1) (variable optimization)
-- Full table → memoization (if only subset needed)
-
-#### 2. "What's the Time Complexity?"
-
-**Trap**: Easy to miscount, especially with nested loops
-
-**Common Mistakes**:
-- Saying O(n²) for 2D DP when it's actually O(m×n)
-- Forgetting to account for inner loop operations
-- Not considering memoization lookup cost
-
-**Correct Analysis**:
-- Count unique states
-- Count operations per state
-- Account for data structure operations (hash lookup, array access)
-
-#### 3. "Can You Reconstruct the Solution?"
-
-**Trap**: You solved for the value, but interviewer wants the actual solution
-
-**Example**: 
-- LCS: Found length is 3, but what's the actual subsequence?
-- Knapsack: Found max value, but which items to take?
-
-**Solution Strategy**:
-- Store parent/backtracking information
-- Reconstruct by following parent pointers
-- Or use the DP table to backtrack
-
-#### 4. "What If We Can Use Each Coin Multiple Times?"
-
-**Trap**: Changes 0/1 knapsack to unbounded knapsack
-
-**Key Difference**:
-- 0/1: `dp[i][w] = max(dp[i-1][w], dp[i-1][w-weight[i]] + value[i])`
-- Unbounded: `dp[w] = max(dp[w], dp[w-weight[i]] + value[i])` (no `i-1`)
-
-**Response**: Recognize the pattern change and adjust recurrence
-
-### Common Implementation Errors
-
-#### 1. Wrong Recurrence Relation
-
-**Error**: Incorrectly combining subproblems
-
-**Example**:
-```cpp
-// WRONG: Adding instead of taking max
-dp[i] = dp[i-1] + dp[i-2];  // For problems that need max
-
-// CORRECT:
-dp[i] = max(dp[i-1], dp[i-2] + value[i]);
-```
-
-**Fix**: Carefully think about what the recurrence should be
-
-#### 2. Incorrect State Representation
-
-**Error**: State doesn't capture all necessary information
-
-**Example**:
-```cpp
-// WRONG: Missing information
-dp[i] = ...  // For knapsack, need both item index AND capacity
-
-// CORRECT:
-dp[i][w] = ...  // Need 2D state
-```
-
-**Fix**: Ensure state uniquely identifies the subproblem
-
-#### 3. Wrong Iteration Order
-
-**Error**: Processing states before dependencies are ready
-
-**Example**:
-```cpp
-// WRONG: Accessing dp[i-1] before it's computed
-for (int i = 0; i < n; i++) {
-    dp[i] = dp[i-1] + ...;  // dp[i-1] not ready when i=0
-}
-
-// CORRECT: Process in dependency order
-for (int i = 1; i < n; i++) {
-    dp[i] = dp[i-1] + ...;  // dp[i-1] already computed
-}
-```
-
-**Fix**: Understand dependencies and iterate in correct order
-
-### Debugging Tips
-
-1. **Print DP Table**: Visualize the table to see if values are correct
-2. **Check Base Cases**: Verify base cases are set correctly
-3. **Trace Example**: Manually trace through a small example
-4. **Verify Recurrence**: Make sure recurrence matches problem logic
-5. **Test Edge Cases**: Empty input, single element, all same values
-
-This section helps engineers avoid common mistakes and succeed in interviews.
+To debug: print the table, verify base cases, hand-trace a small example, confirm the recurrence matches the problem, and test empty/single-element/all-equal inputs.
 
 ## 12.15 Classic DP Problems
 
 ### 1. Climbing Stairs
 
-**Problem**: You can climb 1 or 2 steps at a time. How many ways can you climb n steps?
+You can climb 1 or 2 steps at a time; count the ways to climb `n` steps. The recurrence is `dp[i] = dp[i-1] + dp[i-2]` (Fibonacci-shaped), so O(1) space suffices:
 
 ```cpp
-// Recursive approach
-int climbStairsRecursive(int n) {
-    if (n <= 2) {
-        return n;
-    }
-    return climbStairsRecursive(n - 1) + climbStairsRecursive(n - 2);
-}
-
-// DP approach
-int climbStairs(int n) {
-    if (n <= 2) {
-        return n;
-    }
-    
-    vector<int> dp(n + 1);
-    dp[1] = 1;
-    dp[2] = 2;
-    
-    for (int i = 3; i <= n; i++) {
-        dp[i] = dp[i - 1] + dp[i - 2];
-    }
-    
-    return dp[n];
-}
-
-// Space-optimized
 int climbStairsOptimized(int n) {
-    if (n <= 2) {
-        return n;
-    }
-    
+    if (n <= 2) return n;
     int prev2 = 1;  // ways to reach step 1
     int prev1 = 2;  // ways to reach step 2
-    int current;
-    
+    int current = 0;
     for (int i = 3; i <= n; i++) {
         current = prev1 + prev2;
         prev2 = prev1;
         prev1 = current;
     }
-    
     return current;
 }
 ```
 
 ### 2. House Robber
 
-**Problem**: Rob houses to maximize money, but can't rob adjacent houses.
+Maximize the loot without robbing two adjacent houses: at each house, either skip it (`dp[i-1]`) or rob it (`dp[i-2] + nums[i]`).
 
 ```cpp
-// Recursive approach
-int robRecursive(vector<int>& nums, int index) {
-    if (index >= nums.size()) {
-        return 0;
-    }
-    
-    // Two choices: rob current house or skip it
-    return max(nums[index] + robRecursive(nums, index + 2),
-               robRecursive(nums, index + 1));
-}
-
-// Memoization approach
-int robMemo(vector<int>& nums, int index, vector<int>& memo) {
-    if (index >= nums.size()) {
-        return 0;
-    }
-    
-    if (memo[index] != -1) {
-        return memo[index];
-    }
-    
-    memo[index] = max(nums[index] + robMemo(nums, index + 2, memo),
-                      robMemo(nums, index + 1, memo));
-    return memo[index];
-}
-
-int robMemo(vector<int>& nums) {
-    vector<int> memo(nums.size(), -1);
-    return robMemo(nums, 0, memo);
-}
-
-// Tabulation approach
+// Tabulation
 int rob(vector<int>& nums) {
-    if (nums.empty()) {
-        return 0;
-    }
-    if (nums.size() == 1) {
-        return nums[0];
-    }
-    
+    if (nums.empty()) return 0;
+    if (nums.size() == 1) return nums[0];
     vector<int> dp(nums.size());
     dp[0] = nums[0];
     dp[1] = max(nums[0], nums[1]);
-    
-    for (int i = 2; i < nums.size(); i++) {
+    for (int i = 2; i < nums.size(); i++)
         dp[i] = max(dp[i - 1], dp[i - 2] + nums[i]);
-    }
-    
     return dp[nums.size() - 1];
 }
 
-// Space-optimized
+// Space-optimized O(1)
 int robOptimized(vector<int>& nums) {
-    if (nums.empty()) {
-        return 0;
-    }
-    
-    int prev2 = 0;  // max money from houses 0 to i-2
-    int prev1 = nums[0];  // max money from houses 0 to i-1
-    
+    if (nums.empty()) return 0;
+    int prev2 = 0, prev1 = nums[0];
     for (int i = 1; i < nums.size(); i++) {
         int current = max(prev1, prev2 + nums[i]);
         prev2 = prev1;
         prev1 = current;
     }
-    
     return prev1;
 }
 ```
 
 ### 3. Longest Common Subsequence (LCS)
 
-**Problem**: Find the length of the longest subsequence common to two strings.
+Find the length of the longest subsequence common to two strings. If the current characters match, extend the diagonal; otherwise take the better of dropping one character from either string.
 
 ```cpp
-// Recursive approach
-int lcsRecursive(string& s1, string& s2, int i, int j) {
-    if (i == 0 || j == 0) {
-        return 0;
-    }
-    
-    if (s1[i - 1] == s2[j - 1]) {
-        return 1 + lcsRecursive(s1, s2, i - 1, j - 1);
-    } else {
-        return max(lcsRecursive(s1, s2, i - 1, j),
-                   lcsRecursive(s1, s2, i, j - 1));
-    }
-}
-
-// DP approach
 int longestCommonSubsequence(string text1, string text2) {
-    int m = text1.length();
-    int n = text2.length();
-    
+    int m = text1.length(), n = text2.length();
     vector<vector<int>> dp(m + 1, vector<int>(n + 1, 0));
-    
-    for (int i = 1; i <= m; i++) {
-        for (int j = 1; j <= n; j++) {
-            if (text1[i - 1] == text2[j - 1]) {
+    for (int i = 1; i <= m; i++)
+        for (int j = 1; j <= n; j++)
+            if (text1[i - 1] == text2[j - 1])
                 dp[i][j] = 1 + dp[i - 1][j - 1];
-            } else {
+            else
                 dp[i][j] = max(dp[i - 1][j], dp[i][j - 1]);
-            }
-        }
-    }
-    
     return dp[m][n];
 }
+```
 
-// Function to get the actual LCS string
+To recover the actual subsequence (not just its length), keep the full table and backtrack from `(m, n)`:
+
+```cpp
 string getLCS(string text1, string text2) {
-    int m = text1.length();
-    int n = text2.length();
-    
+    int m = text1.length(), n = text2.length();
     vector<vector<int>> dp(m + 1, vector<int>(n + 1, 0));
-    
-    // Fill DP table
-    for (int i = 1; i <= m; i++) {
-        for (int j = 1; j <= n; j++) {
-            if (text1[i - 1] == text2[j - 1]) {
-                dp[i][j] = 1 + dp[i - 1][j - 1];
-            } else {
-                dp[i][j] = max(dp[i - 1][j], dp[i][j - 1]);
-            }
-        }
-    }
-    
-    // Backtrack to find LCS
+    for (int i = 1; i <= m; i++)
+        for (int j = 1; j <= n; j++)
+            dp[i][j] = (text1[i - 1] == text2[j - 1])
+                ? 1 + dp[i - 1][j - 1]
+                : max(dp[i - 1][j], dp[i][j - 1]);
+
     string lcs = "";
     int i = m, j = n;
-    
     while (i > 0 && j > 0) {
-        if (text1[i - 1] == text2[j - 1]) {
-            lcs = text1[i - 1] + lcs;
-            i--;
-            j--;
-        } else if (dp[i - 1][j] > dp[i][j - 1]) {
-            i--;
-        } else {
-            j--;
-        }
+        if (text1[i - 1] == text2[j - 1]) { lcs = text1[i - 1] + lcs; i--; j--; }
+        else if (dp[i - 1][j] > dp[i][j - 1]) i--;
+        else j--;
     }
-    
     return lcs;
 }
 ```
 
-### 4. Edit Distance (Levenshtein Distance)
+### 4. Edit Distance (Levenshtein)
 
-**Problem**: Find minimum operations to convert string1 to string2.
+Minimum insert/delete/replace operations to turn `word1` into `word2`. Base cases: converting to/from the empty string costs the string's length. On a mismatch, take the cheapest of delete, insert, or replace.
 
 ```cpp
 int minDistance(string word1, string word2) {
-    int m = word1.length();
-    int n = word2.length();
-    
+    int m = word1.length(), n = word2.length();
     vector<vector<int>> dp(m + 1, vector<int>(n + 1, 0));
-    
-    // Initialize base cases
-    for (int i = 0; i <= m; i++) {
-        dp[i][0] = i;  // i deletions
-    }
-    for (int j = 0; j <= n; j++) {
-        dp[0][j] = j;  // j insertions
-    }
-    
-    for (int i = 1; i <= m; i++) {
-        for (int j = 1; j <= n; j++) {
-            if (word1[i - 1] == word2[j - 1]) {
-                dp[i][j] = dp[i - 1][j - 1];  // No operation needed
-            } else {
-                dp[i][j] = 1 + min({
-                    dp[i - 1][j],      // Delete from word1
-                    dp[i][j - 1],      // Insert into word1
-                    dp[i - 1][j - 1]   // Replace in word1
-                });
-            }
-        }
-    }
-    
+    for (int i = 0; i <= m; i++) dp[i][0] = i;  // i deletions
+    for (int j = 0; j <= n; j++) dp[0][j] = j;  // j insertions
+    for (int i = 1; i <= m; i++)
+        for (int j = 1; j <= n; j++)
+            if (word1[i - 1] == word2[j - 1])
+                dp[i][j] = dp[i - 1][j - 1];
+            else
+                dp[i][j] = 1 + min({dp[i - 1][j],      // delete
+                                    dp[i][j - 1],      // insert
+                                    dp[i - 1][j - 1]}); // replace
     return dp[m][n];
 }
+```
 
-// Space-optimized version
+Since each row depends only on the previous one, a rolling array cuts space to O(min(m,n)):
+
+```cpp
 int minDistanceOptimized(string word1, string word2) {
-    int m = word1.length();
-    int n = word2.length();
-    
-    if (m < n) {
-        swap(word1, word2);
-        swap(m, n);
-    }
-    
+    if (word1.length() < word2.length()) swap(word1, word2);
+    int m = word1.length(), n = word2.length();
     vector<int> prev(n + 1), curr(n + 1);
-    
-    // Initialize first row
-    for (int j = 0; j <= n; j++) {
-        prev[j] = j;
-    }
-    
+    for (int j = 0; j <= n; j++) prev[j] = j;
     for (int i = 1; i <= m; i++) {
         curr[0] = i;
-        
-        for (int j = 1; j <= n; j++) {
-            if (word1[i - 1] == word2[j - 1]) {
-                curr[j] = prev[j - 1];
-            } else {
-                curr[j] = 1 + min({prev[j], curr[j - 1], prev[j - 1]});
-            }
-        }
-        
+        for (int j = 1; j <= n; j++)
+            curr[j] = (word1[i - 1] == word2[j - 1])
+                ? prev[j - 1]
+                : 1 + min({prev[j], curr[j - 1], prev[j - 1]});
         prev = curr;
     }
-    
     return prev[n];
 }
 ```
 
 ### 5. Coin Change
 
-**Problem**: Find minimum number of coins needed to make a given amount.
+Fewest coins to form `amount`; `dp[i]` is the minimum for sub-amount `i`, seeded to an impossible sentinel.
 
 ```cpp
-// Recursive approach
-int coinChangeRecursive(vector<int>& coins, int amount) {
-    if (amount == 0) return 0;
-    if (amount < 0) return -1;
-    
-    int minCoins = INT_MAX;
-    for (int coin : coins) {
-        int result = coinChangeRecursive(coins, amount - coin);
-        if (result != -1) {
-            minCoins = min(minCoins, result + 1);
-        }
-    }
-    
-    return (minCoins == INT_MAX) ? -1 : minCoins;
-}
-
-// DP approach
+// Minimum coins
 int coinChange(vector<int>& coins, int amount) {
-    vector<int> dp(amount + 1, amount + 1);  // Initialize with impossible value
-    dp[0] = 0;  // Base case: 0 coins needed for amount 0
-    
-    for (int i = 1; i <= amount; i++) {
-        for (int coin : coins) {
-            if (coin <= i) {
+    vector<int> dp(amount + 1, amount + 1);  // sentinel > any real answer
+    dp[0] = 0;
+    for (int i = 1; i <= amount; i++)
+        for (int coin : coins)
+            if (coin <= i)
                 dp[i] = min(dp[i], dp[i - coin] + 1);
-            }
-        }
-    }
-    
     return dp[amount] > amount ? -1 : dp[amount];
 }
 
-// Count number of ways to make change
+// Count the number of ways to make change
 int coinChangeWays(vector<int>& coins, int amount) {
     vector<int> dp(amount + 1, 0);
-    dp[0] = 1;  // One way to make amount 0
-    
-    for (int coin : coins) {
-        for (int i = coin; i <= amount; i++) {
+    dp[0] = 1;
+    for (int coin : coins)          // coins outer loop → combinations, not permutations
+        for (int i = coin; i <= amount; i++)
             dp[i] += dp[i - coin];
-        }
-    }
-    
     return dp[amount];
 }
 ```
 
 ### 6. Longest Increasing Subsequence (LIS)
 
-**Problem**: Find the length of the longest increasing subsequence.
+`dp[i]` is the LIS length ending at `i`. The O(n²) DP is straightforward; a patience-sorting variant with binary search achieves O(n log n).
 
 ```cpp
-// O(n²) DP approach
+// O(n^2)
 int lengthOfLIS(vector<int>& nums) {
     int n = nums.size();
-    vector<int> dp(n, 1);  // Each element is a subsequence of length 1
-    
-    for (int i = 1; i < n; i++) {
-        for (int j = 0; j < i; j++) {
-            if (nums[j] < nums[i]) {
+    vector<int> dp(n, 1);
+    for (int i = 1; i < n; i++)
+        for (int j = 0; j < i; j++)
+            if (nums[j] < nums[i])
                 dp[i] = max(dp[i], dp[j] + 1);
-            }
-        }
-    }
-    
     return *max_element(dp.begin(), dp.end());
 }
 
-// O(n log n) approach using binary search
+// O(n log n): tails[k] = smallest possible tail of an increasing subsequence of length k+1
 int lengthOfLISOptimized(vector<int>& nums) {
     vector<int> tails;
-    
     for (int num : nums) {
         auto it = lower_bound(tails.begin(), tails.end(), num);
-        
-        if (it == tails.end()) {
-            tails.push_back(num);
-        } else {
-            *it = num;
-        }
+        if (it == tails.end()) tails.push_back(num);
+        else *it = num;
     }
-    
     return tails.size();
 }
+```
 
-// Function to get the actual LIS
+To reconstruct the subsequence, record a parent index whenever `dp[i]` is extended, then follow parents back from the best endpoint:
+
+```cpp
 vector<int> getLIS(vector<int>& nums) {
     int n = nums.size();
-    vector<int> dp(n, 1);
-    vector<int> parent(n, -1);
-    
-    for (int i = 1; i < n; i++) {
-        for (int j = 0; j < i; j++) {
+    vector<int> dp(n, 1), parent(n, -1);
+    for (int i = 1; i < n; i++)
+        for (int j = 0; j < i; j++)
             if (nums[j] < nums[i] && dp[j] + 1 > dp[i]) {
                 dp[i] = dp[j] + 1;
                 parent[i] = j;
             }
-        }
-    }
-    
-    // Find the end of longest subsequence
-    int maxLength = 0;
-    int maxIndex = 0;
-    for (int i = 0; i < n; i++) {
-        if (dp[i] > maxLength) {
-            maxLength = dp[i];
-            maxIndex = i;
-        }
-    }
-    
-    // Reconstruct the subsequence
+    int maxIndex = max_element(dp.begin(), dp.end()) - dp.begin();
     vector<int> lis;
-    int current = maxIndex;
-    while (current != -1) {
-        lis.push_back(nums[current]);
-        current = parent[current];
-    }
-    
+    for (int cur = maxIndex; cur != -1; cur = parent[cur])
+        lis.push_back(nums[cur]);
     reverse(lis.begin(), lis.end());
     return lis;
 }
@@ -2151,2120 +525,481 @@ vector<int> getLIS(vector<int>& nums) {
 
 ### Unique Paths
 
-**Problem**: Find number of unique paths from top-left to bottom-right of a grid.
+Count paths from top-left to bottom-right of an `m×n` grid, moving only right or down: `dp[i][j] = dp[i-1][j] + dp[i][j-1]`. A rolling row gives O(n) space:
 
 ```cpp
-int uniquePaths(int m, int n) {
-    vector<vector<int>> dp(m, vector<int>(n, 1));
-    
-    for (int i = 1; i < m; i++) {
-        for (int j = 1; j < n; j++) {
-            dp[i][j] = dp[i - 1][j] + dp[i][j - 1];
-        }
-    }
-    
-    return dp[m - 1][n - 1];
-}
-
-// Space-optimized version
 int uniquePathsOptimized(int m, int n) {
     vector<int> prev(n, 1);
-    
-    for (int i = 1; i < m; i++) {
-        for (int j = 1; j < n; j++) {
-            prev[j] += prev[j - 1];
-        }
-    }
-    
+    for (int i = 1; i < m; i++)
+        for (int j = 1; j < n; j++)
+            prev[j] += prev[j - 1];   // prev[j] (above) + prev[j-1] (left, already updated)
     return prev[n - 1];
 }
+```
 
-// With obstacles
+With obstacles, a blocked cell contributes zero paths:
+
+```cpp
 int uniquePathsWithObstacles(vector<vector<int>>& obstacleGrid) {
-    int m = obstacleGrid.size();
-    int n = obstacleGrid[0].size();
-    
+    int m = obstacleGrid.size(), n = obstacleGrid[0].size();
     vector<vector<int>> dp(m, vector<int>(n, 0));
-    
-    // Initialize first row and column
     dp[0][0] = obstacleGrid[0][0] == 0 ? 1 : 0;
-    
-    for (int i = 1; i < m; i++) {
+    for (int i = 1; i < m; i++)
         dp[i][0] = (obstacleGrid[i][0] == 0 && dp[i - 1][0] == 1) ? 1 : 0;
-    }
-    
-    for (int j = 1; j < n; j++) {
+    for (int j = 1; j < n; j++)
         dp[0][j] = (obstacleGrid[0][j] == 0 && dp[0][j - 1] == 1) ? 1 : 0;
-    }
-    
-    for (int i = 1; i < m; i++) {
-        for (int j = 1; j < n; j++) {
-            if (obstacleGrid[i][j] == 0) {
+    for (int i = 1; i < m; i++)
+        for (int j = 1; j < n; j++)
+            if (obstacleGrid[i][j] == 0)
                 dp[i][j] = dp[i - 1][j] + dp[i][j - 1];
-            }
-        }
-    }
-    
     return dp[m - 1][n - 1];
 }
 ```
 
-### Maximum Path Sum
+### Minimum Path Sum in a Triangle
 
-**Problem**: Find maximum path sum in a triangle.
+Find the minimum root-to-bottom path sum, filling from the bottom row up. The rolling-array version reuses the last row in place:
 
 ```cpp
-int minimumTotal(vector<vector<int>>& triangle) {
-    int n = triangle.size();
-    vector<vector<int>> dp(n, vector<int>(n));
-    
-    // Initialize bottom row
-    for (int j = 0; j < n; j++) {
-        dp[n - 1][j] = triangle[n - 1][j];
-    }
-    
-    // Fill from bottom to top
-    for (int i = n - 2; i >= 0; i--) {
-        for (int j = 0; j <= i; j++) {
-            dp[i][j] = triangle[i][j] + min(dp[i + 1][j], dp[i + 1][j + 1]);
-        }
-    }
-    
-    return dp[0][0];
-}
-
-// Space-optimized
 int minimumTotalOptimized(vector<vector<int>>& triangle) {
     int n = triangle.size();
-    vector<int> dp(triangle[n - 1]);
-    
-    for (int i = n - 2; i >= 0; i--) {
-        for (int j = 0; j <= i; j++) {
+    vector<int> dp(triangle[n - 1]);           // start from the bottom row
+    for (int i = n - 2; i >= 0; i--)
+        for (int j = 0; j <= i; j++)
             dp[j] = triangle[i][j] + min(dp[j], dp[j + 1]);
-        }
-    }
-    
     return dp[0];
 }
 ```
 
 ## 12.17 Backtracking with Memoization
 
-**Note**: While backtracking is a distinct algorithmic technique, it often benefits from memoization to avoid redundant state exploration. This section shows how backtracking problems can be optimized using DP techniques.
+Backtracking explores solutions incrementally and abandons partial ones that cannot lead to a valid completion. When the same *state* (as opposed to the same path) recurs, memoization turns exponential search into polynomial DP. The key is choosing a state key that captures everything relevant to the remaining decisions — and only that, so distinct paths reaching the same state share a cached result.
 
-### 12.5.1 Understanding Backtracking in DP Context
-
-Backtracking systematically explores all possible solutions by building solutions incrementally and abandoning partial solutions that cannot lead to a complete solution. When combined with memoization, backtracking becomes a powerful tool for solving complex DP problems.
-
-#### Core Concept
-
-Backtracking with memoization combines:
-- **Systematic Exploration**: Try all possible choices at each step
-- **Pruning**: Abandon paths that cannot lead to optimal solutions
-- **Memoization**: Cache results to avoid redundant calculations
-- **State Space Reduction**: Use constraints to limit the search space
-
-#### When to Use Backtracking with Memoization
-
-- **Combinatorial Problems**: Finding all possible combinations or permutations
-- **Constraint Satisfaction**: Problems with multiple constraints
-- **Decision Trees**: Problems that can be represented as decision trees
-- **Optimization with Constraints**: Finding optimal solutions under constraints
-
-### 12.5.2 Memoization Techniques and Implementation
-
-#### Basic Memoization Pattern
-
-```cpp
-#include <iostream>
-#include <vector>
-#include <unordered_map>
-#include <string>
-using namespace std;
-
-// Basic memoization template
-template<typename Func>
-class Memoizer {
-private:
-    unordered_map<string, int> cache;
-    Func func;
-    
-public:
-    Memoizer(Func f) : func(f) {}
-    
-    int operator()(const vector<int>& params) {
-        string key = createKey(params);
-        
-        if (cache.find(key) != cache.end()) {
-            return cache[key];
-        }
-        
-        int result = func(params);
-        cache[key] = result;
-        return result;
-    }
-    
-private:
-    string createKey(const vector<int>& params) {
-        string key = "";
-        for (int param : params) {
-            key += to_string(param) + ",";
-        }
-        return key;
-    }
-};
-```
-
-#### Advanced Memoization with State Compression
-
-```cpp
-// State compression for efficient memoization
-class StateCompressor {
-private:
-    unordered_map<long long, int> cache;
-    
-public:
-    long long compressState(const vector<int>& state) {
-        long long compressed = 0;
-        for (int i = 0; i < state.size(); i++) {
-            compressed = compressed * 1000 + state[i];
-        }
-        return compressed;
-    }
-    
-    int getMemoized(long long state) {
-        return cache.find(state) != cache.end() ? cache[state] : -1;
-    }
-    
-    void setMemoized(long long state, int value) {
-        cache[state] = value;
-    }
-};
-```
-
-### 12.5.3 Classic Backtracking Problems with Memoization
-
-#### N-Queens Problem with Memoization
-
-```cpp
-class NQueensSolver {
-private:
-    int n;
-    vector<vector<int>> board;
-    unordered_map<string, int> memo;
-    
-    string createBoardKey() {
-        string key = "";
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                key += to_string(board[i][j]);
-            }
-        }
-        return key;
-    }
-    
-    bool isSafe(int row, int col) {
-        // Check column
-        for (int i = 0; i < row; i++) {
-            if (board[i][col] == 1) return false;
-        }
-        
-        // Check diagonal
-        for (int i = row, j = col; i >= 0 && j >= 0; i--, j--) {
-            if (board[i][j] == 1) return false;
-        }
-        
-        // Check anti-diagonal
-        for (int i = row, j = col; i >= 0 && j < n; i--, j++) {
-            if (board[i][j] == 1) return false;
-        }
-        
-        return true;
-    }
-    
-public:
-    NQueensSolver(int n) : n(n), board(n, vector<int>(n, 0)) {}
-    
-    int solveWithMemoization(int row = 0) {
-        if (row == n) {
-            return 1; // Found a valid solution
-        }
-        
-        string key = createBoardKey() + "," + to_string(row);
-        if (memo.find(key) != memo.end()) {
-            return memo[key];
-        }
-        
-        int solutions = 0;
-        for (int col = 0; col < n; col++) {
-            if (isSafe(row, col)) {
-                board[row][col] = 1;
-                solutions += solveWithMemoization(row + 1);
-                board[row][col] = 0; // Backtrack
-            }
-        }
-        
-        memo[key] = solutions;
-        return solutions;
-    }
-    
-    void printSolutions() {
-        cout << "Total solutions for " << n << "-Queens: " 
-             << solveWithMemoization() << endl;
-    }
-};
-```
-
-#### Subset Sum with Memoization
+Subset Sum is a clean example: the state is `(index, target)`, and both the "include" and "exclude" branches recurse into strictly smaller states.
 
 ```cpp
 class SubsetSumSolver {
-private:
     vector<int> numbers;
-    unordered_map<string, bool> memo;
-    
-    string createKey(int index, int target) {
-        return to_string(index) + "," + to_string(target);
-    }
-    
-public:
-    SubsetSumSolver(const vector<int>& nums) : numbers(nums) {}
-    
-    bool canMakeSum(int target) {
-        return canMakeSumMemo(0, target);
-    }
-    
-private:
+    unordered_map<string, bool> memo;   // key = "index,target"
+
     bool canMakeSumMemo(int index, int target) {
         if (target == 0) return true;
-        if (index >= numbers.size() || target < 0) return false;
-        
-        string key = createKey(index, target);
-        if (memo.find(key) != memo.end()) {
-            return memo[key];
-        }
-        
-        // Try including current number
-        bool include = canMakeSumMemo(index + 1, target - numbers[index]);
-        
-        // Try excluding current number
-        bool exclude = canMakeSumMemo(index + 1, target);
-        
-        bool result = include || exclude;
+        if (index >= (int)numbers.size() || target < 0) return false;
+
+        string key = to_string(index) + "," + to_string(target);
+        auto it = memo.find(key);
+        if (it != memo.end()) return it->second;
+
+        bool result = canMakeSumMemo(index + 1, target - numbers[index]) // include
+                   || canMakeSumMemo(index + 1, target);                 // exclude
         memo[key] = result;
         return result;
     }
-    
 public:
-    vector<vector<int>> getAllSubsets(int target) {
-        vector<vector<int>> result;
-        vector<int> current;
-        getAllSubsetsHelper(0, target, current, result);
-        return result;
-    }
-    
-private:
-    void getAllSubsetsHelper(int index, int target, vector<int>& current, 
-                           vector<vector<int>>& result) {
-        if (target == 0) {
-            result.push_back(current);
-            return;
-        }
-        
-        if (index >= numbers.size() || target < 0) return;
-        
-        // Include current number
-        current.push_back(numbers[index]);
-        getAllSubsetsHelper(index + 1, target - numbers[index], current, result);
-        current.pop_back();
-        
-        // Exclude current number
-        getAllSubsetsHelper(index + 1, target, current, result);
-    }
+    SubsetSumSolver(const vector<int>& nums) : numbers(nums) {}
+    bool canMakeSum(int target) { return canMakeSumMemo(0, target); }
 };
 ```
 
-### 12.5.4 Advanced Memoization Patterns
-
-#### Multi-Dimensional Memoization
+The same shape extends to multiple constraints — a 3D knapsack keys its memo on `(index, remainingWeight, remainingVolume)`:
 
 ```cpp
-class MultiDimMemoization {
-private:
+class Knapsack3D {
     unordered_map<string, int> memo;
-    
-    string createKey(const vector<int>& dimensions) {
-        string key = "";
-        for (int dim : dimensions) {
-            key += to_string(dim) + ",";
-        }
-        return key;
+    string key(int i, int w, int v) {
+        return to_string(i) + "," + to_string(w) + "," + to_string(v);
     }
-    
-public:
-    int knapsack3D(vector<int>& weights, vector<int>& values, 
-                   vector<int>& volumes, int maxWeight, int maxVolume) {
-        return knapsack3DMemo(0, maxWeight, maxVolume, weights, values, volumes);
-    }
-    
-private:
-    int knapsack3DMemo(int index, int remainingWeight, int remainingVolume,
-                      const vector<int>& weights, const vector<int>& values,
-                      const vector<int>& volumes) {
-        if (index >= weights.size() || remainingWeight < 0 || remainingVolume < 0) {
-            return 0;
-        }
-        
-        vector<int> state = {index, remainingWeight, remainingVolume};
-        string key = createKey(state);
-        
-        if (memo.find(key) != memo.end()) {
-            return memo[key];
-        }
-        
-        // Don't take current item
-        int notTake = knapsack3DMemo(index + 1, remainingWeight, remainingVolume,
-                                   weights, values, volumes);
-        
-        // Take current item
+    int solve(int index, int w, int v, const vector<int>& wt,
+              const vector<int>& val, const vector<int>& vol) {
+        if (index >= (int)wt.size() || w < 0 || v < 0) return 0;
+        string k = key(index, w, v);
+        auto it = memo.find(k);
+        if (it != memo.end()) return it->second;
+
+        int notTake = solve(index + 1, w, v, wt, val, vol);
         int take = 0;
-        if (weights[index] <= remainingWeight && volumes[index] <= remainingVolume) {
-            take = values[index] + knapsack3DMemo(index + 1, 
-                                                remainingWeight - weights[index],
-                                                remainingVolume - volumes[index],
-                                                weights, values, volumes);
-        }
-        
-        int result = max(notTake, take);
-        memo[key] = result;
-        return result;
+        if (wt[index] <= w && vol[index] <= v)
+            take = val[index] + solve(index + 1, w - wt[index], v - vol[index], wt, val, vol);
+
+        return memo[k] = max(notTake, take);
+    }
+public:
+    int knapsack(vector<int>& wt, vector<int>& val, vector<int>& vol, int maxW, int maxV) {
+        return solve(0, maxW, maxV, wt, val, vol);
     }
 };
 ```
 
-## 12.18 10 Must-Know Dynamic Programming Patterns for Coding Interviews
+The lesson is state design, not the backtracking mechanics: a good key collapses the search space; a key that encodes an entire path (e.g. a full board layout) never repeats and so memoizes nothing.
 
-**Why This Section Matters**: Dynamic programming is a favorite interview topic at top tech companies like Google. Most DP questions follow well-established patterns. If you can identify the pattern, the solution writes itself. This section covers the 10 most important DP patterns with LeetCode-style examples to help you map problems to solutions quickly.
+## 12.18 Ten Must-Know DP Patterns
 
-### Pattern Recognition Strategy
+Most DP interview problems are variations on a handful of patterns. Recognizing the pattern gives you the recurrence, and the recurrence gives you the code. Each pattern below lists its signature, its recurrence, and a representative implementation.
 
-**Key Insight**: Most DP problems are not new problems—they are variations of the same old patterns. The ability to recognize patterns is more valuable than memorizing solutions.
+### Pattern 1: 1D DP (Linear)
 
-**How to Use This Section**:
-1. Study each pattern's characteristics
-2. Understand the recurrence relation
-3. Practice the example problems
-4. Learn to identify which pattern a new problem matches
+The answer at position `i` depends on a constant number of earlier positions. Signal words: "ways to reach", "max/min up to `i`". Time O(n), space O(n) or O(1). Climbing Stairs (`dp[i]=dp[i-1]+dp[i-2]`) and House Robber (`dp[i]=max(dp[i-1], dp[i-2]+nums[i])`) — both shown in §12.15 — are the canonical examples.
 
----
+### Pattern 2: 2D Grid DP
 
-### Pattern 1: 1D DP (Linear DP) ⭐ Classic Starter
-
-**Core Concept**: You make decisions based on previous index. The state depends only on the current position and previous positions.
-
-**Characteristics**:
-- 1D state space: `dp[i]` represents solution up to position `i`
-- Sequential processing: Process elements one by one
-- Simple recurrence: Usually depends on previous 1-2 states
-- Time: O(n), Space: O(n) or O(1) with optimization
-
-**When to Use**: Problems where the answer at position `i` depends on answers at positions `i-1`, `i-2`, etc.
-
-**LeetCode Examples**:
-- **Climbing Stairs** (LeetCode 70): How many ways to climb n steps (1 or 2 steps at a time)
-- **House Robber** (LeetCode 198): Maximize money without robbing adjacent houses
-- **Fibonacci** (LeetCode 509): Classic sequence problem
-
-**Example 1: Climbing Stairs**
-
-**Problem**: You can climb 1 or 2 steps at a time. How many distinct ways can you climb to the top?
-
-**Recurrence**: `dp[i] = dp[i-1] + dp[i-2]` (ways to reach step i-1 + ways to reach step i-2)
-
-```cpp
-// LeetCode 70: Climbing Stairs
-int climbStairs(int n) {
-    if (n <= 2) return n;
-    
-    // Space-optimized: O(1) space
-    int prev2 = 1;  // ways to reach step 1
-    int prev1 = 2;  // ways to reach step 2
-    
-    for (int i = 3; i <= n; i++) {
-        int current = prev1 + prev2;
-        prev2 = prev1;
-        prev1 = current;
-    }
-    
-    return prev1;
-}
-
-// Alternative: O(n) space (easier to understand)
-int climbStairsTabulation(int n) {
-    if (n <= 2) return n;
-    
-    vector<int> dp(n + 1);
-    dp[1] = 1;
-    dp[2] = 2;
-    
-    for (int i = 3; i <= n; i++) {
-        dp[i] = dp[i - 1] + dp[i - 2];
-    }
-    
-    return dp[n];
-}
-```
-
-**Example 2: House Robber**
-
-**Problem**: Rob houses to maximize money, but can't rob two adjacent houses.
-
-**Recurrence**: `dp[i] = max(dp[i-1], dp[i-2] + nums[i])` (skip current OR rob current)
-
-```cpp
-// LeetCode 198: House Robber
-int rob(vector<int>& nums) {
-    if (nums.empty()) return 0;
-    if (nums.size() == 1) return nums[0];
-    
-    // dp[i] = max money from houses 0 to i
-    vector<int> dp(nums.size());
-    dp[0] = nums[0];
-    dp[1] = max(nums[0], nums[1]);
-    
-    for (int i = 2; i < nums.size(); i++) {
-        // Either skip house i (use dp[i-1])
-        // Or rob house i (use dp[i-2] + nums[i])
-        dp[i] = max(dp[i - 1], dp[i - 2] + nums[i]);
-    }
-    
-    return dp[nums.size() - 1];
-}
-
-// Space-optimized version
-int robOptimized(vector<int>& nums) {
-    if (nums.empty()) return 0;
-    
-    int prev2 = 0;  // max money from houses 0 to i-2
-    int prev1 = nums[0];  // max money from houses 0 to i-1
-    
-    for (int i = 1; i < nums.size(); i++) {
-        int current = max(prev1, prev2 + nums[i]);
-        prev2 = prev1;
-        prev1 = current;
-    }
-    
-    return prev1;
-}
-```
-
-**Pattern Recognition Tips**:
-- Look for "ways to reach", "maximum/minimum up to position i"
-- State depends only on previous 1-2 positions
-- Can often optimize space to O(1)
-
----
-
-### Pattern 2: 2D DP (Grid / Matrix DP) ⭐ Very Common in Interviews
-
-**Core Concept**: State depends on row and column. You traverse a grid and make decisions based on adjacent cells.
-
-**Characteristics**:
-- 2D state space: `dp[i][j]` represents solution at grid position `(i, j)`
-- Grid traversal: Fill grid row by row or column by column
-- Adjacent dependencies: Usually depends on top `(i-1, j)` and left `(i, j-1)` cells
-- Time: O(m×n), Space: O(m×n) or O(min(m,n)) with optimization
-
-**When to Use**: Problems involving grid traversal, path finding, or 2D optimization.
-
-**LeetCode Examples**:
-- **Unique Paths** (LeetCode 62): Count paths from top-left to bottom-right
-- **Minimum Path Sum** (LeetCode 64): Find minimum sum path
-- **Dungeon Game** (LeetCode 174): Minimum initial health to reach bottom-right
-
-**Example 1: Unique Paths**
-
-**Problem**: Find number of unique paths from top-left to bottom-right (can only move right or down).
-
-**Recurrence**: `dp[i][j] = dp[i-1][j] + dp[i][j-1]` (paths from top + paths from left)
-
-```cpp
-// LeetCode 62: Unique Paths
-int uniquePaths(int m, int n) {
-    // dp[i][j] = number of ways to reach (i, j)
-    vector<vector<int>> dp(m, vector<int>(n, 1));
-    
-    // First row and column are all 1 (only one way to reach)
-    // Fill the rest
-    for (int i = 1; i < m; i++) {
-        for (int j = 1; j < n; j++) {
-            dp[i][j] = dp[i - 1][j] + dp[i][j - 1];
-        }
-    }
-    
-    return dp[m - 1][n - 1];
-}
-
-// Space-optimized: O(n) space using rolling array
-int uniquePathsOptimized(int m, int n) {
-    vector<int> prev(n, 1);  // Previous row
-    
-    for (int i = 1; i < m; i++) {
-        vector<int> curr(n, 1);
-        for (int j = 1; j < n; j++) {
-            curr[j] = prev[j] + curr[j - 1];
-        }
-        prev = curr;
-    }
-    
-    return prev[n - 1];
-}
-```
-
-**Example 2: Minimum Path Sum**
-
-**Problem**: Find minimum sum path from top-left to bottom-right.
-
-**Recurrence**: `dp[i][j] = grid[i][j] + min(dp[i-1][j], dp[i][j-1])`
+State `dp[i][j]` depends on adjacent cells, usually top and left. Signal words: "grid", "matrix", "path". Time O(m×n), space O(m×n) or O(min(m,n)).
 
 ```cpp
 // LeetCode 64: Minimum Path Sum
 int minPathSum(vector<vector<int>>& grid) {
-    int m = grid.size();
-    int n = grid[0].size();
-    
+    int m = grid.size(), n = grid[0].size();
     vector<vector<int>> dp(m, vector<int>(n));
     dp[0][0] = grid[0][0];
-    
-    // Initialize first row
-    for (int j = 1; j < n; j++) {
-        dp[0][j] = dp[0][j - 1] + grid[0][j];
-    }
-    
-    // Initialize first column
-    for (int i = 1; i < m; i++) {
-        dp[i][0] = dp[i - 1][0] + grid[i][0];
-    }
-    
-    // Fill the rest
-    for (int i = 1; i < m; i++) {
-        for (int j = 1; j < n; j++) {
+    for (int j = 1; j < n; j++) dp[0][j] = dp[0][j - 1] + grid[0][j];
+    for (int i = 1; i < m; i++) dp[i][0] = dp[i - 1][0] + grid[i][0];
+    for (int i = 1; i < m; i++)
+        for (int j = 1; j < n; j++)
             dp[i][j] = grid[i][j] + min(dp[i - 1][j], dp[i][j - 1]);
-        }
-    }
-    
     return dp[m - 1][n - 1];
 }
 ```
 
-**Pattern Recognition Tips**:
-- Look for "grid", "matrix", "path", "traverse"
-- State is 2D: `dp[i][j]`
-- Usually depends on top and left cells
+### Pattern 3: Knapsack (Pick or Skip)
 
----
-
-### Pattern 3: Knapsack Pattern (Pick or Not Pick) ⭐ Most DP Problems Reduce to This
-
-**Core Concept**: At every step you decide: take or skip. This is the mental model for most DP problems.
-
-**Characteristics**:
-- Decision at each step: Include current item or skip it
-- State: `dp[i][capacity]` or `dp[i][sum]` depending on problem
-- Two choices: Take current item or don't take it
-- Time: O(n×W) for knapsack, Space: O(n×W) or O(W) optimized
-
-**When to Use**: Problems where you make binary choices (take/skip) at each step.
-
-**LeetCode Examples**:
-- **0/1 Knapsack**: Each item can be used at most once
-- **Subset Sum** (LeetCode 416): Can you make target sum with subset?
-- **Partition Equal Subset Sum** (LeetCode 416): Can array be partitioned into two equal sum subsets?
-
-**Example 1: 0/1 Knapsack**
-
-**Problem**: Maximize value with weight constraint. Each item can be used at most once.
-
-**Recurrence**: `dp[i][w] = max(dp[i-1][w], dp[i-1][w-weight[i]] + value[i])`
+At each item, decide take or skip — the mental model for most DP. Signal words: "subset", "partition", "can you make sum X". The 1D optimization iterates capacity **backwards** so each item is used at most once.
 
 ```cpp
-// Classic 0/1 Knapsack
-int knapsack(vector<int>& weights, vector<int>& values, int capacity) {
-    int n = weights.size();
-    // dp[i][w] = max value using first i items with capacity w
-    vector<vector<int>> dp(n + 1, vector<int>(capacity + 1, 0));
-    
-    for (int i = 1; i <= n; i++) {
-        for (int w = 1; w <= capacity; w++) {
-            // Don't take item i-1
-            dp[i][w] = dp[i - 1][w];
-            
-            // Take item i-1 (if it fits)
-            if (weights[i - 1] <= w) {
-                dp[i][w] = max(dp[i][w], 
-                              dp[i - 1][w - weights[i - 1]] + values[i - 1]);
-            }
-        }
-    }
-    
-    return dp[n][capacity];
-}
-
-// Space-optimized: O(capacity) space
-// IMPORTANT: Iterate capacity backwards to avoid using updated values
+// 0/1 Knapsack, O(capacity) space
 int knapsackOptimized(vector<int>& weights, vector<int>& values, int capacity) {
     vector<int> dp(capacity + 1, 0);
-    
-    for (int i = 0; i < weights.size(); i++) {
-        // Iterate backwards to avoid using updated dp[w] in same iteration
-        for (int w = capacity; w >= weights[i]; w--) {
+    for (int i = 0; i < (int)weights.size(); i++)
+        for (int w = capacity; w >= weights[i]; w--)   // backwards → 0/1 semantics
             dp[w] = max(dp[w], dp[w - weights[i]] + values[i]);
-        }
-    }
-    
     return dp[capacity];
 }
-```
 
-**Example 2: Partition Equal Subset Sum**
-
-**Problem**: Can array be partitioned into two subsets with equal sum?
-
-**Key Insight**: This is a subset sum problem. If total sum is S, we need to find subset with sum S/2.
-
-```cpp
-// LeetCode 416: Partition Equal Subset Sum
+// LeetCode 416: Partition Equal Subset Sum (subset sum to totalSum/2)
 bool canPartition(vector<int>& nums) {
     int totalSum = accumulate(nums.begin(), nums.end(), 0);
-    
-    // If sum is odd, can't partition
     if (totalSum % 2 != 0) return false;
-    
-    int target = totalSum / 2;
-    int n = nums.size();
-    
-    // dp[i][sum] = can we make sum using first i items?
-    vector<vector<bool>> dp(n + 1, vector<bool>(target + 1, false));
-    
-    // Base case: sum 0 is always possible (empty subset)
-    for (int i = 0; i <= n; i++) {
-        dp[i][0] = true;
-    }
-    
-    for (int i = 1; i <= n; i++) {
-        for (int sum = 1; sum <= target; sum++) {
-            // Don't take nums[i-1]
-            dp[i][sum] = dp[i - 1][sum];
-            
-            // Take nums[i-1] (if it fits)
-            if (sum >= nums[i - 1]) {
-                dp[i][sum] = dp[i][sum] || dp[i - 1][sum - nums[i - 1]];
-            }
-        }
-    }
-    
-    return dp[n][target];
-}
-
-// Space-optimized version
-bool canPartitionOptimized(vector<int>& nums) {
-    int totalSum = accumulate(nums.begin(), nums.end(), 0);
-    if (totalSum % 2 != 0) return false;
-    
     int target = totalSum / 2;
     vector<bool> dp(target + 1, false);
-    dp[0] = true;  // Base case: sum 0 is always possible
-    
-    for (int num : nums) {
-        // Iterate backwards to avoid using updated dp[sum] in same iteration
-        for (int sum = target; sum >= num; sum--) {
+    dp[0] = true;
+    for (int num : nums)
+        for (int sum = target; sum >= num; sum--)
             dp[sum] = dp[sum] || dp[sum - num];
-        }
-    }
-    
     return dp[target];
 }
 ```
 
-**Pattern Recognition Tips**:
-- Look for "subset", "partition", "can you make sum X"
-- Mental model: "Do I take this item or skip it?"
-- Often can optimize to 1D array with backwards iteration
+### Pattern 4: Longest Subsequence / Subarray
 
----
+Compare the current element against earlier ones to extend a run. Signal words: "longest", "increasing", "common". One sequence → 1D (LIS, O(n²) or O(n log n)); two sequences → 2D (LCS, O(m×n)). Both are implemented in §12.15.
 
-### Pattern 4: Longest Subsequence / Subarray ⭐ Tricky Transitions, Very Popular
+### Pattern 5: Interval DP
 
-**Core Concept**: You compare past states to build the longest answer. Compare current element with previous elements to extend sequences.
-
-**Characteristics**:
-- Compare current with previous: `dp[i]` depends on `dp[j]` for `j < i`
-- Two variants: Subsequence (not necessarily contiguous) vs Subarray (contiguous)
-- Matching problems: Compare two sequences
-- Time: O(n²) for LIS, O(m×n) for LCS, Space: O(n) or O(m×n)
-
-**When to Use**: Problems asking for longest increasing/decreasing/common subsequences or subarrays.
-
-**LeetCode Examples**:
-- **Longest Increasing Subsequence** (LeetCode 300): Find length of longest strictly increasing subsequence
-- **Longest Common Subsequence** (LeetCode 1143): Find LCS of two strings
-- **Longest Palindromic Subsequence** (LeetCode 516): Find longest palindromic subsequence
-
-**Example 1: Longest Increasing Subsequence (LIS)**
-
-**Problem**: Find length of longest strictly increasing subsequence.
-
-**Recurrence**: `dp[i] = max(dp[j] + 1)` for all `j < i` where `nums[j] < nums[i]`
+Solve small ranges and combine them into larger ones, iterating by interval **length**. Signal words: "range", "split", "parenthesize". Usually O(n³).
 
 ```cpp
-// LeetCode 300: Longest Increasing Subsequence
-// O(n²) DP approach
-int lengthOfLIS(vector<int>& nums) {
-    int n = nums.size();
-    // dp[i] = length of LIS ending at index i
-    vector<int> dp(n, 1);  // Each element is a subsequence of length 1
-    
-    for (int i = 1; i < n; i++) {
-        for (int j = 0; j < i; j++) {
-            // If nums[j] < nums[i], we can extend LIS ending at j
-            if (nums[j] < nums[i]) {
-                dp[i] = max(dp[i], dp[j] + 1);
-            }
-        }
-    }
-    
-    return *max_element(dp.begin(), dp.end());
-}
-
-// O(n log n) optimized approach using binary search
-int lengthOfLISOptimized(vector<int>& nums) {
-    vector<int> tails;  // tails[i] = smallest tail of all increasing subsequences of length i+1
-    
-    for (int num : nums) {
-        // Find first element >= num
-        auto it = lower_bound(tails.begin(), tails.end(), num);
-        
-        if (it == tails.end()) {
-            // num is larger than all tails, extend longest subsequence
-            tails.push_back(num);
-        } else {
-            // Replace first element >= num with num (maintains sorted order)
-            *it = num;
-        }
-    }
-    
-    return tails.size();
-}
-```
-
-**Example 2: Longest Common Subsequence (LCS)**
-
-**Problem**: Find length of longest common subsequence of two strings.
-
-**Recurrence**: 
-- If `s1[i] == s2[j]`: `dp[i][j] = 1 + dp[i-1][j-1]`
-- Else: `dp[i][j] = max(dp[i-1][j], dp[i][j-1])`
-
-```cpp
-// LeetCode 1143: Longest Common Subsequence
-int longestCommonSubsequence(string text1, string text2) {
-    int m = text1.length();
-    int n = text2.length();
-    
-    // dp[i][j] = LCS of text1[0..i-1] and text2[0..j-1]
-    vector<vector<int>> dp(m + 1, vector<int>(n + 1, 0));
-    
-    for (int i = 1; i <= m; i++) {
-        for (int j = 1; j <= n; j++) {
-            if (text1[i - 1] == text2[j - 1]) {
-                // Characters match: extend LCS
-                dp[i][j] = 1 + dp[i - 1][j - 1];
-            } else {
-                // Characters don't match: take max of skipping either
-                dp[i][j] = max(dp[i - 1][j], dp[i][j - 1]);
-            }
-        }
-    }
-    
-    return dp[m][n];
-}
-
-// Space-optimized: O(min(m, n)) space
-int longestCommonSubsequenceOptimized(string text1, string text2) {
-    if (text1.length() < text2.length()) {
-        swap(text1, text2);
-    }
-    
-    int m = text1.length();
-    int n = text2.length();
-    
-    vector<int> prev(n + 1, 0);
-    vector<int> curr(n + 1, 0);
-    
-    for (int i = 1; i <= m; i++) {
-        for (int j = 1; j <= n; j++) {
-            if (text1[i - 1] == text2[j - 1]) {
-                curr[j] = 1 + prev[j - 1];
-            } else {
-                curr[j] = max(prev[j], curr[j - 1]);
-            }
-        }
-        prev = curr;
-    }
-    
-    return prev[n];
-}
-```
-
-**Pattern Recognition Tips**:
-- Look for "longest", "subsequence", "subarray", "common"
-- Compare current element with previous elements
-- Two sequences → 2D DP, one sequence → 1D DP
-
----
-
-### Pattern 5: Interval DP ⭐ Usually O(n³), Scary but Powerful
-
-**Core Concept**: You solve smaller ranges and expand. Process intervals by length, combining solutions from smaller intervals.
-
-**Characteristics**:
-- Process intervals: Work with ranges `[i, j]`
-- Length-based iteration: Iterate by interval length (length 2, 3, ..., n)
-- Combine subintervals: `dp[i][j]` combines solutions from `dp[i][k]` and `dp[k+1][j]`
-- Time: O(n³), Space: O(n²)
-
-**When to Use**: Problems involving ranges, intervals, or splitting into subproblems.
-
-**LeetCode Examples**:
-- **Burst Balloons** (LeetCode 312): Maximize coins by bursting balloons
-- **Matrix Chain Multiplication**: Minimize multiplication operations
-- **Palindrome Partitioning II** (LeetCode 132): Minimum cuts for palindrome partitioning
-
-**Example 1: Burst Balloons**
-
-**Problem**: Burst balloons to maximize coins. When you burst balloon i, you get `nums[left] * nums[i] * nums[right]` coins.
-
-**Key Insight**: Think backwards—which balloon is the LAST one to burst in range [i, j]?
-
-**Recurrence**: `dp[i][j] = max(dp[i][k-1] + dp[k+1][j] + nums[i-1]*nums[k]*nums[j+1])` for all k in [i, j]
-
-```cpp
-// LeetCode 312: Burst Balloons
+// LeetCode 312: Burst Balloons — dp[i][j] over balloon k burst LAST in [i,j]
 int maxCoins(vector<int>& nums) {
     int n = nums.size();
-    
-    // Add boundary balloons with value 1
     vector<int> balloons(n + 2, 1);
-    for (int i = 0; i < n; i++) {
-        balloons[i + 1] = nums[i];
-    }
-    
-    // dp[i][j] = max coins from bursting balloons in range [i, j]
+    for (int i = 0; i < n; i++) balloons[i + 1] = nums[i];
     vector<vector<int>> dp(n + 2, vector<int>(n + 2, 0));
-    
-    // Iterate by length (length 1, 2, ..., n)
-    for (int len = 1; len <= n; len++) {
+    for (int len = 1; len <= n; len++)
         for (int i = 1; i <= n - len + 1; i++) {
             int j = i + len - 1;
-            
-            // Try each balloon k in [i, j] as the LAST one to burst
             for (int k = i; k <= j; k++) {
-                int coins = balloons[i - 1] * balloons[k] * balloons[j + 1];
-                coins += dp[i][k - 1] + dp[k + 1][j];
+                int coins = balloons[i - 1] * balloons[k] * balloons[j + 1]
+                          + dp[i][k - 1] + dp[k + 1][j];
                 dp[i][j] = max(dp[i][j], coins);
             }
         }
-    }
-    
     return dp[1][n];
 }
 ```
 
-**Example 2: Matrix Chain Multiplication**
-
-**Problem**: Find optimal way to parenthesize matrix multiplication to minimize operations.
-
-**Recurrence**: `dp[i][j] = min(dp[i][k] + dp[k+1][j] + p[i]*p[k+1]*p[j+1])` for all k in [i, j-1]
+Matrix Chain Multiplication shares this structure — `dp[i][j]` is the minimum scalar multiplications to multiply matrices `i..j`:
 
 ```cpp
-// Matrix Chain Multiplication
-int matrixChainOrder(vector<int>& p) {
-    int n = p.size() - 1;  // n matrices
-    // dp[i][j] = min operations to multiply matrices i to j
+int matrixChainOrder(vector<int>& p) {   // p.size() == numMatrices + 1
+    int n = p.size() - 1;
     vector<vector<int>> dp(n, vector<int>(n, 0));
-    
-    // Iterate by chain length
-    for (int len = 2; len <= n; len++) {
-        for (int i = 0; i < n - len + 1; i++) {
+    for (int len = 2; len <= n; len++)
+        for (int i = 0; i + len - 1 < n; i++) {
             int j = i + len - 1;
             dp[i][j] = INT_MAX;
-            
-            // Try each split point k
-            for (int k = i; k < j; k++) {
-                int cost = dp[i][k] + dp[k + 1][j] + 
-                          p[i] * p[k + 1] * p[j + 1];
-                dp[i][j] = min(dp[i][j], cost);
-            }
+            for (int k = i; k < j; k++)
+                dp[i][j] = min(dp[i][j],
+                               dp[i][k] + dp[k + 1][j] + p[i] * p[k + 1] * p[j + 1]);
         }
-    }
-    
     return dp[0][n - 1];
 }
 ```
 
-**Pattern Recognition Tips**:
-- Look for "range", "interval", "split", "parenthesize"
-- Iterate by length, not by start position
-- Usually O(n³) time complexity
+### Pattern 6: DP on Strings
 
----
-
-### Pattern 6: DP on Strings ⭐ Edit Operations, Matching, Skipping
-
-**Core Concept**: State usually based on two indices. Compare two strings character by character, making edit decisions.
-
-**Characteristics**:
-- Two indices: `dp[i][j]` compares positions `i` and `j` in two strings
-- Edit operations: Insert, delete, replace characters
-- Matching: Compare characters and decide to match or skip
-- Time: O(m×n), Space: O(m×n) or O(min(m,n))
-
-**When to Use**: String transformation, matching, or comparison problems.
-
-**LeetCode Examples**:
-- **Edit Distance** (LeetCode 72): Minimum operations to convert string1 to string2
-- **Regular Expression Matching** (LeetCode 10): Match pattern with string
-- **Wildcard Matching** (LeetCode 44): Match pattern with wildcards
-
-**Example 1: Edit Distance (Levenshtein Distance)**
-
-**Problem**: Find minimum operations (insert, delete, replace) to convert word1 to word2.
-
-**Recurrence**:
-- If `word1[i] == word2[j]`: `dp[i][j] = dp[i-1][j-1]` (no operation)
-- Else: `dp[i][j] = 1 + min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1])` (delete, insert, replace)
-
-```cpp
-// LeetCode 72: Edit Distance
-int minDistance(string word1, string word2) {
-    int m = word1.length();
-    int n = word2.length();
-    
-    // dp[i][j] = min operations to convert word1[0..i-1] to word2[0..j-1]
-    vector<vector<int>> dp(m + 1, vector<int>(n + 1, 0));
-    
-    // Base cases: converting empty string
-    for (int i = 0; i <= m; i++) {
-        dp[i][0] = i;  // i deletions
-    }
-    for (int j = 0; j <= n; j++) {
-        dp[0][j] = j;  // j insertions
-    }
-    
-    for (int i = 1; i <= m; i++) {
-        for (int j = 1; j <= n; j++) {
-            if (word1[i - 1] == word2[j - 1]) {
-                // Characters match: no operation needed
-                dp[i][j] = dp[i - 1][j - 1];
-            } else {
-                // Three choices:
-                // 1. Delete from word1: dp[i-1][j] + 1
-                // 2. Insert into word1: dp[i][j-1] + 1
-                // 3. Replace in word1: dp[i-1][j-1] + 1
-                dp[i][j] = 1 + min({dp[i - 1][j],      // delete
-                                   dp[i][j - 1],        // insert
-                                   dp[i - 1][j - 1]});  // replace
-            }
-        }
-    }
-    
-    return dp[m][n];
-}
-```
-
-**Example 2: Regular Expression Matching**
-
-**Problem**: Match pattern with string. '.' matches any character, '*' matches zero or more of preceding element.
-
-**Recurrence**: Complex state machine with matching and skipping logic.
+Two indices `dp[i][j]` compare two strings, deciding to match or apply an edit. Signal words: "edit", "match", "transform". Time O(m×n). Edit Distance is in §12.15; regular-expression matching is the same idea with `.`/`*` transitions:
 
 ```cpp
 // LeetCode 10: Regular Expression Matching
 bool isMatch(string s, string p) {
-    int m = s.length();
-    int n = p.length();
-    
-    // dp[i][j] = does s[0..i-1] match p[0..j-1]?
+    int m = s.length(), n = p.length();
     vector<vector<bool>> dp(m + 1, vector<bool>(n + 1, false));
-    
-    // Base case: empty string matches empty pattern
     dp[0][0] = true;
-    
-    // Handle patterns like "a*", "a*b*" that can match empty string
-    for (int j = 2; j <= n; j++) {
-        if (p[j - 1] == '*') {
-            dp[0][j] = dp[0][j - 2];  // '*' can match zero characters
-        }
-    }
-    
-    for (int i = 1; i <= m; i++) {
+    for (int j = 2; j <= n; j++)                 // patterns like a*, a*b* matching ""
+        if (p[j - 1] == '*') dp[0][j] = dp[0][j - 2];
+    for (int i = 1; i <= m; i++)
         for (int j = 1; j <= n; j++) {
             if (p[j - 1] == '*') {
-                // '*' can match zero or more of preceding character
-                // Option 1: Match zero (skip pattern)
-                dp[i][j] = dp[i][j - 2];
-                
-                // Option 2: Match one or more (if preceding char matches)
-                if (p[j - 2] == '.' || p[j - 2] == s[i - 1]) {
-                    dp[i][j] = dp[i][j] || dp[i - 1][j];
-                }
+                dp[i][j] = dp[i][j - 2];         // '*' matches zero of preceding
+                if (p[j - 2] == '.' || p[j - 2] == s[i - 1])
+                    dp[i][j] = dp[i][j] || dp[i - 1][j];  // or one/more
             } else if (p[j - 1] == '.' || p[j - 1] == s[i - 1]) {
-                // Current characters match
                 dp[i][j] = dp[i - 1][j - 1];
             }
         }
-    }
-    
     return dp[m][n];
 }
 ```
 
-**Pattern Recognition Tips**:
-- Look for "edit", "match", "transform", "convert"
-- Two strings → 2D DP
-- Think about operations: insert, delete, replace, match, skip
+### Pattern 7: DP on Trees
 
----
-
-### Pattern 7: DP on Trees ⭐ Very Common in System Style Interviews
-
-**Core Concept**: DFS + DP values returned from children. Traverse tree and combine results from subtrees.
-
-**Characteristics**:
-- Tree traversal: DFS (post-order usually)
-- Return values: Each node returns DP value to parent
-- Combine children: Parent combines results from left and right children
-- Time: O(n), Space: O(h) where h is height
-
-**When to Use**: Tree problems where answer depends on subtree solutions.
-
-**LeetCode Examples**:
-- **House Robber III** (LeetCode 337): Rob houses in binary tree (can't rob adjacent)
-- **Diameter of Binary Tree** (LeetCode 543): Longest path between any two nodes (DP variant)
-- **Binary Tree Maximum Path Sum** (LeetCode 124): Maximum path sum in tree
-
-**Example 1: House Robber III**
-
-**Problem**: Rob houses arranged in binary tree. Can't rob two directly linked houses.
-
-**Recurrence**: For each node, return `[rob, notRob]` where:
-- `rob = node.val + left[notRob] + right[notRob]`
-- `notRob = max(left) + max(right)`
+Post-order DFS returns DP values from children that the parent combines. Signal words: "tree", "subtree". Time O(n), space O(h). House Robber III returns `{rob, notRob}` per node:
 
 ```cpp
-// LeetCode 337: House Robber III
-struct TreeNode {
-    int val;
-    TreeNode* left;
-    TreeNode* right;
-    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
-};
+struct TreeNode { int val; TreeNode *left, *right; TreeNode(int x): val(x), left(nullptr), right(nullptr) {} };
 
-pair<int, int> robHelper(TreeNode* root) {
+pair<int,int> robHelper(TreeNode* root) {          // {rob this node, don't rob this node}
     if (!root) return {0, 0};
-    
-    // [rob, notRob] for current node
-    auto left = robHelper(root->left);
-    auto right = robHelper(root->right);
-    
-    // If we rob current node, we can't rob children
-    int rob = root->val + left.second + right.second;
-    
-    // If we don't rob current node, we can choose best from children
-    int notRob = max(left.first, left.second) + max(right.first, right.second);
-    
+    auto l = robHelper(root->left);
+    auto r = robHelper(root->right);
+    int rob = root->val + l.second + r.second;      // rob node → children must be skipped
+    int notRob = max(l.first, l.second) + max(r.first, r.second);
     return {rob, notRob};
 }
-
 int rob(TreeNode* root) {
-    auto result = robHelper(root);
-    return max(result.first, result.second);
+    auto res = robHelper(root);
+    return max(res.first, res.second);
 }
 ```
 
-**Example 2: Diameter of Binary Tree (DP Variant)**
+### Pattern 8: DP on Graphs (DAG)
 
-**Problem**: Find longest path between any two nodes (may or may not pass through root).
-
-**Recurrence**: For each node, return max depth. Diameter = max(leftDepth + rightDepth) across all nodes.
+On a directed acyclic graph, process nodes in topological order and relax edges. Signal words: "DAG", "topological", "prerequisites". Time O(V+E).
 
 ```cpp
-// LeetCode 543: Diameter of Binary Tree
-int diameter = 0;
-
-int maxDepth(TreeNode* root) {
-    if (!root) return 0;
-    
-    int leftDepth = maxDepth(root->left);
-    int rightDepth = maxDepth(root->right);
-    
-    // Update diameter: path through current node
-    diameter = max(diameter, leftDepth + rightDepth);
-    
-    // Return max depth from current node
-    return 1 + max(leftDepth, rightDepth);
-}
-
-int diameterOfBinaryTree(TreeNode* root) {
-    diameter = 0;
-    maxDepth(root);
-    return diameter;
-}
-```
-
-**Pattern Recognition Tips**:
-- Look for "tree", "binary tree", "subtree"
-- Use DFS (usually post-order)
-- Return values from children, combine at parent
-
----
-
-### Pattern 8: DP on Graphs (DAG DP) ⭐ Only Works When No Cycles
-
-**Core Concept**: Topological order + DP relaxations. Process nodes in topological order and relax edges.
-
-**Characteristics**:
-- DAG only: Works only on Directed Acyclic Graphs
-- Topological sort: Process nodes in topological order
-- Relax edges: Update DP values by relaxing incoming/outgoing edges
-- Time: O(V + E), Space: O(V)
-
-**When to Use**: Graph problems on DAGs where you need longest/shortest paths or optimal values.
-
-**LeetCode Examples**:
-- **Longest Path in DAG**: Find longest path in directed acyclic graph
-- **Course Schedule** variants: Prerequisites, longest path in course dependency graph
-- **Critical Path**: Longest path in project scheduling
-
-**Example 1: Longest Path in DAG**
-
-**Problem**: Find longest path from source to all nodes in DAG.
-
-**Approach**: Topological sort + DP relaxation.
-
-```cpp
-// Longest Path in DAG
-vector<int> longestPathDAG(int n, vector<vector<pair<int, int>>>& graph, int source) {
-    // Topological sort
-    vector<int> inDegree(n, 0);
-    for (int u = 0; u < n; u++) {
-        for (auto [v, w] : graph[u]) {
-            inDegree[v]++;
-        }
-    }
-    
+// Longest path from a source in a weighted DAG
+vector<int> longestPathDAG(int n, vector<vector<pair<int,int>>>& graph, int source) {
+    vector<int> inDeg(n, 0);
+    for (int u = 0; u < n; u++)
+        for (auto [v, w] : graph[u]) inDeg[v]++;
     queue<int> q;
-    for (int i = 0; i < n; i++) {
-        if (inDegree[i] == 0) {
-            q.push(i);
-        }
-    }
-    
-    vector<int> topoOrder;
+    for (int i = 0; i < n; i++) if (inDeg[i] == 0) q.push(i);
+    vector<int> topo;
     while (!q.empty()) {
-        int u = q.front();
-        q.pop();
-        topoOrder.push_back(u);
-        
-        for (auto [v, w] : graph[u]) {
-            inDegree[v]--;
-            if (inDegree[v] == 0) {
-                q.push(v);
-            }
-        }
+        int u = q.front(); q.pop(); topo.push_back(u);
+        for (auto [v, w] : graph[u]) if (--inDeg[v] == 0) q.push(v);
     }
-    
-    // DP: longest path from source
     vector<int> dp(n, INT_MIN);
     dp[source] = 0;
-    
-    // Process nodes in topological order
-    for (int u : topoOrder) {
-        if (dp[u] != INT_MIN) {
-            for (auto [v, w] : graph[u]) {
+    for (int u : topo)
+        if (dp[u] != INT_MIN)
+            for (auto [v, w] : graph[u])
                 dp[v] = max(dp[v], dp[u] + w);
-            }
-        }
-    }
-    
     return dp;
 }
 ```
 
-**Example 2: Course Schedule with Longest Path**
+### Pattern 9: Bitmask DP
 
-**Problem**: Find longest path in course prerequisite DAG.
-
-```cpp
-// Variant: Longest path in course dependency graph
-int longestCoursePath(int numCourses, vector<vector<int>>& prerequisites) {
-    // Build graph
-    vector<vector<int>> graph(numCourses);
-    vector<int> inDegree(numCourses, 0);
-    
-    for (auto& edge : prerequisites) {
-        graph[edge[1]].push_back(edge[0]);
-        inDegree[edge[0]]++;
-    }
-    
-    // Topological sort
-    queue<int> q;
-    for (int i = 0; i < numCourses; i++) {
-        if (inDegree[i] == 0) {
-            q.push(i);
-        }
-    }
-    
-    // DP: longest path ending at each node
-    vector<int> dp(numCourses, 1);  // Each course takes at least 1 semester
-    int maxPath = 1;
-    
-    while (!q.empty()) {
-        int u = q.front();
-        q.pop();
-        
-        for (int v : graph[u]) {
-            dp[v] = max(dp[v], dp[u] + 1);
-            maxPath = max(maxPath, dp[v]);
-            
-            inDegree[v]--;
-            if (inDegree[v] == 0) {
-                q.push(v);
-            }
-        }
-    }
-    
-    return maxPath;
-}
-```
-
-**Pattern Recognition Tips**:
-- Look for "DAG", "directed acyclic", "topological", "prerequisites"
-- Must be acyclic (no cycles)
-- Process in topological order
-
----
-
-### Pattern 9: Bitmask DP ⭐ Looks Hard, but Brute Force Optimized
-
-**Core Concept**: State compressed into bits. Represent sets or combinations as bit masks.
-
-**Characteristics**:
-- Bit representation: Use integers to represent sets (bit i = 1 means element i is included)
-- State compression: Reduce state space using bit masks
-- Iterate subsets: Use bit manipulation to iterate over subsets
-- Time: O(2^n × n) typically, Space: O(2^n)
-
-**When to Use**: Problems involving subsets, combinations, or visited/unvisited states.
-
-**LeetCode Examples**:
-- **Traveling Salesman Problem**: Visit all cities exactly once, return to start
-- **Assign Tasks to Workers**: Assign tasks optimally
-- **Partition to K Equal Sum Subsets** (LeetCode 698): Can array be partitioned into k equal subsets?
-
-**Example 1: Traveling Salesman Problem (TSP)**
-
-**Problem**: Visit all cities exactly once and return to start, minimizing total distance.
-
-**State**: `dp[mask][last]` = min cost to visit cities in mask, ending at last city.
+Encode a set of elements as the bits of an integer. Signal words: "subset", "visited", "all cities". Time typically O(2ⁿ·n), space O(2ⁿ). The Traveling Salesman Problem keys on `dp[mask][last]` = min cost to have visited `mask`, ending at `last`:
 
 ```cpp
-// Traveling Salesman Problem
 int tsp(vector<vector<int>>& dist) {
-    int n = dist.size();
-    int maskLimit = 1 << n;
-    
-    // dp[mask][last] = min cost to visit cities in mask, ending at last
+    int n = dist.size(), maskLimit = 1 << n;
     vector<vector<int>> dp(maskLimit, vector<int>(n, INT_MAX));
-    
-    // Base case: starting from city 0
-    dp[1][0] = 0;  // mask=1 means only city 0 is visited
-    
-    // Iterate over all masks
-    for (int mask = 1; mask < maskLimit; mask++) {
+    dp[1][0] = 0;                                   // start at city 0
+    for (int mask = 1; mask < maskLimit; mask++)
         for (int last = 0; last < n; last++) {
-            // Check if last city is in mask
-            if (!(mask & (1 << last))) continue;
-            if (dp[mask][last] == INT_MAX) continue;
-            
-            // Try visiting next unvisited city
+            if (!(mask & (1 << last)) || dp[mask][last] == INT_MAX) continue;
             for (int next = 0; next < n; next++) {
-                if (mask & (1 << next)) continue;  // Already visited
-                
-                int newMask = mask | (1 << next);
-                dp[newMask][next] = min(dp[newMask][next], 
-                                       dp[mask][last] + dist[last][next]);
+                if (mask & (1 << next)) continue;
+                int nm = mask | (1 << next);
+                dp[nm][next] = min(dp[nm][next], dp[mask][last] + dist[last][next]);
             }
         }
-    }
-    
-    // Return to starting city (city 0)
-    int result = INT_MAX;
-    int fullMask = maskLimit - 1;  // All cities visited
-    for (int last = 1; last < n; last++) {
-        result = min(result, dp[fullMask][last] + dist[last][0]);
-    }
-    
+    int result = INT_MAX, full = maskLimit - 1;
+    for (int last = 1; last < n; last++)
+        if (dp[full][last] != INT_MAX)
+            result = min(result, dp[full][last] + dist[last][0]);
     return result;
 }
 ```
 
-**Example 2: Partition to K Equal Sum Subsets**
+### Pattern 10: State Machine DP
 
-**Problem**: Can array be partitioned into k non-empty subsets with equal sum?
-
-**State**: `dp[mask]` = can we partition subset represented by mask into valid subsets?
+Track discrete states (holding/not holding, transactions used) and their transitions. Signal words: "buy/sell", "hold", "cooldown". The stock-with-cooldown problem cycles through hold → sold → rest:
 
 ```cpp
-// LeetCode 698: Partition to K Equal Sum Subsets
-bool canPartitionKSubsets(vector<int>& nums, int k) {
-    int n = nums.size();
-    int totalSum = accumulate(nums.begin(), nums.end(), 0);
-    
-    if (totalSum % k != 0) return false;
-    int target = totalSum / k;
-    
-    // Sort in descending order for optimization
-    sort(nums.rbegin(), nums.rend());
-    
-    int maskLimit = 1 << n;
-    vector<bool> dp(maskLimit, false);
-    vector<int> sum(maskLimit, 0);
-    
-    dp[0] = true;  // Empty set can be partitioned
-    
-    for (int mask = 0; mask < maskLimit; mask++) {
-        if (!dp[mask]) continue;
-        
-        for (int i = 0; i < n; i++) {
-            if (mask & (1 << i)) continue;  // Already used
-            
-            int newMask = mask | (1 << i);
-            int newSum = sum[mask] + nums[i];
-            
-            if (newSum <= target) {
-                sum[newMask] = newSum % target;  // Reset to 0 if equals target
-                dp[newMask] = true;
-            }
-        }
-    }
-    
-    return dp[maskLimit - 1];
-}
-```
-
-**Pattern Recognition Tips**:
-- Look for "subset", "combination", "visited", "all cities"
-- State space is exponential (2^n)
-- Use bit manipulation: `mask & (1 << i)`, `mask | (1 << i)`
-
----
-
-### Pattern 10: State Machine DP ⭐ Very Common in Trading Style Questions
-
-**Core Concept**: You track states like buy/sell, hold/not hold. Model problem as state machine with transitions.
-
-**Characteristics**:
-- Multiple states: Problem has distinct states (e.g., holding stock, not holding)
-- State transitions: Move between states based on actions
-- State tracking: `dp[i][state]` = solution at position `i` in state `state`
-- Time: O(n×k) where k is number of states, Space: O(n×k) or O(k)
-
-**When to Use**: Problems with multiple states and transitions (trading, game states, etc.).
-
-**LeetCode Examples**:
-- **Best Time to Buy and Sell Stock I** (LeetCode 121): One transaction
-- **Best Time to Buy and Sell Stock II** (LeetCode 122): Unlimited transactions
-- **Best Time to Buy and Sell Stock III** (LeetCode 123): At most 2 transactions
-- **Best Time to Buy and Sell Stock with Cooldown** (LeetCode 309): Cooldown period
-
-**Example 1: Best Time to Buy and Sell Stock with Cooldown**
-
-**Problem**: Buy and sell stock with cooldown (can't buy the day after selling).
-
-**States**: 
-- `hold`: Currently holding stock
-- `sold`: Just sold (cooldown)
-- `rest`: Can buy (not holding, not in cooldown)
-
-```cpp
-// LeetCode 309: Best Time to Buy and Sell Stock with Cooldown
+// LeetCode 309: Buy/Sell with Cooldown, O(1) space
 int maxProfit(vector<int>& prices) {
-    int n = prices.size();
-    if (n <= 1) return 0;
-    
-    // States: 0 = hold, 1 = sold (cooldown), 2 = rest (can buy)
-    vector<vector<int>> dp(n, vector<int>(3, 0));
-    
-    // Day 0
-    dp[0][0] = -prices[0];  // Hold: bought on day 0
-    dp[0][1] = 0;            // Sold: can't sell on day 0
-    dp[0][2] = 0;            // Rest: no action on day 0
-    
-    for (int i = 1; i < n; i++) {
-        // Hold: max of (continue holding, buy today from rest state)
-        dp[i][0] = max(dp[i - 1][0], dp[i - 1][2] - prices[i]);
-        
-        // Sold: sold today (was holding)
-        dp[i][1] = dp[i - 1][0] + prices[i];
-        
-        // Rest: max of (continue rest, end cooldown from sold)
-        dp[i][2] = max(dp[i - 1][2], dp[i - 1][1]);
-    }
-    
-    return max({dp[n - 1][0], dp[n - 1][1], dp[n - 1][2]});
-}
-
-// Space-optimized version
-int maxProfitOptimized(vector<int>& prices) {
     int hold = INT_MIN, sold = 0, rest = 0;
-    
     for (int price : prices) {
         int prevHold = hold, prevSold = sold, prevRest = rest;
-        
-        hold = max(prevHold, prevRest - price);
-        sold = prevHold + price;
-        rest = max(prevRest, prevSold);
+        hold = max(prevHold, prevRest - price);   // keep holding, or buy from rest
+        sold = prevHold + price;                  // sell today
+        rest = max(prevRest, prevSold);           // stay resting, or exit cooldown
     }
-    
     return max(sold, rest);
 }
 ```
 
-**Example 2: Best Time to Buy and Sell Stock III (At Most 2 Transactions)**
+At-most-k transactions generalizes this by tracking a buy/sell pair per transaction (for k=2: `buy1, sell1, buy2, sell2`).
 
-**Problem**: At most 2 transactions allowed.
+### Pattern Recognition Guide
 
-**States**: Track number of transactions completed and whether holding.
+| Pattern | Key Indicator | State | Time | Examples |
+|---------|--------------|-------|------|----------|
+| 1D | "ways to reach", "max up to i" | 1D | O(n) | Climbing Stairs, House Robber |
+| 2D Grid | "grid", "path" | 2D | O(m×n) | Unique Paths, Min Path Sum |
+| Knapsack | "subset", "take or skip" | 2D/1D | O(n×W) | 0/1 Knapsack, Subset Sum |
+| Subsequence | "longest", "common" | 1D/2D | O(n²)/O(m×n) | LIS, LCS |
+| Interval | "range", "split" | 2D | O(n³) | Burst Balloons, Matrix Chain |
+| String | "edit", "match" | 2D | O(m×n) | Edit Distance, Regex |
+| Tree | "tree", "subtree" | return values | O(n) | House Robber III |
+| DAG | "topological", "prerequisite" | 1D | O(V+E) | Longest Path |
+| Bitmask | "visited", "all cities" | bitmask | O(2ⁿ·n) | TSP |
+| State Machine | "buy/sell", "hold" | pos × state | O(n×k) | Stock problems |
 
-```cpp
-// LeetCode 123: Best Time to Buy and Sell Stock III
-int maxProfit(vector<int>& prices) {
-    int n = prices.size();
-    
-    // dp[i][k][0/1] = max profit on day i with k transactions completed, 0=not holding, 1=holding
-    // Since k is at most 2, we can use separate variables
-    int buy1 = -prices[0], sell1 = 0;
-    int buy2 = -prices[0], sell2 = 0;
-    
-    for (int i = 1; i < n; i++) {
-        // First transaction
-        buy1 = max(buy1, -prices[i]);        // Buy first stock
-        sell1 = max(sell1, buy1 + prices[i]); // Sell first stock
-        
-        // Second transaction
-        buy2 = max(buy2, sell1 - prices[i]);  // Buy second stock
-        sell2 = max(sell2, buy2 + prices[i]); // Sell second stock
-    }
-    
-    return sell2;
-}
-```
-
-**Pattern Recognition Tips**:
-- Look for "buy", "sell", "hold", "state", "transaction"
-- Identify distinct states and transitions
-- Often can optimize space to O(k) where k is number of states
-
----
-
-### Summary: Pattern Recognition Guide
-
-**Quick Reference Table**:
-
-| Pattern | Key Indicator | State Dimension | Time Complexity | Common Examples |
-|---------|--------------|----------------|-----------------|-----------------|
-| 1D DP | "ways to reach", "max up to i" | 1D | O(n) | Climbing Stairs, House Robber |
-| 2D Grid | "grid", "matrix", "path" | 2D | O(m×n) | Unique Paths, Min Path Sum |
-| Knapsack | "subset", "take or skip" | 2D or 1D | O(n×W) | 0/1 Knapsack, Subset Sum |
-| Subsequence | "longest", "common", "increasing" | 1D or 2D | O(n²) or O(m×n) | LIS, LCS |
-| Interval | "range", "split", "parenthesize" | 2D | O(n³) | Burst Balloons, Matrix Chain |
-| String DP | "edit", "match", "transform" | 2D | O(m×n) | Edit Distance, Regex Match |
-| Tree DP | "tree", "subtree" | Return values | O(n) | House Robber III, Diameter |
-| DAG DP | "DAG", "topological", "prerequisite" | 1D | O(V+E) | Longest Path, Course Schedule |
-| Bitmask | "subset", "all cities", "visited" | Bit mask | O(2^n × n) | TSP, Partition K Subsets |
-| State Machine | "buy/sell", "hold", "states" | 2D (pos × state) | O(n×k) | Stock Problems |
-
-**Interview Strategy**:
-1. **Read the problem carefully** and identify keywords
-2. **Match to pattern** using the table above
-3. **Write recurrence relation** based on pattern
-4. **Implement with memoization or tabulation**
-5. **Optimize space** if asked
-
-**Remember**: Most DP questions are not new problems—they are the same old patterns. If you can identify the pattern, the solution writes itself slowly but surely.
+The workflow: identify keywords → match a pattern → write the recurrence → implement with memoization or tabulation → space-optimize if asked.
 
 ## 12.19 DP vs Recursion vs Greedy
-
-### When to Use Each Approach
 
 ```mermaid
 graph TD
     Problem{Problem Type?} --> OptSub{Optimal<br/>Substructure?}
-    
+
     OptSub -->|No| Brute["Brute Force<br/>or<br/>Backtracking"]
-    
+
     OptSub -->|Yes| Overlap{Overlapping<br/>Subproblems?}
-    
+
     Overlap -->|No| Greedy{Local Optimal<br/>→ Global?}
     Greedy -->|Yes| GreedyAlgo["Greedy Algorithm<br/>- Make locally optimal choice<br/>- Examples: Activity Selection,<br/>  Minimum Coins (greedy)"]
     Greedy -->|No| DP["Dynamic Programming<br/>- Store subproblem results<br/>- Examples: Coin Change (DP),<br/>  Longest Path"]
-    
+
     Overlap -->|Yes| DP
-    
+
     style Problem fill:#FFE5B4,stroke:#333,stroke-width:3px
     style Brute fill:#FFB6C1,stroke:#333,stroke-width:2px
     style GreedyAlgo fill:#90EE90,stroke:#333,stroke-width:2px
     style DP fill:#87CEEB,stroke:#333,stroke-width:2px
 ```
 
-### Comparison Table
+Plain recursion solves subproblems independently and may recompute them; DP stores results. Greedy commits to a locally optimal choice and never reconsiders; DP explores all possibilities to guarantee a global optimum. Coin Change captures the distinction: greedy works for some coin systems (e.g. US denominations) but fails for others, whereas DP is always optimal.
 
-| Approach | When to Use | Time Complexity | Space Complexity | Examples |
-|----------|-------------|----------------|------------------|----------|
-| **Recursion** | Clear recursive structure, no overlapping subproblems | Exponential | O(n) stack | Tree traversal, factorial |
-| **Memoization** | Overlapping subproblems, top-down thinking | Polynomial | O(n) + O(n) memo | Fibonacci, LCS (memoized) |
-| **Tabulation** | Overlapping subproblems, bottom-up approach | Polynomial | O(n) or O(n²) | Fibonacci, LCS (tabulated) |
-| **Greedy** | Local optimal → global optimal, no overlapping | Polynomial | O(1) to O(n) | Activity Selection, Dijkstra |
-| **DP** | Overlapping subproblems, optimal substructure | Polynomial | O(n) to O(n²) | Coin Change, LIS, Knapsack |
-
-### Key Differences
-
-**Recursion vs DP**:
-- **Recursion**: Solves subproblems independently, may recalculate
-- **DP**: Stores results, avoids recalculation
-
-**Greedy vs DP**:
-- **Greedy**: Makes locally optimal choice, doesn't reconsider
-- **DP**: Explores all possibilities, finds globally optimal
-
-**Example: Coin Change**
-- **Greedy**: Works for some coin systems (e.g., US coins), fails for others
-- **DP**: Always finds optimal solution for any coin system
+| Approach | When | Time | Space | Examples |
+|----------|------|------|-------|----------|
+| Recursion | Recursive structure, no overlap | Exponential | O(n) stack | Tree traversal |
+| Memoization | Overlap, top-down | Polynomial | O(n)+O(n) memo | Fibonacci, LCS |
+| Tabulation | Overlap, bottom-up | Polynomial | O(n)–O(n²) | Fibonacci, LCS |
+| Greedy | Local → global optimal | Polynomial | O(1)–O(n) | Activity Selection, Dijkstra |
+| DP | Overlap + optimal substructure | Polynomial | O(n)–O(n²) | Coin Change, LIS, Knapsack |
 
 ## 12.20 Space Optimization Techniques
 
-### Technique 1: Rolling Array
+**Rolling array.** When the current row depends only on the previous one, collapse a 2D table to one (or two) rows — Unique Paths and Edit Distance in §12.15–12.16 both use this to reach O(n) space.
 
-**Concept**: For 2D DP where current row only depends on previous row, use 1D array.
+**Variable reduction.** When only the last few values matter, drop the array entirely. Fibonacci and Climbing Stairs keep just two scalars for O(1) space.
 
-```cpp
-// Before: O(m×n) space
-vector<vector<int>> dp(m, vector<int>(n));
+**State compression.** Encode sets as bitmask integers so an exponential set of states fits in an array indexed by the mask — see the TSP implementation in Pattern 9 (§12.18), which keys `dp[mask][last]`.
 
-// After: O(n) space (rolling array)
-vector<int> prev(n);
-vector<int> curr(n);
-
-for (int i = 0; i < m; i++) {
-    for (int j = 0; j < n; j++) {
-        // Calculate curr[j] using prev
-    }
-    prev = curr;  // Roll over
-}
-```
-
-**Example: Unique Paths**
-```cpp
-// Space-optimized from O(m×n) to O(n)
-int uniquePathsOptimized(int m, int n) {
-    vector<int> prev(n, 1);
-    
-    for (int i = 1; i < m; i++) {
-        vector<int> curr(n, 1);
-        for (int j = 1; j < n; j++) {
-            curr[j] = prev[j] + curr[j - 1];
-        }
-        prev = curr;
-    }
-    
-    return prev[n - 1];
-}
-```
-
-### Technique 2: State Compression
-
-**Concept**: Use bit masks to represent states, reducing space from O(2^n) to O(2^n) but with better constants.
-
-```cpp
-// Example: Traveling Salesman Problem (TSP)
-int tsp(vector<vector<int>>& dist) {
-    int n = dist.size();
-    int maskLimit = 1 << n;
-    
-    // dp[mask][last] = min cost to visit cities in mask, ending at last
-    vector<vector<int>> dp(maskLimit, vector<int>(n, INT_MAX));
-    
-    // Base case: starting from city 0
-    dp[1][0] = 0;
-    
-    for (int mask = 1; mask < maskLimit; mask++) {
-        for (int last = 0; last < n; last++) {
-            if (!(mask & (1 << last))) continue;  // last not in mask
-            if (dp[mask][last] == INT_MAX) continue;
-            
-            for (int next = 0; next < n; next++) {
-                if (mask & (1 << next)) continue;  // already visited
-                
-                int newMask = mask | (1 << next);
-                dp[newMask][next] = min(dp[newMask][next], 
-                                       dp[mask][last] + dist[last][next]);
-            }
-        }
-    }
-    
-    // Return to starting city
-    int result = INT_MAX;
-    int fullMask = maskLimit - 1;
-    for (int last = 1; last < n; last++) {
-        result = min(result, dp[fullMask][last] + dist[last][0]);
-    }
-    
-    return result;
-}
-```
-
-### Technique 3: Variable Optimization
-
-**Concept**: For linear DP, only keep necessary previous states.
-
-```cpp
-// Fibonacci: Only need last 2 values
-// Before: O(n) space
-vector<long long> dp(n + 1);
-
-// After: O(1) space
-long long prev2 = 0, prev1 = 1;
-for (int i = 2; i <= n; i++) {
-    long long curr = prev1 + prev2;
-    prev2 = prev1;
-    prev1 = curr;
-}
-```
-
-### Technique 4: Sliding Window for Intervals
-
-**Concept**: For interval DP, process by length and reuse arrays.
-
-```cpp
-// Matrix Chain: Process by chain length
-// Only need current length, can reuse previous
-```
+**Interval reuse.** In interval DP, process by increasing length so only the current length's results are live at once.
 
 ## 12.21 Additional Classic DP Problems
 
-### Problem 1: Edit Distance (Levenshtein Distance)
+### Longest Palindromic Subsequence
 
-**Already covered in section 12.3.4**
-
-### Problem 2: Longest Palindromic Subsequence
-
-**Problem**: Find the length of the longest palindromic subsequence in a string.
+`dp[i][j]` is the longest palindromic subsequence of `s[i..j]`. Fill by increasing length; matching ends add 2 to the inner range. The rolling-array form uses O(n) space:
 
 ```cpp
-int longestPalindromeSubseq(string s) {
-    int n = s.length();
-    vector<vector<int>> dp(n, vector<int>(n, 0));
-    
-    // Base case: single character is palindrome of length 1
-    for (int i = 0; i < n; i++) {
-        dp[i][i] = 1;
-    }
-    
-    // Fill for lengths 2 to n
-    for (int len = 2; len <= n; len++) {
-        for (int i = 0; i <= n - len; i++) {
-            int j = i + len - 1;
-            
-            if (s[i] == s[j]) {
-                // Characters match: add 2 to inner subsequence
-                dp[i][j] = 2 + (len > 2 ? dp[i + 1][j - 1] : 0);
-            } else {
-                // Characters don't match: take max of excluding either
-                dp[i][j] = max(dp[i + 1][j], dp[i][j - 1]);
-            }
-        }
-    }
-    
-    return dp[0][n - 1];
-}
-
-// Space-optimized version
 int longestPalindromeSubseqOptimized(string s) {
     int n = s.length();
-    vector<int> prev(n, 0);
-    vector<int> curr(n, 0);
-    
+    vector<int> prev(n, 0), curr(n, 0);
     for (int i = n - 1; i >= 0; i--) {
-        curr[i] = 1;  // Single character
-        for (int j = i + 1; j < n; j++) {
-            if (s[i] == s[j]) {
-                curr[j] = 2 + prev[j - 1];
-            } else {
-                curr[j] = max(prev[j], curr[j - 1]);
-            }
-        }
+        curr[i] = 1;                                // single character
+        for (int j = i + 1; j < n; j++)
+            curr[j] = (s[i] == s[j]) ? 2 + prev[j - 1]
+                                     : max(prev[j], curr[j - 1]);
         prev = curr;
     }
-    
     return curr[n - 1];
 }
 ```
 
-### Problem 3: Word Break
+### Word Break
 
-**Problem**: Determine if a string can be segmented into space-separated words from a dictionary.
+Can `s` be segmented into dictionary words? `dp[i]` is true if `s[0..i-1]` is segmentable. Iterating over word lengths keeps the inner loop bounded by the dictionary rather than the string:
 
 ```cpp
 bool wordBreak(string s, vector<string>& wordDict) {
     int n = s.length();
-    unordered_set<string> wordSet(wordDict.begin(), wordDict.end());
-    
-    // dp[i] = can s[0..i-1] be segmented?
-    vector<bool> dp(n + 1, false);
-    dp[0] = true;  // Empty string can always be segmented
-    
-    for (int i = 1; i <= n; i++) {
-        for (int j = 0; j < i; j++) {
-            // Check if s[0..j-1] can be segmented (dp[j])
-            // and s[j..i-1] is in dictionary
-            if (dp[j] && wordSet.find(s.substr(j, i - j)) != wordSet.end()) {
-                dp[i] = true;
-                break;
-            }
-        }
-    }
-    
-    return dp[n];
-}
-
-// Optimized: Check word lengths instead of all positions
-bool wordBreakOptimized(string s, vector<string>& wordDict) {
-    int n = s.length();
-    unordered_set<string> wordSet(wordDict.begin(), wordDict.end());
+    unordered_set<string> words(wordDict.begin(), wordDict.end());
     vector<bool> dp(n + 1, false);
     dp[0] = true;
-    
-    for (int i = 1; i <= n; i++) {
-        for (const string& word : wordDict) {
-            int len = word.length();
-            if (i >= len && dp[i - len] && 
-                s.substr(i - len, len) == word) {
-                dp[i] = true;
-                break;
-            }
-        }
-    }
-    
+    for (int i = 1; i <= n; i++)
+        for (int j = 0; j < i; j++)
+            if (dp[j] && words.count(s.substr(j, i - j))) { dp[i] = true; break; }
     return dp[n];
 }
 ```
 
-## 12.22 DP Patterns and Techniques (Continued)
+## 12.22 Knapsack Variants
 
-### Pattern 7: 0/1 Knapsack
-
-**Problem**: Maximize value with weight constraint.
-
-```cpp
-int knapsack(vector<int>& weights, vector<int>& values, int capacity) {
-    int n = weights.size();
-    vector<vector<int>> dp(n + 1, vector<int>(capacity + 1, 0));
-    
-    for (int i = 1; i <= n; i++) {
-        for (int w = 1; w <= capacity; w++) {
-            if (weights[i - 1] <= w) {
-                dp[i][w] = max(dp[i - 1][w],
-                               dp[i - 1][w - weights[i - 1]] + values[i - 1]);
-            } else {
-                dp[i][w] = dp[i - 1][w];
-            }
-        }
-    }
-    
-    return dp[n][capacity];
-}
-
-// Space-optimized (1D array)
-int knapsackOptimized(vector<int>& weights, vector<int>& values, int capacity) {
-    vector<int> dp(capacity + 1, 0);
-    
-    for (int i = 0; i < weights.size(); i++) {
-        for (int w = capacity; w >= weights[i]; w--) {
-            dp[w] = max(dp[w], dp[w - weights[i]] + values[i]);
-        }
-    }
-    
-    return dp[capacity];
-}
-```
-
-### Pattern 2: Unbounded Knapsack
-
-**Problem**: Items can be used unlimited times.
+The 0/1 knapsack (§12.18, Pattern 3) has two important siblings. **Unbounded knapsack** allows unlimited copies of each item; the capacity loop runs **forward**, so an item's own updated value can be reused:
 
 ```cpp
 int unboundedKnapsack(vector<int>& weights, vector<int>& values, int capacity) {
     vector<int> dp(capacity + 1, 0);
-    
-    for (int w = 1; w <= capacity; w++) {
-        for (int i = 0; i < weights.size(); i++) {
-            if (weights[i] <= w) {
+    for (int w = 1; w <= capacity; w++)
+        for (int i = 0; i < (int)weights.size(); i++)
+            if (weights[i] <= w)
                 dp[w] = max(dp[w], dp[w - weights[i]] + values[i]);
-            }
-        }
-    }
-    
     return dp[capacity];
 }
 ```
 
-### Pattern 3: Subset Sum
-
-**Problem**: Check if subset with given sum exists.
+**Subset Sum** — is there a subset summing to `target`? — is the boolean specialization of 0/1 knapsack (the `canPartition` in Pattern 3 is exactly this with `target = totalSum/2`):
 
 ```cpp
 bool subsetSum(vector<int>& nums, int target) {
-    int n = nums.size();
-    vector<vector<bool>> dp(n + 1, vector<bool>(target + 1, false));
-    
-    // Base case: sum 0 is always possible
-    for (int i = 0; i <= n; i++) {
-        dp[i][0] = true;
-    }
-    
-    for (int i = 1; i <= n; i++) {
-        for (int j = 1; j <= target; j++) {
-            if (nums[i - 1] <= j) {
-                dp[i][j] = dp[i - 1][j] || dp[i - 1][j - nums[i - 1]];
-            } else {
-                dp[i][j] = dp[i - 1][j];
-            }
-        }
-    }
-    
-    return dp[n][target];
+    vector<bool> dp(target + 1, false);
+    dp[0] = true;
+    for (int num : nums)
+        for (int j = target; j >= num; j--)   // backwards → each item once
+            dp[j] = dp[j] || dp[j - num];
+    return dp[target];
 }
 ```
 
-## 12.23 Performance Analysis and Optimization
+The forward-vs-backward capacity loop is the single line that separates unbounded from 0/1 semantics.
 
-### Time and Space Complexity
+## 12.23 Key Takeaways
 
-| Problem Type | Time Complexity | Space Complexity | Optimization |
-|--------------|----------------|------------------|--------------|
-| 1D DP | O(n) | O(n) | O(1) with variables |
-| 2D DP | O(m×n) | O(m×n) | O(min(m,n)) with 1D array |
-| Knapsack | O(n×W) | O(n×W) | O(W) with 1D array |
-| LCS | O(m×n) | O(m×n) | O(min(m,n)) |
+1. DP breaks a problem into subproblems, solves each once, and reuses the results, turning exponential recursion into polynomial time.
+2. Memoization (top-down) caches recursive results; tabulation (bottom-up) fills a table in dependency order.
+3. DP applies exactly when a problem has both **optimal substructure** and **overlapping subproblems**.
+4. Space optimization — rolling arrays, variable reduction, bitmasks — often cuts memory by an order of magnitude, and a smaller footprint improves cache behavior (§12.10).
+5. Most problems reduce to one of ten patterns; recognizing the pattern yields the recurrence.
 
-### Optimization Techniques
+## 12.24 Practice Problems
 
-1. **Space Optimization**: Reduce space complexity by reusing arrays
-2. **State Optimization**: Reduce number of states needed
-3. **Memoization vs Tabulation**: Choose based on problem characteristics
-4. **Bottom-up vs Top-down**: Consider recursion depth and memory usage
+Grouped by the pattern they exercise; implement each with both memoization and tabulation, then space-optimize.
 
-## 12.24 Key Takeaways
+- **1D / linear:** Maximum Subarray (Kadane), Decode Ways, Jump Game II.
+- **Knapsack family:** Target Sum, Coin Change II (count ways), Partition to K Equal Sum Subsets.
+- **Subsequence / string:** Longest Palindromic Subsequence, Distinct Subsequences, Interleaving String.
+- **Grid / interval:** Dungeon Game, Palindrome Partitioning II, Matrix Chain Multiplication.
+- **State machine / bitmask:** Best Time to Buy/Sell Stock IV, Traveling Salesman, Shortest Path Visiting All Nodes.
 
-1. **Dynamic Programming** solves complex problems by breaking them into simpler subproblems
-2. **Memoization** stores results to avoid redundant calculations
-3. **Tabulation** builds solutions bottom-up from base cases
-4. **Optimal substructure** and **overlapping subproblems** are key characteristics
-5. **Space optimization** can significantly reduce memory usage
-6. **Pattern recognition** helps identify DP problems quickly
+For each, first identify the pattern (§12.18), then write the recurrence before any code.
 
-## 12.25 Practice Problems
+## 12.25 Summary
 
-### Easy Level Problems
-
-#### Problem 1: Generate Parentheses
-**Description**: Given n pairs of parentheses, generate all combinations of well-formed parentheses.
-
-**Example**:
-- Input: n = 3
-- Output: ["((()))", "(()())", "(())()", "()(())", "()()()"]
-
-**Key Concepts**: Backtracking, constraint satisfaction, string generation
-
-#### Problem 2: Letter Combinations of a Phone Number
-**Description**: Given a string containing digits from 2-9, return all possible letter combinations that the number could represent.
-
-**Example**:
-- Input: "23"
-- Output: ["ad", "ae", "af", "bd", "be", "bf", "cd", "ce", "cf"]
-
-**Key Concepts**: Backtracking, string manipulation, mapping
-
-#### Problem 3: Subsets
-**Description**: Given an integer array nums, return all possible subsets (the power set).
-
-**Example**:
-- Input: nums = [1,2,3]
-- Output: [[], [1], [2], [1,2], [3], [1,3], [2,3], [1,2,3]]
-
-**Key Concepts**: Backtracking, subset generation, bit manipulation
-
-### Medium Level Problems
-
-#### Problem 4: Permutations
-**Description**: Given an array nums of distinct integers, return all possible permutations.
-
-**Example**:
-- Input: nums = [1,2,3]
-- Output: [[1,2,3], [1,3,2], [2,1,3], [2,3,1], [3,1,2], [3,2,1]]
-
-**Key Concepts**: Backtracking, permutation generation, state management
-
-#### Problem 5: Combination Sum
-**Description**: Given an array of distinct integers and a target, return all unique combinations where the numbers sum to target.
-
-**Example**:
-- Input: candidates = [2,3,6,7], target = 7
-- Output: [[2,2,3], [7]]
-
-**Key Concepts**: Backtracking, combination generation, pruning
-
-#### Problem 6: Word Search
-**Description**: Given a 2D board and a word, find if the word exists in the grid.
-
-**Example**:
-- Input: board = [["A","B","C","E"],["S","F","C","S"],["A","D","E","E"]], word = "ABCCED"
-- Output: true
-
-**Key Concepts**: Backtracking, 2D grid traversal, path finding
-
-#### Problem 7: Palindrome Partitioning
-**Description**: Given a string s, partition s such that every substring of the partition is a palindrome.
-
-**Example**:
-- Input: s = "aab"
-- Output: [["a","a","b"], ["aa","b"]]
-
-**Key Concepts**: Backtracking, palindrome checking, string partitioning
-
-### Hard Level Problems
-
-#### Problem 8: N-Queens
-**Description**: Place n queens on an n×n chessboard such that no two queens attack each other.
-
-**Example**:
-- Input: n = 4
-- Output: [[".Q..","...Q","Q...","..Q."], ["..Q.","Q...","...Q",".Q.."]]
-
-**Key Concepts**: Backtracking, constraint satisfaction, 2D board problems
-
-#### Problem 9: Sudoku Solver
-**Description**: Write a program to solve a Sudoku puzzle by filling the empty cells.
-
-**Example**:
-- Input: 9×9 grid with some cells filled
-- Output: Complete valid Sudoku solution
-
-**Key Concepts**: Backtracking, constraint propagation, 2D grid problems
-
-#### Problem 10: Word Ladder II
-**Description**: Given two words and a dictionary, find all shortest transformation sequences from beginWord to endWord.
-
-**Example**:
-- Input: beginWord = "hit", endWord = "cog", wordList = ["hot","dot","dog","lot","log","cog"]
-- Output: [["hit","hot","dot","dog","cog"], ["hit","hot","lot","log","cog"]]
-
-**Key Concepts**: Backtracking, graph traversal, shortest path, BFS + DFS
-
-#### Problem 11: Expression Add Operators
-**Description**: Given a string num and a target, add binary operators (+, -, *) to make the expression evaluate to the target.
-
-**Example**:
-- Input: num = "123", target = 6
-- Output: ["1+2+3", "1*2*3"]
-
-**Key Concepts**: Backtracking, expression evaluation, operator precedence
-
-#### Problem 12: Restore IP Addresses
-**Description**: Given a string containing only digits, restore it by returning all possible valid IP address combinations.
-
-**Example**:
-- Input: s = "25525511135"
-- Output: ["255.255.11.135", "255.255.111.35"]
-
-**Key Concepts**: Backtracking, string validation, IP address formatting
-
-### Advanced Problems
-
-#### Problem 13: Word Pattern II
-**Description**: Given a pattern and a string, determine if the string matches the pattern using backtracking.
-
-**Example**:
-- Input: pattern = "abab", str = "redblueredblue"
-- Output: true
-
-**Key Concepts**: Backtracking, pattern matching, bijection mapping
-
-#### Problem 14: Remove Invalid Parentheses
-**Description**: Remove the minimum number of invalid parentheses to make the input string valid.
-
-**Example**:
-- Input: s = "()())()"
-- Output: ["()()()", "(())()"]
-
-**Key Concepts**: Backtracking, string manipulation, optimization
-
-#### Problem 15: Android Unlock Patterns
-**Description**: Given Android 9-dot lock screen, count the number of valid unlock patterns of length m to n.
-
-**Example**:
-- Input: m = 1, n = 1
-- Output: 9
-
-**Key Concepts**: Backtracking, constraint satisfaction, counting problems
-
-### Problem-Solving Strategies
-
-#### 1. **Identify the Problem Type**
-- **Combinatorial Generation**: Subsets, permutations, combinations
-- **Constraint Satisfaction**: N-Queens, Sudoku, word problems
-- **Path Finding**: Word search, maze problems
-- **Optimization**: Remove invalid parentheses, expression evaluation
-
-#### 2. **Choose the Right Approach**
-- **Pure Backtracking**: When you need to explore all possibilities
-- **Backtracking + Memoization**: When there are overlapping subproblems
-- **Backtracking + Pruning**: When you can eliminate impossible paths early
-- **Backtracking + Heuristics**: When you can guide the search intelligently
-
-#### 3. **Implementation Tips**
-- **State Management**: Keep track of current state and choices made
-- **Pruning**: Eliminate impossible paths as early as possible
-- **Base Cases**: Define clear termination conditions
-- **Backtracking**: Undo changes when returning from recursive calls
-
-#### 4. **Optimization Techniques**
-- **Memoization**: Cache results to avoid redundant calculations
-- **Constraint Propagation**: Use constraints to reduce search space
-- **Heuristic Ordering**: Try most promising choices first
-- **Early Termination**: Stop when solution is found (if only one needed)
-
-## 12.26 Exercises
-
-1. Implement a DP solution for the "Maximum Subarray" problem (Kadane's algorithm).
-2. Solve the "Word Break" problem using DP.
-3. Implement DP for "Longest Palindromic Subsequence".
-4. Create a DP solution for "Matrix Chain Multiplication".
-5. Solve the "Target Sum" problem using DP.
-
-## 12.27 Summary
-
-Dynamic Programming is a powerful technique that transforms exponential-time recursive solutions into polynomial-time algorithms. By identifying overlapping subproblems and storing their solutions, DP provides efficient solutions to many optimization problems. Understanding the core principles, recognizing DP patterns, and mastering optimization techniques are essential skills for solving complex algorithmic challenges.
-
-The key to mastering DP is practice and pattern recognition. Start with simple problems like Fibonacci and gradually work your way up to more complex problems involving 2D DP and advanced patterns. Remember that DP is not just about memorizing solutions but understanding the underlying principles that make it work.
+Dynamic Programming transforms exponential-time recursive solutions into polynomial-time algorithms by identifying overlapping subproblems and storing their solutions. Mastery comes from recognizing the underlying patterns rather than memorizing individual solutions: start from Fibonacci, internalize the memoization/tabulation duality, and work up through the 2D, knapsack, interval, string, tree, graph, bitmask, and state-machine patterns. On real hardware, the decisive factors are cache locality and memory footprint — which is why bottom-up tabulation with space optimization usually outperforms an equivalent top-down memoization despite identical asymptotic complexity.
