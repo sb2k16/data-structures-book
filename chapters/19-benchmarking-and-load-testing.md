@@ -1,1183 +1,251 @@
 # Chapter 19: Benchmarking and Load Testing
 
-## Table of Contents
+This is the chapter the rest of the book leans on. Every performance claim we have made — that an array outruns a linked list, that a B-tree beats a binary tree, that open addressing wins — is a claim about a number someone measured. The live benchmarks that run in your browser as you read the online edition are all built on the handful of techniques in this chapter. So is every benchmark you will ever be tempted to trust from a blog post, a vendor, or your own terminal.
 
-- [19.1 Problem Statement & Motivation](#problem-statement-motivation)
-  - [Why Benchmarking Matters](#why-benchmarking-matters)
-  - [When to Benchmark](#when-to-benchmark)
-  - [Real-World Applications](#real-world-applications)
-- [19.2 Conceptual Overview](#conceptual-overview)
-  - [What is Benchmarking?](#what-is-benchmarking)
-  - [Types of Benchmarking](#types-of-benchmarking)
-  - [Key Concepts](#key-concepts)
-- [19.3 Abstract Model & Invariants ⭐](#abstract-model-invariants)
-  - [Benchmarking Model](#benchmarking-model)
-  - [Core Invariants](#core-invariants)
-  - [Assumptions](#assumptions)
-- [19.4 Operations & Interface](#operations-interface)
-  - [Benchmarking Operations](#benchmarking-operations)
-  - [Benchmarking Interface](#benchmarking-interface)
-- [19.5 Time & Space Complexity](#time-space-complexity)
-  - [Benchmarking Overhead](#benchmarking-overhead)
-  - [Measurement Precision](#measurement-precision)
-- [19.6 Pseudocode (Language-Neutral) ⭐](#pseudocode-language-neutral)
-  - [Basic Benchmarking Algorithm](#basic-benchmarking-algorithm)
-  - [Comparison Algorithm](#comparison-algorithm)
-  - [Load Testing Algorithm](#load-testing-algorithm)
-- [19.7 Implementation (Reference Language: C++)](#implementation-reference-language-c)
-  - [Basic Benchmarking Framework](#basic-benchmarking-framework)
-  - [Example Usage](#example-usage)
-- [19.8 Low-Level Strategies and Configurations](#low-level-strategies-and-configurations)
-  - [CPU and System Configuration](#cpu-and-system-configuration)
-  - [Compiler Configuration](#compiler-configuration)
-  - [Memory Configuration](#memory-configuration)
-  - [Cache Warming](#cache-warming)
-  - [System State Control](#system-state-control)
-- [19.9 How to Perform Benchmark Performance](#how-to-perform-benchmark-performance)
-  - [Benchmarking Methodology](#benchmarking-methodology)
-  - [Statistical Analysis](#statistical-analysis)
-  - [Handling Outliers](#handling-outliers)
-  - [Benchmarking Best Practices](#benchmarking-best-practices)
-- [19.10 Comparing Implementations](#comparing-implementations)
-  - [Fair Comparison Principles](#fair-comparison-principles)
-  - [Comparison Framework](#comparison-framework)
-  - [Reporting Comparison Results](#reporting-comparison-results)
-- [19.11 Load Testing](#load-testing)
-  - [What is Load Testing?](#what-is-load-testing)
-  - [Load Testing Metrics](#load-testing-metrics)
-  - [Simple Load Testing Framework](#simple-load-testing-framework)
-  - [Load Testing Strategy](#load-testing-strategy)
-- [19.12 Correctness Argument](#correctness-argument)
-  - [Benchmarking Correctness](#benchmarking-correctness)
-- [19.13 Edge Cases & Failure Modes](#edge-cases-failure-modes)
-  - [Common Benchmarking Pitfalls](#common-benchmarking-pitfalls)
-- [19.14 Performance & System Considerations](#performance-system-considerations)
-  - [Benchmarking Performance](#benchmarking-performance)
-  - [System-Level Considerations](#system-level-considerations)
-- [19.15 Real-World Applications](#real-world-applications)
-  - [Database Systems](#database-systems)
-  - [Web Servers](#web-servers)
-  - [Game Engines](#game-engines)
-  - [System Libraries](#system-libraries)
-- [19.16 Common Pitfalls & Interview Traps](#common-pitfalls-interview-traps)
-  - [Common Mistakes](#common-mistakes)
-  - [Interview Questions](#interview-questions)
-- [19.17 Exercises & Thought Questions](#exercises-thought-questions)
-  - [Conceptual Questions](#conceptual-questions)
-  - [Implementation Tasks](#implementation-tasks)
-  - [Analysis Problems](#analysis-problems)
-- [19.18 Summary](#summary)
+Measuring performance sounds like the easy part. You start a timer, run the code, stop the timer. It is not the easy part. A microbenchmark is one of the most reliable ways to lie to yourself in all of software: the compiler deletes the work you meant to measure, the timer is coarser than the thing you are timing, the first run pays for cold caches you will never see again in production, and the CPU quietly changes its clock speed underneath you. Every one of these produces a number. None of them produces the truth.
 
+This chapter is about measuring honestly — getting a number you can stake a decision on, and knowing when you cannot.
 
+## The noise is one-sided
 
-## 19.1 Problem Statement & Motivation
+Start with the single most important fact about timing a piece of code, because it dictates everything else: **measurement noise only ever makes things slower.**
 
-### Why Benchmarking Matters
+Think about what perturbs a running benchmark. The scheduler preempts your thread to run something else. An interrupt fires. The CPU drops its frequency to cool down. A cache line gets evicted by another process. Every one of these events *adds* time. There is no event that makes your code run faster than the hardware is physically capable of. The distribution of run times has a hard floor — the true cost — and a long, ragged tail of contamination above it.
 
-Theoretical complexity analysis (Chapter 2) tells us how algorithms *should* perform, but real-world performance depends on many factors:
-- **Hardware characteristics**: CPU architecture, cache sizes, memory bandwidth
-- **Compiler optimizations**: Different optimization levels produce different code
-- **Data patterns**: Real data may have different characteristics than worst-case scenarios
-- **System state**: Other processes, thermal throttling, power management
+This is why reporting the **mean** is a beginner's mistake. The mean averages in the noise. Two runs of identical code on a busy laptop can have means 40% apart, entirely because one of them caught more interrupts. The **minimum**, by contrast, is the run that got interrupted least — the closest you got to measuring the machine instead of the weather. Report the minimum. Report the median if you want a sense of the typical case under real contention. Report the mean almost never, and never alone.
 
-**The Problem**: How do we measure actual performance and make informed decisions about which implementation to use?
+> The online benchmarks follow this rule literally. Each one runs its inner loop many times and reports the fastest repetition, precisely because "a scheduler preemption can only make a run slower, never faster." That is the whole justification, in one sentence.
 
-**Naive Approaches and Their Limitations**:
-- **Single run timing**: Highly variable, affected by system noise
-- **Informal testing**: "It feels faster" - not reproducible or comparable
-- **Theoretical analysis only**: Doesn't account for hardware effects, cache behavior, branch prediction
-- **Inconsistent methodology**: Results can't be compared across different runs or systems
+Everything that follows is a technique for pushing that minimum down toward the real floor, and for making sure the thing you are timing is actually the thing you meant to time.
 
-**The Benchmarking Solution**: Systematic, reproducible performance measurement that accounts for variability, controls for external factors, and provides statistically meaningful results.
+## A harness that does it right
 
-### When to Benchmark
-
-✅ **Benchmark when**:
-- Comparing multiple implementations of the same algorithm
-- Optimizing critical code paths
-- Validating performance requirements
-- Understanding hardware-specific behavior
-- Making architectural decisions
-
-❌ **Don't benchmark when**:
-- Performance is not a concern
-- Code is still in early development
-- Theoretical analysis is sufficient
-- Premature optimization (profile first!)
-
-### Real-World Applications
-
-- **Database systems**: Compare different indexing strategies
-- **Game engines**: Measure frame times and identify bottlenecks
-- **Web servers**: Load testing to determine capacity
-- **Scientific computing**: Validate algorithm performance on real datasets
-- **System libraries**: Ensure performance meets specifications
-
-## 19.2 Conceptual Overview
-
-### What is Benchmarking?
-
-**Benchmarking** is the systematic measurement of code performance under controlled conditions. It involves:
-1. **Isolation**: Minimize external factors affecting measurements
-2. **Repetition**: Run multiple times to account for variability
-3. **Analysis**: Use statistical methods to draw meaningful conclusions
-4. **Comparison**: Fair comparison between different implementations
-
-### Types of Benchmarking
-
-1. **Micro-benchmarks**: Measure small, isolated operations (e.g., hash function, comparison)
-2. **Algorithm benchmarks**: Measure complete algorithms (e.g., sorting, searching)
-3. **System benchmarks**: Measure end-to-end system performance (e.g., web request handling)
-4. **Load testing**: Measure performance under various load conditions
-
-### Key Concepts
-
-**Throughput**: Operations per unit time (e.g., operations/second)
-**Latency**: Time per operation (e.g., microseconds per operation)
-**Scalability**: How performance changes with input size
-**Consistency**: Variance in measurements (lower is better)
-
-## 19.3 Abstract Model & Invariants ⭐
-
-### Benchmarking Model
-
-A benchmark consists of:
-1. **Code under test**: The implementation being measured
-2. **Test data**: Inputs that represent realistic usage
-3. **Measurement method**: How time/resources are measured
-4. **Environment**: Hardware, OS, compiler settings
-5. **Repetition count**: Number of runs for statistical validity
-
-### Core Invariants
-
-1. **Reproducibility Invariant**: Same code + same environment + same methodology = same results (within statistical variance)
-2. **Isolation Invariant**: Benchmark results reflect only the code under test, not external factors
-3. **Fairness Invariant**: Comparisons use identical test conditions and methodology
-4. **Statistical Validity Invariant**: Results are based on sufficient samples to be meaningful
-
-### Assumptions
-
-- **Stable environment**: System state doesn't change significantly during benchmarking
-- **Representative data**: Test data reflects real-world usage patterns
-- **Adequate warmup**: System has reached steady state before measurement
-- **Controlled variables**: Only the code under test varies between comparisons
-
-## 19.4 Operations & Interface
-
-### Benchmarking Operations
-
-| Operation | Description | Preconditions | Postconditions |
-|-----------|-------------|---------------|----------------|
-| `warmup()` | Run code to stabilize system | Code is ready | System in steady state |
-| `measure(operation, iterations)` | Measure operation performance | Operation is defined | Returns timing data |
-| `compare(impl1, impl2, data)` | Compare two implementations | Both implementations ready | Returns comparison metrics |
-| `analyze(results)` | Statistical analysis of results | Results collected | Returns statistics (mean, stddev, etc.) |
-
-### Benchmarking Interface
-
-```cpp
-// Conceptual interface
-class Benchmark {
-    // Configure benchmark
-    void setIterations(int n);
-    void setWarmupRuns(int n);
-    void setTestData(Data data);
-    
-    // Run benchmark
-    TimingResults measure(Operation op);
-    
-    // Compare implementations
-    ComparisonResults compare(Operation op1, Operation op2);
-    
-    // Analyze results
-    Statistics analyze(vector<TimingResults> results);
-};
-```
-
-## 19.5 Time & Space Complexity
-
-### Benchmarking Overhead
-
-| Operation | Time Complexity | Space Complexity | Notes |
-|-----------|----------------|------------------|-------|
-| Single measurement | O(1) | O(1) | Negligible overhead |
-| N iterations | O(N) | O(1) | Linear with iterations |
-| Statistical analysis | O(N log N) | O(N) | Sorting for percentiles |
-| Full benchmark suite | O(M × N) | O(M) | M benchmarks, N iterations each |
-
-**Key Insight**: Benchmarking overhead should be minimized but is typically negligible compared to the code being measured.
-
-### Measurement Precision
-
-- **Clock resolution**: Typically nanosecond precision on modern systems
-- **Measurement overhead**: Usually < 1% of operation time for microsecond-scale operations
-- **Statistical accuracy**: Improves with √N (need 4× iterations for 2× accuracy improvement)
-
-## 19.6 Pseudocode (Language-Neutral) ⭐
-
-### Basic Benchmarking Algorithm
-
-```
-FUNCTION benchmark(operation, iterations, warmupRuns):
-    // Warmup phase: stabilize system
-    FOR i = 1 TO warmupRuns:
-        operation()
-    
-    // Measurement phase
-    results = []
-    FOR i = 1 TO iterations:
-        startTime = getCurrentTime()
-        operation()
-        endTime = getCurrentTime()
-        duration = endTime - startTime
-        results.append(duration)
-    
-    // Analysis
-    mean = calculateMean(results)
-    stddev = calculateStdDev(results)
-    min = findMin(results)
-    max = findMax(results)
-    median = findMedian(results)
-    
-    RETURN Statistics(mean, stddev, min, max, median)
-END FUNCTION
-```
-
-### Comparison Algorithm
-
-```
-FUNCTION compareImplementations(impl1, impl2, testData, iterations):
-    // Ensure fair comparison
-    results1 = benchmark(impl1, testData, iterations)
-    results2 = benchmark(impl2, testData, iterations)
-    
-    // Statistical comparison
-    speedup = results1.mean / results2.mean
-    confidence = calculateConfidence(results1, results2)
-    
-    RETURN Comparison(speedup, confidence, results1, results2)
-END FUNCTION
-```
-
-### Load Testing Algorithm
-
-```
-FUNCTION loadTest(system, loadLevels, durationPerLevel):
-    results = []
-    
-    FOR EACH loadLevel IN loadLevels:
-        // Generate load
-        threads = createThreads(loadLevel)
-        
-        // Measure under load
-        startTime = getCurrentTime()
-        FOR duration IN durationPerLevel:
-            measureMetrics(system)
-        endTime = getCurrentTime()
-        
-        // Collect results
-        metrics = collectMetrics(system)
-        results.append(LoadResult(loadLevel, metrics))
-        
-        // Cleanup
-        stopThreads(threads)
-        waitForStabilization()
-    
-    RETURN results
-END FUNCTION
-```
-
-## 19.7 Implementation (Reference Language: C++)
-
-### Basic Benchmarking Framework
+Here is a complete timing harness in about forty lines. Read it once, then we will justify every design decision in it.
 
 ```cpp
 #include <chrono>
-#include <vector>
 #include <algorithm>
-#include <numeric>
-#include <cmath>
-#include <iostream>
+#include <limits>
 
-using namespace std;
-using namespace std::chrono;
+using clock_type = std::chrono::steady_clock;
 
-struct BenchmarkResult {
-    double mean;
-    double stddev;
-    double min;
-    double max;
-    double median;
-    vector<double> samples;
-};
+// Prevent the optimizer from discarding a computed value. Emits no
+// instructions — it only tells the compiler the value is observed, which is
+// enough to stop dead-code elimination. (GCC/Clang. On MSVC, a volatile
+// write or _ReadWriteBarrier() serves the same purpose.)
+template <typename T>
+inline void doNotOptimize(const T& value) {
+    asm volatile("" : : "r,m"(value) : "memory");
+}
 
-class Benchmark {
-private:
-    int warmupRuns;
-    int iterations;
-    
-    template<typename Func>
-    double measureSingle(Func& func) {
-        auto start = high_resolution_clock::now();
-        func();
-        auto end = high_resolution_clock::now();
-        
-        auto duration = duration_cast<nanoseconds>(end - start);
-        return duration.count() / 1e9; // Convert to seconds
+// Returns the MINIMUM nanoseconds-per-operation over `trials` trials, each of
+// which times a batch of `batch` calls to op(). op() must return the result
+// we want measured, so we can feed it to doNotOptimize.
+template <typename Op>
+double benchmarkNsPerOp(Op op, int batch = 1000, int trials = 200,
+                        int warmup = 50) {
+    using namespace std::chrono;
+
+    // Warm up: pull code and data into cache, train the branch predictor, and
+    // let the CPU ramp to its steady clock. These runs are thrown away.
+    for (int i = 0; i < warmup; ++i) doNotOptimize(op());
+
+    double best = std::numeric_limits<double>::infinity();
+    for (int t = 0; t < trials; ++t) {
+        auto start = clock_type::now();
+        for (int b = 0; b < batch; ++b)
+            doNotOptimize(op());          // defeat dead-code elimination
+        auto end = clock_type::now();
+
+        double ns = duration_cast<nanoseconds>(end - start).count();
+        best = std::min(best, ns / batch);
     }
-    
-public:
-    Benchmark(int warmup = 10, int iter = 100) 
-        : warmupRuns(warmup), iterations(iter) {}
-    
-    template<typename Func>
-    BenchmarkResult run(Func func) {
-        // Warmup phase
-        for (int i = 0; i < warmupRuns; i++) {
-            func();
-        }
-        
-        // Measurement phase
-        vector<double> times;
-        times.reserve(iterations);
-        
-        for (int i = 0; i < iterations; i++) {
-            times.push_back(measureSingle(func));
-        }
-        
-        // Statistical analysis
-        sort(times.begin(), times.end());
-        
-        double sum = accumulate(times.begin(), times.end(), 0.0);
-        double mean = sum / iterations;
-        
-        double variance = 0.0;
-        for (double t : times) {
-            variance += (t - mean) * (t - mean);
-        }
-        double stddev = sqrt(variance / iterations);
-        
-        BenchmarkResult result;
-        result.mean = mean;
-        result.stddev = stddev;
-        result.min = times[0];
-        result.max = times[iterations - 1];
-        result.median = times[iterations / 2];
-        result.samples = move(times);
-        
-        return result;
-    }
-    
-    template<typename Func1, typename Func2>
-    void compare(const string& name1, Func1 func1, 
-                 const string& name2, Func2 func2) {
-        auto result1 = run(func1);
-        auto result2 = run(func2);
-        
-        double speedup = result1.mean / result2.mean;
-        
-        cout << "\n=== Comparison: " << name1 << " vs " << name2 << " ===\n";
-        cout << name1 << ":\n";
-        cout << "  Mean:   " << result1.mean * 1e6 << " μs\n";
-        cout << "  StdDev: " << result1.stddev * 1e6 << " μs\n";
-        cout << "  Min:    " << result1.min * 1e6 << " μs\n";
-        cout << "  Max:    " << result1.max * 1e6 << " μs\n";
-        
-        cout << name2 << ":\n";
-        cout << "  Mean:   " << result2.mean * 1e6 << " μs\n";
-        cout << "  StdDev: " << result2.stddev * 1e6 << " μs\n";
-        cout << "  Min:    " << result2.min * 1e6 << " μs\n";
-        cout << "  Max:    " << result2.max * 1e6 << " μs\n";
-        
-        cout << "\nSpeedup: " << speedup << "x ";
-        if (speedup > 1.0) {
-            cout << "(" << name1 << " is " << speedup << "x slower)\n";
-        } else {
-            cout << "(" << name2 << " is " << (1.0 / speedup) << "x slower)\n";
-        }
-    }
-};
-```
-
-### Example Usage
-
-```cpp
-// Example: Comparing two sorting algorithms
-void exampleBenchmark() {
-    Benchmark bench(10, 1000);
-    
-    vector<int> data1(10000);
-    vector<int> data2(10000);
-    
-    // Fill with random data
-    iota(data1.begin(), data1.end(), 0);
-    iota(data2.begin(), data2.end(), 0);
-    random_shuffle(data1.begin(), data1.end());
-    random_shuffle(data2.begin(), data2.end());
-    
-    bench.compare(
-        "std::sort",
-        [&]() {
-            vector<int> copy = data1;
-            sort(copy.begin(), copy.end());
-        },
-        "Bubble Sort",
-        [&]() {
-            vector<int> copy = data2;
-            // Bubble sort implementation
-            for (size_t i = 0; i < copy.size(); i++) {
-                for (size_t j = 0; j < copy.size() - i - 1; j++) {
-                    if (copy[j] > copy[j + 1]) {
-                        swap(copy[j], copy[j + 1]);
-                    }
-                }
-            }
-        }
-    );
+    return best;
 }
 ```
 
-## 19.8 Low-Level Strategies and Configurations
+Four decisions in that code are the whole art of microbenchmarking.
 
-### CPU and System Configuration
+**`steady_clock`, not `high_resolution_clock`.** The obvious choice is wrong. `std::chrono::high_resolution_clock` is allowed to be an alias for the *system* clock, which can jump backward when NTP adjusts it or a leap second lands — and a clock that runs backward mid-measurement gives you negative durations. `steady_clock` is guaranteed monotonic: it only ever moves forward, at a constant rate, which is exactly the guarantee a stopwatch needs. Use it for every duration you measure.
 
-#### 1. CPU Frequency Scaling
-
-**Problem**: Modern CPUs dynamically adjust frequency based on load and thermal conditions, causing measurement variance.
-
-**Solution**: Lock CPU frequency to a fixed value during benchmarking.
-
-**Linux**:
-```bash
-# Check current frequency
-cat /proc/cpuinfo | grep MHz
-
-# Set performance governor (maximum frequency)
-sudo cpupower frequency-set -g performance
-
-# Or set specific frequency
-sudo cpupower frequency-set -f 2.4GHz
-```
-
-**macOS**:
-```bash
-# Disable Turbo Boost (requires root)
-sudo sysctl -w machdep.xcpm.turbo_enabled=0
-```
-
-**Windows**: Use Power Options → High Performance mode
-
-#### 2. Process Affinity
-
-**Problem**: Process migration between CPU cores causes cache misses and inconsistent timing.
-
-**Solution**: Pin benchmark process to specific CPU cores.
+**`doNotOptimize` defeats dead-code elimination.** This is the trap that catches everyone. Consider the "benchmark" the optimizer sees when you sum a loop and never look at the result:
 
 ```cpp
-#ifdef __linux__
-#include <sched.h>
-
-void setCPUAffinity(int cpu) {
-    cpu_set_t cpuset;
-    CPU_ZERO(&cpuset);
-    CPU_SET(cpu, &cpuset);
-    pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-}
-#endif
+long sum = 0;
+for (int i = 0; i < n; ++i) sum += data[i];
+// sum is never used again
 ```
 
-#### 3. Disable CPU Features That Cause Variance
+The compiler is allowed to prove `sum` has no observable effect and delete the entire loop. Your timer then measures an empty region of code and reports a few nanoseconds. **A benchmark that discards its result measures nothing** — and it does so silently, handing you a beautiful, fast, meaningless number. `doNotOptimize` fixes this by telling the compiler the value escapes, so the work that produced it cannot be removed. It compiles to zero instructions; it only constrains what the optimizer is allowed to assume.
 
-```bash
-# Disable hyperthreading (if needed for consistent results)
-# Requires BIOS/UEFI settings
+**Batching beats the timer's resolution.** `steady_clock::now()` is not free and not infinitely fine. Calling it costs tens of nanoseconds, and its tick may be coarser still. If the operation you are timing takes 3 ns, wrapping each call in a pair of `now()` calls measures the clock, not the code. The fix is to time a *batch* of `batch` operations and divide: the fixed overhead of two `now()` calls is amortized across a thousand operations until it disappears into rounding. As a rule, size the batch so each timed region lasts at least a few hundred microseconds.
 
-# Disable CPU power saving features
-echo performance | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
-```
+**Warmup, then measure the minimum.** The first calls to `op()` pay one-time costs that production traffic does not: instructions faulted in, data pulled into cache from cold, branch predictors untrained, and the CPU still at its idle clock speed. Those warmup iterations are run and thrown away so the measured region starts from a realistic steady state. Then, as argued above, we keep the fastest batch across all trials.
 
-### Compiler Configuration
+## Isolate the variable
 
-#### Optimization Flags
+A benchmark is a controlled experiment, and it obeys the same rule as any experiment: change one thing at a time. If implementation A and implementation B run on different input, or different compiler flags, or a different machine, or with the CPU at a different temperature, the difference in their timings tells you nothing about the code.
 
-```bash
-# Release build with maximum optimizations
-g++ -O3 -march=native -mtune=native -flto benchmark.cpp -o benchmark
-
-# Flags explanation:
-# -O3: Maximum optimization level
-# -march=native: Use CPU-specific instructions
-# -mtune=native: Optimize for current CPU
-# -flto: Link-time optimization
-```
-
-#### Disable Specific Optimizations (for fair comparison)
-
-```bash
-# Disable inlining (if comparing function call overhead)
-g++ -O3 -fno-inline benchmark.cpp
-
-# Disable loop unrolling (if comparing loop performance)
-g++ -O3 -fno-unroll-loops benchmark.cpp
-```
-
-### Memory Configuration
-
-#### 1. Disable Transparent Huge Pages (Linux)
-
-```bash
-# THP can cause variance in memory allocation timing
-echo never | sudo tee /sys/kernel/mm/transparent_hugepage/enabled
-echo never | sudo tee /sys/kernel/mm/transparent_hugepage/defrag
-```
-
-#### 2. Pre-allocate Memory
+The most common violation is subtle — feeding the two contenders different data:
 
 ```cpp
-// Pre-allocate memory to avoid allocation during benchmark
-vector<int> data;
-data.reserve(1000000);  // Pre-allocate
-// ... fill data ...
+// WRONG: each side sorts a different array, so any difference could be the data
+bench(sortA, makeRandomData());
+bench(sortB, makeRandomData());
+
+// RIGHT: build the input once, hand both sides an identical copy
+auto input = makeRandomData();
+bench(sortA, input);
+bench(sortB, input);   // fresh copy inside the harness if the op mutates it
 ```
 
-#### 3. Memory Alignment
+The same discipline applies to the whole environment. Compare like with like: same compiler, same flags (`-O3 -march=native` for both, or `-O2` for both — never one of each), same CPU governor, same background load. Document what the machine was so the result is reproducible. A speedup you cannot reproduce is a rumor, not a measurement.
 
-```cpp
-// Align data to cache line boundaries (64 bytes)
-alignas(64) int data[1000];
-```
+## Measure a realistic size and cache state
 
-### Cache Warming
+The number you get depends enormously on how much data you touch, because — as [the memory hierarchy chapter](03.6-memory-hierarchy-and-performance.md) showed at length — the same code is an order of magnitude slower when its working set spills from L2 to DRAM. A benchmark on a 100-element array lives entirely in L1 and will happily tell you a linear scan and a binary search cost the same. Run the real workload's size, or a spread of sizes, and watch where the curves cross.
 
-**Problem**: First access to data is slower due to cache misses.
+Cache state is part of the input, not a nuisance to be scrubbed away. There are two honest questions and they have different answers:
 
-**Solution**: Access all data once before benchmarking.
+- **Hot-cache (warm) cost:** the data is already in cache when the operation runs. This is what you measure with a warmup loop, and it is the right number for a tight inner loop that runs millions of times over resident data.
+- **Cold-cache cost:** the data starts in DRAM, as it does the first time a request touches it. To measure this you must *evict* between trials — touch enough unrelated memory to flush the caches — because a warmup loop measures the opposite of what you want.
 
-```cpp
-template<typename Container>
-void warmupCache(Container& data) {
-    volatile int sum = 0;
-    for (auto& item : data) {
-        sum += item;  // Force memory access
-    }
-    (void)sum;  // Suppress unused variable warning
-}
-```
+Neither is more correct. What is incorrect is measuring the hot-cache cost and then quoting it for a cold-cache workload, which is how a data structure that looks brilliant in a microbenchmark falls over in production.
 
-### System State Control
+## Latency versus throughput
 
-#### 1. Close Unnecessary Processes
+These are different questions and a good benchmark answers only one at a time.
 
-```bash
-# Linux: Check what's running
-ps aux | grep -v "\["
+**Latency** is how long a single operation takes, start to finish — the number you care about for a keystroke, a database query, a p99 tail. **Throughput** is how many operations complete per unit time under sustained load — the number you care about for a batch job or a saturated server.
 
-# Stop unnecessary services
-sudo systemctl stop <service-name>
-```
+They are not reciprocals, because modern hardware overlaps work. A CPU can have a dozen memory loads in flight at once, so a loop that issues independent operations achieves a throughput far higher than `1 / latency` would predict. The memory-hierarchy chapter's pointer chase makes this concrete: each load depends on the previous one, so nothing overlaps and you measure pure latency. Change the access pattern to independent loads and throughput leaps, though the latency of any single load is unchanged.
 
-#### 2. Disable Background Tasks
+Decide which you are measuring before you start. To measure latency, serialize: make each operation depend on the result of the last (a dependency chain), so the hardware cannot hide one behind another. To measure throughput, do the opposite: keep many independent operations in flight and count completions over a fixed interval. A benchmark that mixes them measures neither.
 
-- Close browser tabs
-- Disable automatic updates
-- Stop background sync services
-- Disable antivirus scanning during benchmarks
+## How to lie to yourself with a microbenchmark
 
-#### 3. Thermal Considerations
+Every item on this list has produced a confident, published, wrong number. Read it as a pre-flight checklist.
 
-```cpp
-// Wait for system to reach thermal equilibrium
-void waitForThermalEquilibrium(int seconds = 30) {
-    // Run dummy workload
-    for (int i = 0; i < seconds; i++) {
-        volatile int sum = 0;
-        for (int j = 0; j < 1000000; j++) {
-            sum += j;
-        }
-        this_thread::sleep_for(chrono::seconds(1));
-    }
-}
-```
+- **Let the compiler delete the work.** Discard the result and the optimizer removes the computation. Defeat it with `doNotOptimize`, or your loop measures nothing. (This one has probably caused more bogus benchmarks than all the others combined.)
+- **Time a constant.** If the input is known at compile time, the optimizer may compute the whole answer during compilation and your benchmark times a single load of a precomputed value. Generate inputs at runtime.
+- **Hoist the work out of the loop.** If the operation does not depend on the loop variable, the compiler runs it once and reuses the result. Make the work depend on the iteration.
+- **Report the mean of a noisy sample.** The noise is one-sided; the mean is contaminated by it. Report the minimum.
+- **Skip the warmup.** Your first iteration pays for cold caches and a downclocked CPU, and if you only run once, that is the number you ship.
+- **Measure a toy size.** L1-resident data hides every cache effect that dominates the real workload. Measure the size you actually run.
+- **Trust one run.** A single measurement has no error bar. If you cannot state the variance, you cannot tell a real 5% win from scheduler noise.
+- **Believe a null result.** If a benchmark reports that a real effect does not exist — two layouts "identical," a change with "no impact" — suspect the benchmark before you believe it. That is exactly how the online array-of-structures benchmark initially reported a 1.0× ratio: a single accumulator serialized the additions and measured the floating-point adder in both cases, and the memory system in neither. If a benchmark tells you an effect does not exist, suspect the benchmark.
 
-## 19.9 How to Perform Benchmark Performance
+## Controlling the machine
 
-### Benchmarking Methodology
+Once the harness is honest, the remaining variance is the machine changing underneath you. You cannot eliminate it, but you can pin down the big sources. In rough order of impact:
 
-#### Phase 1: Preparation
+- **Frequency scaling.** Modern CPUs boost and throttle constantly, which is the single largest source of run-to-run variance. Pin the clock before measuring: on Linux, `cpupower frequency-set -g performance`; on macOS, expect more variance because you have less control. Let the machine reach thermal steady state first — a benchmark that starts cold and heats up shows a downward drift that is pure artifact.
+- **Core migration.** When the OS moves your thread to another core, it lands with cold caches. Pin the thread to one core (`sched_setaffinity` / `pthread_setaffinity_np` on Linux, `taskset` from the shell) so every trial runs on the same caches.
+- **Background load.** Close the browser, pause the sync client, kill the antivirus scan. Other processes evict your cache lines and steal your cores. The cleaner the machine, the lower and tighter your minimum.
+- **The build.** Benchmark an optimized build (`-O3 -march=native -flto`) unless you are specifically studying debug behavior. A number from a `-O0` build describes a program you will never ship.
 
-1. **Define the metric**: What are you measuring? (time, throughput, memory)
-2. **Choose test data**: Representative of real-world usage
-3. **Set up environment**: Apply low-level configurations (Section 19.8)
-4. **Warm up system**: Run dummy workload to stabilize
+Do not over-invest here. The goal is a stable *minimum*, and the techniques above — minimum-of-many, warmup, batching — already absorb most of the noise these settings would remove. Reach for frequency pinning and core affinity when you are chasing a 5% difference; skip them when you are confirming a 40× one.
 
-#### Phase 2: Measurement
+## Load testing
 
-1. **Warmup runs**: Execute code multiple times without measuring (10-100 runs)
-2. **Measurement runs**: Collect timing data (100-10000 iterations)
-3. **Multiple samples**: Run entire benchmark multiple times (5-10 times)
+Everything so far measures a single operation in isolation. Load testing asks a different question: **how does the whole system behave as concurrent demand rises?** It is the difference between "how fast is one query" and "what happens at ten thousand queries per second." The two are not related by simple arithmetic, because under load you hit contention — locks, connection pools, cache thrash, garbage collection — that never appears one request at a time.
 
-#### Phase 3: Analysis
+You sweep the load through several regimes and watch the metrics bend:
 
-1. **Statistical analysis**: Calculate mean, median, standard deviation
-2. **Outlier detection**: Identify and handle outliers
-3. **Confidence intervals**: Determine statistical significance
-4. **Visualization**: Plot distributions, compare visually
+- **Baseline** — one request at a time, the best case.
+- **Normal** — expected production concurrency.
+- **Peak** — the busiest you expect to survive.
+- **Stress** — past the limit, to find where and how it breaks.
 
-### Statistical Analysis
+The metrics that matter under load are not the mean either. Throughput (requests/second) tells you capacity; **tail latency** (p95, p99) tells you what your unlucky users feel. A system with a great average and a terrible p99 is a system with a queue backing up somewhere. Track error rate too — the point where errors climb is usually the real capacity limit, well before throughput flatlines.
 
-```cpp
-struct Statistics {
-    double mean;
-    double median;
-    double stddev;
-    double min;
-    double max;
-    double p50, p95, p99;  // Percentiles
-    double confidence_interval_95;
-};
-
-Statistics calculateStatistics(const vector<double>& samples) {
-    Statistics stats;
-    vector<double> sorted = samples;
-    sort(sorted.begin(), sorted.end());
-    
-    int n = sorted.size();
-    
-    // Mean
-    stats.mean = accumulate(sorted.begin(), sorted.end(), 0.0) / n;
-    
-    // Median
-    stats.median = (n % 2 == 0) 
-        ? (sorted[n/2 - 1] + sorted[n/2]) / 2.0
-        : sorted[n/2];
-    
-    // Standard deviation
-    double variance = 0.0;
-    for (double x : sorted) {
-        variance += (x - stats.mean) * (x - stats.mean);
-    }
-    stats.stddev = sqrt(variance / n);
-    
-    // Min/Max
-    stats.min = sorted[0];
-    stats.max = sorted[n - 1];
-    
-    // Percentiles
-    stats.p50 = sorted[n * 0.50];
-    stats.p95 = sorted[n * 0.95];
-    stats.p99 = sorted[n * 0.99];
-    
-    // 95% confidence interval (using t-distribution approximation)
-    double t_value = 1.96;  // For large n, approximates t-distribution
-    stats.confidence_interval_95 = t_value * stats.stddev / sqrt(n);
-    
-    return stats;
-}
-```
-
-### Handling Outliers
-
-```cpp
-vector<double> removeOutliers(const vector<double>& samples, double threshold = 3.0) {
-    if (samples.empty()) return samples;
-    
-    double mean = accumulate(samples.begin(), samples.end(), 0.0) / samples.size();
-    double stddev = 0.0;
-    for (double x : samples) {
-        stddev += (x - mean) * (x - mean);
-    }
-    stddev = sqrt(stddev / samples.size());
-    
-    vector<double> filtered;
-    for (double x : samples) {
-        double z_score = abs(x - mean) / stddev;
-        if (z_score <= threshold) {
-            filtered.push_back(x);
-        }
-    }
-    
-    return filtered;
-}
-```
-
-### Benchmarking Best Practices
-
-1. **Measure what matters**: Focus on actual bottlenecks, not micro-optimizations
-2. **Use representative data**: Test with realistic input sizes and patterns
-3. **Run multiple times**: Account for system variance
-4. **Report statistics**: Don't just report mean - include variance, percentiles
-5. **Control variables**: Only change what you're comparing
-6. **Document environment**: Record hardware, OS, compiler, flags
-7. **Warm up properly**: Ensure system is in steady state
-8. **Avoid measurement overhead**: For very fast operations, batch multiple calls
-
-## 19.10 Comparing Implementations
-
-### Fair Comparison Principles
-
-#### 1. Identical Test Conditions
-
-```cpp
-// BAD: Different test data
-benchmark(impl1, data1);
-benchmark(impl2, data2);
-
-// GOOD: Same test data
-auto data = generateTestData();
-benchmark(impl1, data);
-benchmark(impl2, data);
-```
-
-#### 2. Same Compiler and Flags
-
-```bash
-# BAD: Different optimization levels
-g++ -O2 impl1.cpp
-g++ -O3 impl2.cpp
-
-# GOOD: Same flags
-g++ -O3 impl1.cpp
-g++ -O3 impl2.cpp
-```
-
-#### 3. Same Environment
-
-- Same hardware
-- Same OS version
-- Same system load
-- Same CPU frequency
-- Same memory state
-
-#### 4. Statistical Significance
-
-```cpp
-bool isSignificantlyDifferent(const BenchmarkResult& r1, 
-                              const BenchmarkResult& r2,
-                              double confidence = 0.95) {
-    // Two-sample t-test
-    double pooled_std = sqrt(
-        (r1.stddev * r1.stddev + r2.stddev * r2.stddev) / 2.0
-    );
-    
-    double t_stat = abs(r1.mean - r2.mean) / 
-                    (pooled_std * sqrt(2.0 / r1.samples.size()));
-    
-    // For large samples, t ≈ 1.96 for 95% confidence
-    double critical_value = 1.96;
-    
-    return t_stat > critical_value;
-}
-```
-
-### Comparison Framework
-
-```cpp
-class ImplementationComparator {
-private:
-    Benchmark benchmark;
-    
-public:
-    ImplementationComparator(int warmup = 10, int iter = 1000)
-        : benchmark(warmup, iter) {}
-    
-    template<typename Func1, typename Func2>
-    ComparisonResult compare(const string& name1, Func1 func1,
-                            const string& name2, Func2 func2,
-                            int rounds = 5) {
-        vector<BenchmarkResult> results1, results2;
-        
-        // Run multiple rounds
-        for (int i = 0; i < rounds; i++) {
-            results1.push_back(benchmark.run(func1));
-            results2.push_back(benchmark.run(func2));
-        }
-        
-        // Aggregate results
-        BenchmarkResult agg1 = aggregate(results1);
-        BenchmarkResult agg2 = aggregate(results2);
-        
-        // Calculate comparison metrics
-        double speedup = agg1.mean / agg2.mean;
-        double speedup_stddev = calculateSpeedupStdDev(results1, results2);
-        
-        bool significant = isSignificantlyDifferent(agg1, agg2);
-        
-        ComparisonResult comp;
-        comp.name1 = name1;
-        comp.name2 = name2;
-        comp.result1 = agg1;
-        comp.result2 = agg2;
-        comp.speedup = speedup;
-        comp.speedup_stddev = speedup_stddev;
-        comp.is_significant = significant;
-        
-        return comp;
-    }
-    
-private:
-    BenchmarkResult aggregate(const vector<BenchmarkResult>& results) {
-        BenchmarkResult agg;
-        double sum_mean = 0.0, sum_stddev = 0.0;
-        double min_min = DBL_MAX, max_max = 0.0;
-        
-        for (const auto& r : results) {
-            sum_mean += r.mean;
-            sum_stddev += r.stddev;
-            min_min = min(min_min, r.min);
-            max_max = max(max_max, r.max);
-        }
-        
-        int n = results.size();
-        agg.mean = sum_mean / n;
-        agg.stddev = sum_stddev / n;
-        agg.min = min_min;
-        agg.max = max_max;
-        
-        return agg;
-    }
-};
-```
-
-### Reporting Comparison Results
-
-```cpp
-void printComparison(const ComparisonResult& comp) {
-    cout << "\n=== Implementation Comparison ===\n";
-    cout << comp.name1 << " vs " << comp.name2 << "\n\n";
-    
-    cout << comp.name1 << ":\n";
-    cout << "  Mean:   " << comp.result1.mean * 1e6 << " ± " 
-         << comp.result1.stddev * 1e6 << " μs\n";
-    cout << "  Range:  [" << comp.result1.min * 1e6 << ", " 
-         << comp.result1.max * 1e6 << "] μs\n";
-    
-    cout << comp.name2 << ":\n";
-    cout << "  Mean:   " << comp.result2.mean * 1e6 << " ± " 
-         << comp.result2.stddev * 1e6 << " μs\n";
-    cout << "  Range:  [" << comp.result2.min * 1e6 << ", " 
-         << comp.result2.max * 1e6 << "] μs\n";
-    
-    cout << "\nSpeedup: " << comp.speedup << "x";
-    if (comp.speedup > 1.0) {
-        cout << " (" << comp.name2 << " is " << comp.speedup << "x faster)\n";
-    } else {
-        cout << " (" << comp.name1 << " is " << (1.0 / comp.speedup) << "x faster)\n";
-    }
-    
-    cout << "Statistical significance: " 
-         << (comp.is_significant ? "YES" : "NO") << "\n";
-}
-```
-
-## 19.11 Load Testing
-
-### What is Load Testing?
-
-**Load testing** measures system performance under various load conditions:
-- **Baseline**: No load (single request)
-- **Normal load**: Expected production load
-- **Peak load**: Maximum expected load
-- **Stress test**: Beyond normal capacity (find breaking point)
-
-### Load Testing Metrics
-
-1. **Throughput**: Requests/second, operations/second
-2. **Latency**: Response time (mean, p50, p95, p99)
-3. **Error rate**: Percentage of failed requests
-4. **Resource utilization**: CPU, memory, I/O usage
-5. **Scalability**: How performance degrades with load
-
-### Simple Load Testing Framework
+Here is a compact load driver: fixed number of worker threads, each hammering the operation for a fixed duration, collecting per-request latencies for percentile analysis.
 
 ```cpp
 #include <thread>
-#include <atomic>
 #include <vector>
+#include <atomic>
 #include <chrono>
+#include <algorithm>
+#include <cstdio>
 
-class LoadTester {
-private:
-    atomic<int> active_threads{0};
-    atomic<long long> total_requests{0};
-    atomic<long long> failed_requests{0};
-    atomic<long long> total_latency{0};
-    vector<long long> latencies;
-    mutex latencies_mutex;
-    
-public:
-    template<typename Func>
-    void runLoadTest(Func operation, int num_threads, 
-                     int duration_seconds, int ops_per_thread) {
-        vector<thread> threads;
-        latencies.clear();
-        latencies.reserve(num_threads * ops_per_thread);
-        
-        auto start_time = chrono::steady_clock::now();
-        
-        // Start worker threads
-        for (int i = 0; i < num_threads; i++) {
-            threads.emplace_back([&, ops_per_thread]() {
-                active_threads++;
-                
-                for (int j = 0; j < ops_per_thread; j++) {
-                    auto op_start = chrono::steady_clock::now();
-                    
-                    try {
-                        operation();
-                        total_requests++;
-                    } catch (...) {
-                        failed_requests++;
-                    }
-                    
-                    auto op_end = chrono::steady_clock::now();
-                    auto latency = chrono::duration_cast<chrono::microseconds>(
-                        op_end - op_start).count();
-                    
-                    total_latency += latency;
-                    
-                    {
-                        lock_guard<mutex> lock(latencies_mutex);
-                        latencies.push_back(latency);
-                    }
-                    
-                    // Check if duration exceeded
-                    auto elapsed = chrono::steady_clock::now() - start_time;
-                    if (elapsed > chrono::seconds(duration_seconds)) {
-                        break;
-                    }
-                }
-                
-                active_threads--;
-            });
-        }
-        
-        // Wait for all threads
-        for (auto& t : threads) {
-            t.join();
-        }
-        
-        // Calculate statistics
-        sort(latencies.begin(), latencies.end());
-        
-        long long total_time = chrono::duration_cast<chrono::seconds>(
-            chrono::steady_clock::now() - start_time).count();
-        
-        double throughput = (double)total_requests / total_time;
-        double avg_latency = (double)total_latency / total_requests;
-        double p95_latency = latencies[latencies.size() * 0.95];
-        double p99_latency = latencies[latencies.size() * 0.99];
-        double error_rate = (double)failed_requests / total_requests * 100.0;
-        
-        cout << "\n=== Load Test Results ===\n";
-        cout << "Threads:        " << num_threads << "\n";
-        cout << "Duration:       " << total_time << " seconds\n";
-        cout << "Total requests: " << total_requests << "\n";
-        cout << "Throughput:     " << throughput << " req/s\n";
-        cout << "Avg latency:    " << avg_latency << " μs\n";
-        cout << "P95 latency:    " << p95_latency << " μs\n";
-        cout << "P99 latency:    " << p99_latency << " μs\n";
-        cout << "Error rate:     " << error_rate << "%\n";
-    }
+struct LoadResult {
+    double throughput;    // requests / second
+    double p50, p95, p99; // microseconds
+    double errorRate;     // fraction failed
 };
-```
 
-### Load Testing Strategy
+template <typename Op>
+LoadResult loadTest(Op operation, int numThreads, int durationSeconds) {
+    using clock_type = std::chrono::steady_clock;
+    std::atomic<long long> failures{0};
+    std::vector<std::vector<long long>> perThread(numThreads); // latencies, µs
 
-1. **Start low**: Begin with single-threaded, low load
-2. **Gradually increase**: Step up load in increments
-3. **Monitor metrics**: Watch for degradation patterns
-4. **Find limits**: Identify when system breaks or degrades significantly
-5. **Document results**: Record all metrics at each load level
+    auto start = clock_type::now();
+    auto deadline = start + std::chrono::seconds(durationSeconds);
 
-## 19.12 Correctness Argument
-
-### Benchmarking Correctness
-
-**Invariant Preservation**: 
-- Benchmarking preserves the correctness of the code being tested (doesn't modify behavior)
-- Statistical analysis correctly represents the performance characteristics
-- Comparisons are fair and unbiased
-
-**Validation**:
-- Results are reproducible (same conditions → same results)
-- Statistical measures are mathematically correct
-- Outliers are handled appropriately
-- Confidence intervals are calculated correctly
-
-## 19.13 Edge Cases & Failure Modes
-
-### Common Benchmarking Pitfalls
-
-#### 1. Measurement Overhead
-
-**Problem**: Measurement code itself takes significant time compared to operation.
-
-**Solution**: 
-- Batch multiple operations per measurement
-- Use high-resolution timers
-- Measure larger operations where overhead is negligible
-
-#### 2. Compiler Optimizations
-
-**Problem**: Compiler optimizes away "unused" code.
-
-```cpp
-// BAD: Compiler may optimize this away
-void benchmark() {
-    int sum = 0;
-    for (int i = 0; i < 1000; i++) {
-        sum += i;
+    std::vector<std::thread> workers;
+    for (int id = 0; id < numThreads; ++id) {
+        workers.emplace_back([&, id] {
+            auto& samples = perThread[id];          // thread-local: no locking
+            while (clock_type::now() < deadline) {
+                auto t0 = clock_type::now();
+                bool ok = operation();
+                auto t1 = clock_type::now();
+                if (!ok) failures.fetch_add(1, std::memory_order_relaxed);
+                samples.push_back(
+                    std::chrono::duration_cast<std::chrono::microseconds>(
+                        t1 - t0).count());
+            }
+        });
     }
-    // sum is never used - compiler removes loop
+    for (auto& w : workers) w.join();
+
+    // Merge, sort, and read off percentiles.
+    std::vector<long long> all;
+    for (auto& s : perThread) all.insert(all.end(), s.begin(), s.end());
+    std::sort(all.begin(), all.end());
+
+    double elapsed = std::chrono::duration<double>(
+        clock_type::now() - start).count();
+    long long total = static_cast<long long>(all.size());
+    if (total == 0) return {0, 0, 0, 0, 0};   // guard the empty run
+
+    auto pct = [&](double p) {
+        return static_cast<double>(all[std::min<size_t>(
+            all.size() - 1, static_cast<size_t>(p * all.size()))]);
+    };
+    return {total / elapsed, pct(0.50), pct(0.95), pct(0.99),
+            static_cast<double>(failures.load()) / total};
 }
 ```
 
-```cpp
-// GOOD: Force computation
-void benchmark() {
-    volatile int sum = 0;  // volatile prevents optimization
-    for (int i = 0; i < 1000; i++) {
-        sum += i;
-    }
-    // Use sum somehow, or mark as volatile
-}
-```
+Two details make this correct where the naive version is not. Each thread writes to its **own** latency vector, so there is no lock on the hot path — a shared, mutex-guarded vector would have you measuring lock contention instead of the system under test. And the percentile index is **clamped** against `all.size() - 1`, because `p * size` for p = 0.99 rounds up to a valid-looking index that is one past the end on small samples; an unclamped version reads out of bounds exactly when the test is short. The empty-run guard covers the case where the deadline passes before any thread completes a request, which would otherwise divide by zero.
 
-#### 3. Cache Effects
+Run it as a sweep, not a single point: step `numThreads` up — 1, 2, 4, 8, 16 — and plot throughput and p99 against concurrency. Throughput climbs, then flattens as you saturate a resource; p99 stays flat, then hockey-sticks upward as requests start queueing. Where those two curves bend is your real capacity, and it is almost never the number you would have guessed.
 
-**Problem**: First run is slower due to cache misses.
+## The interview trap
 
-**Solution**: Always include warmup phase.
+A favorite interview question: *"Your benchmark says function X runs in 0.3 nanoseconds. What happened?"* The answer is dead-code elimination — 0.3 ns is well under the cost of a single cache miss, so the work was optimized away and the timer measured an empty loop. The follow-up — *"how would you fix it?"* — is `doNotOptimize`, or consuming the result in a way the compiler cannot see through. The deeper trap, and the one that separates people who have actually measured things from people who have read about it, is the impossibly-good result: a number faster than physics allows, or a change that shows "no effect." The reflex to distrust your own benchmark before you trust its happy news is the whole skill.
 
-#### 4. System Noise
+## Exercises
 
-**Problem**: Other processes affect measurements.
+1. Take the summing loop from this chapter, benchmark it with `doNotOptimize` removed, and inspect the assembly (`-O3 -S`). Confirm the loop is gone. Add the barrier back and watch it return.
+2. Time a single operation that takes roughly 2 ns with a batch size of 1, then 10, then 1000. Explain the curve.
+3. Measure the same array-sum at sizes 1 KiB, 1 MiB, and 128 MiB. Relate the three numbers to the cache hierarchy from [Chapter 3.6](03.6-memory-hierarchy-and-performance.md).
+4. Build the same operation two ways — as a latency measurement (dependency chain) and a throughput measurement (independent operations) — and explain why the two numbers differ.
+5. Run the load driver as a concurrency sweep and find the point where p99 latency turns sharply upward. What resource is saturating there?
 
-**Solution**: 
-- Run on dedicated system
-- Use process isolation
-- Run multiple times and use statistics
+## Summary
 
-#### 5. Thermal Throttling
+Honest measurement is a discipline, and it comes down to a short list of non-negotiables:
 
-**Problem**: CPU slows down when it gets hot.
+- **The noise is one-sided, so report the minimum**, not the mean. The fastest run is the one that measured the machine instead of the interference.
+- **Defeat the optimizer.** A benchmark that discards its result measures nothing. `doNotOptimize`, every time.
+- **Beat the timer with batching.** Do not time a 3 ns operation with a 30 ns clock.
+- **Warm up, then measure**, so cold caches and a cold CPU do not become your headline number.
+- **Isolate one variable.** Same data, same flags, same machine — a controlled experiment or nothing.
+- **Match the real workload's size and cache state**, because both change the answer by an order of magnitude.
+- **Know whether you are measuring latency or throughput.** They are different questions with different rigs.
 
-**Solution**: 
-- Wait for thermal equilibrium
-- Monitor CPU temperature
-- Use adequate cooling
-
-## 19.14 Performance & System Considerations
-
-### Benchmarking Performance
-
-**Overhead**: Benchmarking framework should have minimal overhead (< 1% of operation time for microsecond-scale operations).
-
-**Scalability**: Framework should handle:
-- Large number of iterations
-- Many different benchmarks
-- Long-running load tests
-
-**Resource Usage**: Benchmarking itself should not:
-- Consume excessive memory
-- Create too many threads
-- Interfere with system
-
-### System-Level Considerations
-
-1. **Isolation**: Isolate benchmark from other processes
-2. **Reproducibility**: Document all system settings
-3. **Portability**: Results may vary across systems
-4. **Representativeness**: Test conditions should match production
-
-## 19.15 Real-World Applications
-
-### Database Systems
-
-- Compare indexing strategies (B-tree vs hash index)
-- Measure query performance under load
-- Test transaction throughput
-
-### Web Servers
-
-- Load test API endpoints
-- Measure response times under concurrent requests
-- Find maximum concurrent connections
-
-### Game Engines
-
-- Measure frame time consistency
-- Profile rendering performance
-- Test physics simulation under load
-
-### System Libraries
-
-- Validate performance specifications
-- Compare different implementations
-- Regression testing for performance
-
-## 19.16 Common Pitfalls & Interview Traps
-
-### Common Mistakes
-
-1. **Single measurement**: Not accounting for variance
-2. **Different test data**: Comparing with different inputs
-3. **Compiler differences**: Using different optimization levels
-4. **System state**: Not controlling for background processes
-5. **No warmup**: First run includes cold cache effects
-6. **Ignoring outliers**: Not handling statistical anomalies
-7. **Premature optimization**: Benchmarking before profiling
-
-### Interview Questions
-
-**Q: How would you benchmark a hash function?**
-- Test with various input sizes
-- Measure distribution quality (collision rate)
-- Measure computation time
-- Test with different data patterns
-
-**Q: How do you ensure benchmark results are reliable?**
-- Multiple runs with statistical analysis
-- Control system state (CPU frequency, processes)
-- Use representative test data
-- Document environment
-
-## 19.17 Exercises & Thought Questions
-
-### Conceptual Questions
-
-1. Why is a single timing measurement insufficient for benchmarking?
-2. What is the purpose of warmup runs in benchmarking?
-3. How does CPU frequency scaling affect benchmark results?
-4. Why should you use the same compiler flags when comparing implementations?
-5. What statistical measures are most important for benchmarking?
-
-### Implementation Tasks
-
-1. Implement a benchmarking framework that handles outliers
-2. Create a load testing tool for a simple web server
-3. Write code to compare two sorting algorithms with statistical significance testing
-4. Implement cache warming for a data structure benchmark
-5. Create a benchmark that measures memory allocation performance
-
-### Analysis Problems
-
-1. Given benchmark results with high variance, what could be the causes?
-2. How would you benchmark an algorithm that has different performance characteristics for different input patterns?
-3. Design a benchmarking methodology for comparing database query performance
-4. How would you load test a distributed system?
-5. What metrics would you use to benchmark a cache implementation?
-
-## 19.18 Summary
-
-Benchmarking and load testing are essential skills for performance-critical software development. Key takeaways:
-
-1. **Systematic approach**: Use proper methodology with warmup, multiple runs, and statistical analysis
-2. **Control variables**: Ensure fair comparisons by controlling all factors except what you're testing
-3. **Low-level configuration**: CPU frequency, compiler flags, and system state significantly affect results
-4. **Statistical validity**: Use proper statistical methods to draw meaningful conclusions
-5. **Representative testing**: Test with realistic data and load conditions
-6. **Documentation**: Record all settings and conditions for reproducibility
-
-Effective benchmarking requires understanding both the code being tested and the system it runs on. By following proper methodology and controlling for external factors, you can make informed decisions about performance optimizations and implementation choices.
-
+These are not academic niceties. They are the exact techniques the book's live benchmarks use to earn the numbers they show you — and once you have them, you can stop trusting anyone else's benchmark, including your own past self's, and go measure the machine in front of you.

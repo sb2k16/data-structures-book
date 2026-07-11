@@ -1,1596 +1,544 @@
 # Chapter 17: Divide and Conquer
 
-## Table of Contents
+Most of this book is about *structures* — arrays, trees, hash tables — and the way they lay
+themselves out in memory. This chapter is about a *strategy*, and it is the one strategy whose
+payoff shows up twice: once in the asymptotics, where splitting a problem in half turns `O(n²)`
+into `O(n log n)`, and once on the hardware, where that same recursive split — almost by
+accident — produces the most cache-friendly memory access pattern you can write. That second
+payoff is the one other books skip, and it is the reason this chapter exists.
 
-- [17.1 Problem Statement & Motivation](#problem-statement-motivation)
-  - [What Problem Does Divide and Conquer Solve?](#what-problem-does-divide-and-conquer-solve)
-  - [When to Use Divide and Conquer](#when-to-use-divide-and-conquer)
-  - [When NOT to Use Divide and Conquer](#when-not-to-use-divide-and-conquer)
-- [17.2 Conceptual Overview](#conceptual-overview)
-  - [Intuitive Explanation](#intuitive-explanation)
-  - [Key Characteristics](#key-characteristics)
-  - [Divide and Conquer vs. Dynamic Programming](#divide-and-conquer-vs-dynamic-programming)
-- [17.3 Abstract Model & Invariants ⭐ (Mandatory)](#abstract-model-invariants-mandatory)
-  - [Abstract Model](#abstract-model)
-  - [Core Invariants](#core-invariants)
-  - [Algorithm-Specific Invariants](#algorithm-specific-invariants)
-  - [Assumptions](#assumptions)
-- [17.4 Operations & Interface](#operations-interface)
-  - [Behavioral Guarantees](#behavioral-guarantees)
-- [17.5 Time & Space Complexity](#time-space-complexity)
-  - [Time Complexity Analysis](#time-complexity-analysis)
-  - [Common Recurrences](#common-recurrences)
-  - [Space Complexity](#space-complexity)
-  - [Master Theorem](#master-theorem)
-- [17.6 Pseudocode (Language-Neutral) ⭐ (Mandatory)](#pseudocode-language-neutral-mandatory)
-  - [Generic Divide and Conquer Pattern](#generic-divide-and-conquer-pattern)
-  - [Merge Sort](#merge-sort)
-  - [Quick Sort](#quick-sort)
-  - [Binary Search](#binary-search)
-  - [Maximum Subarray (Divide and Conquer)](#maximum-subarray-divide-and-conquer)
-- [17.7 Implementation (Reference Language: C++) ⭐](#implementation-reference-language-c)
-- [17.8 Correctness Argument](#correctness-argument)
-  - [Invariant Preservation](#invariant-preservation)
-  - [Algorithm-Specific Correctness](#algorithm-specific-correctness)
-  - [Informal Proof Sketch](#informal-proof-sketch)
-- [17.9 Edge Cases & Failure Modes](#edge-cases-failure-modes)
-  - [Empty Input](#empty-input)
-  - [Already Sorted Input](#already-sorted-input)
-  - [Integer Overflow](#integer-overflow)
-  - [Common Failure Patterns](#common-failure-patterns)
-- [17.10 Performance & System Considerations ⭐ (Differentiator)](#performance-system-considerations-differentiator)
-  - [Recursion vs Iteration](#recursion-vs-iteration)
-  - [Cache Locality](#cache-locality)
-  - [Parallelization](#parallelization)
-  - [Practical Recommendations](#practical-recommendations)
-- [17.11 Merge Sort](#merge-sort)
-  - [Implementation](#implementation)
-  - [Time Complexity](#time-complexity)
-- [17.12 Quick Sort](#quick-sort)
-  - [Implementation](#implementation)
-  - [Randomized Quick Sort](#randomized-quick-sort)
-  - [Time Complexity](#time-complexity)
-- [17.13 Binary Search (Divide and Conquer)](#binary-search-divide-and-conquer)
-- [17.14 Power Calculation](#power-calculation)
-  - [Implementation](#implementation)
-  - [Time Complexity](#time-complexity)
-- [17.15 Maximum Subarray Problem (Kadane's vs Divide and Conquer)](#maximum-subarray-problem-kadanes-vs-divide-and-conquer)
-  - [Divide and Conquer Approach](#divide-and-conquer-approach)
-  - [Time Complexity](#time-complexity)
-- [17.16 Closest Pair of Points](#closest-pair-of-points)
-  - [Implementation](#implementation)
-  - [Time Complexity](#time-complexity)
-- [17.17 Strassen's Matrix Multiplication](#strassens-matrix-multiplication)
-  - [Implementation](#implementation)
-  - [Time Complexity](#time-complexity)
-- [17.18 Master Theorem](#master-theorem)
-  - [Recurrence Form](#recurrence-form)
-  - [Master Theorem Cases](#master-theorem-cases)
-  - [Examples](#examples)
-- [17.19 Advanced Divide and Conquer Problems](#advanced-divide-and-conquer-problems)
-  - [17.10.1 Counting Inversions](#1-counting-inversions)
-  - [17.10.2 Closest Pair of Points](#2-closest-pair-of-points)
-  - [17.10.3 Majority Element](#3-majority-element)
-  - [17.10.4 Karatsuba Multiplication](#4-karatsuba-multiplication)
-  - [17.10.5 Fast Fourier Transform (FFT) - Overview](#5-fast-fourier-transform-fft-overview)
-- [17.20 Divide and Conquer Patterns](#divide-and-conquer-patterns)
-  - [Pattern 1: Array Problems](#pattern-1-array-problems)
-  - [Pattern 2: Tree Problems](#pattern-2-tree-problems)
-  - [Pattern 3: Geometric Problems](#pattern-3-geometric-problems)
-  - [Pattern 4: Optimization Problems](#pattern-4-optimization-problems)
-- [17.21 Key Takeaways](#key-takeaways)
-- [17.22 Exercises](#exercises)
-- [17.23 Summary](#summary)
+The idea is three moves:
 
+1. **Divide** the problem into smaller instances of the same problem.
+2. **Conquer** each one by recursing, until the pieces are small enough to solve outright.
+3. **Combine** the sub-answers into an answer for the whole.
 
+The art is entirely in steps 1 and 3. If dividing is trivial and combining is cheap, you get an
+elegant `O(n log n)` algorithm; if combining costs as much as the naive method, you have gained
+nothing. Everything below is a study in where that line falls.
 
-## 17.1 Problem Statement & Motivation
+What divide and conquer is *not* is dynamic programming. Both break a problem into subproblems,
+but D&C subproblems are **independent** — the left half of an array knows nothing about the right
+half — so there is nothing to memoize and the pieces can run in parallel. DP exists precisely
+because *its* subproblems overlap. When you find yourself solving the same subproblem twice, you
+have left this chapter and entered that one.
 
-### What Problem Does Divide and Conquer Solve?
+## The recurrence is the algorithm
 
-Many problems can be solved more efficiently by breaking them into smaller subproblems:
-
-- **Sorting**: Merge sort, quick sort divide array into halves
-- **Searching**: Binary search divides search space in half
-- **Mathematical Problems**: Power calculation, matrix multiplication
-- **Geometric Problems**: Closest pair of points, convex hull
-- **Optimization**: Maximum subarray, optimal binary search tree
-
-**Naive Approaches and Their Limitations**:
-
-- **Brute Force**: Try all possibilities → exponential time
-- **Iterative Solutions**: Often O(n²) or worse
-- **No Structure**: Can't leverage problem decomposition
-
-**The Divide and Conquer Solution**: Divide problem into smaller subproblems, solve recursively, combine results. Often achieves O(n log n) or better performance.
-
-### When to Use Divide and Conquer
-
-✅ **Use divide and conquer when**:
-- Problem can be divided into similar subproblems
-- Subproblems are independent
-- Combining solutions is efficient
-- Base cases are easy to solve
-- Recursive structure is natural
-
-✅ **Real-world applications**:
-- Sorting (merge sort, quick sort)
-- Searching (binary search)
-- Matrix operations (Strassen's algorithm)
-- Geometric algorithms (closest pair)
-- Optimization problems
-
-### When NOT to Use Divide and Conquer
-
-❌ **Avoid when**:
-- Subproblems are not independent
-- Combining is expensive
-- Problem doesn't divide naturally
-- Iterative solution is simpler
-- Overlapping subproblems (use DP instead)
-
-**Key Trade-off**: Divide and conquer trades problem decomposition complexity for algorithmic efficiency.
-
-## 17.2 Conceptual Overview
-
-**Divide and Conquer** is a fundamental algorithmic paradigm that solves problems by:
-1. **Divide**: Break the problem into smaller subproblems
-2. **Conquer**: Solve the subproblems recursively
-3. **Combine**: Combine solutions to subproblems to solve the original problem
-
-### Intuitive Explanation
-
-Think of divide and conquer like organizing a large event:
-- **Divide**: Break event into smaller tasks (catering, music, decorations)
-- **Conquer**: Handle each task separately (assign teams)
-- **Combine**: Bring everything together for the final event
-
-Think of it like a binary tree:
-- **Root**: Original problem
-- **Children**: Subproblems
-- **Leaves**: Base cases (solved directly)
-- **Combine**: Work your way back up the tree
-
-### Key Characteristics
-
-- **Recursive Structure**: Problems are solved recursively
-- **Subproblem Independence**: Subproblems are independent (unlike DP)
-- **Base Case**: Small enough problems are solved directly
-- **Efficiency**: Often leads to O(n log n) algorithms
-
-### Divide and Conquer vs. Dynamic Programming
-
-| Aspect | Divide and Conquer | Dynamic Programming |
-|--------|-------------------|---------------------|
-| **Subproblems** | Independent | Overlapping |
-| **Memoization** | Not needed | Often needed |
-| **Combining** | Usually O(n) | Usually O(1) |
-| **Examples** | Merge sort, Quick sort | Fibonacci, LCS |
-
-## 17.3 Abstract Model & Invariants ⭐ (Mandatory)
-
-**Purpose**: Define correctness independent of implementation.
-
-### Abstract Model
-
-A divide and conquer algorithm consists of:
-- **Problem Instance**: Input to be solved
-- **Divide Function**: Breaks problem into subproblems
-- **Base Case Function**: Solves small problems directly
-- **Combine Function**: Merges subproblem solutions
-- **Recurrence Relation**: T(n) = aT(n/b) + f(n)
-
-### Core Invariants
-
-These invariants must **always** hold for divide and conquer algorithms:
-
-#### 1. Problem Decomposition Invariant
+You cannot reason about a divide-and-conquer algorithm without writing its **recurrence** — the
+cost of a problem expressed in terms of its subproblems. [Chapter 2](02-complexity-analysis.md)
+introduced the shape; here it earns its keep. Every algorithm in this chapter fits the template
 
 ```
-For any problem instance P:
-  divide(P) = {P₁, P₂, ..., Pₖ} where:
-    - Each Pᵢ is a valid subproblem
-    - Size(Pᵢ) < Size(P) for all i
-    - combine(solve(P₁), ..., solve(Pₖ)) = solve(P)
+T(n) = a · T(n/b) + f(n)
 ```
 
-**Meaning**: Problem can be correctly decomposed and solutions combined.
-
-#### 2. Base Case Invariant
-
-```
-For base case problems B:
-  solve(B) is computed directly (not recursively)
-  solve(B) is correct
-  Base cases are reachable from any problem instance
-```
-
-**Meaning**: Base cases provide correct termination.
-
-#### 3. Subproblem Independence Invariant
+where `a` is the number of subproblems you recurse on, `b` is the factor by which each shrinks,
+and `f(n)` is the cost of the divide-and-combine work at this level. Merge sort splits into two
+halves and merges them in linear time, so `a = 2`, `b = 2`, `f(n) = n`:
 
 ```
-For subproblems P₁, P₂, ..., Pₖ:
-  solve(Pᵢ) does not depend on solve(Pⱼ) for i ≠ j
-  Subproblems can be solved in any order (or in parallel)
+T(n) = 2·T(n/2) + O(n)
 ```
 
-**Meaning**: Subproblems are independent (unlike DP where they overlap).
+You can *see* why that solves to `O(n log n)` by drawing the recursion tree. Each level does
+`O(n)` total work — the top merges `n` elements, the next level merges two halves of `n/2`, and
+so on — and there are `log₂ n` levels before the pieces reach size 1:
 
-#### 4. Progress Invariant
-
-```
-For any recursive call:
-  Problem size decreases: Size(subproblem) < Size(problem)
-  Eventually reaches base case
-  Algorithm terminates
-```
-
-**Meaning**: Each recursive call makes progress toward base case.
-
-### Algorithm-Specific Invariants
-
-#### Merge Sort Invariants
-
-1. **Sorted Subarray Invariant**: After conquering, each subarray is sorted
-2. **Merge Invariant**: Merge combines two sorted arrays into one sorted array
-3. **Completeness Invariant**: All elements are processed exactly once
-
-#### Quick Sort Invariants
-
-1. **Partition Invariant**: After partition, pivot is in correct position
-2. **Ordering Invariant**: Elements left of pivot ≤ pivot ≤ elements right of pivot
-3. **Recursive Invariant**: Left and right subarrays are independent
-
-### Assumptions
-
-1. **Finite Problem Size**: Problem instances are finite
-2. **Well-Defined Division**: Problem can be divided consistently
-3. **Efficient Combination**: Combining solutions is efficient (usually O(n))
-4. **Base Cases Exist**: Base cases are well-defined and reachable
-5. **No Overlapping Subproblems**: Unlike DP, subproblems are independent
-
-This abstract model provides the intellectual backbone for understanding divide and conquer correctness.
-
-## 17.4 Operations & Interface
-
-**Purpose**: Define what operations are supported.
-
-Divide and conquer algorithms support the following conceptual operations:
-
-| Operation | Description | Precondition | Postcondition |
-|-----------|-------------|--------------|---------------|
-| `divide(problem)` | Break into subproblems | Problem is valid | Returns list of subproblems |
-| `conquer(subproblem)` | Solve subproblem | Subproblem is valid | Returns solution |
-| `combine(solutions)` | Merge solutions | Solutions are valid | Returns combined solution |
-| `isBaseCase(problem)` | Check if base case | Problem is valid | Returns true if base case |
-| `solveDirectly(problem)` | Solve base case | Problem is base case | Returns solution |
-
-### Behavioral Guarantees
-
-1. **Correctness**: Combined solution correctly solves original problem
-2. **Termination**: Algorithm eventually reaches base cases
-3. **Efficiency**: Time complexity meets recurrence relation
-4. **Independence**: Subproblems can be solved independently
-
-## 17.5 Time & Space Complexity
-
-**Purpose**: Make trade-offs explicit.
-
-### Time Complexity Analysis
-
-Divide and conquer algorithms follow recurrence relations of the form:
-```
-T(n) = aT(n/b) + f(n)
+```mermaid
+graph TD
+    A["n — O(n) merge"] --> B["n/2"]
+    A --> C["n/2"]
+    B --> D["n/4"]
+    B --> E["n/4"]
+    C --> F["n/4"]
+    C --> G["n/4"]
+    D --> H["… log n levels, O(n) work each …"]
+    E --> H
+    F --> H
+    G --> H
 ```
 
-Where:
-- `a` = number of subproblems
-- `n/b` = size of each subproblem
-- `f(n)` = cost of dividing and combining
+`O(n)` per level × `log n` levels = `O(n log n)`. That picture — total work per level, times the
+number of levels — is the whole intuition. The Master Theorem just turns it into a formula so you
+don't have to draw the tree every time.
 
-### Common Recurrences
+## The Master Theorem
 
-| Recurrence | Solution | Examples |
-|-----------|----------|----------|
-| T(n) = 2T(n/2) + O(n) | O(n log n) | Merge sort, Quick sort (average) |
-| T(n) = T(n/2) + O(1) | O(log n) | Binary search |
-| T(n) = 2T(n/2) + O(1) | O(n) | Tree traversal |
-| T(n) = T(n-1) + O(n) | O(n²) | Some divide and conquer |
-| T(n) = 7T(n/2) + O(n²) | O(n^log₂7) ≈ O(n^2.81) | Strassen's matrix multiplication |
+Given `T(n) = a·T(n/b) + f(n)` with `a ≥ 1` and `b > 1`, the answer is decided by a race between
+two quantities: the number of leaves in the recursion tree, `n^(log_b a)`, and the per-call work
+`f(n)`. Whichever grows faster dominates.
 
-### Space Complexity
+- **Case 1 — leaves win.** If `f(n) = O(n^(log_b a − ε))` for some `ε > 0`, then
+  `T(n) = Θ(n^(log_b a))`. The work is dominated by the exponentially many base cases at the
+  bottom of the tree.
+- **Case 2 — a tie.** If `f(n) = Θ(n^(log_b a))`, then `T(n) = Θ(n^(log_b a) · log n)`. Every
+  level does the same total work, and there are `log n` of them. Merge sort lives here.
+- **Case 3 — the root wins.** If `f(n) = Ω(n^(log_b a + ε))` for some `ε > 0` *and*
+  `a·f(n/b) ≤ c·f(n)` for some `c < 1` (the regularity condition), then `T(n) = Θ(f(n))`. The
+  top-level combine cost swamps everything beneath it.
 
-| Algorithm | Space Complexity | Notes |
-|-----------|------------------|-------|
-| **Merge Sort** | O(n) | Auxiliary array for merging |
-| **Quick Sort** | O(log n) | Recursion stack (average) |
-| **Binary Search** | O(1) iterative<br>O(log n) recursive | Stack space |
-| **Closest Pair** | O(n log n) | Sorting and recursion |
+Watch it decide the algorithms in this chapter:
 
-### Master Theorem
+| Algorithm | Recurrence | `log_b a` | vs. `f(n)` | Result |
+|-----------|-----------|-----------|-----------|--------|
+| Binary search | `T(n) = T(n/2) + O(1)` | 0 | tie (`n⁰`) | `Θ(log n)` |
+| Merge sort | `T(n) = 2T(n/2) + O(n)` | 1 | tie (`n¹`) | `Θ(n log n)` |
+| Quickselect (avg) | `T(n) = T(n/2) + O(n)` | 0 | root wins | `Θ(n)` |
+| Karatsuba | `T(n) = 3T(n/2) + O(n)` | ≈1.585 | leaves win | `Θ(n^1.585)` |
+| Recursive matmul | `T(n) = 8T(n/2) + O(n²)` | 3 | leaves win | `Θ(n³)` |
+| Strassen | `T(n) = 7T(n/2) + O(n²)` | ≈2.807 | leaves win | `Θ(n^2.807)` |
 
-The Master Theorem provides solutions for recurrences of the form T(n) = aT(n/b) + f(n):
+The Master Theorem does not cover every recurrence — it needs equal-sized subproblems and a
+well-behaved `f(n)` — but it covers the ones that matter here, and it makes the design lever
+obvious: to beat a bound, you either shrink `a` (Karatsuba trades a multiply for additions to
+drop from 4 to 3; Strassen from 8 to 7) or you cheapen `f(n)`.
 
-**Case 1**: If f(n) = O(n^(log_b a - ε)) for some ε > 0
-- Then T(n) = Θ(n^(log_b a))
+## Merge sort: the canonical split
 
-**Case 2**: If f(n) = Θ(n^(log_b a))
-- Then T(n) = Θ(n^(log_b a) log n)
+Merge sort is the algorithm the recurrence was drawn for. Split the array at the midpoint, sort
+each half recursively, then merge the two sorted halves in one linear pass. The merge is the whole
+trick: walking two sorted runs with two fingers and emitting the smaller element is `O(n)`, and it
+is what buys the `n log n`.
 
-**Case 3**: If f(n) = Ω(n^(log_b a + ε)) for some ε > 0, and af(n/b) ≤ cf(n) for some c < 1
-- Then T(n) = Θ(f(n))
-
-## 17.6 Pseudocode (Language-Neutral) ⭐ (Mandatory)
-
-**Purpose**: Bridge theory → implementation.
-
-**Rules**: No language syntax, no pointers/templates, focus on logic only.
-
-### Generic Divide and Conquer Pattern
-
-```
-FUNCTION divideAndConquer(problem):
-  IF isBaseCase(problem):
-    RETURN solveDirectly(problem)
-  END IF
-  
-  subproblems ← divide(problem)
-  solutions ← empty list
-  
-  FOR EACH subproblem IN subproblems:
-    solution ← divideAndConquer(subproblem)
-    solutions.add(solution)
-  END FOR
-  
-  RETURN combine(solutions)
-END FUNCTION
-```
-
-### Merge Sort
-
-```
-FUNCTION mergeSort(array, left, right):
-  IF left ≥ right:
-    RETURN  // Base case: single element or empty
-  END IF
-  
-  mid ← (left + right) / 2
-  
-  mergeSort(array, left, mid)      // Conquer left
-  mergeSort(array, mid + 1, right)  // Conquer right
-  merge(array, left, mid, right)    // Combine
-END FUNCTION
-
-FUNCTION merge(array, left, mid, right):
-  temp ← empty array
-  i ← left
-  j ← mid + 1
-  
-  WHILE i ≤ mid AND j ≤ right:
-    IF array[i] ≤ array[j]:
-      temp.append(array[i])
-      i ← i + 1
-    ELSE:
-      temp.append(array[j])
-      j ← j + 1
-    END IF
-  END WHILE
-  
-  WHILE i ≤ mid:
-    temp.append(array[i])
-    i ← i + 1
-  END WHILE
-  
-  WHILE j ≤ right:
-    temp.append(array[j])
-    j ← j + 1
-  END WHILE
-  
-  FOR k FROM 0 TO temp.size() - 1:
-    array[left + k] ← temp[k]
-  END FOR
-END FUNCTION
-```
-
-### Quick Sort
-
-```
-FUNCTION quickSort(array, left, right):
-  IF left ≥ right:
-    RETURN  // Base case
-  END IF
-  
-  pivot_index ← partition(array, left, right)
-  quickSort(array, left, pivot_index - 1)   // Conquer left
-  quickSort(array, pivot_index + 1, right) // Conquer right
-END FUNCTION
-
-FUNCTION partition(array, left, right):
-  pivot ← array[right]
-  i ← left - 1
-  
-  FOR j FROM left TO right - 1:
-    IF array[j] ≤ pivot:
-      i ← i + 1
-      swap(array[i], array[j])
-    END IF
-  END FOR
-  
-  swap(array[i + 1], array[right])
-  RETURN i + 1
-END FUNCTION
-```
-
-### Binary Search
-
-```
-FUNCTION binarySearch(array, target, left, right):
-  IF left > right:
-    RETURN -1  // Not found
-  END IF
-  
-  mid ← left + (right - left) / 2
-  
-  IF array[mid] = target:
-    RETURN mid
-  ELSE IF array[mid] < target:
-    RETURN binarySearch(array, target, mid + 1, right)
-  ELSE:
-    RETURN binarySearch(array, target, left, mid - 1)
-  END IF
-END FUNCTION
-```
-
-### Maximum Subarray (Divide and Conquer)
-
-```
-FUNCTION maxSubarray(array, left, right):
-  IF left = right:
-    RETURN array[left]  // Base case
-  END IF
-  
-  mid ← (left + right) / 2
-  
-  left_max ← maxSubarray(array, left, mid)
-  right_max ← maxSubarray(array, mid + 1, right)
-  cross_max ← maxCrossingSubarray(array, left, mid, right)
-  
-  RETURN max(left_max, right_max, cross_max)
-END FUNCTION
-
-FUNCTION maxCrossingSubarray(array, left, mid, right):
-  left_sum ← -infinity
-  sum ← 0
-  
-  FOR i FROM mid DOWNTO left:
-    sum ← sum + array[i]
-    left_sum ← max(left_sum, sum)
-  END FOR
-  
-  right_sum ← -infinity
-  sum ← 0
-  
-  FOR j FROM mid + 1 TO right:
-    sum ← sum + array[j]
-    right_sum ← max(right_sum, sum)
-  END FOR
-  
-  RETURN left_sum + right_sum
-END FUNCTION
-```
-
-This pseudocode should be readable by any engineer, regardless of their programming language background.
-
-## 17.7 Implementation (Reference Language: C++) ⭐
-
-**Note to Reader**: This section provides concrete C++ implementations. The correctness relies on the invariants defined in Section 17.3 and the pseudocode in Section 17.6.
-
-Detailed C++ implementations for each divide and conquer algorithm are provided in the following sections:
-- Section 17.9: Merge Sort Implementation
-- Section 17.10: Quick Sort Implementation
-- Section 17.11: Binary Search Implementation
-- And other algorithms in subsequent sections
-
-## 17.8 Correctness Argument
-
-**Purpose**: Explain why the implementations work.
-
-### Invariant Preservation
-
-Divide and conquer algorithms preserve the core invariants defined in Section 17.3:
-
-#### 1. Problem Decomposition Invariant
-
-**For Merge Sort**:
-- Array divided into two halves
-- Each half sorted recursively
-- Merge combines two sorted halves into one sorted array
-- **Preserves**: Final array is sorted
-
-**For Quick Sort**:
-- Array partitioned around pivot
-- Left and right subarrays sorted recursively
-- Partition ensures pivot in correct position
-- **Preserves**: Final array is sorted
-
-#### 2. Base Case Invariant
-
-**For All Algorithms**:
-- Base cases (single element or empty) are handled correctly
-- Base case solutions are correct by definition
-- **Preserves**: Algorithm terminates correctly
-
-#### 3. Subproblem Independence
-
-**For Divide and Conquer**:
-- Subproblems are independent (unlike DP)
-- Can be solved in any order
-- Solutions don't depend on each other
-- **Preserves**: Correctness of individual subproblems
-
-### Algorithm-Specific Correctness
-
-#### Merge Sort Correctness
-
-**Why it works**:
-1. Base case: Single element is sorted
-2. Divide: Array split into two halves
-3. Conquer: Each half sorted recursively
-4. Combine: Merge combines two sorted arrays into one sorted array
-5. **Correct**: Final array is sorted
-
-#### Quick Sort Correctness
-
-**Why it works**:
-1. Partition places pivot in correct position
-2. Elements left of pivot ≤ pivot ≤ elements right of pivot
-3. Left and right subarrays sorted recursively
-4. **Correct**: Final array is sorted
-
-### Informal Proof Sketch
-
-**For Divide and Conquer**:
-1. **Base Case**: Correct by definition/verification
-2. **Inductive Step**: If subproblems solved correctly, combination is correct
-3. **Termination**: Problem size decreases, eventually reaches base case
-4. **Conclusion**: Divide and conquer solution is correct
-
-This correctness argument provides engineers with confidence that divide and conquer implementations work correctly.
-
-## 17.9 Edge Cases & Failure Modes
-
-**Purpose**: Build defensive thinking.
-
-### Empty Input
-
-**Problem**: Empty array or list.
-
-**Edge Cases**:
-- Empty array `[]`
-- Single element `[x]`
-- Two elements `[x, y]`
-
-**Handling**:
 ```cpp
-if (left >= right) {
-    return;  // Base case: empty or single element
-}
-```
-
-### Already Sorted Input
-
-**Problem**: Input is already sorted.
-
-**Edge Cases**:
-- Sorted ascending
-- Sorted descending
-- All same elements
-
-**Handling**: Usually handled correctly, but verify performance.
-
-### Integer Overflow
-
-**Problem**: `(left + right) / 2` may overflow.
-
-**Edge Cases**:
-- Very large indices
-- `left + right > INT_MAX`
-
-**Handling**:
-```cpp
-int mid = left + (right - left) / 2;  // Avoid overflow
-```
-
-### Common Failure Patterns
-
-1. **Off-by-One Errors**: Incorrect array bounds
-2. **Missing Base Case**: Infinite recursion
-3. **Incorrect Merge**: Not handling remaining elements
-4. **Partition Errors**: Pivot not in correct position
-5. **Integer Overflow**: `(left + right) / 2` overflow
-
-This section maps directly to production bugs and helps engineers write robust code.
-
-## 17.10 Performance & System Considerations ⭐ (Differentiator)
-
-**Purpose**: Connect algorithms to real machines.
-
-### Recursion vs Iteration
-
-#### Stack Space
-
-**Recursive Divide and Conquer**:
-- Uses call stack: O(log n) depth typically
-- Stack overflow risk for very large inputs
-- Function call overhead
-
-**Iterative Alternatives**:
-- No stack overflow risk
-- Better performance (no function calls)
-- More complex to implement
-
-### Cache Locality
-
-#### Merge Sort
-
-**Cache Behavior**:
-- Good: Sequential access in merge phase
-- Bad: Recursive calls may cause cache misses
-- **Optimization**: Use iterative merge sort for better cache performance
-
-#### Quick Sort
-
-**Cache Behavior**:
-- Good: In-place partitioning (cache-friendly)
-- Bad: Recursive calls
-- **Optimization**: Use iterative version or limit recursion depth
-
-### Parallelization
-
-#### Divide and Conquer is Naturally Parallel
-
-**Opportunities**:
-- Independent subproblems can be solved in parallel
-- Merge/combine phase may be parallelizable
-
-**Challenges**:
-- Overhead of parallelization
-- Load balancing
-- Synchronization
-
-### Practical Recommendations
-
-1. **Use Iterative When Possible**: Better performance, no stack risk
-2. **Consider Hybrid**: Recursive for clarity, iterative for performance
-3. **Profile**: Measure actual performance
-4. **Parallelize**: When subproblems are independent and large enough
-
-This section connects divide and conquer algorithms to real system performance.
-
-## 17.11 Merge Sort
-
-**Merge Sort** is a classic divide and conquer sorting algorithm.
-
-### Implementation
-```cpp
-#include <iostream>
 #include <vector>
+using std::vector;
+
+void merge(vector<int>& a, int lo, int mid, int hi) {
+    vector<int> buf;
+    buf.reserve(hi - lo + 1);
+    int i = lo, j = mid + 1;
+    while (i <= mid && j <= hi)               // two fingers, emit the smaller
+        buf.push_back(a[i] <= a[j] ? a[i++] : a[j++]);
+    while (i <= mid) buf.push_back(a[i++]);   // drain the leftovers
+    while (j <= hi)  buf.push_back(a[j++]);
+    for (int k = 0; k < (int)buf.size(); ++k)
+        a[lo + k] = buf[k];
+}
+
+void mergeSort(vector<int>& a, int lo, int hi) {
+    if (lo >= hi) return;                      // base case: 0 or 1 element
+    int mid = lo + (hi - lo) / 2;              // not (lo+hi)/2 — that can overflow
+    mergeSort(a, lo, mid);
+    mergeSort(a, mid + 1, hi);
+    merge(a, lo, mid, hi);
+}
+
+void mergeSort(vector<int>& a) {
+    if (!a.empty()) mergeSort(a, 0, (int)a.size() - 1);
+}
+```
+
+Two details here are the most common bugs in the whole chapter. The midpoint is
+`lo + (hi - lo) / 2`, never `(lo + hi) / 2`: the latter overflows a 32-bit `int` once the indices
+grow large — a bug that sat undetected in the JDK's binary search for nine years. And the wrapper
+guards `a.empty()`, because `a.size()` is unsigned, so `a.size() - 1` on an empty vector wraps to a
+gigantic value. Merge sort's `O(n log n)` is worst-case, not just average — every level does the
+same work regardless of input — which makes it the sort of choice when you cannot tolerate
+quicksort's `O(n²)` tail. It pays for that guarantee with `O(n)` auxiliary memory for the merge
+buffer.
+
+## Quicksort and quickselect: recurse toward the pivot
+
+Quicksort inverts merge sort's balance of effort. Merge sort does trivial dividing and hard
+combining; quicksort does hard dividing (the partition) and *no* combining at all. Partition picks
+a pivot and rearranges the array so everything smaller sits left of it and everything larger sits
+right; the pivot is now in its final position, and the two sides are sorted independently with
+nothing left to merge.
+
+```cpp
+#include <random>
 #include <algorithm>
-using namespace std;
+using std::vector;
 
-void merge(vector<int>& arr, int left, int mid, int right) {
-    int n1 = mid - left + 1;
-    int n2 = right - mid;
-    
-    vector<int> leftArr(n1);
-    vector<int> rightArr(n2);
-    
-    for (int i = 0; i < n1; i++) {
-        leftArr[i] = arr[left + i];
-    }
-    for (int j = 0; j < n2; j++) {
-        rightArr[j] = arr[mid + 1 + j];
-    }
-    
-    int i = 0, j = 0, k = left;
-    
-    while (i < n1 && j < n2) {
-        if (leftArr[i] <= rightArr[j]) {
-            arr[k] = leftArr[i];
-            i++;
-        } else {
-            arr[k] = rightArr[j];
-            j++;
-        }
-        k++;
-    }
-    
-    while (i < n1) {
-        arr[k] = leftArr[i];
-        i++;
-        k++;
-    }
-    
-    while (j < n2) {
-        arr[k] = rightArr[j];
-        j++;
-        k++;
-    }
+int partition(vector<int>& a, int lo, int hi) {
+    static std::mt19937 rng{std::random_device{}()};   // seeded ONCE, not per call
+    std::uniform_int_distribution<int> pick(lo, hi);
+    std::swap(a[pick(rng)], a[hi]);                     // random pivot → expected n log n
+    int pivot = a[hi], i = lo - 1;
+    for (int j = lo; j < hi; ++j)
+        if (a[j] < pivot) std::swap(a[++i], a[j]);
+    std::swap(a[i + 1], a[hi]);
+    return i + 1;                                       // pivot's final index
 }
 
-void mergeSort(vector<int>& arr, int left, int right) {
-    if (left < right) {
-        int mid = left + (right - left) / 2;
-        
-        mergeSort(arr, left, mid);
-        mergeSort(arr, mid + 1, right);
-        
-        merge(arr, left, mid, right);
-    }
-}
-
-void mergeSort(vector<int>& arr) {
-    mergeSort(arr, 0, arr.size() - 1);
+void quickSort(vector<int>& a, int lo, int hi) {
+    if (lo >= hi) return;
+    int p = partition(a, lo, hi);
+    quickSort(a, lo, p - 1);
+    quickSort(a, p + 1, hi);
 }
 ```
 
-### Time Complexity
-- **Time**: O(n log n) in all cases
-- **Space**: O(n) for temporary arrays
-- **Stable**: Yes
-- **In-place**: No
+The randomization is not decoration. With a fixed pivot (say, always the last element), an already
+sorted array drives partition into its `O(n²)` worst case — the single most common way quicksort
+blows up in production. A uniformly random pivot makes that worst case astronomically unlikely
+regardless of input, which is why the seed lives in a `static` generator initialized once. Re-seed
+from the clock *inside* `partition` and every call within the same millisecond gets the same
+"random" pivot — no randomization at all.
 
-## 17.12 Quick Sort
+The same partition gives you **quickselect**, the classic example of recursing into only *one*
+side. To find the k-th smallest element you do not need to sort both halves — only the half that
+contains rank `k`:
 
-**Quick Sort** uses divide and conquer with a pivot element.
-
-### Implementation
 ```cpp
-int partition(vector<int>& arr, int low, int high) {
-    int pivot = arr[high];
-    int i = low - 1;
-    
-    for (int j = low; j < high; j++) {
-        if (arr[j] < pivot) {
-            i++;
-            swap(arr[i], arr[j]);
-        }
-    }
-    swap(arr[i + 1], arr[high]);
-    return i + 1;
-}
-
-void quickSort(vector<int>& arr, int low, int high) {
-    if (low < high) {
-        int pi = partition(arr, low, high);
-        
-        quickSort(arr, low, pi - 1);
-        quickSort(arr, pi + 1, high);
-    }
-}
-
-void quickSort(vector<int>& arr) {
-    quickSort(arr, 0, arr.size() - 1);
+// k is 0-indexed: k == 0 is the minimum. Expected O(n).
+int quickselect(vector<int>& a, int lo, int hi, int k) {
+    if (lo == hi) return a[lo];
+    int p = partition(a, lo, hi);
+    if (k == p) return a[p];
+    return (k < p) ? quickselect(a, lo, p - 1, k)
+                   : quickselect(a, p + 1, hi, k);
 }
 ```
 
-### Randomized Quick Sort
-```cpp
-#include <cstdlib>
-#include <ctime>
+Recursing into one half instead of two changes the recurrence from `2T(n/2)` to `T(n/2)`, and the
+Master Theorem's Case 3 collapses it from `O(n log n)` to `O(n)` expected. This is `std::nth_element`,
+and it is how you find a median, or the top-k, without paying to sort everything you don't care
+about.
 
-int randomizedPartition(vector<int>& arr, int low, int high) {
-    srand(time(nullptr));
-    int random = low + rand() % (high - low + 1);
-    swap(arr[random], arr[high]);
-    return partition(arr, low, high);
-}
+## Binary search and fast exponentiation: `a = 1`
 
-void randomizedQuickSort(vector<int>& arr, int low, int high) {
-    if (low < high) {
-        int pi = randomizedPartition(arr, low, high);
-        randomizedQuickSort(arr, low, pi - 1);
-        randomizedQuickSort(arr, pi + 1, high);
-    }
-}
-```
-
-### Time Complexity
-- **Best Case**: O(n log n)
-- **Average Case**: O(n log n)
-- **Worst Case**: O(n²) - when pivot is always smallest/largest
-- **Space**: O(log n) for recursion stack
-- **In-place**: Yes (with some modifications)
-
-## 17.13 Binary Search (Divide and Conquer)
-
-Binary search is a divide and conquer algorithm.
+The leanest divide-and-conquer algorithms discard subproblems entirely. Binary search
+(covered in full in [Chapter 13](13-searching-algorithms.md)) inspects the middle element and recurses
+into *one* half, giving `T(n) = T(n/2) + O(1) = O(log n)`. Fast exponentiation applies the same
+halving to arithmetic: `xⁿ = (x^(n/2))²`, squaring one recursively computed result instead of
+multiplying `x` by itself `n` times.
 
 ```cpp
-// Already covered in Chapter 13
-// Divide: Check middle element
-// Conquer: Search in left or right half
-// Combine: Return result
-```
-
-## 17.14 Power Calculation
-
-Calculate x^n efficiently using divide and conquer.
-
-### Implementation
-```cpp
-double power(double x, int n) {
-    if (n == 0) {
-        return 1.0;
-    }
-    
-    if (n < 0) {
-        x = 1.0 / x;
-        n = -n;
-    }
-    
+double power(double x, long long n) {
+    if (n == 0) return 1.0;
+    if (n < 0)  return 1.0 / power(x, -n);   // long long so -INT_MIN can't overflow
     double half = power(x, n / 2);
-    
-    if (n % 2 == 0) {
-        return half * half;
-    } else {
-        return half * half * x;
-    }
+    return (n % 2 == 0) ? half * half : half * half * x;
 }
 ```
 
-### Time Complexity
-- **Time**: O(log n)
-- **Space**: O(log n)
+Taking `n` as `long long` matters: negating the most negative 32-bit `int` overflows, so a naive
+`int` version corrupts on `power(x, INT_MIN)`. The recurrence `T(n) = T(n/2) + O(1)` is binary
+search's, and the cost is `O(log n)` multiplications — the same trick that makes modular
+exponentiation, and therefore RSA, tractable.
 
-## 17.15 Maximum Subarray Problem (Kadane's vs Divide and Conquer)
+## Maximum subarray: the combine step does the work
 
-### Divide and Conquer Approach
-```cpp
-struct SubarrayResult {
-    int maxSum;
-    int maxLeftSum;
-    int maxRightSum;
-    int totalSum;
-};
-
-SubarrayResult maxCrossingSubarray(const vector<int>& arr, 
-                                   int low, int mid, int high) {
-    int leftSum = numeric_limits<int>::min();
-    int sum = 0;
-    int maxLeft = mid;
-    
-    for (int i = mid; i >= low; i--) {
-        sum += arr[i];
-        if (sum > leftSum) {
-            leftSum = sum;
-            maxLeft = i;
-        }
-    }
-    
-    int rightSum = numeric_limits<int>::min();
-    sum = 0;
-    int maxRight = mid + 1;
-    
-    for (int i = mid + 1; i <= high; i++) {
-        sum += arr[i];
-        if (sum > rightSum) {
-            rightSum = sum;
-            maxRight = i;
-        }
-    }
-    
-    return {leftSum + rightSum, leftSum, rightSum, 
-            accumulate(arr.begin() + low, arr.begin() + high + 1, 0)};
-}
-
-int maxSubarrayDivideConquer(const vector<int>& arr, int low, int high) {
-    if (low == high) {
-        return arr[low];
-    }
-    
-    int mid = low + (high - low) / 2;
-    
-    int leftMax = maxSubarrayDivideConquer(arr, low, mid);
-    int rightMax = maxSubarrayDivideConquer(arr, mid + 1, high);
-    SubarrayResult cross = maxCrossingSubarray(arr, low, mid, high);
-    
-    return max({leftMax, rightMax, cross.maxSum});
-}
-
-int maxSubarray(const vector<int>& arr) {
-    return maxSubarrayDivideConquer(arr, 0, arr.size() - 1);
-}
-```
-
-### Time Complexity
-- **Time**: O(n log n)
-- **Space**: O(log n)
-
-## 17.16 Closest Pair of Points
-
-**Problem**: Find the closest pair of points in a 2D plane.
-
-### Implementation
-```cpp
-#include <cmath>
-#include <algorithm>
-
-struct Point {
-    double x, y;
-    
-    Point(double x, double y) : x(x), y(y) {}
-    
-    double distance(const Point& other) const {
-        double dx = x - other.x;
-        double dy = y - other.y;
-        return sqrt(dx * dx + dy * dy);
-    }
-};
-
-bool compareX(const Point& a, const Point& b) {
-    return a.x < b.x;
-}
-
-bool compareY(const Point& a, const Point& b) {
-    return a.y < b.y;
-}
-
-double closestPairRecursive(vector<Point>& points, int left, int right) {
-    if (right - left <= 3) {
-        // Brute force for small sets
-        double minDist = numeric_limits<double>::max();
-        for (int i = left; i <= right; i++) {
-            for (int j = i + 1; j <= right; j++) {
-                minDist = min(minDist, points[i].distance(points[j]));
-            }
-        }
-        return minDist;
-    }
-    
-    int mid = left + (right - left) / 2;
-    Point midPoint = points[mid];
-    
-    double leftDist = closestPairRecursive(points, left, mid);
-    double rightDist = closestPairRecursive(points, mid + 1, right);
-    double minDist = min(leftDist, rightDist);
-    
-    // Check points in strip
-    vector<Point> strip;
-    for (int i = left; i <= right; i++) {
-        if (abs(points[i].x - midPoint.x) < minDist) {
-            strip.push_back(points[i]);
-        }
-    }
-    
-    sort(strip.begin(), strip.end(), compareY);
-    
-    for (size_t i = 0; i < strip.size(); i++) {
-        for (size_t j = i + 1; j < strip.size() && 
-             (strip[j].y - strip[i].y) < minDist; j++) {
-            minDist = min(minDist, strip[i].distance(strip[j]));
-        }
-    }
-    
-    return minDist;
-}
-
-double closestPair(vector<Point>& points) {
-    sort(points.begin(), points.end(), compareX);
-    return closestPairRecursive(points, 0, points.size() - 1);
-}
-```
-
-### Time Complexity
-- **Time**: O(n log² n)
-- **Space**: O(n)
-
-## 17.17 Strassen's Matrix Multiplication
-
-**Strassen's algorithm** multiplies two matrices using divide and conquer.
-
-### Implementation
-```cpp
-#include <vector>
-
-vector<vector<int>> addMatrix(const vector<vector<int>>& A, 
-                              const vector<vector<int>>& B) {
-    int n = A.size();
-    vector<vector<int>> C(n, vector<int>(n));
-    
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            C[i][j] = A[i][j] + B[i][j];
-        }
-    }
-    return C;
-}
-
-vector<vector<int>> subtractMatrix(const vector<vector<int>>& A, 
-                                    const vector<vector<int>>& B) {
-    int n = A.size();
-    vector<vector<int>> C(n, vector<int>(n));
-    
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            C[i][j] = A[i][j] - B[i][j];
-        }
-    }
-    return C;
-}
-
-vector<vector<int>> strassenMultiply(const vector<vector<int>>& A, 
-                                     const vector<vector<int>>& B) {
-    int n = A.size();
-    
-    // Base case
-    if (n == 1) {
-        return {{A[0][0] * B[0][0]}};
-    }
-    
-    // Divide matrices into submatrices
-    int half = n / 2;
-    
-    vector<vector<int>> A11(half, vector<int>(half));
-    vector<vector<int>> A12(half, vector<int>(half));
-    vector<vector<int>> A21(half, vector<int>(half));
-    vector<vector<int>> A22(half, vector<int>(half));
-    
-    vector<vector<int>> B11(half, vector<int>(half));
-    vector<vector<int>> B12(half, vector<int>(half));
-    vector<vector<int>> B21(half, vector<int>(half));
-    vector<vector<int>> B22(half, vector<int>(half));
-    
-    // Split matrices (simplified - assumes n is power of 2)
-    for (int i = 0; i < half; i++) {
-        for (int j = 0; j < half; j++) {
-            A11[i][j] = A[i][j];
-            A12[i][j] = A[i][j + half];
-            A21[i][j] = A[i + half][j];
-            A22[i][j] = A[i + half][j + half];
-            
-            B11[i][j] = B[i][j];
-            B12[i][j] = B[i][j + half];
-            B21[i][j] = B[i + half][j];
-            B22[i][j] = B[i + half][j + half];
-        }
-    }
-    
-    // Calculate 7 products
-    auto P1 = strassenMultiply(A11, subtractMatrix(B12, B22));
-    auto P2 = strassenMultiply(addMatrix(A11, A12), B22);
-    auto P3 = strassenMultiply(addMatrix(A21, A22), B11);
-    auto P4 = strassenMultiply(A22, subtractMatrix(B21, B11));
-    auto P5 = strassenMultiply(addMatrix(A11, A22), addMatrix(B11, B22));
-    auto P6 = strassenMultiply(subtractMatrix(A12, A22), addMatrix(B21, B22));
-    auto P7 = strassenMultiply(subtractMatrix(A11, A21), addMatrix(B11, B12));
-    
-    // Calculate result submatrices
-    auto C11 = addMatrix(subtractMatrix(addMatrix(P5, P4), P2), P6);
-    auto C12 = addMatrix(P1, P2);
-    auto C21 = addMatrix(P3, P4);
-    auto C22 = subtractMatrix(subtractMatrix(addMatrix(P5, P1), P3), P7);
-    
-    // Combine result
-    vector<vector<int>> C(n, vector<int>(n));
-    for (int i = 0; i < half; i++) {
-        for (int j = 0; j < half; j++) {
-            C[i][j] = C11[i][j];
-            C[i][j + half] = C12[i][j];
-            C[i + half][j] = C21[i][j];
-            C[i + half][j + half] = C22[i][j];
-        }
-    }
-    
-    return C;
-}
-```
-
-### Time Complexity
-- **Time**: O(n^log₂7) ≈ O(n^2.81)
-- **Space**: O(n²)
-
-## 17.18 Master Theorem
-
-The **Master Theorem** provides asymptotic analysis for divide and conquer recurrences.
-
-### Recurrence Form
-```
-T(n) = aT(n/b) + f(n)
-```
-where:
-- `a ≥ 1`: number of subproblems
-- `b > 1`: factor by which problem size is reduced
-- `f(n)`: cost of dividing and combining
-
-### Master Theorem Cases
-
-**Case 1**: If f(n) = O(n^(log_b a - ε)) for some ε > 0
-- Then T(n) = Θ(n^(log_b a))
-
-**Case 2**: If f(n) = Θ(n^(log_b a))
-- Then T(n) = Θ(n^(log_b a) log n)
-
-**Case 3**: If f(n) = Ω(n^(log_b a + ε)) for some ε > 0, and af(n/b) ≤ cf(n) for some c < 1
-- Then T(n) = Θ(f(n))
-
-### Examples
-
-1. **Merge Sort**: T(n) = 2T(n/2) + O(n)
-   - a = 2, b = 2, f(n) = n
-   - log_b a = 1, f(n) = Θ(n^1)
-   - Case 2: T(n) = Θ(n log n)
-
-2. **Binary Search**: T(n) = T(n/2) + O(1)
-   - a = 1, b = 2, f(n) = 1
-   - log_b a = 0, f(n) = Θ(n^0)
-   - Case 2: T(n) = Θ(log n)
-
-3. **Quick Sort (average)**: T(n) = 2T(n/2) + O(n)
-   - Same as merge sort: Θ(n log n)
-
-## 17.19 Advanced Divide and Conquer Problems
-
-### 17.10.1 Counting Inversions
-
-Count the number of inversions (pairs where i < j but arr[i] > arr[j]):
+Some problems divide trivially but hide their difficulty in the combine. The maximum-subarray
+problem — find the contiguous slice with the largest sum — splits into left and right halves, but
+the best subarray might straddle the midpoint, belonging to neither. So the combine step has real
+work: find the best subarray *ending* at the midpoint and the best one *starting* just after it,
+and glue them.
 
 ```cpp
-#include <iostream>
-#include <vector>
-using namespace std;
-
-long long mergeAndCount(vector<int>& arr, int left, int mid, int right) {
-    vector<int> temp(right - left + 1);
-    int i = left, j = mid + 1, k = 0;
-    long long inversions = 0;
-    
-    while (i <= mid && j <= right) {
-        if (arr[i] <= arr[j]) {
-            temp[k++] = arr[i++];
-        } else {
-            temp[k++] = arr[j++];
-            inversions += (mid - i + 1); // All remaining left elements form inversions
-        }
-    }
-    
-    while (i <= mid) temp[k++] = arr[i++];
-    while (j <= right) temp[k++] = arr[j++];
-    
-    for (i = left, k = 0; i <= right; i++, k++) {
-        arr[i] = temp[k];
-    }
-    
-    return inversions;
-}
-
-long long countInversions(vector<int>& arr, int left, int right) {
-    if (left >= right) return 0;
-    
-    int mid = left + (right - left) / 2;
-    long long inversions = 0;
-    
-    inversions += countInversions(arr, left, mid);
-    inversions += countInversions(arr, mid + 1, right);
-    inversions += mergeAndCount(arr, left, mid, right);
-    
-    return inversions;
-}
-
-// Time: O(n log n), Space: O(n)
-```
-
-### 17.10.2 Closest Pair of Points
-
-Find the closest pair of points in 2D space:
-
-```cpp
-#include <iostream>
-#include <vector>
-#include <algorithm>
-#include <cmath>
 #include <climits>
-using namespace std;
+#include <algorithm>
+using std::vector; using std::max;
 
-struct Point {
-    double x, y;
-    Point(double x, double y) : x(x), y(y) {}
-};
-
-double distance(const Point& p1, const Point& p2) {
-    return sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y));
+int maxCrossing(const vector<int>& a, int lo, int mid, int hi) {
+    int sum = 0, left = INT_MIN;
+    for (int i = mid; i >= lo; --i) { sum += a[i]; left = max(left, sum); }
+    sum = 0; int right = INT_MIN;
+    for (int i = mid + 1; i <= hi; ++i) { sum += a[i]; right = max(right, sum); }
+    return left + right;                       // must use at least one element each side
 }
 
-double closestPairRec(vector<Point>& points, int left, int right) {
-    if (right - left <= 3) {
-        // Brute force for small sets
-        double minDist = INT_MAX;
-        for (int i = left; i <= right; i++) {
-            for (int j = i + 1; j <= right; j++) {
-                minDist = min(minDist, distance(points[i], points[j]));
-            }
-        }
-        return minDist;
+int maxSubarray(const vector<int>& a, int lo, int hi) {
+    if (lo == hi) return a[lo];
+    int mid = lo + (hi - lo) / 2;
+    return max({ maxSubarray(a, lo, mid),
+                 maxSubarray(a, mid + 1, hi),
+                 maxCrossing(a, lo, mid, hi) });
+}
+```
+
+The linear crossing scan makes `f(n) = O(n)`, so `T(n) = 2T(n/2) + O(n) = O(n log n)`. In practice
+you would reach for Kadane's algorithm, which solves this in one `O(n)` pass. The D&C version earns
+its place as a teaching case: the cleanest illustration of a combine step that is neither free nor
+trivial, and the crossing-sum pattern generalizes to problems Kadane cannot touch — segment trees
+answer range-max queries with exactly this decomposition.
+
+## Counting inversions: piggyback on the merge
+
+A merge already knows more than it tells you. When you merge two sorted halves and take an element
+from the *right* before the left half is exhausted, that right element was smaller than every
+remaining left element — that is, it was out of order with all of them. Counting those events
+counts the array's **inversions** (pairs `i < j` with `a[i] > a[j]`), a measure of how unsorted
+the data is, for free during a merge sort.
+
+```cpp
+long long mergeCount(vector<int>& a, int lo, int mid, int hi) {
+    vector<int> buf; buf.reserve(hi - lo + 1);
+    int i = lo, j = mid + 1;
+    long long inv = 0;
+    while (i <= mid && j <= hi) {
+        if (a[i] <= a[j]) buf.push_back(a[i++]);
+        else { buf.push_back(a[j++]); inv += mid - i + 1; }  // left[i..mid] all beat a[j]
     }
-    
-    int mid = left + (right - left) / 2;
-    double midX = points[mid].x;
-    
-    double dl = closestPairRec(points, left, mid);
-    double dr = closestPairRec(points, mid + 1, right);
-    double d = min(dl, dr);
-    
-    // Check strip around mid line
-    vector<Point> strip;
-    for (int i = left; i <= right; i++) {
-        if (abs(points[i].x - midX) < d) {
-            strip.push_back(points[i]);
-        }
+    while (i <= mid) buf.push_back(a[i++]);
+    while (j <= hi)  buf.push_back(a[j++]);
+    for (int k = 0; k < (int)buf.size(); ++k) a[lo + k] = buf[k];
+    return inv;
+}
+
+long long countInversions(vector<int>& a, int lo, int hi) {
+    if (lo >= hi) return 0;
+    int mid = lo + (hi - lo) / 2;
+    return countInversions(a, lo, mid)
+         + countInversions(a, mid + 1, hi)
+         + mergeCount(a, lo, mid, hi);
+}
+```
+
+The count is `long long` on purpose: a reversed array of `n` elements has `n(n−1)/2` inversions,
+which overflows a 32-bit `int` before `n` reaches 100,000. The brute-force count is `O(n²)`;
+riding the merge makes it `O(n log n)` at no extra asymptotic cost.
+
+## Closest pair of points: geometry in `O(n log n)`
+
+Given `n` points in the plane, the closest pair is trivially found in `O(n²)` by checking all
+pairs. Divide and conquer beats it. Sort by x, split at the median x into left and right halves,
+and recursively find the closest pair in each; let `d` be the smaller of the two distances. The
+only pairs left to check are those straddling the dividing line — but any such pair closer than
+`d` must lie within a vertical strip of width `2d` around the line. The geometric miracle is that
+within that strip, sorted by y, each point can have at most a constant number of neighbors closer
+than `d`, so the strip check is linear, not quadratic.
+
+```cpp
+#include <vector>
+#include <algorithm>
+#include <cmath>
+#include <limits>
+using std::vector; using std::min; using std::sort;
+
+struct Point { double x, y; };
+
+double dist(const Point& p, const Point& q) {
+    double dx = p.x - q.x, dy = p.y - q.y;
+    return std::sqrt(dx * dx + dy * dy);
+}
+
+double closest(vector<Point>& pts, int lo, int hi) {
+    if (hi - lo <= 3) {                        // small: brute force
+        double d = std::numeric_limits<double>::max();
+        for (int i = lo; i <= hi; ++i)
+            for (int j = i + 1; j <= hi; ++j)
+                d = min(d, dist(pts[i], pts[j]));
+        return d;
     }
-    
-    // Sort by y-coordinate
-    sort(strip.begin(), strip.end(), 
+    int mid = lo + (hi - lo) / 2;
+    double midX = pts[mid].x;
+    double d = min(closest(pts, lo, mid), closest(pts, mid + 1, hi));
+
+    vector<Point> strip;                       // points within d of the divider
+    for (int i = lo; i <= hi; ++i)
+        if (std::abs(pts[i].x - midX) < d) strip.push_back(pts[i]);
+    sort(strip.begin(), strip.end(),
          [](const Point& a, const Point& b) { return a.y < b.y; });
-    
-    // Check points in strip (at most 6 points need checking)
-    for (int i = 0; i < strip.size(); i++) {
-        for (int j = i + 1; j < strip.size() && (strip[j].y - strip[i].y) < d; j++) {
-            d = min(d, distance(strip[i], strip[j]));
-        }
-    }
-    
+
+    for (size_t i = 0; i < strip.size(); ++i)
+        for (size_t j = i + 1; j < strip.size() && strip[j].y - strip[i].y < d; ++j)
+            d = min(d, dist(strip[i], strip[j]));
     return d;
 }
 
-double closestPair(vector<Point>& points) {
-    sort(points.begin(), points.end(), 
+double closestPair(vector<Point>& pts) {
+    sort(pts.begin(), pts.end(),
          [](const Point& a, const Point& b) { return a.x < b.x; });
-    return closestPairRec(points, 0, points.size() - 1);
+    return closest(pts, 0, (int)pts.size() - 1);
 }
-
-// Time: O(n log² n), can be optimized to O(n log n)
 ```
 
-### 17.10.3 Majority Element
+Re-sorting the strip by y at every level makes `f(n) = O(n log n)` and the whole thing
+`O(n log² n)`. Carrying a y-sorted copy through the recursion (merging it like merge sort, instead
+of re-sorting) drops `f(n)` to `O(n)` and the algorithm to the optimal `O(n log n)` — a good
+exercise, and a reminder that where you spend the combine budget is the entire game.
 
-Find element appearing more than n/2 times:
+## The systems payoff: divide and conquer is cache-oblivious
+
+Here is the claim that makes this chapter belong in *this* book. The recursive structure that
+gives divide and conquer its clean asymptotics *also*, with no extra effort, gives it excellent
+cache behavior — and it does so **without knowing the size of the cache**. Algorithms with that
+property are called **cache-oblivious**, and matrix multiplication is the cleanest demonstration.
+
+Recall from [Chapter 2](02-complexity-analysis.md) that the memory hierarchy, not the flop count,
+usually decides who wins. The textbook triple loop is the perfect victim:
 
 ```cpp
-int majorityElement(vector<int>& nums, int left, int right) {
-    if (left == right) return nums[left];
-    
-    int mid = left + (right - left) / 2;
-    int leftMajority = majorityElement(nums, left, mid);
-    int rightMajority = majorityElement(nums, mid + 1, right);
-    
-    if (leftMajority == rightMajority) return leftMajority;
-    
-    // Count occurrences of each candidate
-    int leftCount = count(nums.begin() + left, nums.begin() + right + 1, leftMajority);
-    int rightCount = count(nums.begin() + left, nums.begin() + right + 1, rightMajority);
-    
-    return leftCount > rightCount ? leftMajority : rightMajority;
-}
-
-// Time: O(n log n), Space: O(log n) for recursion
+// Naive: C = A·B, three nested loops. O(n³) flops — and O(n³) cache misses.
+for (int i = 0; i < n; ++i)
+    for (int j = 0; j < n; ++j)
+        for (int k = 0; k < n; ++k)
+            C[i][j] += A[i][k] * B[k][j];   // B[k][j] strides down a column
 ```
 
-### 17.10.4 Karatsuba Multiplication
+The flops are unavoidable, but the memory pattern is a disaster. The inner loop walks `B` *down a
+column* — `B[0][j]`, `B[1][j]`, `B[2][j]` — and in row-major storage those elements are `n`
+floats apart. Once `n` is large enough that a matrix row no longer fits in cache, every single
+access to `B` is a cache miss. The algorithm is `O(n³)` in flops but also `O(n³)` in cache misses,
+and on real hardware the misses are what you feel.
 
-**Karatsuba multiplication** is a fast multiplication algorithm that multiplies two n-digit numbers in O(n^log₂3) ≈ O(n^1.585) time, which is faster than the traditional O(n²) schoolbook method.
+Now split each matrix into four quadrants and recurse. An `n×n` product becomes eight
+`(n/2)×(n/2)` products, combined by adding quadrant results:
 
-#### The Problem
-
-Multiplying two n-digit numbers using the standard method:
 ```
-   1234
- × 5678
---------
-   O(n²) operations
+⎡C₁₁ C₁₂⎤   ⎡A₁₁ A₁₂⎤ ⎡B₁₁ B₁₂⎤     C₁₁ = A₁₁B₁₁ + A₁₂B₂₁
+⎢       ⎥ = ⎢       ⎥ ⎢       ⎥     C₁₂ = A₁₁B₁₂ + A₁₂B₂₂
+⎣C₂₁ C₂₂⎦   ⎣A₂₁ A₂₂⎦ ⎣B₂₁ B₂₂⎦     C₂₁ = A₂₁B₁₁ + A₂₂B₂₁
+                                     C₂₂ = A₂₁B₁₂ + A₂₂B₂₂
 ```
-
-#### Karatsuba's Insight
-
-For two numbers `x` and `y`, split them:
-- `x = a × 10^(n/2) + b` (a = high half, b = low half)
-- `y = c × 10^(n/2) + d` (c = high half, d = low half)
-
-**Standard multiplication**:
-```
-x × y = (a × 10^(n/2) + b) × (c × 10^(n/2) + d)
-      = ac × 10^n + (ad + bc) × 10^(n/2) + bd
-```
-This requires **4 multiplications**: ac, ad, bc, bd
-
-**Karatsuba's trick**:
-```
-x × y = ac × 10^n + ((a+b)(c+d) - ac - bd) × 10^(n/2) + bd
-```
-This requires **3 multiplications**: ac, bd, (a+b)(c+d)
-
-#### Implementation
 
 ```cpp
-#include <iostream>
-#include <string>
-#include <algorithm>
-using namespace std;
-
-// Helper: Add two numbers represented as strings
-string addStrings(string num1, string num2) {
-    int i = num1.length() - 1, j = num2.length() - 1;
-    int carry = 0;
-    string result = "";
-    
-    while (i >= 0 || j >= 0 || carry) {
-        int sum = carry;
-        if (i >= 0) sum += num1[i--] - '0';
-        if (j >= 0) sum += num2[j--] - '0';
-        result += (sum % 10) + '0';
-        carry = sum / 10;
+// C += A·B over n×n submatrices at the given (row, col) offsets.
+// C must be zero-initialized by the caller; n a power of two.
+void matmul(const vector<vector<double>>& A, int ar, int ac,
+            const vector<vector<double>>& B, int br, int bc,
+            vector<vector<double>>& C, int cr, int cc, int n) {
+    if (n <= 64) {                             // base block: fits in cache
+        for (int i = 0; i < n; ++i)
+            for (int k = 0; k < n; ++k) {      // ikj order: unit stride on B and C
+                double aik = A[ar + i][ac + k];
+                for (int j = 0; j < n; ++j)
+                    C[cr + i][cc + j] += aik * B[br + k][bc + j];
+            }
+        return;
     }
-    
-    reverse(result.begin(), result.end());
-    return result;
-}
-
-// Helper: Subtract two numbers (assumes num1 >= num2)
-string subtractStrings(string num1, string num2) {
-    int i = num1.length() - 1, j = num2.length() - 1;
-    int borrow = 0;
-    string result = "";
-    
-    while (i >= 0) {
-        int diff = (num1[i] - '0') - borrow;
-        if (j >= 0) diff -= (num2[j] - '0');
-        
-        if (diff < 0) {
-            diff += 10;
-            borrow = 1;
-        } else {
-            borrow = 0;
-        }
-        
-        result += diff + '0';
-        i--; j--;
-    }
-    
-    reverse(result.begin(), result.end());
-    // Remove leading zeros
-    while (result.length() > 1 && result[0] == '0') {
-        result = result.substr(1);
-    }
-    return result;
-}
-
-// Helper: Multiply by power of 10
-string multiplyByPowerOf10(string num, int power) {
-    return num + string(power, '0');
-}
-
-// Karatsuba multiplication
-string karatsuba(string x, string y) {
-    // Make both numbers same length
-    int n = max(x.length(), y.length());
-    while (x.length() < n) x = "0" + x;
-    while (y.length() < n) y = "0" + y;
-    
-    // Base case: small numbers
-    if (n <= 2) {
-        // Use standard multiplication for small numbers
-        long long a = stoll(x);
-        long long b = stoll(y);
-        return to_string(a * b);
-    }
-    
-    int m = n / 2;
-    
-    // Split numbers
-    string a = x.substr(0, n - m);
-    string b = x.substr(n - m);
-    string c = y.substr(0, n - m);
-    string d = y.substr(n - m);
-    
-    // Three recursive multiplications
-    string ac = karatsuba(a, c);
-    string bd = karatsuba(b, d);
-    string abcd = karatsuba(addStrings(a, b), addStrings(c, d));
-    
-    // Calculate (ad + bc) = (a+b)(c+d) - ac - bd
-    string ad_plus_bc = subtractStrings(subtractStrings(abcd, ac), bd);
-    
-    // Combine: ac × 10^(2m) + (ad+bc) × 10^m + bd
-    string result = addStrings(
-        multiplyByPowerOf10(ac, 2 * m),
-        addStrings(
-            multiplyByPowerOf10(ad_plus_bc, m),
-            bd
-        )
-    );
-    
-    // Remove leading zeros
-    while (result.length() > 1 && result[0] == '0') {
-        result = result.substr(1);
-    }
-    
-    return result;
-}
-
-// Example usage
-int main() {
-    string x = "1234";
-    string y = "5678";
-    cout << karatsuba(x, y) << endl;  // Output: 7006652
-    return 0;
+    int h = n / 2;
+    matmul(A, ar,   ac,   B, br,   bc,   C, cr,   cc,   h); // C₁₁ += A₁₁B₁₁
+    matmul(A, ar,   ac+h, B, br+h, bc,   C, cr,   cc,   h); // C₁₁ += A₁₂B₂₁
+    matmul(A, ar,   ac,   B, br,   bc+h, C, cr,   cc+h, h); // C₁₂ += A₁₁B₁₂
+    matmul(A, ar,   ac+h, B, br+h, bc+h, C, cr,   cc+h, h); // C₁₂ += A₁₂B₂₂
+    matmul(A, ar+h, ac,   B, br,   bc,   C, cr+h, cc,   h); // C₂₁ += A₂₁B₁₁
+    matmul(A, ar+h, ac+h, B, br+h, bc,   C, cr+h, cc,   h); // C₂₁ += A₂₂B₂₁
+    matmul(A, ar+h, ac,   B, br,   bc+h, C, cr+h, cc+h, h); // C₂₂ += A₂₁B₁₂
+    matmul(A, ar+h, ac+h, B, br+h, bc+h, C, cr+h, cc+h, h); // C₂₂ += A₂₂B₂₂
 }
 ```
 
-#### Complexity Analysis
+The flop count is identical: `T(n) = 8T(n/2) + O(n²) = O(n³)` by the Master Theorem, exactly the
+triple loop. But the *cache misses* are not identical. As the recursion descends, the submatrices
+shrink; the moment three blocks fit together in cache — which happens automatically at some level,
+whatever the cache size is — every operation below that point is a hit. The analysis gives
+`O(n³ / (B√M))` misses for a cache of `M` words with `B`-word lines, versus the triple loop's
+`O(n³)`. That `√M` in the denominator is a large constant on real hardware, and it is *free*: the
+code never mentions `M`, `B`, or the cache at all. It merely recurses, and the recursion tiles the
+computation into cache-sized blocks on its own. This is why the block size `64` in the base case is
+a soft tuning knob, not a correctness parameter — get it wrong and you lose a little; the algorithm
+still works.
 
-**Recurrence Relation**: T(n) = 3T(n/2) + O(n)
+This is the general lesson, and the reason divide and conquer matters to systems programmers as
+much as to algorithm designers: **a recursive split localizes memory access.** Each subproblem
+touches a contiguous, shrinking region, so temporal and spatial locality fall out of the structure.
+Cache-oblivious versions of sorting (funnelsort), matrix transposition, and the FFT all exploit
+this, and it is how high-performance libraries stay fast across CPUs with wildly different cache
+sizes without being retuned for each one.
 
-**Using Master Theorem**:
-- a = 3, b = 2, f(n) = O(n)
-- log_b(a) = log₂(3) ≈ 1.585
-- Since f(n) = O(n^1) < O(n^1.585), case 1 applies
-- **Time Complexity**: O(n^log₂3) ≈ O(n^1.585)
+## Strassen: buy asymptotics with algebra
 
-**Space Complexity**: O(log n) for recursion stack
+The recursive multiply above does eight sub-multiplies because that is how many products the
+definition contains. Strassen's insight (1969) was that with a clever set of additions you can
+compute the same four output quadrants from only **seven** sub-multiplies — trading one expensive
+recursive multiplication for a handful of cheap matrix additions. The seven products are
 
-#### Comparison with Standard Multiplication
-
-| Method | Time Complexity | When to Use |
-|--------|----------------|-------------|
-| **Schoolbook** | O(n²) | Small numbers, simple cases |
-| **Karatsuba** | O(n^1.585) | Large numbers (> 100 digits) |
-| **FFT-based** | O(n log n) | Very large numbers (> 1000 digits) |
-
-#### When to Use Karatsuba
-
-- **Large number multiplication**: When dealing with numbers with hundreds or thousands of digits
-- **Cryptography**: RSA, elliptic curve cryptography
-- **Arbitrary precision arithmetic**: Libraries like GMP (GNU Multiple Precision)
-- **Competitive programming**: Problems involving very large integers
-
-#### Real-World Applications
-
-- **Cryptographic systems**: RSA encryption/decryption
-- **Computer algebra systems**: Mathematica, Maple
-- **Arbitrary precision libraries**: GMP, MPFR
-- **Blockchain**: Cryptographic operations with large numbers
-
-### 17.10.5 Fast Fourier Transform (FFT) - Overview
-
-The **Fast Fourier Transform (FFT)** is an efficient algorithm for computing the Discrete Fourier Transform (DFT) and its inverse. While FFT is primarily used in signal processing, it has important applications in computer science, particularly for **polynomial multiplication**.
-
-#### Polynomial Multiplication with FFT
-
-**Problem**: Multiply two polynomials of degree n in O(n log n) time instead of O(n²).
-
-**Standard Method**:
 ```
-P(x) = a₀ + a₁x + a₂x² + ... + aₙxⁿ
-Q(x) = b₀ + b₁x + b₂x² + ... + bₙxⁿ
-P(x) × Q(x) = Σᵢⱼ aᵢbⱼx^(i+j)  // O(n²) operations
+M₁ = (A₁₁ + A₂₂)(B₁₁ + B₂₂)     M₅ = (A₁₁ + A₁₂) B₂₂
+M₂ = (A₂₁ + A₂₂) B₁₁            M₆ = (A₂₁ − A₁₁)(B₁₁ + B₁₂)
+M₃ = A₁₁ (B₁₂ − B₂₂)            M₇ = (A₁₂ − A₂₂)(B₂₁ + B₂₂)
+M₄ = A₂₂ (B₂₁ − B₁₁)
+```
+```
+C₁₁ = M₁ + M₄ − M₅ + M₇    C₁₂ = M₃ + M₅
+C₂₁ = M₂ + M₄              C₂₂ = M₁ − M₂ + M₃ + M₆
 ```
 
-**FFT Method**:
-1. **Evaluate** P and Q at 2n+1 points using FFT: O(n log n)
-2. **Multiply** point values: O(n)
-3. **Interpolate** to get coefficients using inverse FFT: O(n log n)
-4. **Total**: O(n log n)
+Dropping `a` from 8 to 7 changes the exponent from `log₂8 = 3` to `log₂7 ≈ 2.807`:
+`T(n) = 7T(n/2) + O(n²) = O(n^2.807)`. Asymptotically it wins, and it is the ancestor of every
+sub-cubic multiplication algorithm since. In practice Strassen's larger constant factor and its
+poorer numerical stability mean production BLAS libraries reach for it only for very large matrices,
+and often prefer the cache-oblivious recursive multiply above — the same quadrant split, minus the
+algebra — precisely because its memory behavior is so good. The exponent is not the whole story;
+the cache is the rest of it.
 
-#### Key Insight
+## Karatsuba: the same trick on integers
 
-FFT uses **divide and conquer** to evaluate polynomials at special points (roots of unity) efficiently:
-- Divide polynomial into even and odd powers
-- Recursively evaluate at half the points
-- Combine results using properties of roots of unity
+Multiplying two `n`-digit integers the schoolbook way is `O(n²)`. Karatsuba applies Strassen's
+"trade a multiply for additions" idea to arithmetic. Split each number around the middle digit:
+`x = a·10^m + b`, `y = c·10^m + d`. The naive expansion needs four products (`ac`, `ad`, `bc`,
+`bd`); Karatsuba computes the middle term `ad + bc` as `(a+b)(c+d) − ac − bd`, needing only
+**three** recursive multiplications.
 
-#### Complexity
+```cpp
+int digits(long long v)  { int d = 0; do { ++d; v /= 10; } while (v); return d; }
+long long pow10(int e)   { long long p = 1; while (e--) p *= 10; return p; }
 
-- **Time**: O(n log n) for polynomial multiplication
-- **Space**: O(n) for storing coefficients and intermediate results
+// Illustrative: values small enough not to overflow long long.
+// Real big-integer libraries apply the identical split to arrays of limbs.
+long long karatsuba(long long x, long long y) {
+    if (x < 10 || y < 10) return x * y;                 // base case: one digit
+    int m = std::max(digits(x), digits(y)) / 2;
+    long long p = pow10(m);
+    long long a = x / p, b = x % p;                     // x = a·10^m + b
+    long long c = y / p, d = y % p;                     // y = c·10^m + d
+    long long ac = karatsuba(a, c);
+    long long bd = karatsuba(b, d);
+    long long mid = karatsuba(a + b, c + d) - ac - bd;  // = ad + bc, one multiply
+    return ac * p * p + mid * p + bd;
+}
+```
 
-#### Applications
+Three sub-multiplies give `T(n) = 3T(n/2) + O(n) = O(n^1.585)` — Master Theorem Case 1, leaves
+winning. GMP and every serious bignum library use this (and, for truly enormous operands, an
+FFT-based multiply at `O(n log n)`) beneath the RSA and elliptic-curve arithmetic your TLS
+handshakes depend on. The `long long` version here is a teaching model; swap the digit splits for
+limb-array splits and it is production big-integer multiplication.
 
-1. **Polynomial Multiplication**: Fast multiplication of large polynomials
-2. **Large Integer Multiplication**: Can multiply n-digit numbers in O(n log n) using FFT
-3. **Signal Processing**: Audio, image processing, compression
-4. **Convolution**: Efficient computation of convolutions
-5. **Competitive Programming**: Problems involving polynomial operations
+## A quick tour of the rest
 
-#### When to Use FFT
+Divide and conquer is a pattern more than a fixed algorithm, and once you see the split-and-combine
+shape you find it everywhere:
 
-- **Very large polynomials**: Degree > 1000
-- **Large integer multiplication**: Numbers with > 1000 digits (faster than Karatsuba)
-- **Convolution problems**: When you need to compute many convolutions
-- **Signal processing**: Audio/image processing applications
+- **Majority element** — the element appearing more than `n/2` times. If a majority exists in the
+  whole, it is the majority of the left half or the right half, so recurse on both and reconcile
+  the two candidates with a linear count: `T(n) = 2T(n/2) + O(n) = O(n log n)`. (Boyer–Moore voting
+  beats it at `O(n)`, but the D&C version needs no cleverness to see.)
+- **Fast Fourier Transform** — multiply two degree-`n` polynomials in `O(n log n)` instead of
+  `O(n²)`. The FFT splits a polynomial into its even- and odd-power coefficients, evaluates each
+  half at the roots of unity, and combines them — a textbook `2T(n/2) + O(n)`. It is the engine
+  behind signal processing, image compression, and the fastest known large-integer multiply.
+- **Tree algorithms** are divide and conquer by construction: a result for a node is combined from
+  results for its subtrees. Height, subtree sums, and most tree DP are this pattern in disguise.
 
-#### Implementation Note
+## When it fits, and when it doesn't
 
-FFT implementation is complex and typically uses:
-- **Complex number arithmetic**: Roots of unity are complex numbers
-- **Iterative or recursive approach**: Both have trade-offs
-- **Optimizations**: Bit-reversal, in-place computation
+Reach for divide and conquer when the problem splits into independent subproblems of the same kind
+and the combine is cheaper than solving from scratch. Walk away when the subproblems overlap — that
+is dynamic programming, and D&C will redo exponential amounts of work — or when combining costs as
+much as the brute force, which buys you nothing but recursion overhead.
 
-**For this book**: We provide an overview. Full FFT implementation is typically found in specialized libraries or advanced algorithm courses.
+Three correctness hazards recur often enough to name. Compute the midpoint as
+`lo + (hi - lo) / 2`, never `(lo + hi) / 2`, or large indices overflow. Make every recursive call
+*strictly* shrink the problem, with a base case that catches the smallest pieces, or you recurse
+forever. And watch the accumulators: an inversion count or a large sum overflows a 32-bit `int`
+long before the array is — reach for `long long`.
 
-**Example Libraries**:
-- **FFTW** (Fastest Fourier Transform in the West): C library
-- **NumPy**: Python library with FFT support
-- **Eigen**: C++ library with FFT
+The systems takeaways are shorter still. A balanced split costs `O(log n)` of stack, which is why
+tuned quicksort recurses into the smaller partition first, and why an unbalanced split risks both
+`O(n²)` time and stack overflow. Independent subproblems parallelize almost for free — fork the two
+halves onto separate cores — which is why merge sort and quicksort are the backbone of parallel
+sorting libraries. And the recursive split is cache-oblivious: it tiles memory access into
+shrinking, local regions without being told the cache size, the property that keeps these
+algorithms fast on hardware their authors never saw.
 
-#### Comparison: Multiplication Methods
+## Exercises
 
-| Method | Time Complexity | Best For |
-|--------|----------------|----------|
-| **Schoolbook** | O(n²) | Small numbers (< 10 digits) |
-| **Karatsuba** | O(n^1.585) | Medium numbers (10-1000 digits) |
-| **FFT-based** | O(n log n) | Very large numbers (> 1000 digits) |
-
-**Note**: FFT has higher constant factors, so Karatsuba is often faster for practical sizes. FFT becomes advantageous for extremely large numbers.
-
-## 17.20 Divide and Conquer Patterns
-
-### Pattern 1: Array Problems
-- **Divide**: Split array into halves
-- **Conquer**: Solve recursively on each half
-- **Combine**: Merge results (often O(n) work)
-- **Examples**: Merge Sort, Quick Sort, Counting Inversions
-
-### Pattern 2: Tree Problems
-- **Divide**: Split tree into subtrees
-- **Conquer**: Solve recursively on each subtree
-- **Combine**: Aggregate results from subtrees
-- **Examples**: Tree traversals, tree construction, tree queries
-
-### Pattern 3: Geometric Problems
-- **Divide**: Partition plane/space
-- **Conquer**: Solve recursively in each partition
-- **Combine**: Handle boundary cases and merge
-- **Examples**: Closest Pair, Convex Hull, Line Intersection
-
-### Pattern 4: Optimization Problems
-- **Divide**: Split problem space
-- **Conquer**: Find optimal in each part
-- **Combine**: Select best from parts
-- **Examples**: Maximum Subarray, Optimal Binary Search Tree
-
-## 17.21 Key Takeaways
-
-1. **Divide and Conquer** breaks problems into smaller subproblems
-2. **Recursive structure** is fundamental
-3. **Base cases** must be handled
-4. **Combining solutions** is crucial
-5. **Master Theorem** helps analyze complexity
-6. **Many algorithms** use this paradigm
-7. **Efficiency** often comes from reducing problem size
-
-## 17.22 Exercises
-
-1. Implement merge sort for linked lists.
-
-2. Create a divide and conquer solution for finding the k-th largest element.
-
-3. Implement a divide and conquer algorithm for counting inversions in an array.
-
-4. Create a solution for "Majority Element" using divide and conquer.
-
-5. Implement divide and conquer for "Pow(x, n)" with optimization.
-
-6. Create a divide and conquer solution for "Search in Rotated Sorted Array".
-
-7. Implement divide and conquer for "Construct Binary Tree from Preorder and Inorder".
-
-8. Create a solution for "Different Ways to Add Parentheses" using divide and conquer.
-
-9. Implement divide and conquer for "Expression Add Operators".
-
-10. Create a divide and conquer solution for "The Skyline Problem".
-
-## 17.23 Summary
-
-Divide and Conquer is a powerful algorithmic paradigm that solves problems by breaking them into smaller subproblems, solving them recursively, and combining the solutions. Understanding divide and conquer, the Master Theorem, and common patterns is essential for designing efficient algorithms and analyzing their complexity.
-
+1. Implement bottom-up (iterative) merge sort. Why does it have the same `O(n log n)` bound but a
+   different constant factor and cache profile than the recursive version?
+2. Modify quickselect to return the k smallest elements, not just the k-th. What is the cost?
+3. Improve the closest-pair algorithm to `O(n log n)` by threading a y-sorted order through the
+   recursion instead of re-sorting each strip.
+4. Benchmark the naive triple-loop matrix multiply against the recursive `matmul` above for
+   `n = 1024`. Measure both wall-clock time and cache misses (`perf stat`), and explain the gap.
+5. Implement `power` for modular exponentiation (`xⁿ mod p`) and use it to test primality with
+   Fermat's little theorem.
+6. Solve "Different Ways to Add Parentheses": given an arithmetic expression, compute every result
+   reachable by different parenthesizations, splitting the string at each operator.
+7. Solve the Skyline problem by divide and conquer — split the buildings, solve each half, and
+   merge the two skylines like merge sort merges two sorted runs.

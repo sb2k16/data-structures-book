@@ -1,1284 +1,275 @@
 # Chapter 16: Greedy Algorithms
 
-## Table of Contents
+A greedy algorithm is the most optimistic strategy in the book: at every step it grabs whatever looks best right now and never looks back. No branching, no backtracking, no table of subproblems — just a sequence of committed local decisions. When that optimism is justified, greedy is the cheapest way to an optimal answer you will ever find: usually a sort plus a single pass, `O(n log n)` and a few lines of code. When it isn't justified, greedy fails silently, returning a plausible-looking answer that is simply wrong.
 
-- [16.1 Problem Statement & Motivation](#problem-statement-motivation)
-  - [What Problem Do Greedy Algorithms Solve?](#what-problem-do-greedy-algorithms-solve)
-  - [When to Use Greedy Algorithms](#when-to-use-greedy-algorithms)
-  - [When NOT to Use Greedy Algorithms](#when-not-to-use-greedy-algorithms)
-- [16.2 Conceptual Overview](#conceptual-overview)
-  - [Intuitive Explanation](#intuitive-explanation)
-  - [Key Characteristics](#key-characteristics)
-  - [Greedy vs. Dynamic Programming](#greedy-vs-dynamic-programming)
-- [16.3 Abstract Model & Invariants ⭐ (Mandatory)](#abstract-model-invariants-mandatory)
-  - [Abstract Model](#abstract-model)
-  - [Core Invariants](#core-invariants)
-  - [Algorithm-Specific Invariants](#algorithm-specific-invariants)
-  - [Assumptions](#assumptions)
-- [16.4 Operations & Interface](#operations-interface)
-  - [Behavioral Guarantees](#behavioral-guarantees)
-- [16.5 Time & Space Complexity](#time-space-complexity)
-  - [Time Complexity](#time-complexity)
-  - [Space Complexity](#space-complexity)
-  - [Comparison with Other Approaches](#comparison-with-other-approaches)
-- [16.6 Pseudocode (Language-Neutral) ⭐ (Mandatory)](#pseudocode-language-neutral-mandatory)
-  - [Generic Greedy Pattern](#generic-greedy-pattern)
-  - [Activity Selection](#activity-selection)
-  - [Fractional Knapsack](#fractional-knapsack)
-  - [Huffman Coding](#huffman-coding)
-  - [Kruskal's MST](#kruskals-mst)
-- [16.7 Implementation (Reference Language: C++) ⭐](#implementation-reference-language-c)
-- [16.8 Correctness Argument](#correctness-argument)
-  - [Invariant Preservation](#invariant-preservation)
-  - [Algorithm-Specific Correctness](#algorithm-specific-correctness)
-  - [Informal Proof Sketch](#informal-proof-sketch)
-- [16.9 Edge Cases & Failure Modes](#edge-cases-failure-modes)
-  - [When Greedy Fails](#when-greedy-fails)
-  - [Common Failure Patterns](#common-failure-patterns)
-- [16.10 Performance & System Considerations ⭐ (Differentiator)](#performance-system-considerations-differentiator)
-  - [Sorting Overhead](#sorting-overhead)
-  - [Priority Queue Operations](#priority-queue-operations)
-  - [Practical Recommendations](#practical-recommendations)
-- [16.11 Activity Selection Problem](#activity-selection-problem)
-  - [Implementation](#implementation)
-  - [Time Complexity](#time-complexity)
-- [16.12 Fractional Knapsack Problem](#fractional-knapsack-problem)
-  - [Implementation](#implementation)
-  - [Time Complexity](#time-complexity)
-- [16.13 Huffman Coding](#huffman-coding)
-  - [Implementation](#implementation)
-  - [Time Complexity](#time-complexity)
-- [16.14 Minimum Spanning Tree (Greedy Approach)](#minimum-spanning-tree-greedy-approach)
-  - [Kruskal's Algorithm (Greedy)](#kruskals-algorithm-greedy)
-  - [Prim's Algorithm (Greedy)](#prims-algorithm-greedy)
-- [16.15 Interval Scheduling](#interval-scheduling)
-  - [Implementation](#implementation)
-- [16.16 Coin Change (Greedy)](#coin-change-greedy)
-  - [Implementation](#implementation)
-  - [When Greedy Works](#when-greedy-works)
-  - [When Greedy Fails](#when-greedy-fails)
-- [16.17 Job Scheduling](#job-scheduling)
-  - [Job Sequencing with Deadlines](#job-sequencing-with-deadlines)
-- [16.18 Dijkstra's Algorithm (Greedy)](#dijkstras-algorithm-greedy)
-- [16.19 When Greedy Fails: Counterexamples and Analysis](#when-greedy-fails-counterexamples-and-analysis)
-  - [Why Greedy Fails: The Core Issue](#why-greedy-fails-the-core-issue)
-  - [Example 1: 0-1 Knapsack (Greedy Fails)](#example-1-0-1-knapsack-greedy-fails)
-  - [Example 2: Coin Change (Greedy Fails for Non-Canonical Systems)](#example-2-coin-change-greedy-fails-for-non-canonical-systems)
-  - [Example 3: Shortest Path with Negative Edges (Greedy Fails)](#example-3-shortest-path-with-negative-edges-greedy-fails)
-  - [Common Patterns When Greedy Fails](#common-patterns-when-greedy-fails)
-  - [When to Use Greedy vs Dynamic Programming](#when-to-use-greedy-vs-dynamic-programming)
-  - [Key Takeaway](#key-takeaway)
-- [16.20 Greedy Algorithm Patterns](#greedy-algorithm-patterns)
-  - [Pattern 1: Interval Problems](#pattern-1-interval-problems)
-  - [Pattern 2: Scheduling Problems](#pattern-2-scheduling-problems)
-  - [Pattern 3: Optimization Problems](#pattern-3-optimization-problems)
-  - [Pattern 4: Graph Problems](#pattern-4-graph-problems)
-- [16.21 Proving Greedy Correctness](#proving-greedy-correctness)
-  - [Two Key Properties for Greedy Correctness](#two-key-properties-for-greedy-correctness)
-  - [Method 1: Greedy Choice Property](#method-1-greedy-choice-property)
-  - [Method 2: Exchange Argument](#method-2-exchange-argument)
-  - [Method 3: Induction](#method-3-induction)
-  - [Method 4: Cut Property / Matroid Theory](#method-4-cut-property-matroid-theory)
-  - [Step-by-Step Proof Template](#step-by-step-proof-template)
-  - [Example: Complete Proof for Activity Selection](#example-complete-proof-for-activity-selection)
-  - [Common Proof Techniques Summary](#common-proof-techniques-summary)
-  - [Practice: Proving Your Own Greedy Algorithms](#practice-proving-your-own-greedy-algorithms)
-  - [Key Takeaway](#key-takeaway)
-- [16.22 Key Takeaways](#key-takeaways)
-- [16.23 Exercises](#exercises)
-- [16.24 Summary](#summary)
+So the whole subject reduces to one question, and this chapter is organized around it: **when is a locally optimal choice provably globally optimal?** Get that right and greedy is a scalpel. Get it wrong and you have shipped a bug that only surfaces on inputs you didn't test. The discipline here isn't writing the loop — the loop is trivial — it's the proof that the loop is allowed to exist.
 
+## The shape of every greedy algorithm
 
-
-## 16.1 Problem Statement & Motivation
-
-### What Problem Do Greedy Algorithms Solve?
-
-Many optimization problems can be solved by making locally optimal choices:
-
-- **Activity Selection**: Choose maximum non-overlapping activities
-- **Coin Change**: Make change with minimum coins (for some systems)
-- **Scheduling**: Optimize task/job scheduling
-- **Minimum Spanning Tree**: Find minimum cost tree connecting all vertices
-- **Huffman Coding**: Optimal prefix-free encoding
-
-**Naive Approaches and Their Limitations**:
-
-- **Brute Force**: Try all possibilities → exponential time
-- **Dynamic Programming**: Consider all choices → may be overkill
-- **No Structure**: Can't leverage problem properties
-
-**The Greedy Solution**: Greedy algorithms make locally optimal choices at each step, often leading to globally optimal solutions when the greedy choice property holds. They're simpler and faster than DP when applicable.
-
-### When to Use Greedy Algorithms
-
-✅ **Use greedy when**:
-- Problem has greedy choice property (local optimal → global optimal)
-- Problem has optimal substructure
-- Greedy choice is clear and obvious
-- Need fast, simple solution
-- Can prove greedy correctness
-
-✅ **Real-world applications**:
-- Activity selection and scheduling
-- Minimum spanning tree (Kruskal's, Prim's)
-- Shortest path (Dijkstra's with non-negative weights)
-- Huffman coding (data compression)
-- Interval scheduling
-- Fractional knapsack
-
-### When NOT to Use Greedy Algorithms
-
-❌ **Avoid greedy when**:
-- Greedy choice property doesn't hold
-- Local optimal doesn't lead to global optimal
-- Need to consider all possibilities
-- Problem requires backtracking
-- Cannot prove greedy correctness
-
-**Key Trade-off**: Greedy algorithms trade correctness guarantees (must prove) for simplicity and efficiency.
-
-## 16.2 Conceptual Overview
-
-A **greedy algorithm** makes the locally optimal choice at each step with the hope that these local choices will lead to a globally optimal solution.
-
-### Intuitive Explanation
-
-Think of greedy algorithms like making change:
-- **Greedy Choice**: Always use largest coin that fits
-- **Local Optimal**: Best choice at current step
-- **Global Optimal**: Final solution is optimal (if greedy property holds)
-
-Think of greedy like a hiker:
-- **Greedy Choice**: Always go to highest nearby point
-- **Local Optimal**: Best immediate choice
-- **Risk**: Might get stuck on local peak, miss global peak
-
-### Key Characteristics
-
-- **Greedy Choice Property**: A global optimum can be reached by making locally optimal choices
-- **Optimal Substructure**: The problem can be broken down into subproblems
-- **No Backtracking**: Once a choice is made, it's never reconsidered
-- **Efficiency**: Often faster than dynamic programming
-
-### Greedy vs. Dynamic Programming
-
-| Aspect | Greedy | Dynamic Programming |
-|--------|--------|---------------------|
-| Choices | Makes best choice now | Considers all choices |
-| Subproblems | Solves once | May solve multiple times |
-| Backtracking | No | Yes (implicitly) |
-| Efficiency | Usually faster | May be slower |
-| Correctness | Not always optimal | Always optimal |
-| Proof Required | Yes (must prove) | No (always optimal) |
-
-## 16.3 Abstract Model & Invariants ⭐ (Mandatory)
-
-**Purpose**: Define correctness independent of implementation.
-
-### Abstract Model
-
-A greedy algorithm consists of:
-- **Problem Space**: Set of all possible solutions
-- **Greedy Choice Function**: Selects locally optimal choice at each step
-- **Feasible Set**: Set of choices available at current step
-- **Solution Set**: Accumulated choices (partial solution)
-- **Objective Function**: What we're optimizing (minimize/maximize)
-
-### Core Invariants
-
-These invariants must **always** hold for greedy algorithms to be correct:
-
-#### 1. Greedy Choice Property Invariant
+Strip away the specifics and every greedy algorithm has the same skeleton: impose an order on the choices, then walk that order once, taking each choice that stays feasible.
 
 ```
-For any problem instance:
-  There exists an optimal solution that includes the greedy choice
+sort or heap-order the candidates by the greedy criterion
+for each candidate in that order:
+    if taking it keeps the partial solution feasible:
+        take it
 ```
 
-**Meaning**: The greedy choice is part of some optimal solution.
+That's it. The activity scheduler, Huffman's encoder, Kruskal's MST builder, and Dijkstra's shortest-path search are all this loop with a different ordering criterion and a different feasibility test. What separates a correct greedy algorithm from a wrong one is never the loop — it's whether the ordering criterion has been *proven* to lead to a global optimum.
 
-#### 2. Optimal Substructure Invariant
+Two properties, together, are what make that proof possible:
 
-```
-After making greedy choice:
-  Remaining problem is a smaller instance of the same problem
-  Optimal solution to subproblem + greedy choice = optimal solution
-```
+- **The greedy-choice property.** There exists an optimal solution that includes the very first choice greedy makes. You are never forced to give up optimality by taking the greedy pick — it's always *safe*.
+- **Optimal substructure.** After you commit that choice, what remains is a smaller instance of the same problem, and an optimal solution to the remainder plus your choice is optimal overall.
 
-**Meaning**: Problem can be decomposed optimally.
+If both hold, induction finishes the job: the first greedy choice is safe, the rest of the problem is the same problem, so by induction the whole run is optimal. If either fails, greedy has no right to be correct, and you almost certainly want [dynamic programming](12-dynamic-programming.md) instead — which considers *all* choices at each step precisely because no single local choice is safe.
 
-#### 3. Feasibility Invariant
+The workhorse tool for proving the greedy-choice property is the **exchange argument**, and it's worth learning once because it recurs across every problem below: take any optimal solution, show that you can swap the greedy choice in for whatever it did first *without making the solution worse*, and you've proven the greedy choice belongs to some optimal solution. We'll do it concretely in a moment.
 
-```
-At each step:
-  Greedy choice is from feasible set
-  Partial solution remains feasible
-  All constraints are satisfied
-```
+## Interval scheduling: the exchange argument in the flesh
 
-**Meaning**: All choices maintain feasibility.
+You have a set of jobs, each with a start and finish time, and one machine. You can run any set of jobs whose intervals don't overlap. Maximize how many you run. This is the *activity selection* problem, and it is the cleanest place to see why greedy works.
 
-#### 4. Progress Invariant
+The tempting criteria are wrong in instructive ways. Pick the *shortest* jobs first and a single short job wedged across two long ones can block a better pair. Pick the *earliest-starting* jobs and one job that starts early but runs all day sinks you. The criterion that works is **earliest finish time**: always take the compatible job that frees the machine soonest.
 
-```
-At each step:
-  Problem size decreases
-  Solution set grows
-  Eventually reaches complete solution
-```
+The intuition: finishing early leaves the most room for everything after. The proof is the exchange argument. Let `a` be the job with the earliest finish time overall, and let `S` be any optimal schedule. If `S` already contains `a`, done. If not, look at the first job `S` runs, call it `a'`. Because `a` finishes no later than `a'` and `a` is compatible with everything after `a'`, we can swap `a'` out and `a` in. The result is still a valid schedule with the *same* number of jobs — still optimal — and now it contains the greedy choice. The greedy choice is safe. Optimal substructure is immediate: once `a` is fixed, the problem is "schedule the jobs that start after `a` finishes," the identical problem on a smaller set. Induction does the rest.
 
-**Meaning**: Algorithm makes progress and terminates.
-
-### Algorithm-Specific Invariants
-
-#### Activity Selection Invariant
-
-1. **Non-Overlapping Invariant**: Selected activities don't overlap
-2. **Earliest Finish Invariant**: Always select activity with earliest finish time
-3. **Maximal Invariant**: Maximum number of activities selected
-
-#### Minimum Spanning Tree Invariant
-
-1. **Tree Invariant**: Selected edges form a tree (or forest)
-2. **Minimal Cost Invariant**: Total edge weight is minimized
-3. **Spanning Invariant**: All vertices are connected
-
-### Assumptions
-
-1. **Greedy Choice Property Holds**: Local optimal → global optimal
-2. **Optimal Substructure**: Problem decomposes optimally
-3. **Feasible Choices**: Greedy choice is always feasible
-4. **Deterministic**: Same input produces same greedy choices
-5. **Finite Problem**: Problem has finite solution space
-
-This abstract model provides the intellectual backbone for understanding greedy algorithm correctness.
-
-## 16.4 Operations & Interface
-
-**Purpose**: Define what operations are supported.
-
-Greedy algorithms support the following conceptual operations:
-
-| Operation | Description | Precondition | Postcondition |
-|-----------|-------------|--------------|---------------|
-| `makeGreedyChoice(feasibleSet)` | Select best choice from feasible set | Feasible set is non-empty | Returns locally optimal choice |
-| `updateFeasibleSet(choice)` | Update feasible set after choice | Choice is valid | Feasible set updated |
-| `addToSolution(choice)` | Add choice to solution | Choice is valid | Solution updated |
-| `isComplete(solution)` | Check if solution is complete | Solution is valid | Returns true if complete |
-| `evaluate(solution)` | Evaluate solution quality | Solution is complete | Returns objective value |
-| `isFeasible(partialSolution)` | Check if partial solution is feasible | Partial solution is valid | Returns true if feasible |
-
-### Behavioral Guarantees
-
-1. **Greedy Choice**: Always selects locally optimal choice
-2. **Feasibility**: All partial solutions are feasible
-3. **Termination**: Algorithm eventually terminates
-4. **Optimality**: Solution is optimal if greedy property holds
-
-## 16.5 Time & Space Complexity
-
-**Purpose**: Make trade-offs explicit.
-
-### Time Complexity
-
-| Algorithm | Time Complexity | Notes |
-|-----------|----------------|-------|
-| **Activity Selection** | O(n log n) | Sorting dominates |
-| **Fractional Knapsack** | O(n log n) | Sorting by ratio |
-| **Huffman Coding** | O(n log n) | Priority queue operations |
-| **Kruskal's MST** | O(E log E) | Sorting edges |
-| **Prim's MST** | O(E log V) | Priority queue |
-| **Dijkstra's** | O((V + E) log V) | Priority queue |
-| **Interval Scheduling** | O(n log n) | Sorting |
-
-### Space Complexity
-
-| Algorithm | Space Complexity | Notes |
-|-----------|------------------|-------|
-| **Activity Selection** | O(1) | No extra space |
-| **Fractional Knapsack** | O(1) | No extra space |
-| **Huffman Coding** | O(n) | Tree structure |
-| **Kruskal's MST** | O(V) | Union-Find structure |
-| **Prim's MST** | O(V) | Priority queue, visited array |
-| **Dijkstra's** | O(V) | Distance array, priority queue |
-
-### Comparison with Other Approaches
-
-| Approach | Time | Space | When Better |
-|----------|------|-------|-------------|
-| **Greedy** | O(n log n) typical | O(1) to O(n) | When greedy property holds |
-| **Dynamic Programming** | O(n²) to O(n³) | O(n) to O(n²) | When greedy fails |
-| **Brute Force** | O(2ⁿ) | O(n) | Never (too slow) |
-
-## 16.6 Pseudocode (Language-Neutral) ⭐ (Mandatory)
-
-**Purpose**: Bridge theory → implementation.
-
-**Rules**: No language syntax, no pointers/templates, focus on logic only.
-
-### Generic Greedy Pattern
-
-```
-FUNCTION greedySolve(problem):
-  solution ← empty set
-  feasible_set ← getInitialFeasibleSet(problem)
-  
-  WHILE feasible_set is not empty AND NOT isComplete(solution):
-    choice ← makeGreedyChoice(feasible_set)
-    solution ← addToSolution(solution, choice)
-    feasible_set ← updateFeasibleSet(feasible_set, choice)
-  END WHILE
-  
-  RETURN solution
-END FUNCTION
-```
-
-### Activity Selection
-
-```
-FUNCTION activitySelection(activities):
-  sort activities by finish time
-  
-  solution ← empty list
-  last_finish ← -infinity
-  
-  FOR EACH activity IN activities:
-    IF activity.start ≥ last_finish:
-      solution.add(activity)
-      last_finish ← activity.finish
-    END IF
-  END FOR
-  
-  RETURN solution
-END FUNCTION
-```
-
-### Fractional Knapsack
-
-```
-FUNCTION fractionalKnapsack(items, capacity):
-  sort items by value/weight ratio (descending)
-  
-  total_value ← 0
-  remaining_capacity ← capacity
-  
-  FOR EACH item IN items:
-    IF remaining_capacity ≥ item.weight:
-      total_value ← total_value + item.value
-      remaining_capacity ← remaining_capacity - item.weight
-    ELSE:
-      fraction ← remaining_capacity / item.weight
-      total_value ← total_value + fraction × item.value
-      BREAK
-    END IF
-  END FOR
-  
-  RETURN total_value
-END FUNCTION
-```
-
-### Huffman Coding
-
-```
-FUNCTION buildHuffmanTree(frequencies):
-  priority_queue ← empty min-heap
-  
-  FOR EACH character, frequency IN frequencies:
-    node ← create leaf node(character, frequency)
-    priority_queue.insert(node)
-  END FOR
-  
-  WHILE priority_queue.size() > 1:
-    left ← priority_queue.extractMin()
-    right ← priority_queue.extractMin()
-    
-    merged ← create internal node(left, right)
-    merged.frequency ← left.frequency + right.frequency
-    priority_queue.insert(merged)
-  END WHILE
-  
-  RETURN priority_queue.extractMin()  // Root of Huffman tree
-END FUNCTION
-```
-
-### Kruskal's MST
-
-```
-FUNCTION kruskalMST(graph):
-  sort edges by weight (ascending)
-  mst ← empty set
-  union_find ← initialize with all vertices
-  
-  FOR EACH edge IN sorted_edges:
-    IF union_find.find(edge.u) ≠ union_find.find(edge.v):
-      mst.add(edge)
-      union_find.union(edge.u, edge.v)
-    END IF
-  END FOR
-  
-  RETURN mst
-END FUNCTION
-```
-
-This pseudocode should be readable by any engineer, regardless of their programming language background.
-
-## 16.7 Implementation (Reference Language: C++) ⭐
-
-**Note to Reader**: This section provides concrete C++ implementations. The correctness relies on the invariants defined in Section 16.3 and the pseudocode in Section 16.6.
-
-Detailed C++ implementations for each greedy algorithm are provided in the following sections:
-- Section 16.9: Activity Selection Implementation
-- Section 16.10: Fractional Knapsack Implementation
-- Section 16.11: Huffman Coding Implementation
-- And other algorithms in subsequent sections
-
-## 16.8 Correctness Argument
-
-**Purpose**: Explain why the implementations work.
-
-### Invariant Preservation
-
-Greedy algorithms preserve the core invariants defined in Section 16.3:
-
-#### 1. Greedy Choice Property
-
-**For Activity Selection**:
-- Greedy choice: Select activity with earliest finish time
-- **Proof**: Any optimal solution can be modified to include greedy choice without making it worse
-- **Preserves**: Greedy choice is part of optimal solution
-
-**For Fractional Knapsack**:
-- Greedy choice: Select item with highest value/weight ratio
-- **Proof**: Any solution can be improved by replacing items with higher ratio items
-- **Preserves**: Greedy choice leads to optimal solution
-
-#### 2. Optimal Substructure
-
-**For All Greedy Algorithms**:
-- After making greedy choice, remaining problem is smaller instance
-- Optimal solution to subproblem + greedy choice = optimal solution
-- **Preserves**: Problem decomposes optimally
-
-### Algorithm-Specific Correctness
-
-#### Activity Selection Correctness
-
-**Why it works**:
-1. Sort by finish time ensures earliest finish is considered first
-2. Selecting earliest finish leaves maximum room for remaining activities
-3. Greedy choice property: Can replace any activity in optimal solution with earliest finish
-4. **Correct**: Produces maximum number of activities
-
-#### Fractional Knapsack Correctness
-
-**Why it works**:
-1. Value/weight ratio represents "bang for buck"
-2. Selecting highest ratio items maximizes value per unit weight
-3. Can take fractions, so greedy choice is always optimal
-4. **Correct**: Produces maximum value
-
-### Informal Proof Sketch
-
-**For Greedy Algorithms**:
-1. **Greedy Choice Property**: Show greedy choice is in some optimal solution
-2. **Optimal Substructure**: Show remaining problem is smaller instance
-3. **Induction**: Base case + inductive step → greedy produces optimal solution
-4. **Conclusion**: Greedy algorithm is correct
-
-**Note**: Unlike DP (which is always optimal), greedy algorithms require proof. If you can't prove correctness, the algorithm might not work!
-
-This correctness argument provides engineers with confidence that greedy implementations work correctly (when proven).
-
-## 16.9 Edge Cases & Failure Modes
-
-**Purpose**: Build defensive thinking.
-
-### When Greedy Fails
-
-#### Greedy Choice Property Doesn't Hold
-
-**Problem**: Local optimal doesn't lead to global optimal.
-
-**Example**: Coin change with coins [1, 3, 4] and target 6:
-- Greedy: 4 + 1 + 1 = 3 coins
-- Optimal: 3 + 3 = 2 coins
-- **Failure**: Greedy produces suboptimal solution
-
-**Handling**: Verify greedy choice property before using greedy algorithm.
-
-#### No Optimal Substructure
-
-**Problem**: Problem doesn't decompose optimally.
-
-**Example**: Longest path in graph (not shortest path):
-- Greedy doesn't work
-- Need dynamic programming or other approach
-
-**Handling**: Verify optimal substructure property.
-
-### Common Failure Patterns
-
-1. **Assuming Greedy Works**: Not all problems have greedy solutions
-2. **Wrong Greedy Choice**: Choosing wrong local optimal
-3. **Not Proving Correctness**: Greedy might fail on some inputs
-4. **Edge Cases**: Empty input, single element, all same values
-
-This section maps directly to production bugs and helps engineers avoid greedy pitfalls.
-
-## 16.10 Performance & System Considerations ⭐ (Differentiator)
-
-**Purpose**: Connect algorithms to real machines.
-
-### Sorting Overhead
-
-#### Most Greedy Algorithms Require Sorting
-
-**Impact**:
-- Sorting: O(n log n) time
-- Often dominates algorithm complexity
-- Cache-friendly (sequential access)
-
-**Optimization**: Use counting sort or radix sort when applicable.
-
-### Priority Queue Operations
-
-#### Heap-Based Structures
-
-**Operations**:
-- Insert: O(log n)
-- Extract: O(log n)
-- Used in: Huffman coding, Prim's MST, Dijkstra's
-
-**Performance**: Heap operations are cache-friendly (array-based).
-
-### Practical Recommendations
-
-1. **Verify Greedy Property**: Don't assume greedy works
-2. **Profile Sorting**: Often the bottleneck
-3. **Use Appropriate Data Structures**: Heaps for priority, arrays for sorting
-4. **Consider Alternatives**: DP if greedy doesn't work
-
-This section connects greedy algorithms to real system performance.
-
-## 16.11 Activity Selection Problem
-
-**Problem**: Select maximum number of non-overlapping activities from a set of activities.
-
-### Implementation
 ```cpp
-#include <iostream>
 #include <vector>
 #include <algorithm>
-using namespace std;
+#include <climits>
 
-struct Activity {
+struct Interval {
     int start;
     int finish;
-    
-    Activity(int s, int f) : start(s), finish(f) {}
 };
 
-bool compareFinish(const Activity& a, const Activity& b) {
-    return a.finish < b.finish;
-}
+std::vector<Interval> scheduleMax(std::vector<Interval> jobs) {
+    std::sort(jobs.begin(), jobs.end(),
+              [](const Interval& a, const Interval& b) {
+                  return a.finish < b.finish;
+              });
 
-vector<Activity> activitySelection(vector<Activity>& activities) {
-    // Sort by finish time
-    sort(activities.begin(), activities.end(), compareFinish);
-    
-    vector<Activity> selected;
-    selected.push_back(activities[0]);
-    
-    int lastFinish = activities[0].finish;
-    
-    for (size_t i = 1; i < activities.size(); i++) {
-        if (activities[i].start >= lastFinish) {
-            selected.push_back(activities[i]);
-            lastFinish = activities[i].finish;
+    std::vector<Interval> chosen;
+    int lastFinish = INT_MIN;              // nothing scheduled yet
+    for (const Interval& j : jobs) {
+        if (j.start >= lastFinish) {       // compatible with the last pick
+            chosen.push_back(j);
+            lastFinish = j.finish;
         }
     }
-    
-    return selected;
+    return chosen;
 }
 ```
 
-### Time Complexity
-- **Time**: O(n log n) due to sorting
-- **Space**: O(n)
+The sort is `O(n log n)` and dominates; the scan is `O(n)`. Note the loop never dereferences an out-of-range element the way a "grab `jobs[0]` first" formulation would — an empty input simply returns an empty schedule. This same skeleton, with the feasibility test swapped, solves "minimum number of rooms to hold every meeting" and "fewest intervals to remove so none overlap." Sort by finish, sweep once.
 
-## 16.12 Fractional Knapsack Problem
+## Fractional knapsack: greedy works, and its twin where it doesn't
 
-**Problem**: Given items with weights and values, fill a knapsack of capacity W to maximize value. Items can be broken (fractional).
+You have a knapsack of capacity `W` and items with a weight and a value, and — crucially — you may take *fractions* of an item. Maximize total value. The greedy criterion is **value density**: sort by value-per-unit-weight and fill greedily, taking a fraction of the last item that overflows.
 
-### Implementation
 ```cpp
 struct Item {
-    int weight;
-    int value;
-    double ratio; // value per unit weight
-    
-    Item(int w, int v) : weight(w), value(v) {
-        ratio = static_cast<double>(value) / weight;
-    }
+    double weight;
+    double value;
 };
 
-bool compareRatio(const Item& a, const Item& b) {
-    return a.ratio > b.ratio;
-}
+double fractionalKnapsack(std::vector<Item> items, double capacity) {
+    std::sort(items.begin(), items.end(),
+              [](const Item& a, const Item& b) {
+                  return a.value / a.weight > b.value / b.weight;
+              });
 
-double fractionalKnapsack(vector<Item>& items, int capacity) {
-    // Sort by value-to-weight ratio (descending)
-    sort(items.begin(), items.end(), compareRatio);
-    
-    double totalValue = 0.0;
-    int remainingCapacity = capacity;
-    
-    for (const Item& item : items) {
-        if (remainingCapacity >= item.weight) {
-            // Take whole item
-            totalValue += item.value;
-            remainingCapacity -= item.weight;
-        } else {
-            // Take fraction of item
-            totalValue += item.ratio * remainingCapacity;
-            break;
-        }
+    double total = 0.0;
+    for (const Item& it : items) {
+        if (capacity <= 0) break;
+        double take = std::min(it.weight, capacity);   // whole item or a slice
+        total += take * (it.value / it.weight);
+        capacity -= take;
     }
-    
-    return totalValue;
+    return total;
 }
 ```
 
-### Time Complexity
-- **Time**: O(n log n)
-- **Space**: O(1)
+The exchange argument again: if a solution ever puts weight into a lower-density item while a higher-density item is available and not fully used, swap a sliver of the low for the high. Value goes up (or stays equal), weight is unchanged. So a fully-greedy fill is optimal. Because we can take arbitrary fractions, there's always a sliver to swap, and the argument never gets stuck.
 
-## 16.13 Huffman Coding
+That last sentence is the whole difference between this problem and its famous twin. In **0-1 knapsack** each item is all-or-nothing, and greedy by density breaks:
 
-**Huffman Coding** is a lossless data compression algorithm that assigns variable-length codes to characters based on their frequencies.
+```cpp
+// items: (value 60, weight 10), (value 100, weight 20), (value 120, weight 30)
+// capacity 50, densities 6.0, 5.0, 4.0
+//
+// greedy by density: take item 1 (60), then item 2 (100) -> weight 30,
+//   item 3 needs 30, only 20 left -> total 160
+// optimal:           skip item 1, take items 2 and 3      -> total 220
+```
 
-### Implementation
+The indivisibility is the killer. Taking the densest item first commits 10 units of capacity that would have been better spent as part of the 2+3 combination, and because you can't take a fraction of anything, there's no sliver to swap back — the exchange argument dies. No local criterion is safe, so 0-1 knapsack belongs to [dynamic programming](12-dynamic-programming.md), which weighs every subset implicitly. The tell is general: **when a choice is indivisible and blocks a strictly better combination, greedy fails and DP is the fallback.**
+
+## Huffman coding: greedy as the engine of compression
+
+Every time a file is gzipped, a PNG is written, or an HTTP/2 header block is packed, a greedy algorithm is running underneath. Huffman coding builds an optimal *prefix-free* code: frequent symbols get short bit-strings, rare ones get long, and no code is a prefix of another, so the decoder never needs delimiters.
+
+The greedy insight is a bottom-up merge. The two *least* frequent symbols will sit deepest in the code tree — they can afford the longest codes — so pair them under a new node whose frequency is their sum, drop that node back into the pool, and repeat until one tree remains. A min-heap keyed on frequency makes "the two least frequent" an `O(log n)` operation, so building the tree over `n` symbols is `O(n log n)`.
+
+```mermaid
+graph TD
+    R["(100)"] --> A["a: 45"]
+    R --> N1["(55)"]
+    N1 --> N2["(25)"]
+    N1 --> N3["(30)"]
+    N2 --> C["c: 12"]
+    N2 --> B["b: 13"]
+    N3 --> D["d: 14"]
+    N3 --> N4["(16)"]
+    N4 --> F["f: 5"]
+    N4 --> E["e: 11"]
+```
+
+Reading left-branch-0, right-branch-1 from the root gives each leaf its code: `a` (the most frequent) lands at depth 1 with a single bit, while the rare `f` sits deep. That inverse relationship between frequency and code length is exactly what minimizes total encoded size.
+
 ```cpp
 #include <queue>
+#include <vector>
 #include <unordered_map>
 #include <string>
 
-struct HuffmanNode {
-    char character;
-    int frequency;
-    HuffmanNode* left;
-    HuffmanNode* right;
-    
-    HuffmanNode(char c, int freq) 
-        : character(c), frequency(freq), left(nullptr), right(nullptr) {}
-    
-    HuffmanNode(int freq, HuffmanNode* l, HuffmanNode* r)
-        : character('\0'), frequency(freq), left(l), right(r) {}
+struct Node {
+    int freq;
+    char sym;          // meaningful only in leaves
+    Node* left;
+    Node* right;
 };
 
-struct Compare {
-    bool operator()(HuffmanNode* a, HuffmanNode* b) {
-        return a->frequency > b->frequency;
+struct Greater {
+    bool operator()(const Node* a, const Node* b) const {
+        return a->freq > b->freq;   // min-heap: smallest freq on top
     }
 };
 
-class HuffmanCoding {
-private:
-    HuffmanNode* root;
-    
-    void buildCodes(HuffmanNode* node, string code, 
-                    unordered_map<char, string>& codes) {
-        if (!node) return;
-        
-        if (!node->left && !node->right) {
-            codes[node->character] = code;
-            return;
-        }
-        
-        buildCodes(node->left, code + "0", codes);
-        buildCodes(node->right, code + "1", codes);
+Node* buildHuffman(const std::unordered_map<char, int>& freqs) {
+    std::priority_queue<Node*, std::vector<Node*>, Greater> pq;
+    for (const auto& [sym, f] : freqs)
+        pq.push(new Node{f, sym, nullptr, nullptr});
+
+    while (pq.size() > 1) {
+        Node* l = pq.top(); pq.pop();
+        Node* r = pq.top(); pq.pop();
+        pq.push(new Node{l->freq + r->freq, '\0', l, r});
     }
-    
-    void deleteTree(HuffmanNode* node) {
-        if (!node) return;
-        deleteTree(node->left);
-        deleteTree(node->right);
-        delete node;
-    }
-    
-public:
-    HuffmanCoding(const unordered_map<char, int>& frequencies) {
-        priority_queue<HuffmanNode*, vector<HuffmanNode*>, Compare> pq;
-        
-        // Create leaf nodes
-        for (const auto& pair : frequencies) {
-            pq.push(new HuffmanNode(pair.first, pair.second));
-        }
-        
-        // Build tree
-        while (pq.size() > 1) {
-            HuffmanNode* left = pq.top();
-            pq.pop();
-            
-            HuffmanNode* right = pq.top();
-            pq.pop();
-            
-            HuffmanNode* merged = new HuffmanNode(
-                left->frequency + right->frequency, left, right);
-            pq.push(merged);
-        }
-        
-        root = pq.top();
-    }
-    
-    unordered_map<char, string> getCodes() {
-        unordered_map<char, string> codes;
-        buildCodes(root, "", codes);
-        return codes;
-    }
-    
-    string encode(const string& text) {
-        unordered_map<char, string> codes = getCodes();
-        string encoded = "";
-        
-        for (char c : text) {
-            encoded += codes[c];
-        }
-        
-        return encoded;
-    }
-    
-    ~HuffmanCoding() {
-        deleteTree(root);
-    }
-};
-```
-
-### Time Complexity
-- **Time**: O(n log n) where n is number of unique characters
-- **Space**: O(n)
-
-## 16.14 Minimum Spanning Tree (Greedy Approach)
-
-### Kruskal's Algorithm (Greedy)
-```cpp
-// Already covered in Chapter 11, but here's the greedy perspective
-// Kruskal's algorithm is greedy because it always picks the smallest edge
-// that doesn't form a cycle
-```
-
-### Prim's Algorithm (Greedy)
-```cpp
-// Already covered in Chapter 11
-// Prim's algorithm is greedy because it always picks the minimum weight edge
-// connecting the current MST to a new vertex
-```
-
-## 16.15 Interval Scheduling
-
-**Problem**: Schedule maximum number of non-overlapping intervals.
-
-### Implementation
-```cpp
-struct Interval {
-    int start;
-    int end;
-    
-    Interval(int s, int e) : start(s), end(e) {}
-};
-
-bool compareEnd(const Interval& a, const Interval& b) {
-    return a.end < b.end;
+    return pq.top();   // root
 }
 
-vector<Interval> intervalScheduling(vector<Interval>& intervals) {
-    sort(intervals.begin(), intervals.end(), compareEnd);
-    
-    vector<Interval> scheduled;
-    int lastEnd = -1;
-    
-    for (const Interval& interval : intervals) {
-        if (interval.start >= lastEnd) {
-            scheduled.push_back(interval);
-            lastEnd = interval.end;
-        }
+void buildCodes(const Node* n, const std::string& code,
+                std::unordered_map<char, std::string>& out) {
+    if (!n) return;
+    if (!n->left && !n->right) {
+        // a lone symbol still needs one bit, not the empty string
+        out[n->sym] = code.empty() ? "0" : code;
+        return;
     }
-    
-    return scheduled;
+    buildCodes(n->left,  code + "0", out);
+    buildCodes(n->right, code + "1", out);
 }
 ```
 
-## 16.16 Coin Change (Greedy)
+The correctness proof is again an exchange argument, run on tree depth: swapping the two lowest-frequency symbols down to the deepest level never increases the weighted path length, so greedy's merge is safe at every step. The one edge case worth guarding — a text with a single distinct character — is why `buildCodes` hands out `"0"` instead of an empty code: an empty code encodes nothing.
 
-**Problem**: Make change using minimum number of coins (when greedy works).
+## Greedy on graphs: Dijkstra and the MST
 
-### Implementation
+Two of the most-used graph algorithms in production are greedy, and seeing *why* sharpens the intuition for the whole family. Both are covered in depth in [Chapter 11](11-graphs.md); here we care about the greedy argument.
+
+**Dijkstra's shortest paths.** Repeatedly pull the unvisited vertex with the smallest tentative distance from a min-heap, finalize it, and relax its edges. The greedy claim is that the closest unvisited vertex already has its *final* shortest distance — nothing discovered later can improve it. That claim holds only because edge weights are non-negative: a detour through some farther vertex can never come back cheaper. Make one edge negative and the claim collapses — a longer-looking path can undercut a shorter one — which is exactly why negative weights force you off Dijkstra and onto Bellman-Ford. The greedy-choice property has a *precondition*, and non-negativity is it.
+
+**Minimum spanning tree.** Kruskal's algorithm sorts every edge by weight and adds each one that doesn't create a cycle, using a [union-find](14-advanced-data-structures.md) structure to test connectivity in near-constant time. Its correctness rests on the **cut property**: for any partition of the vertices into two sides, the cheapest edge crossing the partition belongs to some MST. That's a graph-flavored exchange argument — if an MST used a pricier crossing edge, swap in the cheapest one and the tree gets no heavier. Kruskal never adds a cycle-forming edge, so every edge it takes is the cheapest crossing some cut it hasn't yet spanned. Prim's algorithm is the same principle grown from a single vertex outward, always taking the cheapest edge leaving the tree built so far.
+
 ```cpp
-vector<int> coinChangeGreedy(vector<int>& coins, int amount) {
-    // Sort coins in descending order
-    sort(coins.rbegin(), coins.rend());
-    
-    vector<int> result;
-    
-    for (int coin : coins) {
-        while (amount >= coin) {
-            result.push_back(coin);
-            amount -= coin;
+// Kruskal's MST — the greedy heart, assuming a DSU (union-find) type.
+struct Edge { int u, v, weight; };
+
+int kruskalMST(std::vector<Edge> edges, int n) {
+    std::sort(edges.begin(), edges.end(),
+              [](const Edge& a, const Edge& b) { return a.weight < b.weight; });
+
+    DSU dsu(n);
+    int total = 0;
+    for (const Edge& e : edges) {
+        if (dsu.find(e.u) != dsu.find(e.v)) {   // adding e keeps it a forest
+            dsu.unite(e.u, e.v);
+            total += e.weight;
         }
     }
-    
-    if (amount != 0) {
-        return {}; // Cannot make change
-    }
-    
-    return result;
+    return total;
 }
 ```
 
-### When Greedy Works
-- Coin system is "canonical" (e.g., US coins: 1, 5, 10, 25)
-- Each coin is a multiple of smaller coins
+The MST is the deepest case in this chapter of greedy being *provably* optimal — and that's not a coincidence. The set of forests of a graph forms a **matroid**, and there's a theorem that says the greedy algorithm is optimal for *any* problem whose feasible sets form a matroid. Matroids are the abstract answer to "when is greedy safe": they capture exactly the exchange structure the arguments above keep exploiting. You rarely need to invoke the theorem by name, but it's the reason MST, activity selection, and a whole class of scheduling problems all bow to the same simple loop.
 
-### When Greedy Fails
-- Non-canonical systems (e.g., coins: 1, 3, 4, amount: 6)
-- Need dynamic programming instead
+## Where greedy fails, and how to smell it coming
 
-## 16.17 Job Scheduling
+Greedy's failures share a signature: a local choice that looks best in isolation forecloses a globally better arrangement, and no later move can undo the damage. Three canonical traps:
 
-### Job Sequencing with Deadlines
-```cpp
-struct Job {
-    int id;
-    int deadline;
-    int profit;
-    
-    Job(int i, int d, int p) : id(i), deadline(d), profit(p) {}
-};
-
-bool compareProfit(const Job& a, const Job& b) {
-    return a.profit > b.profit;
-}
-
-vector<int> jobSequencing(vector<Job>& jobs) {
-    sort(jobs.begin(), jobs.end(), compareProfit);
-    
-    int maxDeadline = 0;
-    for (const Job& job : jobs) {
-        maxDeadline = max(maxDeadline, job.deadline);
-    }
-    
-    vector<int> schedule(maxDeadline + 1, -1);
-    vector<int> result;
-    
-    for (const Job& job : jobs) {
-        for (int j = job.deadline; j > 0; j--) {
-            if (schedule[j] == -1) {
-                schedule[j] = job.id;
-                result.push_back(job.id);
-                break;
-            }
-        }
-    }
-    
-    return result;
-}
-```
-
-## 16.18 Dijkstra's Algorithm (Greedy)
-
-Dijkstra's algorithm for shortest paths is greedy because it always picks the unvisited vertex with the smallest distance. This is covered in detail in Chapter 11 (Graphs), but here we emphasize the greedy nature.
-
-**Greedy Choice**: At each step, select the unvisited vertex with minimum distance from source.
-
-**Why It's Greedy**: The algorithm makes locally optimal choices (closest unvisited vertex) without considering future implications, yet produces globally optimal shortest paths.
-
-**Key Insight**: Once a vertex is processed, its shortest distance is finalized. This is the greedy choice property - we commit to the locally best option.
-
-## 16.19 When Greedy Fails: Counterexamples and Analysis
-
-Understanding when greedy algorithms fail is crucial for choosing the right approach. Greedy algorithms fail when the **greedy choice property** doesn't hold - when locally optimal choices don't lead to globally optimal solutions.
-
-### Why Greedy Fails: The Core Issue
-
-**Greedy algorithms assume**: Making the best local choice will lead to the best global solution.
-
-**When this breaks**: Future choices depend on past choices in ways the greedy algorithm doesn't consider. The greedy choice might prevent access to better future options.
-
-### Example 1: 0-1 Knapsack (Greedy Fails)
-
-The fractional knapsack (Section 16.3) works with greedy, but 0-1 knapsack doesn't:
+**Non-canonical coin change.** "Make an amount with the fewest coins" is the textbook greedy — take the largest coin that fits, repeat — and for real currency systems (US coins 1, 5, 10, 25) it's optimal, because each denomination is a clean multiple of the arrangement below it. Change the denominations and it breaks:
 
 ```cpp
-// Greedy approach for 0-1 Knapsack (WRONG)
-struct Item {
-    int value;
-    int weight;
-    double ratio;
-    
-    Item(int v, int w) : value(v), weight(w), ratio((double)v / w) {}
-};
-
-int knapsackGreedy(vector<Item>& items, int capacity) {
-    // Sort by value/weight ratio (greedy choice)
-    sort(items.begin(), items.end(), 
-         [](const Item& a, const Item& b) { return a.ratio > b.ratio; });
-    
-    int totalValue = 0;
-    for (const auto& item : items) {
-        if (capacity >= item.weight) {
-            totalValue += item.value;
-            capacity -= item.weight;
-        }
-    }
-    return totalValue; // May not be optimal!
-}
-
-// Example where greedy fails:
-// Items: (value=60, weight=10, ratio=6.0), 
-//        (value=100, weight=20, ratio=5.0), 
-//        (value=120, weight=30, ratio=4.0)
-// Capacity: 50
-// 
-// Greedy approach:
-//   1. Take item 1 (60, weight=10) → remaining capacity: 40
-//   2. Take item 2 (100, weight=20) → remaining capacity: 20
-//   3. Can't take item 3 (needs 30)
-//   Total value: 60 + 100 = 160
-//
-// Optimal solution:
-//   1. Take item 2 (100, weight=20) → remaining capacity: 30
-//   2. Take item 3 (120, weight=30) → remaining capacity: 0
-//   Total value: 100 + 120 = 220
-//
-// Greedy fails because taking the best ratio item (item 1) 
-// prevents us from taking a better combination (items 2 and 3)
+// coins {1, 3, 4}, amount 6
+// greedy:  4 + 1 + 1  = 3 coins
+// optimal: 3 + 3      = 2 coins
 ```
 
-**Why Greedy Fails**: 
-- Once we take an item, we can't take a fraction of it (unlike fractional knapsack)
-- The greedy choice (best ratio) might prevent us from taking better combinations
-- We need to consider all possible combinations, not just locally optimal choices
-
-**Solution**: Use Dynamic Programming (Chapter 12) for 0-1 Knapsack - consider all subsets.
-
-### Example 2: Coin Change (Greedy Fails for Non-Canonical Systems)
-
-Greedy works for standard US coins (1, 5, 10, 25) but fails for arbitrary denominations:
-
-```cpp
-// Greedy coin change (works for some systems, fails for others)
-int coinChangeGreedy(vector<int>& coins, int amount) {
-    sort(coins.rbegin(), coins.rend()); // Descending order
-    
-    int count = 0;
-    for (int coin : coins) {
-        count += amount / coin;
-        amount %= coin;
-    }
-    return amount == 0 ? count : -1; // May not find solution even if one exists
-}
-
-// Example 1: Canonical system (greedy works)
-// Coins: [1, 5, 10, 25], Amount: 67
-// Greedy: 25 + 25 + 10 + 5 + 1 + 1 = 6 coins
-// Optimal: Same (greedy is optimal)
-
-// Example 2: Non-canonical system (greedy fails)
-// Coins: [1, 3, 4], Amount: 6
-// Greedy: 4 + 1 + 1 = 3 coins
-// Optimal: 3 + 3 = 2 coins
-//
-// Why greedy fails:
-// - Greedy takes largest coin (4) first
-// - This leaves 2, which requires two 1s
-// - But optimal solution uses two 3s instead
-```
-
-**Why Greedy Fails**:
-- For non-canonical systems, using a larger coin doesn't always lead to fewer total coins
-- The greedy choice (largest coin) might force us to use many small coins later
-- Optimal solution might use multiple medium coins instead
-
-**Solution**: Use Dynamic Programming for arbitrary coin systems.
-
-### Example 3: Shortest Path with Negative Edges (Greedy Fails)
-
-Dijkstra's algorithm (greedy) fails when edges have negative weights:
-
-```cpp
-// Graph with negative edge:
-//    A --3--> B
-//    |        |
-//    2        -5
-//    |        |
-//    v        v
-//    C --1--> D
-//
-// Shortest path from A to D:
-// Greedy (Dijkstra): A -> B -> D = 3 + (-5) = -2
-// But wait! A -> C -> D = 2 + 1 = 3
-// Actually, A -> B -> C -> D = 3 + (-5) + 1 = -1 (even better!)
-//
-// Problem: Dijkstra's greedy choice (closest unvisited vertex) 
-// doesn't work with negative edges because it assumes all future 
-// edges are non-negative
-```
-
-**Why Greedy Fails**:
-- Dijkstra assumes all edges are non-negative
-- With negative edges, a longer path might be cheaper
-- Greedy choice (closest vertex) might lock in a suboptimal path
-
-**Solution**: Use Bellman-Ford algorithm (Chapter 11) for graphs with negative edges.
-
-### Common Patterns When Greedy Fails
-
-1. **Interdependent Choices**: When choices affect future options in complex ways
-2. **Non-Canonical Systems**: When local optimal doesn't imply global optimal
-3. **Negative Weights/Costs**: When assumptions about costs break down
-4. **Combinatorial Constraints**: When you need to consider all combinations
-5. **NP-Hard Problems**: When the problem itself is computationally hard
-
-### When to Use Greedy vs Dynamic Programming
-
-| Situation | Use Greedy | Use Dynamic Programming |
-|-----------|------------|------------------------|
-| **Fractional choices allowed** | ✅ Yes (fractional knapsack) | ❌ No |
-| **Choices are independent** | ✅ Yes (activity selection) | ❌ No |
-| **Canonical system** | ✅ Yes (standard coin change) | ❌ No |
-| **Need all combinations** | ❌ No | ✅ Yes (0-1 knapsack) |
-| **Non-canonical system** | ❌ No | ✅ Yes (arbitrary coin change) |
-| **Negative weights** | ❌ No | ✅ Yes (Bellman-Ford) |
-| **Optimal substructure** | ✅ If greedy choice property holds | ✅ Always |
-
-### Key Takeaway
-
-**Greedy fails when**:
-- The greedy choice property doesn't hold
-- Local optimal choices don't lead to global optimal
-- Future choices depend on past choices in non-obvious ways
-- The problem requires considering all possible combinations
+Grabbing the 4 leaves a remainder of 2 that only two 1s can fill; the optimum ignores the biggest coin entirely. Whether greedy works here depends on the denominations being *canonical* — a property you'd have to prove — so arbitrary coin systems go to DP.
 
-**Always verify** that your greedy algorithm produces optimal results before using it in production!
+**Negative-weight shortest paths.** As above, Dijkstra's greedy finality assumption needs non-negative edges. Violate the precondition and you need Bellman-Ford's relax-everything approach.
 
-## 16.20 Greedy Algorithm Patterns
+**0-1 knapsack and its combinatorial cousins.** Indivisible choices with capacity constraints, as we saw — no safe local criterion exists.
 
-### Pattern 1: Interval Problems
-- Sort by end time
-- Greedily select non-overlapping intervals
+The pattern behind all three: **greedy is safe when today's best choice never poisons tomorrow's options.** When choices are interdependent, when a resource is indivisible, or when a hidden precondition (canonical coins, non-negative edges) fails, the safety evaporates and you reach for DP, which pays more compute to keep every option alive.
 
-### Pattern 2: Scheduling Problems
-- Sort by some criteria (deadline, profit, etc.)
-- Greedily assign resources
+## Where greedy lives in systems
 
-### Pattern 3: Optimization Problems
-- Sort by ratio or value
-- Greedily select items
+The greedy loop is quietly everywhere real systems make fast decisions under load:
 
-### Pattern 4: Graph Problems
-- Use priority queue
-- Greedily process minimum cost edges/vertices
+- **CPU and task schedulers.** Shortest-job-first, earliest-deadline-first, and priority scheduling are greedy criteria over a ready queue — a heap of runnable tasks, popped by the scheduling policy. Earliest-deadline-first is provably optimal for meeting deadlines on one processor, and it's the interval-scheduling exchange argument wearing a kernel's clothes.
+- **Load balancers.** "Least-connections" and "least-response-time" routing are greedy: send each request to the backend that looks cheapest right now. It's not globally optimal — a burst can pile onto one server — but it's `O(1)` per request and good enough, the classic greedy trade of a proof for speed.
+- **Compression and serialization.** Huffman (and its cousin, arithmetic coding's frequency model) sits inside gzip, zlib, PNG, JPEG, and HTTP/2's HPACK header compression.
+- **Network routing and MST-shaped problems.** Broadcast trees, clustering, and network design lean on Prim/Kruskal-style greedy construction.
 
-## 16.21 Proving Greedy Correctness
+The lesson these share with the theory: production systems often reach for greedy *knowing* it isn't globally optimal, because a provably-optimal scheduler that takes milliseconds per decision is worse than a greedy one that takes microseconds and is usually right. Greedy's cheapness is a feature even when its optimality is only approximate.
 
-Proving that a greedy algorithm produces optimal results is crucial. Unlike dynamic programming (which always produces optimal results), greedy algorithms require careful proof.
+## Proving your own greedy algorithm
 
-### Two Key Properties for Greedy Correctness
+When you invent a greedy algorithm, the loop is the easy 10%. The proof is the job, and it has a template:
 
-1. **Greedy Choice Property**: A global optimum can be reached by making locally optimal choices
-2. **Optimal Substructure**: The problem can be broken down into subproblems, and optimal solutions to subproblems contribute to the global optimum
+1. **State the greedy choice precisely** — the exact ordering criterion.
+2. **Prove the greedy-choice property by exchange.** Take any optimal solution; show you can transform it to include your first choice without making it worse. This is where most wrong greedy criteria die — you try to construct the swap and can't.
+3. **Prove optimal substructure.** Show that after the choice, what remains is the same problem on a smaller instance.
+4. **Close by induction.** Safe first choice plus identical subproblem gives optimality for the whole run.
 
-### Method 1: Greedy Choice Property
+If step 2 won't go through, that is not a gap in your cleverness — it's usually the algorithm telling you the greedy-choice property is false. The fastest way to find that out is to hunt for a small counterexample (the `{1,3,4}` coins, the three-item knapsack). A greedy algorithm you can't prove correct is a greedy algorithm you can't trust, and the honest move is to fall back to DP.
 
-**Goal**: Show that a greedy choice is part of some optimal solution.
+## Engineering judgment
 
-**Approach**: 
-1. Assume there exists an optimal solution that doesn't include the greedy choice
-2. Show that we can modify this solution to include the greedy choice without making it worse
-3. Conclude that the greedy choice is part of some optimal solution
+- **Reach for greedy first on optimization problems — but only ship it with a proof or a hard counterexample.** The exchange argument is the test. If you can't make the swap go through, assume greedy is wrong.
+- **The sort is usually the bill.** Most greedy algorithms are `O(n log n)` dominated by the initial sort; the greedy pass itself is linear. Where the criterion changes as you go (Huffman, Prim, Dijkstra), a heap replaces the sort at the same asymptotic cost and stays cache-friendly because it's array-backed.
+- **When indivisibility, interdependence, or a broken precondition shows up, switch to DP.** 0-1 knapsack, arbitrary coin systems, and negative-weight paths are the recurring tells.
+- **Systems use greedy for its cheapness, not its guarantees.** Load balancers and schedulers accept "usually optimal, always fast" on purpose. Know which regime you're in.
 
-**Example: Activity Selection**
+## Interview checklist
 
-**Greedy Choice**: Select the activity with the earliest finish time.
+**Say this, not that.** "Greedy takes the best local choice" is the shallow answer. The deep one: "Greedy is correct only when the greedy-choice property holds — some optimal solution contains the greedy pick — which you prove with an exchange argument. Absent that proof, greedy is a guess, and problems with indivisible or interdependent choices need DP."
 
-**Proof**:
-1. Let `S` be an optimal solution
-2. Let `a` be the activity with earliest finish time
-3. If `a` is in `S`, we're done
-4. If `a` is not in `S`, let `a'` be the first activity in `S`
-5. Since `a` finishes before `a'`, we can replace `a'` with `a` in `S`
-6. The new solution is still optimal (same number of activities)
-7. Therefore, the greedy choice is part of some optimal solution
+**The problems interviewers use to test it**
+- **Interval scheduling** (activity selection, meeting rooms, non-overlapping intervals) — sort by finish time, sweep once.
+- **Fractional vs. 0-1 knapsack** — knowing *why* fractions make greedy safe and indivisibility breaks it is the entire point of the question.
+- **Huffman / optimal merge** — the least-frequent-first heap merge.
+- **Jump Game, Gas Station, Partition Labels** — each has a one-line greedy invariant hiding behind a wordy prompt.
 
-### Method 2: Exchange Argument
+**Common mistakes**
+- Assuming greedy is optimal without an exchange argument — the single most common wrong answer.
+- Choosing the wrong criterion (shortest interval instead of earliest finish; largest coin in a non-canonical system).
+- Running Dijkstra on a graph with negative edges, or greedy 0-1 knapsack by density.
+- Forgetting the single-symbol edge case in Huffman (an empty code encodes nothing).
 
-**Goal**: Show that any solution can be transformed to include the greedy choice without making it worse.
+## Summary
 
-**Approach**:
-1. Start with any solution (optimal or not)
-2. Show that if it doesn't include the greedy choice, we can exchange elements to include it
-3. Prove that the exchange doesn't make the solution worse
-4. Repeat until the solution matches the greedy solution
-
-**Example: Fractional Knapsack**
-
-**Greedy Choice**: Take items in order of value/weight ratio (descending).
-
-**Proof**:
-1. Let `S` be any solution (optimal or not)
-2. If `S` doesn't match the greedy order, find the first position where it differs
-3. Exchange the items to match greedy order
-4. Show that this exchange doesn't decrease total value (because greedy has better ratio)
-5. Continue until `S` matches greedy solution
-6. Therefore, greedy solution is at least as good as any other solution
-
-### Method 3: Induction
-
-**Goal**: Prove that making greedy choices leads to optimal solution.
-
-**Approach**:
-1. **Base Case**: Show greedy works for the smallest problem
-2. **Inductive Step**: Assume greedy works for problems of size `k`
-3. **Prove**: Show that adding the greedy choice for size `k+1` maintains optimality
-4. **Conclusion**: By induction, greedy works for all problem sizes
-
-**Example: Minimum Spanning Tree (Kruskal's Algorithm)**
-
-**Greedy Choice**: Add the edge with minimum weight that doesn't form a cycle.
-
-**Proof by Induction**:
-1. **Base Case**: For 1 vertex, no edges needed - optimal
-2. **Inductive Hypothesis**: Assume Kruskal's produces MST for `k` vertices
-3. **Inductive Step**: 
-   - Consider adding edge `e` with minimum weight
-   - If `e` doesn't form a cycle, it must be in some MST (cut property)
-   - Adding `e` maintains optimality
-4. **Conclusion**: Kruskal's produces MST for all sizes
-
-### Method 4: Cut Property / Matroid Theory
-
-**Advanced Method**: For certain problems (like MST), use structural properties.
-
-**Cut Property** (for MST):
-- For any cut in the graph, the minimum weight edge crossing the cut is in some MST
-- Greedy algorithms that always choose minimum crossing edges produce MSTs
-
-**Matroid Theory**:
-- Many greedy problems can be modeled as matroids
-- Greedy algorithm is optimal for matroid problems
-- Examples: Minimum Spanning Tree, Activity Selection
-
-### Step-by-Step Proof Template
-
-**Template for Proving Greedy Correctness**:
-
-1. **Define the Greedy Choice**: Clearly state what choice the algorithm makes at each step
-
-2. **State the Claim**: "The greedy algorithm produces an optimal solution"
-
-3. **Prove Greedy Choice Property**:
-   - Show that the greedy choice is part of some optimal solution
-   - Use exchange argument or direct proof
-
-4. **Prove Optimal Substructure**:
-   - Show that after making the greedy choice, the remaining problem is a smaller instance of the same problem
-   - Show that optimal solution to subproblem + greedy choice = optimal solution
-
-5. **Combine**: Use induction or direct argument to show greedy produces optimal solution
-
-### Example: Complete Proof for Activity Selection
-
-**Problem**: Select maximum number of non-overlapping activities.
-
-**Greedy Algorithm**: 
-1. Sort activities by finish time
-2. Select first activity
-3. For each remaining activity, if it starts after last selected finishes, select it
-
-**Proof**:
-
-**Step 1: Greedy Choice Property**
-- Let `a` be the activity with earliest finish time
-- Let `S` be an optimal solution
-- If `a` is in `S`, done
-- If `a` is not in `S`, let `a'` be the first activity in `S`
-- Since `a` finishes before `a'`, we can replace `a'` with `a`
-- New solution has same size, so still optimal
-- Therefore, greedy choice is part of some optimal solution
-
-**Step 2: Optimal Substructure**
-- After selecting `a`, remaining problem: select maximum activities from those starting after `a` finishes
-- This is the same problem (activity selection) on a smaller set
-- If we have optimal solution `S'` to subproblem, then `{a} ∪ S'` is optimal for original problem
-
-**Step 3: Conclusion**
-- By induction: greedy choice + optimal subproblem = optimal solution
-- Therefore, greedy algorithm produces optimal solution
-
-### Common Proof Techniques Summary
-
-| Technique | When to Use | Example |
-|-----------|-------------|---------|
-| **Exchange Argument** | Can swap elements | Activity Selection, Fractional Knapsack |
-| **Induction** | Problem has optimal substructure | MST, Activity Selection |
-| **Cut Property** | Graph problems | Minimum Spanning Tree |
-| **Contradiction** | Assume greedy is wrong, derive contradiction | Many problems |
-| **Matroid Theory** | Problem is a matroid | Greedy is always optimal for matroids |
-
-### Practice: Proving Your Own Greedy Algorithms
-
-**Checklist for Proving Greedy Correctness**:
-
-- [ ] Clearly define the greedy choice
-- [ ] Prove greedy choice property (greedy choice is in some optimal solution)
-- [ ] Prove optimal substructure (subproblem + greedy choice = optimal)
-- [ ] Use appropriate proof technique (exchange, induction, etc.)
-- [ ] Handle edge cases and boundary conditions
-- [ ] Verify with counterexamples (make sure greedy doesn't fail)
-
-### Key Takeaway
-
-**Proving greedy correctness is essential** because:
-- Greedy algorithms don't always produce optimal results
-- Proof gives confidence that the algorithm works
-- Understanding the proof helps identify when greedy fails
-- Proof techniques are valuable for algorithm design
-
-**Remember**: If you can't prove your greedy algorithm is correct, it might not be! Always verify with test cases and consider using dynamic programming if proof is difficult.
-
-## 16.22 Key Takeaways
-
-1. **Greedy algorithms** make locally optimal choices
-2. **Greedy choice property** must hold for correctness
-3. **Optimal substructure** is required
-4. **Not always optimal** - verify correctness
-5. **Often efficient** - simpler than DP
-6. **Common patterns** - intervals, scheduling, optimization
-
-## 16.23 Exercises
-
-1. Implement a greedy algorithm for the "Meeting Rooms" problem.
-
-2. Create a greedy solution for "Non-overlapping Intervals" (remove minimum intervals).
-
-3. Implement a greedy algorithm for "Partition Labels" problem.
-
-4. Create a greedy solution for "Gas Station" problem (circular route).
-
-5. Implement a greedy algorithm for "Jump Game" problems.
-
-6. Create a greedy solution for "Assign Cookies" problem.
-
-7. Implement a greedy algorithm for "Queue Reconstruction by Height".
-
-8. Create a greedy solution for "Remove K Digits" to form smallest number.
-
-9. Implement a greedy algorithm for "Task Scheduler" problem.
-
-10. Create a greedy solution for "Reorganize String" problem.
-
-## 16.24 Summary
-
-Greedy algorithms are powerful tools for optimization problems. They work by making locally optimal choices, which often lead to globally optimal solutions. However, it's crucial to verify that the greedy choice property holds, as greedy algorithms don't always produce optimal results. Understanding when to use greedy algorithms and how to prove their correctness is essential for solving many algorithmic problems efficiently.
-
+Greedy algorithms trade the completeness of dynamic programming for speed and simplicity, and the trade pays off exactly when a locally optimal choice is provably globally optimal — when the greedy-choice property and optimal substructure both hold. The exchange argument is the tool that proves it, matroids are the deep reason it sometimes works, and DP is the fallback when it doesn't. Interval scheduling, fractional knapsack, Huffman coding, Dijkstra, and the MST are the canonical wins; 0-1 knapsack, non-canonical coin change, and negative-weight paths are the canonical failures — and the line between them is always the same question: does today's best choice ever poison tomorrow's options?
