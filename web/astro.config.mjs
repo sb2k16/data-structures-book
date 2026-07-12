@@ -29,7 +29,7 @@ export default defineConfig({
       wrap: false,
     },
     processor: unified({
-      remarkPlugins: [remarkStripChapterChrome, remarkMermaid, [remarkRewriteLinks, REPO_URL]],
+      remarkPlugins: [remarkStripChapterChrome, remarkMermaid, remarkRewriteLinks],
       rehypePlugins: [
         rehypeSlug,
         [rehypeAutolinkHeadings, { behavior: 'wrap', properties: { className: 'heading-anchor' } }],

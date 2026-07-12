@@ -2,7 +2,7 @@
 import Base from '../layouts/Base.astro';
 import EmailCapture from '../components/EmailCapture.astro';
 import Compare from '../components/bench/Compare';
-import { byPart, CHAPTERS, REPO_URL } from '../lib/book';
+import { byPart, CHAPTERS } from '../lib/book';
 
 const parts = byPart();
 const DESC =
@@ -77,7 +77,7 @@ const DESC =
         <p class="mt-2 text-sm leading-relaxed" style="color: var(--text-secondary)">
           Every chapter ends where the structure actually ships — Redis, Postgres, the Linux kernel,
           OpenSearch shard routing — in modern C++ that compiles, with the invariants and failure modes
-          <a href={REPO_URL} class="underline" rel="noopener">in the repo</a>.
+          spelled out in <a href="/chapters" class="underline">every chapter</a>.
         </p>
       </div>
     </div>

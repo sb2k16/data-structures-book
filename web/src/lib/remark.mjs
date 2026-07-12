@@ -55,14 +55,21 @@ export function remarkMermaid() {
  * repo. Rewrite the first to site routes and the second to GitHub, so no link
  * in 188,000 words 404s.
  */
-export function remarkRewriteLinks(repoUrl) {
+export function remarkRewriteLinks() {
   return (tree) => {
-    visit(tree, (node) => {
+    visit(tree, (node, index, parent) => {
       if (node.type !== 'link' || typeof node.url !== 'string') return;
       const url = node.url;
+      // The markdown chapters use absolute site URLs so links also work when
+      // read on GitHub. On the site, strip the domain so they're relative and
+      // survive a domain change (and never look like leaving the site).
+      const siteMatch = url.match(/^https?:\/\/sb2k16\.github\.io(\/[^\s]*)?$/i);
+      if (siteMatch) {
+        node.url = siteMatch[1] || '/';
+        return;
+      }
       // Leave alone: external, mailto, in-page anchors, and absolute site paths
-      // (e.g. /chapters/foo written directly in MDX) — only relative repo paths
-      // and sibling .md links get rewritten below.
+      // (e.g. /chapters/foo written directly in MDX).
       if (/^(https?:|mailto:|#|\/)/.test(url)) return;
 
       const chapterMatch = url.match(/^(?:\.\/|\.\.\/chapters\/)?(\d+(?:\.\d+)?)-([a-z0-9-]+)\.md(#.*)?$/i);
@@ -71,8 +78,12 @@ export function remarkRewriteLinks(repoUrl) {
         node.url = `/chapters/${num === '3.6' || num === '03.6' ? 'memory-hierarchy' : name}${hash}`;
         return;
       }
-      // Everything else (examples/, docs/, LICENSE) lives in the repo.
-      node.url = `${repoUrl}/blob/main/${url.replace(/^(\.\/|\.\.\/)+/, '')}`;
+      // Everything else is a relative repo path (examples/, docs/, LICENSE) that
+      // has no on-site page. Readers should never be bounced off the site to
+      // "browse for details", so unwrap the link and keep only its text.
+      if (parent && typeof index === 'number' && Array.isArray(node.children)) {
+        parent.children.splice(index, 1, ...node.children);
+      }
     });
   };
 }

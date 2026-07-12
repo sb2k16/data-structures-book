@@ -108,14 +108,20 @@ const schema = {
     </main>
 
     <footer class="mt-24 border-t" style="border-color: var(--border)">
-      <div class="mx-auto max-w-6xl px-5 py-10 text-sm" style="color: var(--text-muted)">
-        <p>
-          A free, open-source book. MIT licensed —
-          <a href={REPO_URL} class="underline" style="color: var(--text-secondary)" rel="noopener">read it, fork it, teach from it</a>.
-        </p>
-        <p class="mt-1.5">
-          Every benchmark on this site runs in your browser. Nothing is uploaded, and no result leaves the tab.
-        </p>
+      <div class="mx-auto flex max-w-6xl flex-col gap-4 px-5 py-10 text-sm sm:flex-row sm:items-center sm:justify-between" style="color: var(--text-muted)">
+        <div>
+          <p>A free, open-source book. Read it all right here — the whole thing lives on this site.</p>
+          <p class="mt-1.5">Every benchmark runs in your browser. Nothing is uploaded, and no result leaves the tab.</p>
+        </div>
+        <a
+          href={REPO_URL}
+          rel="noopener"
+          class="inline-flex shrink-0 items-center gap-2 rounded-lg border px-4 py-2 no-underline transition-colors hover:bg-[var(--surface-2)]"
+          style="border-color: var(--border-strong); color: var(--text-primary)"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.58 2 12.25c0 4.53 2.87 8.37 6.84 9.73.5.1.68-.22.68-.49l-.01-1.9c-2.78.62-3.37-1.2-3.37-1.2-.46-1.18-1.11-1.5-1.11-1.5-.9-.63.07-.62.07-.62 1 .07 1.53 1.05 1.53 1.05.9 1.56 2.35 1.11 2.92.85.09-.66.35-1.11.63-1.36-2.22-.26-4.56-1.14-4.56-5.05 0-1.12.39-2.03 1.03-2.74-.1-.26-.45-1.3.1-2.7 0 0 .84-.28 2.75 1.05a9.35 9.35 0 015 0c1.91-1.33 2.75-1.05 2.75-1.05.55 1.4.2 2.44.1 2.7.64.71 1.03 1.62 1.03 2.74 0 3.92-2.34 4.79-4.57 5.04.36.32.68.94.68 1.9l-.01 2.82c0 .27.18.6.69.49A10.02 10.02 0 0022 12.25C22 6.58 17.52 2 12 2z"/></svg>
+          Fork it on GitHub — contributions welcome
+        </a>
       </div>
     </footer>
 
