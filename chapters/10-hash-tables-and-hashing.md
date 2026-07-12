@@ -1,2126 +1,385 @@
 # Chapter 10: Hash Tables and Hashing
 
-## 10.1 Problem Statement & Motivation
+Every other lookup structure in this book *searches*. A sorted array bisects, a balanced tree walks down its levels, a linked list scans from the front. A hash table does something categorically different: it **computes** where the key belongs and goes straight there. Run the key through a hash function, reduce the result modulo the table size, and that arithmetic *is* the address — no comparisons, no traversal, no levels. One function call and one array index. That is why a hash table is `O(1)` average for insert, search, and delete, and it is the fastest general-purpose lookup structure we have.
 
-### What Problem Do Hash Tables Solve?
+The price is total: a hash table throws away all ordering. [Chapter 13](13-searching-algorithms.md) made the case that your search algorithm is decided the moment you pick your container, and the hash table is the container you pick when you will do many lookups by exact key and never need "the smallest," "the next one after this," or "everything between X and Y." Scatter keys across an array by their hash and those questions stop having answers — you cannot iterate in order because there is no order to iterate. If you need ordering plus fast lookup, that is what a [balanced tree](06-trees-and-binary-trees.md) and its `O(log n)` are for. If you need only membership and value-by-key, the hash table wins, and it wins by a wide margin.
 
-Many applications require fast lookup by key:
+Two things decide whether a real hash table delivers on the `O(1)` promise: the **hash function**, which must scatter keys uniformly and cheaply, and **collision resolution**, which decides what happens when two keys land on the same slot. The second turns out to be a cache-locality decision as much as an algorithmic one — and that is where hash tables get genuinely interesting on real hardware.
 
-- Finding a user by ID in a database
-- Checking if an element exists in a set
-- Mapping names to values (dictionaries)
-- Counting frequencies of items
+## What makes a hash function good
 
-**Naive Approaches and Their Limitations**:
+A hash function maps a key of arbitrary size to a fixed-width integer, and a good one has three properties. It is **deterministic** — the same key always produces the same hash, or nothing works. It is **fast** — a handful of arithmetic operations, `O(1)` in the key's size. And it **distributes uniformly** — every bucket equally likely, so a one-bit change in the key produces a large, unpredictable change in the output (the *avalanche* effect). Uniformity is the property that carries the whole structure: the `O(1)` promise assumes keys spread evenly, and a hash function that clumps them into a few buckets quietly turns your table back into a linked list.
 
-- **Linear Search**: O(n) time - too slow for large datasets
-- **Sorted Array + Binary Search**: O(log n) time - better, but still logarithmic
-- **Balanced Trees**: O(log n) time - good, but requires ordering
+For integers, the crudest hash is `key % tableSize` — the division method. It works only when the low bits of your keys are themselves well-mixed; keys sharing a common factor with the table size collide catastrophically, which is the classic argument for prime table sizes. For strings, the workhorse is a **polynomial rolling hash**: treat the characters as digits in base `b` and evaluate with Horner's method.
 
-**The Hash Table Solution**: Hash tables aim for **O(1) average-time** operations by using a hash function to map keys directly to array indices, bypassing the need for ordering or sequential search.
-
-Reach for a hash table when lookups by key dominate, order does not matter, and average-case performance with modest memory overhead is acceptable — database indexing, caches (LRU/LFU), compiler symbol tables, frequency counting, deduplication, and language dictionaries (`std::unordered_map`, Python `dict`, Java `HashMap`). Avoid them when you need ordered traversal, min/max, or range queries (use `std::map` or a BST), when worst-case latency must be tightly bounded (a hash table can degrade to O(n)), or when memory is severely constrained. The core trade-off: hash tables give up **predictability and ordering** for **speed**.
-
-## 10.2 Conceptual Overview
-
-A **hash table** (also called a hash map) is a data structure that implements an associative array, mapping keys to values using a hash function to compute array indices.
-
-### Intuitive Explanation
-
-Think of a hash table like a library catalog system:
-- **Keys** are book titles
-- **Hash function** determines which shelf (bucket) to check
-- **Values** are the actual books
-- **Collisions** occur when multiple books map to the same shelf (handled by chaining or probing)
-
-### Key Characteristics
-
-- **Fast average-case performance**: O(1) for insert, delete, and search operations
-- **Key-value storage**: Stores data as key-value pairs
-- **Hash function**: Maps keys to array indices
-- **Collision handling**: Manages cases where multiple keys map to the same index
-- **Dynamic resizing**: Grows and shrinks as needed
-
-### Comparison with Other Data Structures
-
-| Operation | Hash Table | Array | Binary Search Tree | Linked List |
-|-----------|------------|-------|-------------------|-------------|
-| Search | O(1) avg | O(1) | O(log n) | O(n) |
-| Insert | O(1) avg | O(n) | O(log n) | O(1) |
-| Delete | O(1) avg | O(n) | O(log n) | O(n) |
-| Space | O(n) | O(n) | O(n) | O(n) |
-| Ordered | No | Yes | Yes | Yes |
-| Worst-case | O(n) | O(1) | O(log n) | O(n) |
-
-## 10.3 Abstract Model & Invariants
-
-Understanding hash table invariants is crucial for correct implementation and reasoning. This section defines correctness **independent of any implementation**.
-
-### Abstract Model
-
-A hash table consists of:
-
-1. **A fixed-size array of buckets** (or slots)
-2. **A hash function** `h: Key → [0, m-1]` mapping keys to bucket indices
-3. **A collision resolution strategy** for handling keys that map to the same bucket
-
-We define the abstract operation:
-
-```
-index = hash(key) mod table_size
-```
-
-### Core Invariants
-
-These invariants must **always** hold for a hash table to be correct:
-
-#### 1. Hash Function Invariant
-
-- **Determinism**: Same key always maps to same bucket: `hash(k₁) = hash(k₂) ⟹ k₁ = k₂` (for hash equality)
-- **Distribution**: Hash function distributes keys uniformly across buckets
-- **Efficiency**: Hash computation is O(1) time
-
-**What breaks it**: Non-deterministic hash function, poor distribution causing clustering
-
-#### 2. Key-Value Mapping Invariant
-
-- **Uniqueness**: Each key maps to at most one value
-- **Update semantics**: Inserting same key updates existing value (or handles collision correctly)
-- **No duplicates**: No duplicate keys exist in the table
-
-**What breaks it**: Incorrect collision handling, keys lost or overwritten
-
-#### 3. Load Factor Invariant
-
-- **Definition**: Load factor `α = n / m` where `n` = number of elements, `m` = table size
-- **Threshold**: Must stay below threshold (typically 0.75) to maintain O(1) performance
-- **Rehashing**: When exceeded, rehashing must occur to restore performance
-
-**What breaks it**: Load factor too high degrades to O(n) performance
-
-#### 4. Collision Resolution Invariant
-
-- **Correctness**: All keys that hash to same bucket are stored correctly
-- **Consistency**: Collision resolution method (chaining/probing) is consistently applied
-- **Completeness**: Search/insert/delete operations handle collisions correctly
-
-**What breaks it**: Inconsistent collision handling, keys not found due to incorrect probing
-
-### How Operations Preserve Invariants
-
-- **Insert**: Compute hash (preserves hash function invariant) → handle collision (preserves collision resolution invariant) → update load factor → rehash if needed (restores load factor invariant)
-- **Delete**: Compute hash → locate key → remove → update load factor
-- **Rehash**: Create larger table → recompute all hashes → redistribute keys → restores load factor invariant
-
-This builds on the **array representation** concepts from Chapter 3, but hash tables add the complexity of hash functions and collision resolution.
-
-## 10.4 Operations & Interface
-
-A hash table supports the following core operations:
-
-| Operation | Description | Precondition | Postcondition |
-|-----------|-------------|-------------|---------------|
-| `insert(key, value)` | Adds or updates key-value pair | Key is valid | Key maps to value, load factor updated |
-| `search(key)` | Finds value for given key | Key is valid | Returns value if found, error/None if not |
-| `delete(key)` | Removes key-value pair | Key exists in table | Key removed, load factor updated |
-| `size()` | Returns number of elements | - | Returns current count |
-| `empty()` | Checks if table is empty | - | Returns true if no elements |
-| `loadFactor()` | Returns current load factor | - | Returns α = n/m |
-
-### Behavioral Guarantees
-
-- **Insert**: If key exists, updates value; otherwise adds new entry. May trigger rehashing.
-- **Search**: Returns value if key exists; otherwise indicates not found.
-- **Delete**: Removes key if present; otherwise no-op. May trigger rehashing.
-- **Load Factor**: Always reflects current occupancy. Rehashing occurs when threshold exceeded.
-
-### Interface Contract
-
-**Preconditions**:
-- Keys must be hashable (support hash function)
-- Keys must support equality comparison
-- Table must have sufficient capacity (or support dynamic resizing)
-
-**Postconditions**:
-- All invariants preserved after each operation
-- Load factor maintained below threshold
-- No duplicate keys exist
-
-## 10.5 Time & Space Complexity
-
-### Time Complexity
-
-| Operation | Average Case | Worst Case | Amortized |
-|-----------|--------------|------------|-----------|
-| Insert | O(1) | O(n) | O(1) |
-| Search | O(1) | O(n) | O(1) |
-| Delete | O(1) | O(n) | O(1) |
-| Rehash | O(n) | O(n) | O(1) per insert |
-
-**Important Notes**:
-- **O(1) is expected, not guaranteed**: Worst case occurs with poor hash function or adversarial input
-- **Amortized O(1)**: Rehashing cost amortized across all inserts
-- **Worst case O(n)**: All keys hash to same bucket (extremely rare with good hash function)
-
-### Space Complexity
-
-- **Space**: O(n) where n is the number of elements
-- **Overhead**: 
-  - Separate Chaining: O(n) for pointers + O(m) for buckets
-  - Open Addressing: O(m) for table slots (m ≥ n)
-- **Load Factor Impact**: Higher load factor = less wasted space but more collisions
-
-### Factors Affecting Performance
-
-1. **Hash Function Quality**: Poor hash functions cause clustering → O(n) worst case
-2. **Load Factor**: High load factors increase collisions → degraded performance
-3. **Collision Resolution**: Different methods have different characteristics
-4. **Data Distribution**: Skewed data can degrade performance
-
-## 10.6 Understanding Hash Functions
-
-A **hash function** is any function that can be used to map data of arbitrary size to fixed-size values. The values returned by a hash function are called hash values, hash codes, digests, or simply hashes.
-
-### Properties of Good Hash Functions
-
-1. **Deterministic**: Same input always produces same output
-2. **Uniform distribution**: Keys should be evenly distributed across buckets
-3. **Fast computation**: Should be O(1) time complexity
-4. **Avalanche effect**: Small changes in input should cause large changes in output
-
-### Common Hash Functions
-
-#### 1. Division Method
 ```cpp
-// Simple hash function using modulo
-size_t hashDivision(int key, size_t tableSize) {
-    return key % tableSize;
-}
-
-// For strings
-size_t hashStringDivision(const string& key, size_t tableSize) {
-    size_t hash = 0;
-    for (char c : key) {
-        hash = (hash * 31 + c) % tableSize;
-    }
-    return hash;
+std::size_t hashString(const std::string& key, std::size_t tableSize) {
+    std::size_t h = 0;
+    for (unsigned char c : key)
+        h = h * 31 + c;          // base-31 polynomial, Horner's method
+    return h % tableSize;
 }
 ```
 
-#### 2. Multiplication Method
-```cpp
-#include <cmath>
+The multiplier 31 is the constant Java's `String.hashCode` uses: odd, prime, and cheap to compute as `(h << 5) - h`. Production hashes such as **FNV-1a** and **MurmurHash** are the same idea with stronger mixing:
 
-size_t hashMultiplication(int key, size_t tableSize) {
-    const double A = 0.6180339887; // (sqrt(5) - 1) / 2
-    double fractional = (key * A) - floor(key * A);
-    return static_cast<size_t>(tableSize * fractional);
+```cpp
+std::size_t hashFNV1a(const std::string& key) {
+    std::size_t h = 14695981039346656037ULL;   // 64-bit offset basis
+    for (unsigned char c : key) {
+        h ^= c;
+        h *= 1099511628211ULL;                  // 64-bit FNV prime
+    }
+    return h;                                    // caller reduces mod table size
 }
 ```
 
-#### 3. FNV-1a Hash (Fowler-Noll-Vo)
-```cpp
-size_t hashFNV1a(const string& key, size_t tableSize) {
-    const size_t FNV_OFFSET_BASIS = 2166136261U;
-    const size_t FNV_PRIME = 16777619U;
-    
-    size_t hash = FNV_OFFSET_BASIS;
-    for (char c : key) {
-        hash ^= static_cast<size_t>(c);
-        hash *= FNV_PRIME;
-    }
-    return hash % tableSize;
-}
-```
+Notice FNV-1a returns the full-width hash and leaves the `% tableSize` to the caller. That split is deliberate: the hash function's job is to *mix*, the table's job is to *reduce*. Keeping them separate lets one good hash serve any table size.
 
-#### 4. djb2 Hash (Dan Bernstein)
-```cpp
-size_t hashDJB2(const string& key, size_t tableSize) {
-    size_t hash = 5381;
-    for (char c : key) {
-        hash = ((hash << 5) + hash) + c; // hash * 33 + c
-    }
-    return hash % tableSize;
-}
-```
-
-#### 5. Universal Hashing
-```cpp
-class UniversalHash {
-private:
-    size_t a, b, p, m;
-    
-public:
-    UniversalHash(size_t tableSize) : m(tableSize) {
-        // Choose random a, b, and large prime p
-        p = 2147483647; // Large prime
-        a = 1 + (rand() % (p - 1));
-        b = rand() % p;
-    }
-    
-    size_t hash(int key) {
-        return ((a * key + b) % p) % m;
-    }
-};
-```
-
-### Hashing Custom Types
-
-To use your own type as a key, specialize `std::hash` (and provide `operator==`). Combine the hashes of the members rather than relying on any single field:
+To key a table on your own type, specialize `std::hash` and provide `operator==`. The one rule that matters: **combine all the members** — never lean on a single field, or every key that shares it collides.
 
 ```cpp
-#include <functional>
-#include <string>
-
 struct Person {
-    string name;
+    std::string name;
     int age;
-    
-    bool operator==(const Person& other) const {
-        return name == other.name && age == other.age;
+    bool operator==(const Person& o) const {
+        return name == o.name && age == o.age;
     }
 };
 
-namespace std {
-    template<>
-    struct hash<Person> {
-        size_t operator()(const Person& p) const {
-            return hash<string>()(p.name) ^ (hash<int>()(p.age) << 1);
-        }
-    };
-}
+template <>
+struct std::hash<Person> {
+    std::size_t operator()(const Person& p) const {
+        std::size_t h = std::hash<std::string>{}(p.name);
+        h ^= std::hash<int>{}(p.age) + 0x9e3779b9 + (h << 6) + (h >> 2);
+        return h;                               // boost::hash_combine mixing
+    }
+};
 ```
 
-## 10.7 Collision Resolution Strategies
+That `0x9e3779b9` shuffle (from Boost's `hash_combine`) earns its keep. The naive `h1 ^ (h2 << 1)` throws away bits and makes `{name:"A", age:B}` collide with `{name:"B", age:A}` far too readily; the mixing step decorrelates the fields.
 
-When two or more keys hash to the same index, we have a **collision**. The two dominant strategies — separate chaining and open addressing — differ chiefly in their memory layout, which (as the Systems Perspective below makes concrete) is really a cache-locality argument.
+One caveat separates a *fast* hash from a *secure* one. If an attacker can choose your keys — HTTP headers, JSON fields, usernames — they can craft thousands that all hash to one bucket, collapsing your `O(1)` table into an `O(n)` one. That is a real denial-of-service vector, the "hash flooding" attack that hit web frameworks in the early 2010s. The fix is a **keyed** hash such as SipHash, seeded with a per-process random value the attacker cannot observe, which is exactly why modern languages randomize their default string hashing. Reach for it only when keys are adversarial; for trusted internal keys it is wasted cycles.
 
-### 10.7.1 Separate Chaining
+## Collisions are inevitable — the question is where they live
 
-In **separate chaining**, each bucket contains a linked list (or other data structure) of all entries that hash to the same index.
+No matter how good the hash, collisions come early. By the pigeonhole principle any table holding more keys than it has slots must collide, and the birthday paradox guarantees collisions long before that — with a good hash and just `√m` keys you already expect one. So collision resolution is not an edge case; it is the machinery a hash table runs on constantly. The two dominant strategies, **separate chaining** and **open addressing**, are usually contrasted on a complexity footnote, but the difference that actually matters on hardware is physical: *where the colliding elements sit in memory.*
+
+### Separate chaining
+
+In separate chaining each bucket owns a linked list of every entry that hashed to it. A collision just appends a node.
 
 ```cpp
-#include <iostream>
 #include <vector>
 #include <list>
-#include <algorithm>
-using namespace std;
+#include <optional>
 
-template<typename K, typename V>
-class HashTableChaining {
-private:
-    struct KeyValue {
-        K key;
-        V value;
-        
-        KeyValue(const K& k, const V& v) : key(k), value(v) {}
-    };
-    
-    vector<list<KeyValue>> buckets;
-    size_t tableSize;
-    size_t numElements;
-    const double LOAD_FACTOR_THRESHOLD = 0.75;
-    
-    size_t hashFunction(const K& key) const {
-        return hash<K>{}(key) % tableSize;
+template <typename K, typename V>
+class ChainedHashMap {
+    struct Entry { K key; V value; };
+    std::vector<std::list<Entry>> buckets;
+    std::size_t count = 0;
+    static constexpr double kMaxLoad = 0.75;
+
+    std::size_t bucketOf(const K& key) const {
+        return std::hash<K>{}(key) % buckets.size();
     }
-    
-    void rehash() {
-        size_t oldSize = tableSize;
-        tableSize *= 2;
-        vector<list<KeyValue>> newBuckets(tableSize);
-        
-        for (const auto& bucket : buckets) {
-            for (const auto& kv : bucket) {
-                size_t newIndex = hash<K>{}(kv.key) % tableSize;
-                newBuckets[newIndex].push_back(kv);
-            }
-        }
-        
-        buckets = move(newBuckets);
+
+    void rehash(std::size_t newSize) {
+        std::vector<std::list<Entry>> grown(newSize);
+        for (auto& bucket : buckets)
+            for (auto& e : bucket)
+                grown[std::hash<K>{}(e.key) % newSize].push_back(std::move(e));
+        buckets = std::move(grown);
     }
-    
+
 public:
-    HashTableChaining(size_t initialSize = 16) 
-        : tableSize(initialSize), numElements(0) {
-        buckets.resize(tableSize);
-    }
-    
+    explicit ChainedHashMap(std::size_t initial = 16) : buckets(initial) {}
+
     void insert(const K& key, const V& value) {
-        size_t index = hashFunction(key);
-        
-        // Check if key already exists
-        auto it = find_if(buckets[index].begin(), buckets[index].end(),
-            [&key](const KeyValue& kv) { return kv.key == key; });
-        
-        if (it != buckets[index].end()) {
-            it->value = value; // Update existing
-        } else {
-            buckets[index].push_back(KeyValue(key, value));
-            numElements++;
-        }
-        
-        // Rehash if load factor too high
-        if (static_cast<double>(numElements) / tableSize > LOAD_FACTOR_THRESHOLD) {
-            rehash();
-        }
+        auto& chain = buckets[bucketOf(key)];
+        for (auto& e : chain)
+            if (e.key == key) { e.value = value; return; }   // update in place
+        chain.push_back({key, value});
+        if (++count > kMaxLoad * buckets.size())
+            rehash(buckets.size() * 2);
     }
-    
-    bool find(const K& key, V& value) const {
-        size_t index = hashFunction(key);
-        
-        auto it = find_if(buckets[index].begin(), buckets[index].end(),
-            [&key](const KeyValue& kv) { return kv.key == key; });
-        
-        if (it != buckets[index].end()) {
-            value = it->value;
-            return true;
-        }
+
+    std::optional<V> find(const K& key) const {
+        for (const auto& e : buckets[bucketOf(key)])
+            if (e.key == key) return e.value;
+        return std::nullopt;
+    }
+
+    bool erase(const K& key) {
+        auto& chain = buckets[bucketOf(key)];
+        for (auto it = chain.begin(); it != chain.end(); ++it)
+            if (it->key == key) { chain.erase(it); --count; return true; }
         return false;
     }
-    
-    bool remove(const K& key) {
-        size_t index = hashFunction(key);
-        
-        auto it = find_if(buckets[index].begin(), buckets[index].end(),
-            [&key](const KeyValue& kv) { return kv.key == key; });
-        
-        if (it != buckets[index].end()) {
-            buckets[index].erase(it);
-            numElements--;
-            return true;
-        }
-        return false;
-    }
-    
-    size_t size() const {
-        return numElements;
-    }
-    
-    bool empty() const {
-        return numElements == 0;
-    }
-    
-    double loadFactor() const {
-        return static_cast<double>(numElements) / tableSize;
-    }
-    
-    void printStats() const {
-        cout << "Table Size: " << tableSize << endl;
-        cout << "Number of Elements: " << numElements << endl;
-        cout << "Load Factor: " << loadFactor() << endl;
-        
-        size_t maxChainLength = 0;
-        size_t emptyBuckets = 0;
-        
-        for (const auto& bucket : buckets) {
-            maxChainLength = max(maxChainLength, bucket.size());
-            if (bucket.empty()) emptyBuckets++;
-        }
-        
-        cout << "Max Chain Length: " << maxChainLength << endl;
-        cout << "Empty Buckets: " << emptyBuckets << endl;
-    }
+
+    std::size_t size() const { return count; }
+    double loadFactor() const { return double(count) / buckets.size(); }
 };
 ```
 
-Chaining is simple, handles any number of collisions, and makes deletion trivial (just unlink the node). Its cost is systemic: every node is a separate heap allocation reached by pointer chasing, so it wastes memory on pointers and — the point the Systems Perspective develops below — suffers poor cache locality. Worst case still degrades to O(n) when all keys land in one bucket.
+Chaining is simple, absorbs any number of collisions without ever "filling up," and makes deletion trivial — unlink a node and you are done. Its cost is systemic and physical: every node is a separate heap allocation reached by following a pointer. Walking a chain of length three means three loads from three unrelated addresses, and on real hardware each of those is a likely **cache miss** costing 100–300 cycles while the CPU stalls. The bucket array is contiguous and cache-friendly; the chains hanging off it are scattered across the heap and are anything but. Worst case is still `O(n)` when every key lands in one bucket. (Java 8's `HashMap` mitigates the tail by upgrading a bucket from a list to a balanced tree once it grows past eight entries, capping a degenerate bucket at `O(log n)`.)
 
-### 10.7.2 Open Addressing
+### Open addressing
 
-In **open addressing**, all elements are stored directly in the hash table array. When a collision occurs, we probe for the next available slot.
+Open addressing takes the opposite bet: there are no external lists at all. Every entry lives directly in the table array, and when a key's home slot is taken, you **probe** — walk to the next slot by a fixed rule until you find the key or an empty slot. The simplest rule, **linear probing**, just steps forward one slot at a time, wrapping around the end.
 
-#### Linear Probing
 ```cpp
-#include <iostream>
 #include <vector>
 #include <optional>
-using namespace std;
 
-enum class SlotStatus {
-    EMPTY,
-    OCCUPIED,
-    DELETED
-};
+template <typename K, typename V>
+class OpenHashMap {
+    enum class State { Empty, Occupied, Deleted };
+    struct Slot { K key; V value; State state = State::Empty; };
 
-template<typename K, typename V>
-class HashTableLinearProbing {
-private:
-    struct Slot {
-        K key;
-        V value;
-        SlotStatus status;
-        
-        Slot() : status(SlotStatus::EMPTY) {}
-    };
-    
-    vector<Slot> table;
-    size_t tableSize;
-    size_t numElements;
-    const double LOAD_FACTOR_THRESHOLD = 0.7;
-    
-    size_t hashFunction(const K& key) const {
-        return hash<K>{}(key) % tableSize;
+    std::vector<Slot> slots;
+    std::size_t count = 0;
+    static constexpr double kMaxLoad = 0.5;
+
+    std::size_t home(const K& key) const {
+        return std::hash<K>{}(key) % slots.size();
     }
-    
-    size_t probe(const K& key, size_t startIndex) const {
-        size_t index = startIndex;
-        size_t probeCount = 0;
-        
-        while (probeCount < tableSize) {
-            if (table[index].status == SlotStatus::EMPTY ||
-                (table[index].status == SlotStatus::OCCUPIED && 
-                 table[index].key == key)) {
-                return index;
-            }
-            index = (index + 1) % tableSize;
-            probeCount++;
-        }
-        
-        return tableSize; // Table full
+
+    void rehash(std::size_t newSize) {
+        std::vector<Slot> old = std::move(slots);
+        slots = std::vector<Slot>(newSize);
+        count = 0;
+        for (auto& s : old)
+            if (s.state == State::Occupied)
+                insert(s.key, s.value);          // reinserts skip tombstones
     }
-    
-    void rehash() {
-        size_t oldSize = tableSize;
-        vector<Slot> oldTable = move(table);
-        
-        tableSize *= 2;
-        table.clear();
-        table.resize(tableSize);
-        numElements = 0;
-        
-        for (const auto& slot : oldTable) {
-            if (slot.status == SlotStatus::OCCUPIED) {
-                insert(slot.key, slot.value);
-            }
-        }
-    }
-    
+
 public:
-    HashTableLinearProbing(size_t initialSize = 16) 
-        : tableSize(initialSize), numElements(0) {
-        table.resize(tableSize);
-    }
-    
+    explicit OpenHashMap(std::size_t initial = 16) : slots(initial) {}
+
     void insert(const K& key, const V& value) {
-        if (static_cast<double>(numElements) / tableSize > LOAD_FACTOR_THRESHOLD) {
-            rehash();
-        }
-        
-        size_t index = hashFunction(key);
-        size_t slot = probe(key, index);
-        
-        if (slot == tableSize) {
-            throw runtime_error("Hash table is full");
-        }
-        
-        if (table[slot].status != SlotStatus::OCCUPIED) {
-            numElements++;
-        }
-        
-        table[slot].key = key;
-        table[slot].value = value;
-        table[slot].status = SlotStatus::OCCUPIED;
-    }
-    
-    bool find(const K& key, V& value) const {
-        size_t index = hashFunction(key);
-        size_t probeCount = 0;
-        
-        while (probeCount < tableSize) {
-            if (table[index].status == SlotStatus::EMPTY) {
-                return false;
+        if (count + 1 > kMaxLoad * slots.size())
+            rehash(slots.size() * 2);
+
+        std::size_t i = home(key);
+        std::size_t firstDeleted = slots.size();          // sentinel: none seen
+        for (std::size_t probes = 0; probes < slots.size(); ++probes) {
+            Slot& s = slots[i];
+            if (s.state == State::Empty) {                // key is absent; place it
+                Slot& dst = (firstDeleted != slots.size()) ? slots[firstDeleted] : s;
+                dst = {key, value, State::Occupied};
+                ++count;
+                return;
             }
-            
-            if (table[index].status == SlotStatus::OCCUPIED && 
-                table[index].key == key) {
-                value = table[index].value;
+            if (s.state == State::Occupied && s.key == key) {
+                s.value = value;                          // update in place
+                return;
+            }
+            if (s.state == State::Deleted && firstDeleted == slots.size())
+                firstDeleted = i;                         // reuse the first tombstone
+            i = (i + 1) % slots.size();                   // wrap around
+        }
+    }
+
+    std::optional<V> find(const K& key) const {
+        std::size_t i = home(key);
+        for (std::size_t probes = 0; probes < slots.size(); ++probes) {
+            const Slot& s = slots[i];
+            if (s.state == State::Empty) return std::nullopt;   // a gap ends the run
+            if (s.state == State::Occupied && s.key == key) return s.value;
+            i = (i + 1) % slots.size();
+        }
+        return std::nullopt;
+    }
+
+    bool erase(const K& key) {
+        std::size_t i = home(key);
+        for (std::size_t probes = 0; probes < slots.size(); ++probes) {
+            Slot& s = slots[i];
+            if (s.state == State::Empty) return false;
+            if (s.state == State::Occupied && s.key == key) {
+                s.state = State::Deleted;                 // tombstone, never Empty
+                --count;
                 return true;
             }
-            
-            index = (index + 1) % tableSize;
-            probeCount++;
+            i = (i + 1) % slots.size();
         }
-        
         return false;
-    }
-    
-    bool remove(const K& key) {
-        size_t index = hashFunction(key);
-        size_t probeCount = 0;
-        
-        while (probeCount < tableSize) {
-            if (table[index].status == SlotStatus::EMPTY) {
-                return false;
-            }
-            
-            if (table[index].status == SlotStatus::OCCUPIED && 
-                table[index].key == key) {
-                table[index].status = SlotStatus::DELETED;
-                numElements--;
-                return true;
-            }
-            
-            index = (index + 1) % tableSize;
-            probeCount++;
-        }
-        
-        return false;
-    }
-    
-    size_t size() const {
-        return numElements;
-    }
-    
-    bool empty() const {
-        return numElements == 0;
     }
 };
 ```
 
-#### Quadratic Probing
+Two details here are where hand-rolled open addressing usually goes wrong. First, **deletion cannot clear a slot to `Empty`.** A probe stops the moment it sees an empty slot, so blanking a slot in the middle of a probe run severs every key that was placed past it — they become unreachable. The fix is the tombstone: mark the slot `Deleted`, which `find` skips over and `insert` is allowed to reuse. Second, **`insert` must reuse the first tombstone it passes** while still scanning ahead for the real key, so that a delete-then-reinsert cycle doesn't leave the table littered with dead slots. Tombstones do accumulate over a delete-heavy workload and degrade probing, which is why a rehash — which drops them — periodically earns its cost.
 
-**Quadratic probing** spreads the probe sequence out quadratically instead of sequentially: for a key with initial hash `h(k)`, it probes `(h(k) + i²) mod m` for `i = 0, 1, 2, …`. This breaks up the long runs of occupied slots (primary clustering) that plague linear probing.
+## Collision resolution is a cache-locality decision
 
-It has two costs. First, **secondary clustering**: keys with the same initial hash follow the same probe sequence, though this is milder than primary clustering. Second, the probe sequence only visits all slots if the **table size is prime** (the quadratic residues then form a complete set); with a non-prime size, inserts can fail even when empty slots exist. Deletion, as with all open addressing, requires tombstones (a `DELETED` status) rather than truly clearing a slot. Average case is O(1); keep the load factor below ~0.7.
+Now the payoff. Chaining and open addressing have the *same* average complexity, `O(1)`, and if Big-O were the whole story you would pick based on taste. It is not the whole story, because the two schemes touch memory in opposite ways, and on modern hardware the memory-access pattern dominates everything else. This is the [Chapter 2](02-complexity-analysis.md) constant-factor lesson in its sharpest form.
 
-One implementation note: `(startIndex + probeCount * probeCount) % tableSize` can overflow for large tables. Reduce the squared term first: `(startIndex + (probeCount * probeCount) % tableSize) % tableSize`.
-
-```cpp
-template<typename K, typename V>
-class HashTableQuadraticProbing {
-private:
-    struct Slot {
-        K key;
-        V value;
-        SlotStatus status;
-        
-        Slot() : status(SlotStatus::EMPTY) {}
-    };
-    
-    vector<Slot> table;
-    size_t tableSize;
-    size_t numElements;
-    const double LOAD_FACTOR_THRESHOLD = 0.7;
-    
-    size_t hashFunction(const K& key) const {
-        return hash<K>{}(key) % tableSize;
-    }
-    
-    size_t probe(const K& key, size_t startIndex) const {
-        size_t probeCount = 0;
-        
-        while (probeCount < tableSize) {
-            size_t currentIndex = (startIndex + probeCount * probeCount) % tableSize;
-            
-            if (table[currentIndex].status == SlotStatus::EMPTY ||
-                (table[currentIndex].status == SlotStatus::OCCUPIED && 
-                 table[currentIndex].key == key)) {
-                return currentIndex;
-            }
-            probeCount++;
-        }
-        
-        return tableSize; // Table full
-    }
-    
-    void rehash() {
-        size_t oldSize = tableSize;
-        vector<Slot> oldTable = move(table);
-        
-        // Important: For quadratic probing, table size must be prime
-        // to ensure all slots can be probed. Here we double and find next prime.
-        tableSize *= 2;
-        // In practice, you'd find the next prime number >= tableSize
-        // For simplicity, we'll use the doubled size
-        
-        table.clear();
-        table.resize(tableSize);
-        numElements = 0;
-        
-        // Reinsert all occupied slots
-        for (const auto& slot : oldTable) {
-            if (slot.status == SlotStatus::OCCUPIED) {
-                insert(slot.key, slot.value);
-            }
-        }
-    }
-    
-public:
-    HashTableQuadraticProbing(size_t initialSize = 16) 
-        : tableSize(initialSize), numElements(0) {
-        table.resize(tableSize);
-    }
-    
-    void insert(const K& key, const V& value) {
-        if (static_cast<double>(numElements) / tableSize > LOAD_FACTOR_THRESHOLD) {
-            rehash();
-        }
-        
-        size_t index = hashFunction(key);
-        size_t slot = probe(key, index);
-        
-        if (slot == tableSize) {
-            throw runtime_error("Hash table is full");
-        }
-        
-        if (table[slot].status != SlotStatus::OCCUPIED) {
-            numElements++;
-        }
-        
-        table[slot].key = key;
-        table[slot].value = value;
-        table[slot].status = SlotStatus::OCCUPIED;
-    }
-    
-    bool find(const K& key, V& value) const {
-        size_t index = hashFunction(key);
-        size_t probeCount = 0;
-        
-        while (probeCount < tableSize) {
-            size_t currentIndex = (index + probeCount * probeCount) % tableSize;
-            
-            if (table[currentIndex].status == SlotStatus::EMPTY) {
-                return false;
-            }
-            
-            if (table[currentIndex].status == SlotStatus::OCCUPIED && 
-                table[currentIndex].key == key) {
-                value = table[currentIndex].value;
-                return true;
-            }
-            
-            probeCount++;
-        }
-        
-        return false;
-    }
-    
-    bool remove(const K& key) {
-        size_t index = hashFunction(key);
-        size_t probeCount = 0;
-        
-        while (probeCount < tableSize) {
-            size_t currentIndex = (index + probeCount * probeCount) % tableSize;
-            
-            if (table[currentIndex].status == SlotStatus::EMPTY) {
-                return false;
-            }
-            
-            if (table[currentIndex].status == SlotStatus::OCCUPIED && 
-                table[currentIndex].key == key) {
-                table[currentIndex].status = SlotStatus::DELETED;
-                numElements--;
-                return true;
-            }
-            
-            probeCount++;
-        }
-        
-        return false;
-    }
-    
-    size_t size() const {
-        return numElements;
-    }
-    
-    bool empty() const {
-        return numElements == 0;
-    }
-};
-```
-
-#### Double Hashing
-
-**Double hashing** uses two independent hash functions: `h₁(k)` sets the initial position and `h₂(k)` sets a per-key step size. The probe sequence is `(h₁(k) + i·h₂(k)) mod m`. Because the step size varies by key, two keys that collide at `h₁` diverge immediately — this eliminates both primary and secondary clustering and gives the best distribution of the open-addressing schemes, at the cost of a second hash computation and slightly worse cache locality than linear probing's sequential scan.
-
-The secondary hash `h₂(k)` must satisfy two properties:
-
-1. **Non-zero step**: if `h₂(k) = 0` the sequence never advances. The standard form `h₂(k) = 1 + (hash(k) % (m - 1))` guarantees `h₂(k) ∈ [1, m-1]`.
-2. **Coprime with `m`**: `gcd(h₂(k), m) = 1`, so the sequence visits every slot before repeating. If `gcd = d > 1`, only `m/d` slots are reached. Using a **prime table size** makes any `h₂(k) ∈ [1, m-1]` automatically coprime with `m`.
-
-Double hashing tolerates higher load factors (0.8–0.9) than linear probing; expected probes for a successful search are roughly `1/(1-α)`. Because `h₂` depends on `m`, rehashing recomputes every step size, redistributing keys. It is common in database hash indexes/joins, compiler symbol tables, and high-performance map implementations.
-
-| Aspect | Linear Probing | Quadratic Probing | Double Hashing |
-|--------|---------------|-------------------|----------------|
-| Clustering | Primary clustering | Secondary clustering | Minimal clustering |
-| Probe sequence | Fixed (+1) | Fixed (quadratic) | Key-dependent |
-| Hash functions | 1 | 1 | 2 |
-| Computation cost | Lowest | Low | Moderate |
-| Distribution | Good | Better | Best |
-| Cache performance | Best | Good | Moderate |
-| Table size requirement | Any | Prime preferred | Prime required |
-| Implementation complexity | Simplest | Moderate | Most complex |
-
-```cpp
-template<typename K, typename V>
-class HashTableDoubleHashing {
-private:
-    struct Slot {
-        K key;
-        V value;
-        SlotStatus status;
-        
-        Slot() : status(SlotStatus::EMPTY) {}
-    };
-    
-    vector<Slot> table;
-    size_t tableSize;
-    size_t numElements;
-    const double LOAD_FACTOR_THRESHOLD = 0.7;
-    
-    // First hash function: primary hash
-    size_t hashFunction1(const K& key) const {
-        return hash<K>{}(key) % tableSize;
-    }
-    
-    // Second hash function: step size for probing
-    // Must be relatively prime to tableSize to ensure all slots are probed
-    // Returns a value in [1, tableSize-1] to avoid step size of 0
-    size_t hashFunction2(const K& key) const {
-        // Ensure step size is at least 1 and less than tableSize
-        // Using (tableSize - 1) ensures step is in [1, tableSize-1]
-        return 1 + (hash<K>{}(key) % (tableSize - 1));
-    }
-    
-    size_t probe(const K& key, size_t startIndex) const {
-        size_t index = startIndex;
-        size_t step = hashFunction2(key);
-        size_t probeCount = 0;
-        
-        while (probeCount < tableSize) {
-            if (table[index].status == SlotStatus::EMPTY ||
-                (table[index].status == SlotStatus::OCCUPIED && 
-                 table[index].key == key)) {
-                return index;
-            }
-            // Double hashing: use second hash as step size
-            index = (index + step) % tableSize;
-            probeCount++;
-        }
-        
-        return tableSize; // Table full
-    }
-    
-    void rehash() {
-        size_t oldSize = tableSize;
-        vector<Slot> oldTable = move(table);
-        
-        // For double hashing, table size should be prime for best distribution
-        // Here we double the size; in practice, find next prime >= 2*tableSize
-        tableSize *= 2;
-        
-        table.clear();
-        table.resize(tableSize);
-        numElements = 0;
-        
-        // Reinsert all occupied slots
-        // Note: hashFunction2 will be recalculated with new tableSize
-        for (const auto& slot : oldTable) {
-            if (slot.status == SlotStatus::OCCUPIED) {
-                insert(slot.key, slot.value);
-            }
-        }
-    }
-    
-public:
-    HashTableDoubleHashing(size_t initialSize = 16) 
-        : tableSize(initialSize), numElements(0) {
-        // Ensure tableSize is at least 2 for hashFunction2 to work correctly
-        if (tableSize < 2) {
-            tableSize = 2;
-        }
-        table.resize(tableSize);
-    }
-    
-    void insert(const K& key, const V& value) {
-        if (static_cast<double>(numElements) / tableSize > LOAD_FACTOR_THRESHOLD) {
-            rehash();
-        }
-        
-        size_t index = hashFunction1(key);
-        size_t slot = probe(key, index);
-        
-        if (slot == tableSize) {
-            throw runtime_error("Hash table is full");
-        }
-        
-        if (table[slot].status != SlotStatus::OCCUPIED) {
-            numElements++;
-        }
-        
-        table[slot].key = key;
-        table[slot].value = value;
-        table[slot].status = SlotStatus::OCCUPIED;
-    }
-    
-    bool find(const K& key, V& value) const {
-        size_t index = hashFunction1(key);
-        size_t step = hashFunction2(key);
-        size_t probeCount = 0;
-        
-        while (probeCount < tableSize) {
-            if (table[index].status == SlotStatus::EMPTY) {
-                return false;
-            }
-            
-            if (table[index].status == SlotStatus::OCCUPIED && 
-                table[index].key == key) {
-                value = table[index].value;
-                return true;
-            }
-            
-            index = (index + step) % tableSize;
-            probeCount++;
-        }
-        
-        return false;
-    }
-    
-    bool remove(const K& key) {
-        size_t index = hashFunction1(key);
-        size_t step = hashFunction2(key);
-        size_t probeCount = 0;
-        
-        while (probeCount < tableSize) {
-            if (table[index].status == SlotStatus::EMPTY) {
-                return false;
-            }
-            
-            if (table[index].status == SlotStatus::OCCUPIED && 
-                table[index].key == key) {
-                table[index].status = SlotStatus::DELETED;
-                numElements--;
-                return true;
-            }
-            
-            index = (index + step) % tableSize;
-            probeCount++;
-        }
-        
-        return false;
-    }
-    
-    size_t size() const {
-        return numElements;
-    }
-    
-    bool empty() const {
-        return numElements == 0;
-    }
-    
-    double loadFactor() const {
-        return static_cast<double>(numElements) / tableSize;
-    }
-};
-```
-
-#### Comparison of Open Addressing Methods
-
-| Method | Advantages | Disadvantages |
-|--------|------------|---------------|
-| Linear Probing | Simple, cache-friendly | Primary clustering |
-| Quadratic Probing | Reduces primary clustering | Secondary clustering, complex deletion |
-| Double Hashing | Best distribution, no clustering | More computation, must ensure hash2 ≠ 0 |
-
-
-## 10.8 Real-World Implementations
-
-### C++ Standard Library Hash Tables
-
-C++ provides hash table implementations in the Standard Template Library:
-
-### std::unordered_map
-```cpp
-#include <unordered_map>
-#include <string>
-#include <iostream>
-using namespace std;
-
-void demonstrateUnorderedMap() {
-    // Declaration
-    unordered_map<string, int> ages;
-    
-    // Insertion
-    ages["Alice"] = 25;
-    ages["Bob"] = 30;
-    ages.insert({"Charlie", 35});
-    ages.emplace("David", 40);
-    
-    // Access
-    cout << "Alice's age: " << ages["Alice"] << endl;
-    cout << "Bob's age: " << ages.at("Bob") << endl;
-    
-    // Check existence
-    if (ages.find("Eve") != ages.end()) {
-        cout << "Eve found" << endl;
-    } else {
-        cout << "Eve not found" << endl;
-    }
-    
-    // Iteration
-    for (const auto& pair : ages) {
-        cout << pair.first << ": " << pair.second << endl;
-    }
-    
-    // Size and capacity
-    cout << "Size: " << ages.size() << endl;
-    cout << "Bucket count: " << ages.bucket_count() << endl;
-    cout << "Load factor: " << ages.load_factor() << endl;
-    
-    // Deletion
-    ages.erase("Alice");
-    ages.clear(); // Remove all
-}
-```
-
-### std::unordered_set
-```cpp
-#include <unordered_set>
-#include <iostream>
-using namespace std;
-
-void demonstrateUnorderedSet() {
-    unordered_set<int> numbers;
-    
-    // Insertion
-    numbers.insert(5);
-    numbers.insert(10);
-    numbers.insert(15);
-    numbers.insert(5); // Duplicate, ignored
-    
-    // Check membership
-    if (numbers.find(10) != numbers.end()) {
-        cout << "10 is in the set" << endl;
-    }
-    
-    // Size
-    cout << "Set size: " << numbers.size() << endl;
-    
-    // Iteration
-    for (int num : numbers) {
-        cout << num << " ";
-    }
-    cout << endl;
-    
-    // Deletion
-    numbers.erase(10);
-}
-```
-
-### Custom Hash Function for std::unordered_map
-```cpp
-#include <unordered_map>
-#include <string>
-
-struct Person {
-    string name;
-    int age;
-    
-    bool operator==(const Person& other) const {
-        return name == other.name && age == other.age;
-    }
-};
-
-// Custom hash function
-struct PersonHash {
-    size_t operator()(const Person& p) const {
-        return hash<string>()(p.name) ^ (hash<int>()(p.age) << 1);
-    }
-};
-
-void demonstrateCustomHash() {
-    unordered_map<Person, string, PersonHash> personToCity;
-    
-    personToCity[Person{"Alice", 25}] = "New York";
-    personToCity[Person{"Bob", 30}] = "London";
-    
-    for (const auto& pair : personToCity) {
-        cout << pair.first.name << " lives in " << pair.second << endl;
-    }
-}
-```
-
-## 10.9 Load Factor and Rehashing
-
-### Load Factor
-
-The **load factor** is the ratio of the number of elements to the number of buckets:
+Look at the layouts. Chaining keeps a contiguous bucket array, but the entries live in nodes scattered across the heap:
 
 ```
-Load Factor = Number of Elements / Number of Buckets
-```
-
-### 10.9.1 Systems Perspective: Memory Hierarchy and Performance
-
-Understanding hash table behavior at the system level reveals critical performance considerations. This section applies the memory hierarchy concepts from [Chapter 3.6](03.6-memory-hierarchy-and-performance.md) to hash tables.
-
-For comprehensive coverage of memory hierarchy, cache behavior, CPU cycles, and performance optimization, see Chapter 3.6. Here we focus on hash table-specific implications.
-
-#### Memory Hierarchy Impact on Hash Tables
-
-The memory hierarchy (registers → L1 → L2 → L3 → RAM → disk) dominates hash table performance. Each level is roughly 10–100x slower but 10–100x larger than the one above it: an L1 hit costs ~3–5 cycles, an L3 hit ~40–75, and a main-memory access ~100–300 cycles. A hash lookup that misses to RAM is therefore an order of magnitude slower than one served from cache — which is why the *layout* a collision scheme imposes matters as much as its asymptotic complexity. See Section 3.6.2 for the full memory pyramid.
-
-#### Cache Behavior in Hash Tables
-
-Cache lines (64 bytes) and cache misses significantly impact hash table performance. See Section 3.6.3 for details on cache hits, misses, and miss types.
-
-**Key Points for Hash Tables**:
-- Cache hit: ~5-20 cycles
-- Cache miss: ~100-300 cycles (10-30x slower!)
-- Hash table operations are dominated by memory access patterns
-
-#### Sequential vs. Random Access in Hash Tables
-
-Sequential access (see Section 3.6.4) provides 10-40x better performance than random access:
-
-#### Memory Layout and Cache Behavior
-
-**Separate Chaining:**
-```
-Memory Layout:
+Separate chaining
 ┌─────┬─────┬─────┬─────┐
-│ B0  │ B1  │ B2  │ B3  │  ← Contiguous bucket array
-└──┬──┴──┬──┴──┬──┴──┬──┘
-   │     │     │     │
-   ▼     ▼     ▼     ▼
-  [A]   [X]   [M]   [P]  ← Non-contiguous linked lists
-   │     │     │     │
-   ▼     ▼     ▼     ▼
-  [B]   [Y]   [N]   [Q]
-   │     │     │     │
-   ▼     ▼     ▼     ▼
-  [C]   [Z]   [O]   [R]
+│ B0  │ B1  │ B2  │ B3  │   ← contiguous bucket array
+└──┬──┴─────┴──┬──┴──┬──┘
+   ▼           ▼     ▼
+  [A]         [M]   [P]      ← nodes scattered across the heap
+   ▼           ▼            (each hop is a probable cache miss)
+  [B]         [N]
 ```
 
-- **Memory Layout**: Buckets are contiguous, but chains are linked lists (non-contiguous)
-- **Cache Performance**: Poor - pointer chasing causes cache misses
-- **Memory Overhead**: ~16-24 bytes per node (data + 2 pointers for doubly-linked)
-- **Cache Behavior**:
-  - Bucket array access: L1/L2 hit (contiguous)
-  - First node access: L2/L3 hit (likely)
-  - Subsequent nodes: Random access, 50-70% miss rate
-  - **Real Impact**: Each chain traversal may cause 1-3 cache misses per node
-  - **Example**: Traversing 5 nodes = ~5-15 cache misses = ~500-3000 cycles
+Open addressing stores everything in one flat array, so a probe sequence walks *adjacent memory*:
 
-**Open Addressing (Linear Probing):**
 ```
-Memory Layout:
+Open addressing (linear probing)
 ┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┐
-│ [A] │ [B] │ [X] │ [C] │ [Y] │ [M] │ [N] │ [P] │  ← Contiguous array
+│ [A] │ [B] │ [X] │ [C] │ [Y] │ [M] │ [N] │ [P] │   ← one contiguous array
 └─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┘
-   ↑     ↑     ↑     ↑     ↑     ↑     ↑     ↑
-  All in same cache line (64 bytes = 8 slots of 8 bytes each)
+  └──────── 8 × 8-byte slots ≈ one 64-byte cache line ───────┘
 ```
 
-- **Memory Layout**: All data in contiguous array (like arrays from Chapter 3)
-- **Cache Performance**: Excellent - sequential access benefits from prefetching
-- **Memory Overhead**: Minimal - only data + status flags
-- **Cache Behavior**:
-  - Initial hash: L1 hit (bucket array)
-  - Probing: Sequential access, 90-95% hit rate
-  - **Real Impact**: Clustering hurts cache locality; good distribution = cache-friendly
-  - **Example**: Probing 3 slots = ~0-1 cache misses = ~5-20 cycles
+When linear probing steps from slot 5 to slot 6 to slot 7, those slots are usually in the **same cache line** the CPU already fetched — and the hardware prefetcher, seeing a sequential walk, streams the next line in before you ask. Chaining's every pointer hop is a jump to an unrelated address the prefetcher cannot predict. The numbers that fall out of this are not subtle:
 
-**Performance Comparison (Real-World):**
-```
-Operation          | Separate Chaining | Linear Probing
--------------------|-------------------|---------------
-Cache misses/op    | 2-5               | 0-1
-Memory per element | ~32 bytes         | ~8 bytes
-Best case latency  | ~50-100 cycles    | ~5-10 cycles
-Worst case latency  | ~200-500 cycles   | ~100-200 cycles
-L1 cache hit rate  | ~60-70%           | ~90-95%
-Effective bandwidth| ~5-10 GB/s        | ~20-40 GB/s
-```
+| Per operation | Separate chaining | Linear probing |
+|---|---|---|
+| Cache misses | 2–5 | 0–1 |
+| Memory per element | ~32 bytes (data + 2 pointers) | ~8 bytes (data + status) |
+| Typical latency (cache-resident) | ~50–100 cycles | ~5–20 cycles |
+| L1 hit rate | ~60–70% | ~90–95% |
 
-#### CPU Cycles and Performance
+This is the whole reason the fastest hash tables in production — Google's `absl::flat_hash_map`, `boost::unordered_flat_map`, Rust's `hashbrown` (the standard library `HashMap`) — are all **open-addressed**, storing entries inline in a flat array. They accept open addressing's awkwardness (tombstones, mandatory rehashing, sensitivity to load factor) to buy the one thing that matters most on real hardware: a lookup that touches one cache line instead of chasing a linked list across memory. Chaining survives where its own strengths dominate — frequent deletion, very large values you would rather not move on every rehash, or an unknown and possibly adversarial key distribution — and it is what `std::unordered_map` is effectively required to use, for reasons the standard-library section returns to. But when you are optimizing for speed, open addressing is the default, and the argument for it is a cache-line argument, not a complexity one.
 
-Understanding CPU cycles is crucial for performance analysis. See Section 3.6.5 for details on CPU cycles and operation breakdowns.
+Two refinements exist for open addressing's one real weakness — linear probing's **primary clustering**, where a run of occupied slots grows and swallows more colliding keys, lengthening probes. **Quadratic probing** jumps by `1, 4, 9, …` slots instead of `1, 2, 3, …`, breaking up long runs (at the cost of giving up some cache locality and requiring a prime table size so the probes reach every slot). **Double hashing** computes the step size from a *second* hash of the key, `step = 1 + hash₂(k) mod (m−1)`, so two keys that collide at their home slot immediately diverge — the best distribution of the three, at the cost of a second hash and worse locality than a straight scan.
 
-**Hash Table Operation Breakdown** (Linear Probing, cache hit):
-```
-1. Compute hash:           ~10-20 cycles (L1 cache for hash function)
-2. Modulo operation:      ~5-10 cycles
-3. Access bucket:         ~3-5 cycles (L1 cache hit)
-4. Compare key:           ~5-10 cycles
-5. Return value:          ~3-5 cycles
-─────────────────────────────────────
-Total (cache hit):        ~26-50 cycles ≈ 7-15 ns
-```
+| | Linear probing | Quadratic probing | Double hashing |
+|---|---|---|---|
+| Clustering | Primary | Secondary (milder) | Minimal |
+| Cache locality | Best | Good | Moderate |
+| Hash functions | 1 | 1 | 2 |
+| Table size | any | prime preferred | prime required |
 
-**Hash Table Operation Breakdown** (Separate Chaining, cache miss):
-```
-1. Compute hash:           ~10-20 cycles
-2. Access bucket array:    ~3-5 cycles (L1 cache hit)
-3. Follow pointer:         ~10-20 cycles (L2 cache hit)
-4. Access node:            ~100-300 cycles (L3/RAM miss!)
-5. Compare key:           ~5-10 cycles
-6. Follow next pointer:    ~100-300 cycles (another miss!)
-7. Access node:           ~100-300 cycles
-─────────────────────────────────────
-Total (2 cache misses):   ~328-955 cycles ≈ 80-240 ns
-```
+In practice, linear probing with a good hash and a modest load factor beats the fancier sequences on most workloads precisely because it is the most cache-friendly — the theoretical clustering is a smaller tax than the extra cache misses of jumping around. Measure before you reach for double hashing.
 
-**Key Insight**: A single cache miss can cost 100-300 cycles, making it 10-30x slower than a cache hit! See Section 3.6.5 for detailed CPU cycle analysis.
+## Load factor governs everything
 
-#### False Sharing in Hash Tables
+The single number that controls a hash table's behavior is the **load factor** `α = n / m`, the ratio of stored elements to slots. It is the dial behind every performance claim in this chapter. For open addressing the expected number of probes for a successful lookup is about `1 / (1 − α)`: at `α = 0.5` that is two probes, at `0.9` it is ten, and as `α → 1` it goes to infinity — the table melts down as it fills. Chaining degrades more gently (average chain length is just `α`) but degrades all the same. This is why the implementations above cap the load factor — 0.75 for chaining, a more conservative 0.5 for open addressing — and grow the table when the cap is hit.
 
-False sharing (see Section 3.6.7) can severely impact concurrent hash table performance. When multiple threads access different hash tables on the same cache line, cache coherency protocols cause performance degradation.
+Growing means **rehashing**: allocate a larger array (conventionally 2×), recompute every key's position for the new size, and reinsert all of it. Rehashing is what keeps insertion `O(1)` *amortized* — the `O(n)` cost of a rebuild is spread across the `n` cheap inserts that triggered it — but "amortized" hides a sharp edge. Any single insert can be the one that triggers the rebuild, and that insert stalls for `O(n)`.
 
-**Solution**: Use cache line alignment for thread-local hash tables:
-```cpp
-alignas(64) HashTable threadLocalTable;  // 64-byte alignment
-```
+The stall is worse than the complexity suggests, because of *where* the work lands. Reinserting reads the old table sequentially (cache-friendly) but writes into the new table at hash-scattered positions (cache-hostile), and those random writes dominate. For a million-element table the arithmetic is stark:
 
-#### Memory Access Patterns in Hash Tables
+| Phase of one rehash (1M elements) | Cycles | Time @ 3 GHz |
+|---|---|---|
+| Allocate the new table | ~100,000 | ~33 µs |
+| Recompute 1M hashes | ~20,000,000 | ~6.7 ms |
+| Redistribute (random writes) | ~75,000,000 | ~25 ms |
+| Free the old table | ~10,000 | ~3 µs |
+| **Total** | **~95,000,000** | **~32 ms** |
 
-**Best Case - Linear Probing with Good Distribution**:
-```
-Hash(key) = 5
-Probe sequence: 5 → 6 → 7 → 8 (sequential, same cache line)
-Cache behavior: L1 hits, prefetcher active
-Performance: ~5-10 cycles per probe
-```
+That one insert costs roughly six orders of magnitude more than a normal cache-hit insert, and during the rebuild both tables coexist, so peak memory is ~3× steady state. This is a genuine production failure mode: a table sized for the average case that periodically freezes on the tail. The defenses, in order of effectiveness: **pre-size** with `reserve(expected_count)` to skip rehashing entirely when you know the size ahead of time; **incremental rehashing** (migrate a fixed slice of elements per operation, trading a little steady-state throughput for no spikes — this is how Redis avoids stalling on resize); and **load-factor tuning** to balance space against how often you rebuild. When a hash table is your bottleneck, the cause is almost always one of three things: a poor hash function clustering keys (switch to FNV-1a or MurmurHash), too-frequent rehashing (pre-size or rehash incrementally), or a table larger than cache thrashing on every access (shard it, or use a cache-conscious layout).
 
-**Worst Case - Separate Chaining with Long Chains**:
-```
-Hash(key) = 3
-Chain: bucket[3] → node1 → node2 → node3 → node4
-Memory: [scattered across heap, different cache lines]
-Cache behavior: 1-2 misses per node
-Performance: ~100-300 cycles per node access
-```
+## Compute, don't search — now across a fleet of machines
 
-**Moderate Case - Quadratic/Double Hashing**:
-```
-Hash(key) = 5, step = 3
-Probe sequence: 5 → 8 → 0 → 3 → 6 (modulo table)
-Memory: [within same cache line if table fits]
-Cache behavior: Mostly L1/L2 hits if table < L3 size
-Performance: ~10-50 cycles per probe
-```
+The "compute the location instead of searching for it" idea does not stop at a single array. Its most important large-scale form is **consistent hashing**, the technique that lets a distributed system route a key to one machine out of hundreds without a lookup table and without reshuffling everything when the fleet changes size.
 
-#### Practical Implications
+Start with the obvious approach and watch it fail. To spread keys over `k` servers you might write `server = hash(key) % k`. It works until `k` changes. Add one server — go from 3 to 4 — and the modulus changes for *almost every key*: roughly `(k−1)/k` of them now map to a different server. In a distributed cache that means a near-total cache miss storm; in a sharded database it means migrating most of your data. The `%` operator couples every key's location to the total server count, so changing the count relocates nearly everything.
 
-The size of your hash table relative to cache sizes determines performance characteristics. See Section 3.6.9 for general guidelines on data structure sizes:
-
-1. **Small Hash Tables (< 1 MB)**: Fit in L3 cache
-   - Open addressing: Excellent performance (~5-20 cycles/op)
-   - Chaining: Moderate performance (~50-200 cycles/op)
-
-2. **Medium Hash Tables (1-32 MB)**: Fit in RAM, not cache
-   - Open addressing: Good performance (~20-100 cycles/op)
-   - Chaining: Poor performance (~200-500 cycles/op)
-
-3. **Large Hash Tables (> 32 MB)**: May cause page faults
-   - Both methods: Degraded performance
-   - Consider: Sharding, distributed hash tables, or disk-based structures
-
-For optimization strategies applicable to hash tables, see Section 3.6.8.
-
-#### Rehashing: The Hidden Cost
-
-Rehashing is amortized O(1) per insert, but each rehash is a single O(n) event that can stall an operation. It does four things: allocate a new table (2x, cold memory — possibly an OS syscall if the heap is exhausted), recompute all hashes (~10–50 cycles/key, CPU-bound), redistribute every element (sequential reads from the old table, but *random* cache-unfriendly writes into the new one — the dominant cost), and free the old table. The random writes are why redistribution dominates: they miss cache far more often than the sequential reads.
-
-**Real-World Impact (Example: 1 million elements):**
-
-```
-Operation                    | Cycles      | Time (3 GHz CPU)
------------------------------|-------------|------------------
-Allocate 16 MB table         | ~100,000    | ~33 μs
-Recompute 1M hashes          | ~20,000,000 | ~6.7 ms
-Redistribute (50% cache hit) | ~75,000,000 | ~25 ms
-Deallocate old table         | ~10,000     | ~3.3 μs
-─────────────────────────────|─────────────|──────────────────
-Total                        | ~95,110,000 | ~32 ms
-```
-
-That single insert costs ~95M cycles versus ~5–50 for a normal cache-hit insert — a latency spike of roughly six orders of magnitude. Peak memory is also ~3x normal during the rehash, since the old and new tables coexist. This is a classic **failure mode**: a table sized for the average case periodically freezes on the tail.
-
-Mitigations, in order of effectiveness: **pre-allocate** with `reserve(expected_size)` to skip rehashing entirely when the size is known; **incremental rehashing** (migrate a fixed fraction of elements per operation) to trade a little steady-state throughput for no spikes; **load-factor tuning** (0.7–0.75 balances space against rehash frequency); and **memory pools** to cut allocation overhead and fragmentation.
-
-**When hash tables become a bottleneck:** a poor hash function (clustering → O(n) — switch to FNV-1a or MurmurHash); frequent rehashing (pre-allocate or rehash incrementally); a table larger than cache (cache thrashing — shard or use a cache-conscious layout); and many small tables (fragmentation — use pools or fewer, larger tables).
-
-### Why Load Factor Matters
-
-- **Low load factor (< 0.5)**: Wasted space, but better performance
-- **Optimal load factor (0.7-0.75)**: Good balance between space and performance
-- **High load factor (> 0.9)**: More collisions, degraded performance
-
-### Rehashing
-
-When the load factor exceeds a threshold, we **rehash** the table:
-
-1. Create a new table (typically 2x the size)
-2. Recompute hash values for all elements
-3. Insert all elements into the new table
-4. Replace the old table with the new one
-
-```cpp
-void rehashExample() {
-    HashTableChaining<string, int> table(4); // Small initial size
-    
-    // Insert elements until rehashing occurs
-    for (int i = 0; i < 10; i++) {
-        table.insert("key" + to_string(i), i);
-        cout << "After insert " << i << ": Load factor = " 
-             << table.loadFactor() << endl;
-    }
-}
-```
-
-## 10.10 Applications of Hash Tables
-
-### 1. Database Indexing
-Hash tables are used to create indexes for fast lookups in databases.
-
-### 2. Caching
-```cpp
-#include <unordered_map>
-#include <list>
-#include <optional>
-
-template<typename K, typename V>
-class LRUCache {
-private:
-    struct Node {
-        K key;
-        V value;
-        Node* prev;
-        Node* next;
-    };
-    
-    unordered_map<K, Node*> cache;
-    Node* head;
-    Node* tail;
-    size_t capacity;
-    
-    void moveToFront(Node* node) {
-        removeNode(node);
-        addToFront(node);
-    }
-    
-    void removeNode(Node* node) {
-        node->prev->next = node->next;
-        node->next->prev = node->prev;
-    }
-    
-    void addToFront(Node* node) {
-        node->next = head->next;
-        node->prev = head;
-        head->next->prev = node;
-        head->next = node;
-    }
-    
-    void evictLRU() {
-        Node* last = tail->prev;
-        removeNode(last);
-        cache.erase(last->key);
-        delete last;
-    }
-    
-public:
-    LRUCache(size_t cap) : capacity(cap) {
-        head = new Node();
-        tail = new Node();
-        head->next = tail;
-        tail->prev = head;
-    }
-    
-    optional<V> get(const K& key) {
-        if (cache.find(key) != cache.end()) {
-            Node* node = cache[key];
-            moveToFront(node);
-            return node->value;
-        }
-        return nullopt;
-    }
-    
-    void put(const K& key, const V& value) {
-        if (cache.find(key) != cache.end()) {
-            Node* node = cache[key];
-            node->value = value;
-            moveToFront(node);
-        } else {
-            if (cache.size() >= capacity) {
-                evictLRU();
-            }
-            
-            Node* newNode = new Node{key, value, nullptr, nullptr};
-            addToFront(newNode);
-            cache[key] = newNode;
-        }
-    }
-};
-```
-
-### 3. Symbol Tables in Compilers
-Hash tables store variable names and their attributes during compilation.
-
-### 4. Counting Frequencies
-```cpp
-unordered_map<string, int> countFrequencies(const vector<string>& words) {
-    unordered_map<string, int> frequency;
-    
-    for (const string& word : words) {
-        frequency[word]++;
-    }
-    
-    return frequency;
-}
-```
-
-### 5. Grouping and Categorization
-```cpp
-unordered_map<string, vector<Person>> groupByCity(
-    const vector<Person>& people) {
-    unordered_map<string, vector<Person>> groups;
-    
-    for (const Person& person : people) {
-        groups[person.city].push_back(person);
-    }
-    
-    return groups;
-}
-```
-
-### 6. Finding Duplicates
-```cpp
-bool hasDuplicate(const vector<int>& nums) {
-    unordered_set<int> seen;
-    
-    for (int num : nums) {
-        if (seen.find(num) != seen.end()) {
-            return true;
-        }
-        seen.insert(num);
-    }
-    
-    return false;
-}
-```
-
-### 7. Two Sum Problem
-```cpp
-vector<int> twoSum(const vector<int>& nums, int target) {
-    unordered_map<int, int> numToIndex;
-    
-    for (int i = 0; i < nums.size(); i++) {
-        int complement = target - nums[i];
-        
-        if (numToIndex.find(complement) != numToIndex.end()) {
-            return {numToIndex[complement], i};
-        }
-        
-        numToIndex[nums[i]] = i;
-    }
-    
-    return {}; // No solution
-}
-```
-
-## 10.11 Common Hash Table Problems
-
-### Problem 1: Design a Hash Set
-```cpp
-class MyHashSet {
-private:
-    vector<bool> buckets;
-    size_t tableSize;
-    
-    size_t hash(int key) const {
-        return key % tableSize;
-    }
-    
-public:
-    MyHashSet() : tableSize(10000) {
-        buckets.resize(tableSize, false);
-    }
-    
-    void add(int key) {
-        buckets[hash(key)] = true;
-    }
-    
-    void remove(int key) {
-        buckets[hash(key)] = false;
-    }
-    
-    bool contains(int key) const {
-        return buckets[hash(key)];
-    }
-};
-```
-
-### Problem 2: First Unique Character
-```cpp
-int firstUniqChar(const string& s) {
-    unordered_map<char, int> frequency;
-    
-    // Count frequencies
-    for (char c : s) {
-        frequency[c]++;
-    }
-    
-    // Find first unique
-    for (int i = 0; i < s.length(); i++) {
-        if (frequency[s[i]] == 1) {
-            return i;
-        }
-    }
-    
-    return -1;
-}
-```
-
-### Problem 3: Group Anagrams
-```cpp
-vector<vector<string>> groupAnagrams(const vector<string>& strs) {
-    unordered_map<string, vector<string>> groups;
-    
-    for (const string& str : strs) {
-        string key = str;
-        sort(key.begin(), key.end());
-        groups[key].push_back(str);
-    }
-    
-    vector<vector<string>> result;
-    for (const auto& pair : groups) {
-        result.push_back(pair.second);
-    }
-    
-    return result;
-}
-```
-
-### Problem 4: Longest Consecutive Sequence
-```cpp
-int longestConsecutive(const vector<int>& nums) {
-    unordered_set<int> numSet(nums.begin(), nums.end());
-    int maxLength = 0;
-    
-    for (int num : numSet) {
-        // Only start counting from the beginning of a sequence
-        if (numSet.find(num - 1) == numSet.end()) {
-            int currentNum = num;
-            int currentLength = 1;
-            
-            while (numSet.find(currentNum + 1) != numSet.end()) {
-                currentNum++;
-                currentLength++;
-            }
-            
-            maxLength = max(maxLength, currentLength);
-        }
-    }
-    
-    return maxLength;
-}
-```
-
-### Best Practices
-
-- **Hash function**: prefer built-in `std::hash`; for custom types ensure the members are combined for good distribution; use cryptographic hashes only where an adversary could craft collisions.
-- **Load factor**: keep it in the 0.5–0.75 range, rehash on exceed, and pre-size the table from the expected element count to avoid mid-workload rehash spikes.
-- **Collision strategy**: chaining when the distribution is unknown and deletions are frequent; open addressing (linear probing) when cache performance matters; double hashing for the best distribution at high load.
-- **Concurrency**: guard shared tables with synchronization — `std::shared_mutex` for read-heavy workloads — and reach for a proven library rather than a hand-rolled lock-free table.
-
-## 10.12 Exercises & Thought Questions
-
-### Conceptual Questions
-
-1. **Why is the worst-case time complexity of hash tables O(n)?**
-   - Explain the scenario that causes worst-case performance
-   - How can this be mitigated?
-
-2. **What is the relationship between load factor and performance?**
-   - Why does performance degrade as load factor increases?
-   - What is an optimal load factor threshold?
-
-3. **Compare separate chaining and open addressing:**
-   - When would you choose each?
-   - What are the trade-offs?
-
-4. **Explain why rehashing is necessary:**
-   - What happens if we never rehash?
-   - How does rehashing maintain amortized O(1) performance?
-
-### Implementation Tasks
-
-1. **Implement a hash table with separate chaining**
-   - Support insert, search, delete operations
-   - Implement automatic rehashing
-   - Handle edge cases (empty table, duplicate keys)
-
-2. **Implement a hash table with linear probing**
-   - Support insert, search, delete operations
-   - Handle deleted slots correctly
-   - Implement rehashing
-
-3. **Design a hash function for strings**
-   - Use polynomial rolling hash
-   - Ensure good distribution
-   - Handle edge cases (empty string, very long strings)
-
-### Performance Reasoning
-
-1. **Analyze cache behavior:**
-   - Why is open addressing more cache-friendly than separate chaining?
-   - How many cache misses occur in a chain of length 10?
-   - How does this affect real-world performance?
-
-2. **Amortized analysis:**
-   - Prove that insert is amortized O(1) with rehashing
-   - What is the amortized cost per operation?
-
-3. **Hash function quality:**
-   - Design an adversarial input that causes worst-case performance
-   - How can universal hashing prevent this?
-
-### Interview-Style Problems
-
-1. **Design a Hash Set** (LeetCode 705)
-2. **First Unique Character** (LeetCode 387)
-3. **Group Anagrams** (LeetCode 49)
-4. **Longest Consecutive Sequence** (LeetCode 128)
-5. **Two Sum** (LeetCode 1)
-
-See Section 10.16 for solutions to these problems.
-
-## 10.13 Key Takeaways
-
-1. **Hash tables** provide average O(1) operations for insert, search, and delete
-2. **Hash functions** must be deterministic, fast, and provide uniform distribution
-3. **Collision resolution** is essential - choose chaining or open addressing based on use case
-4. **Load factor** affects performance - maintain it between 0.5-0.75
-5. **Rehashing** is necessary when load factor exceeds threshold
-6. **C++ STL** provides `unordered_map` and `unordered_set` for hash table needs
-7. **Applications** are vast - caching, indexing, frequency counting, and more
-
-### Extension Exercises
-
-1. Replace each chaining bucket's linked list with a balanced BST (Java 8's `HashMap` treeification).
-2. Add a template parameter for a custom hash functor.
-3. Make table sizes prime and grow to the next prime on rehash.
-4. Maintain insertion order (like Java's `LinkedHashMap`).
-5. Add TTL/expiration support and per-table statistics (hit rate, collision count).
-6. Build a thread-safe variant with mutexes, then compare against striped locking.
-
-## 10.14 Concurrency Considerations
-
-This section applies the concurrency fundamentals from [Chapter 3.5](03.5-concurrency-fundamentals.md) to hash tables. See Section 3.5.3 for invariant-based reasoning and Section 3.5.8 for lock granularity tradeoffs.
-
-### 10.14.1 Shared-State Invariants
-
-**Core Hash Table Invariants** (see Section 3.5.3):
-1. **Bucket Invariant**: "Each key maps to exactly one bucket"
-2. **Collision Chain Invariant**: "Keys in same bucket form valid chain (chaining) or valid probe sequence (open addressing)"
-3. **Load Factor Invariant**: "Load factor = size/capacity (used for rehashing decisions)"
-
-**What Must Not Be Observed Half-Updated**:
-- Bucket chain modifications during insertion
-- Table pointer updates during rehashing
-- Size changes while elements are being inserted/removed
-
-### 10.14.2 Operations That Must Be Atomic
-
-**Insert Operation** (see Section 3.5.4):
-```cpp
-void insert(int key, int value) {
-    int bucket = hash(key) % capacity;
-    Node* new_node = new Node(key, value);
-    new_node->next = table[bucket];  // Step 1
-    table[bucket] = new_node;         // Step 2
-    size++;                            // Step 3
-}
-```
-
-**Tie to Invariants**: Between steps, the **Collision Chain Invariant** is violated. Another thread may see inconsistent bucket state.
-
-**Rehashing Operation**:
-```cpp
-void rehash() {
-    // Create new table
-    // Migrate all elements  // Step 1: Copying
-    // Update table pointer  // Step 2: Switching
-    // Delete old table      // Step 3: Cleanup
-}
-```
-
-**Tie to Invariants**: During rehashing, threads may access old table (partially migrated) or new table (not fully populated), breaking the **Bucket Invariant**.
-
-**Operations Requiring Atomicity**:
-- **Insert**: Entire operation (bucket chain update and size change)
-- **Delete**: Entire operation (bucket chain update and size change)
-- **Rehash**: Entire rehashing operation (or use read-copy-update pattern)
-
-### 10.14.3 Naïve Approaches and Why They Fail
-
-**1. Partial Updates**:
-```cpp
-// Thread 1: Insert (key=5, value=10)
-// Thread 2: Insert (key=5, value=20)
-// Both read "key not found", both insert
-// One value overwrites the other
-```
-**Why It Fails**: Insert is not atomic. Invariant violation: **Bucket Invariant** broken (duplicate keys).
-
-**2. Check-Then-Act Bugs**:
-```cpp
-// Thread 1: Rehashing (migrating elements)
-// Thread 2: Reading key
-// Thread 2 may access old table (partially migrated)
-// or new table (not fully populated)
-```
-**Why It Fails**: Rehashing and access are not synchronized. Invariant violation: **Bucket Invariant** broken.
-
-**3. Locking Only Part of the Structure**:
-```cpp
-// Locking only the bucket, not the table pointer
-void insert(int key, int value) {
-    int bucket = hash(key) % capacity;
-    std::lock_guard<std::mutex> lock(bucket_locks[bucket]);
-    // But rehashing may change table pointer!
-    table[bucket] = new_node;
-}
-```
-**Why It Fails**: Rehashing can change table pointer while bucket is locked. Invariant violation: **Bucket Invariant** broken.
-
-### 10.14.4 Locking Strategies
-
-**Coarse-Grained Lock** (see Section 3.5.8):
-```cpp
-class ThreadSafeHashTable {
-    std::vector<Bucket> table;
-    std::mutex mtx;
-    
-public:
-    void insert(int key, int value) {
-        std::lock_guard<std::mutex> lock(mtx);
-        // Entire operation atomic
-    }
-};
-```
-- ✅ Simple, prevents all race conditions
-- ❌ Very low parallelism (only one operation at a time)
-
-**Fine-Grained Lock (Per-Bucket)**:
-```cpp
-class FineGrainedHashTable {
-    std::vector<Bucket> table;
-    std::vector<std::mutex> bucket_locks;
-    
-public:
-    void insert(int key, int value) {
-        int bucket = hash(key) % capacity;
-        std::lock_guard<std::mutex> lock(bucket_locks[bucket]);
-        // Only this bucket is locked
-    }
-};
-```
-- ✅ High parallelism (different buckets can be accessed concurrently)
-- ❌ Rehashing becomes complex (need to lock all buckets)
-- ❌ Memory overhead (one mutex per bucket)
-
-**Striped Locking (Compromise)**:
-```cpp
-// Fewer locks than buckets, hash to lock index
-std::vector<std::mutex> stripe_locks(16);  // 16 locks for many buckets
-int lock_index = hash(key) % 16;
-```
-- ✅ Good parallelism with lower overhead
-- ✅ Easier rehashing than fine-grained
-- ⚠️ Some false contention (different buckets may share lock)
-
-**Read-Write Locks** (see Section 3.5.8):
-- Use `std::shared_mutex` for read-heavy workloads
-- Multiple readers, single writer
-
-### 10.14.5 Performance and Scalability Implications
-
-**Contention** (see Section 3.5.8):
-- Coarse-grained locking: Very high contention, throughput collapses
-- Fine-grained locking: Lower contention, but rehashing complexity
-- Striped locking: Good balance
-
-**False Sharing**: Less relevant (buckets scattered in memory)
-
-**Throughput Collapse Under Load**:
-- With many threads, coarse-grained locking becomes severe bottleneck
-- Fine-grained or striped locking helps significantly
-
-### 10.14.6 When Not to Do This Yourself
-
-**Use Library Implementations**:
-- `std::unordered_map` with external synchronization
-- Thread-safe hash tables from well-tested libraries
-- Lock-free implementations from proven libraries (see Section 3.5.9)
-
-**Avoid Premature Optimization**:
-- Start with coarse-grained locking
-- Only optimize to fine-grained/striped if profiling shows it's necessary
-- Lock-free hash tables are research-level (see Section 3.5.9 warning)
-
-**For Production**: Prefer `std::unordered_map` with external synchronization or thread-safe hash tables from proven libraries. See Section 3.5.10 for guidance on using libraries.
-
-## 10.15 Advanced Hashing Techniques
-
-### 10.15.1 Consistent Hashing
-
-**Consistent Hashing** is a special hashing technique used in distributed systems to minimize the number of keys that need to be remapped when hash table slots (servers/nodes) are added or removed.
-
-#### The Problem with Standard Hashing
-
-In a distributed system with multiple servers, standard hashing has a critical flaw:
-
-```cpp
-// Standard hashing: server_index = hash(key) % num_servers
-int server_index = hash(key) % 3;  // 3 servers
-
-// Problem: If we add a 4th server, most keys need remapping!
-// Before: key "user123" → server 1
-// After:  key "user123" → server 2 (different server!)
-```
-
-**Impact**: When servers are added or removed, **most keys** (approximately `(n-1)/n` where n is the number of servers) need to be remapped to different servers. This causes:
-- Massive data migration
-- Cache invalidation
-- Service disruption
-
-#### How Consistent Hashing Works
-
-**Key Idea**: Map both keys and servers to a **circular hash space** (often visualized as a circle or ring).
+Consistent hashing breaks that coupling. Map both keys and servers onto the same circular hash space — a ring from `0` to `2³²−1`. A key belongs to the first server found walking clockwise from the key's position. Add or remove a server and only the keys in the *one arc* between it and its neighbor move; every other key stays exactly where it was.
 
 ```cpp
 #include <map>
 #include <string>
-#include <vector>
-#include <functional>
+#include <cstdint>
 
-class ConsistentHash {
-private:
-    // Hash ring: maps hash values to server names
-    map<uint32_t, string> hashRing;
-    hash<string> hasher;
-    int numReplicas;  // Virtual nodes per server
-    
+class ConsistentHashRing {
+    std::map<std::uint32_t, std::string> ring;      // hash position -> server
+    int virtualNodes;
+
+    std::uint32_t hashOf(const std::string& s) const {
+        return static_cast<std::uint32_t>(std::hash<std::string>{}(s));
+    }
+
 public:
-    ConsistentHash(int replicas = 3) : numReplicas(replicas) {}
-    
-    // Add a server to the hash ring
-    void addServer(const string& serverName) {
-        for (int i = 0; i < numReplicas; i++) {
-            // Create virtual nodes
-            string virtualNode = serverName + "#" + to_string(i);
-            uint32_t hashValue = hashString(virtualNode);
-            hashRing[hashValue] = serverName;
-        }
+    explicit ConsistentHashRing(int vnodes = 100) : virtualNodes(vnodes) {}
+
+    void addServer(const std::string& server) {
+        for (int i = 0; i < virtualNodes; ++i)
+            ring[hashOf(server + "#" + std::to_string(i))] = server;
     }
-    
-    // Remove a server from the hash ring
-    void removeServer(const string& serverName) {
-        for (int i = 0; i < numReplicas; i++) {
-            string virtualNode = serverName + "#" + to_string(i);
-            uint32_t hashValue = hashString(virtualNode);
-            hashRing.erase(hashValue);
-        }
+
+    void removeServer(const std::string& server) {
+        for (int i = 0; i < virtualNodes; ++i)
+            ring.erase(hashOf(server + "#" + std::to_string(i)));
     }
-    
-    // Get the server for a given key
-    string getServer(const string& key) {
-        if (hashRing.empty()) {
-            return "";
-        }
-        
-        uint32_t keyHash = hashString(key);
-        
-        // Find the first server with hash >= keyHash
-        auto it = hashRing.lower_bound(keyHash);
-        
-        // If no server found, wrap around to the first server
-        if (it == hashRing.end()) {
-            it = hashRing.begin();
-        }
-        
+
+    std::string serverFor(const std::string& key) const {
+        if (ring.empty()) return "";
+        auto it = ring.lower_bound(hashOf(key));     // first node clockwise
+        if (it == ring.end()) it = ring.begin();     // wrap around the ring
         return it->second;
     }
-    
-private:
-    uint32_t hashString(const string& str) {
-        // Simple hash function (in practice, use better hash like MD5, SHA-1)
-        size_t hash = hasher(str);
-        return static_cast<uint32_t>(hash);
-    }
 };
 ```
 
-#### Visual Representation
+Two design points make this practical. The `std::map` is an ordered tree, so `serverFor` is `O(log n)` — technically it *searches*, but over the handful of ring positions, not the enormous key space, and the routing decision is still a pure computation with no coordination between machines. And each physical server is placed at many **virtual nodes** (`server#0`, `server#1`, … — 100 in the constructor above). Without them, three servers might carve the ring into wildly unequal arcs and load would skew badly; scattering 100 points per server smooths the distribution and, when a server dies, spreads its share across all the survivors instead of dumping it on one unlucky neighbor.
 
-```
-Hash Ring (0 to 2^32-1):
+This is not a toy. Consistent hashing is how [Redis Cluster](11-graphs.md) and Memcached spread keys across nodes, how OpenSearch and Elasticsearch route documents to shards, how CDNs pick an edge server, and how Amazon's Dynamo and its descendants partition data. It is the same reasoning that opened the chapter — *don't search for the location, compute it* — scaled from one process's array up to a datacenter's worth of machines. [Chapter 1](01-introduction.md) framed the book's arc as ending back at hashing running a distributed database; this is that landing.
 
-        Server A
-           |
-           v
-     [Key1]---[Key2]---[Key3]
-        |       |       |
-        v       v       v
-     Server B  Server C  Server A
-     
-When Server B is removed:
-- Only keys between Server A and Server C need remapping
-- Keys on Server A and Server C remain unchanged
-```
+A narrower specialization worth knowing is **perfect hashing**: when the key set is *static and known in advance* — reserved keywords in a compiler, a fixed table of country codes — you can construct a collision-free hash offline that guarantees `O(1)` *worst-case* lookup, not just average. A common construction hashes into buckets, then gives each bucket of `k` keys a second-level table of size `k²` (large enough to be collision-free with good probability). The trade is rigidity: add a key and you rebuild. Tools like `gperf` generate exactly these for fixed keyword sets.
 
-#### Virtual Nodes (Replicas)
+## Hash tables in your daily code
 
-**Problem**: Without virtual nodes, servers may be unevenly distributed on the ring.
-
-**Solution**: Create multiple **virtual nodes** (replicas) for each physical server.
+Most of the time you will not implement any of this — you will reach for `std::unordered_map` or `std::unordered_set` and let the standard library carry the machinery. Their headline pattern is membership-or-lookup in one probe, which quietly powers a huge share of everyday algorithms. Frequency counting collapses to a single pass:
 
 ```cpp
-// Physical server: "server1"
-// Virtual nodes: "server1#0", "server1#1", "server1#2"
-// Each virtual node maps to the same physical server
+std::unordered_map<std::string, int> frequency(const std::vector<std::string>& words) {
+    std::unordered_map<std::string, int> freq;
+    for (const auto& w : words) ++freq[w];      // operator[] default-constructs to 0
+    return freq;
+}
 ```
 
-**Benefits**:
-- More even distribution of keys
-- Better load balancing
-- Smoother redistribution when servers are added/removed
-
-#### Properties of Consistent Hashing
-
-1. **Minimal Remapping**: Only `k/n` keys need remapping when a server is added/removed (where k is the number of keys, n is the number of servers)
-2. **Load Balancing**: Keys are distributed evenly across servers
-3. **Scalability**: Easy to add or remove servers
-4. **Fault Tolerance**: When a server fails, only its keys are remapped
-
-#### Real-World Applications
-
-**Distributed Caching**:
-- **Memcached**: Distributed in-memory cache
-- **Redis Cluster**: Distributed key-value store
-- **CDN (Content Delivery Networks)**: Routing requests to nearest edge server
-
-**Load Balancing**:
-- **Request Routing**: Route requests to backend servers
-- **Database Sharding**: Distribute data across database shards
-- **Microservices**: Route requests to service instances
-
-**Example: Distributed Cache**
-```cpp
-ConsistentHash cacheHash(100);  // 100 virtual nodes per server
-
-// Add cache servers
-cacheHash.addServer("cache-server-1");
-cacheHash.addServer("cache-server-2");
-cacheHash.addServer("cache-server-3");
-
-// Route key to appropriate server
-string key = "user:12345";
-string server = cacheHash.getServer(key);
-// Store in: cache-server-2
-
-// Add new server (minimal remapping)
-cacheHash.addServer("cache-server-4");
-// Only ~25% of keys need remapping (1/4 servers)
-```
-
-#### Complexity Analysis
-
-- **Add Server**: O(v) where v is the number of virtual nodes
-- **Remove Server**: O(v)
-- **Get Server**: O(log n) where n is the total number of virtual nodes
-- **Space**: O(n*v) where n is the number of servers, v is virtual nodes per server
-
-#### Advantages
-
-- ✅ Minimal key remapping when servers change
-- ✅ Good load distribution
-- ✅ Scalable and fault-tolerant
-- ✅ Simple to understand and implement
-
-#### Disadvantages
-
-- ❌ Not perfectly uniform (depends on hash function quality)
-- ❌ Requires virtual nodes for good distribution
-- ❌ More complex than standard hashing
-
-### 10.15.2 Perfect Hashing
-
-**Perfect Hashing** is a hashing technique that guarantees **O(1) worst-case lookup time** with **no collisions** when the set of keys is known in advance and static.
-
-#### When Perfect Hashing is Possible
-
-Perfect hashing works when:
-1. **Keys are known in advance** (static key set)
-2. **Keys don't change** (or change infrequently)
-3. **O(1) worst-case lookup** is required
-4. **Space is available** for a larger hash table
-
-#### Two-Level Perfect Hashing
-
-The most common approach uses **two levels of hashing**:
+And the canonical example of trading memory for time — Two Sum in `O(n)` instead of `O(n²)` — is just "remember what you've seen" in a hash map:
 
 ```cpp
-class PerfectHash {
-private:
-    vector<vector<pair<string, int>>> table;  // Two-level table
-    hash<string> hasher;
-    int primarySize;
-    vector<int> secondarySizes;
-    vector<int> hashParams;  // Hash function parameters
-    
-public:
-    PerfectHash(const vector<string>& keys, const vector<int>& values) {
-        // Level 1: Hash to primary bucket
-        primarySize = keys.size();
-        table.resize(primarySize);
-        secondarySizes.resize(primarySize, 0);
-        
-        // Group keys by primary hash
-        vector<vector<string>> buckets(primarySize);
-        for (const string& key : keys) {
-            int bucket = hasher(key) % primarySize;
-            buckets[bucket].push_back(key);
-        }
-        
-        // Level 2: Perfect hash for each bucket
-        for (int i = 0; i < primarySize; i++) {
-            if (buckets[i].empty()) continue;
-            
-            // Find perfect hash function for this bucket
-            int size = buckets[i].size();
-            secondarySizes[i] = size * size;  // Square the size for perfect hashing
-            
-            table[i].resize(secondarySizes[i]);
-            
-            // Simple perfect hash: use a different hash parameter
-            for (const string& key : buckets[i]) {
-                int idx = findValue(keys, key);
-                int hash2 = (hasher(key) * 17 + 31) % secondarySizes[i];
-                table[i][hash2] = {key, values[idx]};
-            }
-        }
+std::vector<int> twoSum(const std::vector<int>& nums, int target) {
+    std::unordered_map<int, int> seen;          // value -> index
+    for (int i = 0; i < (int)nums.size(); ++i) {
+        auto it = seen.find(target - nums[i]);
+        if (it != seen.end()) return {it->second, i};
+        seen[nums[i]] = i;
     }
-    
-    int get(const string& key) {
-        int bucket = hasher(key) % primarySize;
-        if (table[bucket].empty()) return -1;
-        
-        int hash2 = (hasher(key) * 17 + 31) % secondarySizes[bucket];
-        if (table[bucket][hash2].first == key) {
-            return table[bucket][hash2].second;
-        }
-        return -1;
-    }
-    
-private:
-    int findValue(const vector<string>& keys, const string& key) {
-        for (int i = 0; i < keys.size(); i++) {
-            if (keys[i] == key) return i;
-        }
-        return -1;
-    }
-};
+    return {};
+}
 ```
 
-#### How It Works
+The same move — hash-set membership to deduplicate, hash-map grouping to bucket by a computed key, a hash map fronting a linked list to build an LRU cache — recurs across the whole problem catalog. Whenever a brute-force solution scans a collection looking for a matching element, a hash table usually removes the inner loop.
 
-1. **Level 1 (Primary Hash)**: Hash keys to primary buckets
-2. **Level 2 (Secondary Hash)**: For each bucket with `k` keys, use a hash table of size `k²` to guarantee no collisions
+One thing to know about `std::unordered_map` specifically: the standard effectively mandates **separate chaining**, because it guarantees reference and pointer stability (a reference to an element stays valid across inserts) and bucket-level iteration, which an open-addressed table that relocates elements on rehash cannot provide. That guarantee is why `std::unordered_map` is measurably slower than the open-addressed `flat_hash_map` family — you are paying for stability you often don't need. When map performance genuinely matters and you don't require reference stability, an open-addressed third-party map is frequently a 2–3× win for the reasons the cache-locality section laid out.
 
-**Why k² works**: With `k` keys and a table of size `k²`, the probability of no collisions is high. If collisions occur, try different hash function parameters.
+## Engineering judgment
 
-#### Complexity Analysis
+- **Reach for a hash table when lookups by exact key dominate and you never need order.** If you need range queries, min/max, ordered iteration, or bounded *worst-case* latency, use a [balanced tree](06-trees-and-binary-trees.md) instead — a hash table's `O(n)` worst case is real, even if rare.
+- **Pre-size when you can.** `reserve(expected_count)` is the single highest-leverage line you can add: it turns a series of `O(n)` rehash stalls into none.
+- **Default to open addressing for speed, chaining for flexibility.** Open addressing wins on cache locality; chaining wins on cheap deletion, reference stability, and tolerating an unknown key distribution.
+- **Keep the load factor honest.** ~0.75 for chaining, ~0.5 for open addressing. It is the dial that governs everything else.
+- **Randomize the hash if keys are attacker-controlled.** Otherwise hash flooding is a live DoS.
+- **For concurrency, don't hand-roll.** A shared table needs the *entire* insert, erase, and rehash to be atomic, because a half-updated bucket chain or a mid-flight table swap is exactly what another thread must never observe. A single mutex is correct but serializes everything; **striped locking** (a small fixed pool of locks, keyed by `hash(key) % stripes`) is the usual compromise, and `std::shared_mutex` helps read-heavy workloads. But the right default is to guard `std::unordered_map` with external synchronization or use a proven concurrent map — lock-free hash tables are genuinely research-grade and not something to invent under deadline. See [Chapter 3.5](03.5-concurrency-fundamentals.md) for the invariant-based reasoning behind why partial updates corrupt the structure.
 
-- **Construction**: O(n) average case, O(n²) worst case (finding perfect hash)
-- **Lookup**: O(1) worst-case guaranteed
-- **Space**: O(n²) worst case (but often much better in practice)
+## Interview checklist
 
-#### Real-World Applications
+**Say this, not that.** The shallow answer is "a hash table is `O(1)` because it uses a hash function." The deep one: "a hash table *computes* a key's location instead of searching for it, giving `O(1)` average at the cost of all ordering — and which collision-resolution scheme you choose is really a cache-locality decision, which is why the fastest tables are open-addressed."
 
-**Compilers**:
-- **Symbol Tables**: Reserved keywords, built-in functions
-- **Static Analysis**: Known function names, variable names
+**The questions you'll actually get**
+- *Why is the worst case `O(n)`, and how do you defend against it?* All keys colliding into one bucket; defend with a good (or keyed) hash and by keeping the load factor bounded.
+- *Chaining vs. open addressing — when each?* The cache-locality trade above, plus chaining's cheap deletes and reference stability against open addressing's speed and compactness.
+- *Why does deletion in open addressing need tombstones?* Clearing a slot to empty severs every key probed past it.
+- *How is insertion `O(1)` if rehashing is `O(n)`?* Amortization — spread the rebuild across the inserts that caused it — and the follow-up is the latency spike that amortization hides.
+- *How would you shard a cache across servers?* Consistent hashing with virtual nodes; be ready to explain why plain `hash % k` remaps almost everything on a resize.
 
-**Databases**:
-- **Static Lookup Tables**: Country codes, currency codes
-- **Enumeration Values**: Predefined sets of values
+**Common mistakes:** clearing instead of tombstoning on delete; writing `(lo + hi)`-style probe arithmetic that overflows or forgets to wrap; assuming worst-case `O(1)`; using `hash % k` for distributed routing; and hand-rolling a concurrent or lock-free table instead of reaching for a proven one.
 
-**Network Protocols**:
-- **HTTP Status Codes**: Known set of status codes
-- **Protocol Headers**: Fixed set of header names
+## Summary
 
-**Example: Compiler Symbol Table**
-```cpp
-// Known keywords in a programming language
-vector<string> keywords = {"if", "else", "for", "while", "return", "int", "string"};
-vector<int> tokenIds = {1, 2, 3, 4, 5, 6, 7};
-
-PerfectHash keywordHash(keywords, tokenIds);
-
-// O(1) lookup for keywords
-int tokenId = keywordHash.get("if");  // Returns 1
-```
-
-#### Advantages
-
-- ✅ **O(1) worst-case lookup** (no collisions)
-- ✅ **Predictable performance** (no worst-case degradation)
-- ✅ **No collision resolution needed**
-
-#### Disadvantages
-
-- ❌ **Keys must be known in advance** (static set)
-- ❌ **Higher space complexity** (O(n²) worst case)
-- ❌ **Complex construction** (finding perfect hash function)
-- ❌ **Not suitable for dynamic key sets**
-
-#### When to Use Perfect Hashing
-
-**Use When**:
-- Key set is static and known at compile time
-- O(1) worst-case lookup is critical
-- Space is not a major constraint
-- Keys are frequently accessed
-
-**Don't Use When**:
-- Keys are dynamic (added/removed frequently)
-- Space is severely constrained
-- Key set is very large (construction becomes expensive)
-
-#### Comparison with Standard Hashing
-
-| Aspect | Standard Hashing | Perfect Hashing |
-|--------|------------------|-----------------|
-| **Worst-case lookup** | O(n) with collisions | O(1) guaranteed |
-| **Average-case lookup** | O(1) | O(1) |
-| **Space** | O(n) | O(n²) worst case |
-| **Construction** | O(n) | O(n²) worst case |
-| **Dynamic keys** | Yes | No |
-| **Use case** | General purpose | Static key sets |
-
-### 10.15.3 Summary of Advanced Techniques
-
-**Consistent Hashing**:
-- Use for distributed systems with dynamic server sets
-- Minimizes key remapping when servers are added/removed
-- Essential for distributed caches, load balancers, CDNs
-
-**Perfect Hashing**:
-- Use for static key sets requiring O(1) worst-case lookup
-- Common in compilers, symbol tables, static lookup tables
-- Trade space for guaranteed performance
-
-Both techniques extend standard hashing for specialized use cases where standard hashing is insufficient.
-
-## 10.16 Summary
-
-Hash tables are one of the most important and widely used data structures in computer science. They provide excellent average-case performance for key-value operations, making them ideal for many applications including databases, caches, symbol tables, and more.
-
-Understanding hash functions, collision resolution strategies, and performance characteristics is crucial for effective use of hash tables. The C++ Standard Library provides excellent implementations in `std::unordered_map` and `std::unordered_set`, but understanding the underlying principles helps in choosing the right data structure and optimizing performance.
-
-In the next chapter, we'll explore graphs, another fundamental data structure that represents relationships and connections between entities.
-
+A hash table computes a key's address instead of searching for it — one hash, one modulo, one array access — and that is the whole source of its `O(1)` average speed and of everything it gives up, which is order. Two decisions determine whether the promise holds: a hash function that is deterministic, fast, and uniform (and keyed, if keys are hostile); and collision resolution, where the choice between separate chaining and open addressing is best understood as a cache-locality decision, since open addressing probes one contiguous cache line while chaining chases pointers across the heap — the reason the fastest production tables are open-addressed. The load factor is the dial behind all of it, and rehashing is the amortized `O(1)` mechanism that hides a real `O(n)` latency spike you pre-size to avoid. Scale the same "compute, don't search" idea from one array to a fleet of machines and you get consistent hashing, which routes keys across Redis, OpenSearch, and CDN nodes while a resize disturbs only a sliver of the data — the book's opening arc landing exactly where it promised, back at hashing, now running a distributed system. Next we turn to [graphs](11-graphs.md), where relationships rather than lookups take center stage.
