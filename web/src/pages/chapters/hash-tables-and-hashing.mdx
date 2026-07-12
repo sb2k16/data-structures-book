@@ -7,6 +7,8 @@ description: Why hash tables exist, how a lookup actually finds your data, and w
 import Compare from '../../components/bench/Compare';
 import InProduction from '../../components/InProduction.astro';
 import InterviewChecklist from '../../components/InterviewChecklist.astro';
+import CppProblem from '../../components/problem/CppProblem';
+import { twoSumOnePass } from '../../lib/problems';
 
 Every data structure exists because the one before it had a problem.
 
@@ -165,6 +167,19 @@ whose collision-resolution problem became a distributed-systems problem, and the
 - **Reach for a balanced tree (`std::map`) instead when you need order** — sorted iteration, range queries ("all keys between A and B"), or min/max. A hash table cannot answer these at all; it will happily give you O(1) lookup and nothing else.
 - **Reach for a plain array when `n` is small.** For a handful of elements, a linear scan of a contiguous array beats a hash table outright — no hashing, no pointer-chasing, everything on one cache line. The crossover is often larger than people expect; measure before assuming the hash table wins.
 - **When you do use one, prefer an open-addressed implementation for hot lookup paths,** keep the load factor moderate, and give it a good hash function — a weak hash silently converts your O(1) table into an O(n) linked list and invites collision-based denial-of-service.
+
+## Try it: two-sum in one pass
+
+The clearest place to feel "compute, don't search" is the classic two-sum: given an array and
+a target, return the indices of the two numbers that add up to it. The obvious solution checks
+every pair — `O(n²)`, exactly the nested scan this chapter exists to avoid. The hash-table
+version walks the array once and asks the table whether the *complement* (`target − nums[i]`)
+has already been seen, turning it into a single `O(n)` pass.
+
+Fill in the function and run the tests — your C++ is compiled and checked right here in the
+browser. (This is a taste of the full practice set.)
+
+<CppProblem client:visible starter={twoSumOnePass.starter} harness={twoSumOnePass.harness} />
 
 ## Interview checklist
 
