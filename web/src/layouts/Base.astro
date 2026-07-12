@@ -14,7 +14,7 @@ interface Props {
 const { title, description, article = false, ogImage = '/og-default.png' } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const ogUrl = new URL(ogImage, Astro.site);
-const SITE = 'Data Structures on Real Hardware';
+const SITE = 'Data Structures on Systems';
 
 const schema = {
   '@context': 'https://schema.org',
@@ -79,7 +79,8 @@ const schema = {
             <rect x="2" y="8" width="20" height="8" rx="1.5" stroke="var(--accent)" stroke-width="1.8" />
             <path d="M7 8v8M12 8v8M17 8v8" stroke="var(--accent)" stroke-width="1.8" />
           </svg>
-          Real Hardware
+          <span class="hidden sm:inline">Data Structures on Systems</span>
+          <span class="sm:hidden">Data Structures</span>
         </a>
 
         {/* Below `sm` only Chapters and the toggle survive; three links plus the

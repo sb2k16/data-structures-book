@@ -1,7 +1,8 @@
 # The website
 
-Astro site that publishes the book at [realhardware.dev](https://realhardware.dev), plus the
-interactive benchmarks that make the memory-hierarchy chapter run on the reader's own CPU.
+Astro site that publishes *Data Structures on Systems* at
+[sb2k16.github.io](https://sb2k16.github.io), plus the interactive benchmarks that make the
+memory-hierarchy chapter run on the reader's own CPU.
 
 ```bash
 npm install
