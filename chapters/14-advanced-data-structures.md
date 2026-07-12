@@ -1,98 +1,26 @@
 # Chapter 14: Advanced Data Structures
 
-## 14.1 Problem Statement & Motivation
+Basic containers — arrays, linked lists, balanced trees — are generalists. They do everything adequately and a handful of things badly: a range sum over an array is O(n), finding the minimum of an unsorted set is O(n), matching a string prefix is O(n·m), an exact membership set costs O(n) space, snapshotting a structure per version costs O(n). Every structure in this chapter buys back one of those operations by giving up generality. A heap answers "what's most urgent?" in O(log n) but can't search. A segment tree answers any range query in O(log n) but is heavier than the array it wraps. A Bloom filter tests membership in a fraction of the space but occasionally lies. The skill isn't memorizing these structures — it's recognizing the one operation your workload leans on hardest, and reaching for the specialist only when a plain array or tree genuinely can't keep up.
 
-Basic structures (arrays, linked lists, balanced trees) leave specific operations expensive:
+One systems lesson runs through the whole chapter, the same one from [Chapter 3](03-basic-data-structures.md): a structure that lives in a contiguous array beats a pointer-based one doing the same asymptotic work. A binary heap keeps every node a few array slots from its parent, so the prefetcher streams it in and there are no per-node allocations — it runs 2–3× faster than a pointer-based priority queue of the same O(log n) and uses about half the memory. Tries and skip lists, built from many small scattered nodes, pay a cache miss on nearly every step and fragment the allocator; a memory pool or a fixed-array node layout is the usual fix. When two structures share a Big-O, the array-backed one almost always wins — but measure the miss rate before you optimize.
 
-- **Range queries** (sum/min/max over `[l, r]`): O(n) per query with a plain array.
-- **Prefix operations**: recomputing a prefix sum is O(n).
-- **Priority operations**: finding and removing the min/max is O(n) with linear search.
-- **String prefix / substring search**: O(n×m) brute force.
-- **Approximate membership at scale**: an exact set costs O(n) space.
-- **Version history**: naively snapshotting a structure costs O(n) per version.
+| Structure | Insert | Delete | Search | Query | Space |
+|-----------|--------|--------|--------|-------|-------|
+| Heap | O(log n) | O(log n) | O(n) | O(1) peek | O(n) |
+| Trie | O(m) | O(m) | O(m) | O(m) prefix | O(Σ·N·M) |
+| Segment tree | O(log n) | — | O(log n) | O(log n) | O(n) |
+| Fenwick tree | O(log n) | — | O(log n) | O(log n) | O(n) |
+| Sparse table | O(n log n) build | — | O(1) | O(1) | O(n log n) |
+| Skip list | O(log n) | O(log n) | O(log n) | O(log n) | O(n) exp. |
+| Bloom filter | O(k) | — | O(k) | O(1) | O(m) bits |
 
-Each structure in this chapter specializes one of these: heaps for priority, segment and Fenwick trees for range queries, tries and suffix structures for strings, Bloom filters and Count-Min sketches for space-efficient approximation, persistent structures for history. The trade is generality for specialized performance — reach for them only when a simpler structure genuinely can't meet the requirement.
+(m = word/pattern length, k = hash functions, Σ = alphabet size, N words of average length M.)
 
-## 14.2 Conceptual Overview
+## 14.1 Heaps
 
-Think of each structure as a specialized tool: a heap is a hospital triage queue (most urgent first), a segment tree is a building directory answering "any floor range" quickly, a trie is a phone book organized by prefix, and a Bloom filter is a membership card that may say "maybe" but never wrongly says "not a member."
+Reach for a heap when you repeatedly need the most extreme element — the highest-priority task, the nearest point, the smallest remaining edge — and nothing else. A **heap** is a complete binary tree obeying one rule, the *heap property*: every parent dominates its children (≥ for a max-heap, ≤ for a min-heap). Because the tree is complete — every level full but the last, which fills left to right — it needs no pointers: it lives in a flat array where node `i` has parent `(i-1)/2` and children `2i+1`, `2i+2`. That layout is the whole reason a heap is fast, and it bounds the height at ⌊log₂ n⌋.
 
-The chapter groups them as:
-
-- **Priority**: binary heaps, Fibonacci heaps.
-- **Range query**: segment trees, Fenwick trees, sparse tables, sqrt decomposition.
-- **String**: tries, suffix arrays/trees.
-- **Probabilistic**: Bloom filters, Count-Min sketch, skip lists.
-- **Versioned**: persistent structures.
-
-## 14.3 Abstract Model & Invariants
-
-Each structure is defined by its state, its supported operations, and the **invariants** every operation must preserve. Correctness is exactly "no operation ever leaves an invariant broken."
-
-**Heap.** (1) *Heap property*: `parent ≥ children` (max-heap) or `parent ≤ children` (min-heap), recursively. (2) *Complete tree*: all levels full except the last, which fills left to right. (3) *Array mapping*: root at index 0, and for node `i`, parent `(i-1)/2`, children `2i+1` and `2i+2`, with no gaps. The complete-tree shape bounds the height at ⌊log₂ n⌋.
-
-**Segment tree.** Each node owns a range `[l, r]`; an internal node's value is the combination of its two children's values, so any query decomposes into O(log n) node values.
-
-**Trie.** The path from the root to a node spells a prefix; each edge is labeled with one character; an end-of-word marker distinguishes stored words from mere prefixes.
-
-These assume finite data, comparable/orderable elements, valid operation arguments, and sufficient memory.
-
-## 14.4 Operations & Interface
-
-**Heap** — `insert(v)` O(log n), `extractMin/Max()` O(log n), `peek()` O(1), `decreaseKey(i, v)` O(log n). Extraction and peek require a non-empty heap.
-
-**Range structures (segment/Fenwick tree)** — `query(l, r)` returns the aggregate over `[l, r]`; `update(i, v)` sets one element; segment trees also support `rangeUpdate(l, r, v)` with lazy propagation. All require `0 ≤ l ≤ r < n`.
-
-**Trie** — `insert(word)`, `search(word)` (exact word), `startsWith(prefix)` (any word with that prefix).
-
-Every operation must return the correct result, preserve the structure's invariants, and meet its complexity bound.
-
-## 14.5 Time & Space Complexity
-
-| Structure | Insert | Delete | Search | Query | Update | Space |
-|-----------|--------|--------|--------|-------|--------|-------|
-| Heap | O(log n) | O(log n) | O(n) | O(1) peek | O(log n) | O(n) |
-| Trie | O(m) | O(m) | O(m) | O(m) prefix | O(m) | O(Σ·N·M) |
-| Segment tree | O(log n) | O(log n) | O(log n) | O(log n) | O(log n) | O(n) |
-| Fenwick tree | O(log n) | O(log n) | O(log n) | O(log n) | O(log n) | O(n) |
-| Sparse table | O(n log n) build | — | O(1) | O(1) | — | O(n log n) |
-| Skip list | O(log n) | O(log n) | O(log n) | O(log n) | O(log n) | O(n) exp. |
-| Bloom filter | O(k) | — | O(k) | O(1) | — | O(m) bits |
-
-(m = word/pattern length, k = number of hash functions, Σ = alphabet size, N words of average length M.) The recurring trade-off: heaps give fast priority ops but O(n) search; segment trees give flexible O(log n) range queries at O(n) space; tries give O(m) string ops at high space; Bloom filters are tiny but admit false positives.
-
-## 14.6 Correctness
-
-Each operation is correct because it restores every invariant before returning. For a **heap insert**, appending at the end preserves completeness and the array mapping, and bubble-up restores the heap property along the single path to the root; **extract** moves the last element into the root (preserving completeness) and heapify-down restores the heap property. The argument is inductive: a one-element heap is trivially valid, and each operation maps a valid heap to a valid heap. For a **segment tree**, leaves hold array elements and every internal node holds the combination of its children, so `build` is correct bottom-up and `query` is correct because the visited nodes exactly partition `[l, r]`. **Trie** insert creates the character path and marks the terminal node; search follows the same path and checks the marker.
-
-## 14.7 Edge Cases & Failure Modes
-
-- **Empty-heap access**: `extractMax()`/`peek()` on an empty heap must throw rather than read `heap[0]`.
-- **Out-of-range segment-tree query**: reject or clamp `l < 0`, `r ≥ n`, or `l > r` before recursing.
-- **Empty string in a trie**: decide explicitly whether `""` is a valid word (the marker on the root node).
-- **Recurring bugs**: index-out-of-bounds from unchecked child indices, heap-property violations from an incomplete heapify, off-by-one range splits (`mid` vs `mid+1`), Fenwick 0-vs-1-based confusion, and un-freed trie nodes. Section 14.21 shows each as a concrete wrong/right pair.
-
-## 14.8 Performance & System Considerations
-
-This is where the choice of structure meets the machine.
-
-**Array-backed structures win on cache.** A binary heap stores everything in one contiguous `vector`: parent and children are a few array slots apart, prefetching works, and there are no per-node pointers. A pointer-based priority queue (a balanced tree from Chapter 6) chases 2–5 cache lines per level. Same O(log n), but the heap is typically 2–3× faster and uses ~50% less memory. This is the Chapter 3 lesson again: contiguous layout beats pointer-chasing.
-
-| Heap operation | Cache misses | Why |
-|----------------|--------------|-----|
-| heapifyUp | 0–1 | sequential parent access |
-| heapifyDown | 0–2 | children are adjacent |
-| buildHeap | ~log n | bottom-up construction |
-
-**Pointer-based structures (tries, skip lists) pay for allocation.** Many small nodes fragment the heap and scatter across memory, causing a cache miss on nearly every traversal step. Mitigate with memory pools or pre-allocation, and prefer an array-backed representation (for instance a d-ary heap, which trades more children per node for fewer levels) when the access pattern allows. Profile before optimizing — measure the actual miss rate rather than guessing.
-
-## 14.9 Heaps
-
-A **heap** is a complete binary tree satisfying the heap property (Section 14.3): in a max-heap every parent is ≥ its children; in a min-heap every parent is ≤ its children. Because the tree is complete it lives in a flat array with no pointers — the layout responsible for its cache advantage (Section 14.8). For a node at index `i`: parent `(i-1)/2`, left `2i+1`, right `2i+2`.
-
-Insertion appends at the end (preserving completeness) then bubbles up; extraction returns the root, moves the last element into the root, and heapifies down. Each touches one root-to-leaf path, so both are O(log n).
-
-### Max-Heap
+Insertion appends at the end (still complete) and bubbles up along one root-to-leaf path; extraction returns the root, moves the last element up to fill it, then sifts down. Each touches a single path, so both are O(log n); peek is O(1). Search is O(n) — a heap orders parents against children, never siblings, so there is no shortcut to an arbitrary value. Accessing an empty heap must throw rather than read `heap[0]`.
 
 ```cpp
 #include <iostream>
@@ -163,7 +91,7 @@ public:
 };
 ```
 
-A **min-heap** is identical with the comparisons reversed (`<=` in `heapifyUp`, `<` in `heapifyDown`). Rather than duplicate the class, parameterize the comparison to get a reusable priority queue — `PriorityQueue<int, greater<int>>` is a min-heap:
+A **min-heap** is identical with the comparisons reversed. Rather than duplicate the class, parameterize the comparison to get a reusable priority queue — `PriorityQueue<int, greater<int>>` is a min-heap:
 
 ```cpp
 template<typename T, typename Compare = less<T>>
@@ -220,9 +148,7 @@ public:
 };
 ```
 
-### Heap Sort
-
-Build a max-heap, then repeatedly extract the maximum into the back of the array. Extraction yields values in descending order, filling the array ascending:
+**Heap sort** falls straight out: build a max-heap, then repeatedly extract the maximum into the back of the array. Extraction yields descending values, filling the array ascending.
 
 ```cpp
 void heapSort(vector<int>& arr) {
@@ -234,16 +160,18 @@ void heapSort(vector<int>& arr) {
 }
 ```
 
-| Operation | Time |
-|-----------|------|
-| Insert / Extract | O(log n) |
-| Peek | O(1) |
-| Build heap | O(n) |
-| Heap sort | O(n log n) |
+The array layout also gives the heap its cache edge. Every operation walks a single path of adjacent slots, so misses are few — a pointer-based tree of the same height would chase 2–5 cache lines per level.
 
-## 14.10 Tries (Prefix Trees)
+| Heap operation | Time | Cache misses |
+|----------------|------|--------------|
+| Insert / extract | O(log n) | 0–2 (adjacent parent/children) |
+| Peek | O(1) | 0 |
+| Build heap | O(n) | ~log n |
+| Heap sort | O(n log n) | — |
 
-A **trie** stores strings along tree paths: the path from the root to a node spells a prefix, and a per-node flag marks where a stored word ends. Lookups and inserts cost O(m) in the word length, independent of how many words are stored. The map-based node handles any alphabet:
+## 14.2 Tries (Prefix Trees)
+
+A **trie** stores strings along tree paths: the path from the root to a node spells a prefix, and a per-node flag marks where a stored word ends. Lookups and inserts cost O(m) in the word length, *independent of how many words are stored* — which is what makes tries the natural fit for autocomplete, spell checkers, and IP-prefix routing. The map-based node handles any alphabet:
 
 ```cpp
 #include <unordered_map>
@@ -324,7 +252,9 @@ public:
 };
 ```
 
-When the alphabet is small and fixed (e.g. lowercase `a`–`z`), replace the hash map with a fixed array of child pointers. This removes the per-lookup hashing and stores children contiguously, improving cache behavior at the cost of `26 × sizeof(ptr)` per node even when sparse:
+`search` distinguishes a stored word from a mere prefix by checking `isEndOfWord`; `startsWith` doesn't care. The destructor deletes children recursively — omit that and every inserted word leaks its trailing nodes.
+
+When the alphabet is small and fixed (say `a`–`z`), replace the hash map with a fixed array of child pointers. This drops the per-lookup hashing and stores children contiguously, improving cache behavior — at the cost of `26 × sizeof(ptr)` per node even when sparse:
 
 ```cpp
 class CompactTrie {
@@ -363,11 +293,9 @@ public:
 };
 ```
 
-Tries power autocomplete, spell checkers, IP-prefix routing, and any dictionary keyed by prefix.
+## 14.3 Segment Trees
 
-## 14.11 Segment Trees
-
-A **segment tree** answers range aggregate queries and point updates in O(log n). Each node covers a contiguous range and stores the aggregate of its children; a query walks down only the O(log n) nodes whose ranges partition `[l, r]`. The tree is stored in an array sized `4n` (enough to hold every node of the recursive layout). The version below aggregates by sum:
+A **segment tree** answers range aggregate queries *and* point updates in O(log n) — the full-service option when both the data and the queries move. Each node covers a contiguous range and stores the aggregate of its two children, so a query walks down only the O(log n) nodes whose ranges partition `[l, r]`. The tree lives in an array sized `4n` (enough for every node of the recursive layout). This version aggregates by sum:
 
 ```cpp
 class SegmentTree {
@@ -416,11 +344,11 @@ public:
 };
 ```
 
-To answer a different aggregate, change only the combine step and the out-of-range identity. For range-minimum, replace `+` with `min(...)` and return `numeric_limits<int>::max()` (instead of `0`) for a range that lies entirely outside the query. Build is O(n); query and update are O(log n); space is O(n).
+To answer a different aggregate, change only the combine step and the out-of-range identity: for range-minimum, replace `+` with `min(...)` and return `numeric_limits<int>::max()` instead of `0`. Build is O(n); query and update O(log n); space O(n). The one recurring bug is the range split — the right child must start at `mid + 1`, not `mid`, or overlapping ranges double-count and can recurse forever.
 
-## 14.12 Fenwick Trees (Binary Indexed Trees)
+## 14.4 Fenwick Trees (Binary Indexed Trees)
 
-A **Fenwick tree** supports prefix sums and point updates in O(log n) using a single array and bit tricks, with roughly half the memory and better cache behavior than a segment tree. The key operation `index & (-index)` isolates the lowest set bit, which is how each node reaches its parent (query) or next responsible node (update). Indices are 1-based internally:
+When the aggregate is invertible (a sum, not a min), a **Fenwick tree** does everything a segment tree does for prefix/point work in half the memory and with better cache behavior — from a single array and one bit trick. The operation `index & (-index)` isolates the lowest set bit, which is how each node reaches its parent (query) or next responsible node (update). Indices are 1-based internally, so both `update` and `query` convert the incoming 0-based index — forget it in one and every prefix sum is wrong.
 
 ```cpp
 class FenwickTree {
@@ -464,11 +392,11 @@ public:
 };
 ```
 
-Build is O(n log n), query and update O(log n), space O(n). Compared with a segment tree it uses less memory, is simpler to code, and is faster in practice — but it only supports invertible aggregates (sums, not min/max) without extra machinery.
+Build is O(n log n), query and update O(log n), space O(n). Less memory, less code, and faster in practice than a segment tree — the price is that it handles only invertible aggregates without extra machinery.
 
-## 14.13 Sparse Table
+## 14.5 Sparse Table
 
-A **sparse table** answers idempotent range queries (min, max, GCD — any `f` with `f(x, x) = x`) in O(1) after O(n log n) preprocessing, provided the array never changes. It precomputes the answer for every interval whose length is a power of two; a query covers `[l, r]` with two overlapping such intervals, and overlap is harmless because the operation is idempotent.
+If the array never changes and the operation is idempotent (`f(x, x) = x` — min, max, GCD), a **sparse table** beats every log-time structure: O(1) queries after O(n log n) preprocessing. It precomputes the answer for every interval whose length is a power of two; a query covers `[l, r]` with two overlapping such intervals, and the overlap is harmless precisely because the operation is idempotent.
 
 ```cpp
 #include <vector>
@@ -516,11 +444,11 @@ public:
 //   rmq.query(l, r);
 ```
 
-Preprocessing is O(n log n), queries O(1), space O(n log n). Use it for static arrays with many queries and an idempotent operation; it cannot handle updates and uses more memory than a segment tree.
+The catch is right there in the premise: no updates, and O(n log n) space. When the data is static and read-heavy, it's unbeatable; the moment an element can change, you're back to a segment tree.
 
-## 14.14 Sqrt Decomposition
+## 14.6 Sqrt Decomposition
 
-**Sqrt decomposition** splits the array into √n blocks and precomputes an answer per block. A query combines whole-block answers with the individual elements of the two partial end blocks, giving O(√n) queries and updates — simpler than a segment tree and a good stepping stone to it. The version below maintains block minima:
+**Sqrt decomposition** is the simplest range structure worth knowing, and a good stepping stone to the segment tree. Split the array into √n blocks and precompute one answer per block; a query then combines whole-block answers with the individual elements of the two partial end blocks — O(√n) per query and update. Here it maintains block minima:
 
 ```cpp
 #include <vector>
@@ -570,7 +498,7 @@ public:
 };
 ```
 
-For an invertible aggregate like sum, store a running block total so updates become O(1) and queries stay O(√n):
+For an invertible aggregate like sum, store a running block total so updates drop to O(1) while queries stay O(√n):
 
 ```cpp
 class SqrtDecompositionSum {
@@ -609,16 +537,18 @@ public:
 };
 ```
 
-| Structure | Query | Update | Space | Notes |
-|-----------|-------|--------|-------|-------|
-| Sparse table | O(1) | — | O(n log n) | static, idempotent only |
+That rounds out the range-query family. Pick by what constrains you:
+
+| Structure | Query | Update | Space | When |
+|-----------|-------|--------|-------|------|
+| Sparse table | O(1) | — | O(n log n) | static, idempotent |
 | Segment tree | O(log n) | O(log n) | O(n) | full support |
-| Fenwick tree | O(log n) | O(log n) | O(n) | prefix/point, invertible |
-| Sqrt decomp | O(√n) | O(√n) | O(n) | simplest |
+| Fenwick tree | O(log n) | O(log n) | O(n) | invertible, prefix/point |
+| Sqrt decomp | O(√n) | O(√n) | O(n) | simplest to write |
 
-## 14.15 Skip Lists
+## 14.7 Skip Lists
 
-A **skip list** is a probabilistic alternative to a balanced tree (Chapter 6): it layers several sorted linked lists (Chapter 4), where higher "express lane" levels contain progressively fewer nodes. A node's height is chosen randomly, giving O(log n) expected search, insert, and delete without the rotation logic of AVL or red-black trees. Redis uses skip lists for sorted sets, partly because they are easier to make concurrent than trees.
+A **skip list** gets you a balanced tree's O(log n) search, insert, and delete without any of the rotation logic — you pay for it with randomness instead. It layers several sorted linked lists ([Chapter 4](04-linked-lists.md)), with higher "express lane" levels holding progressively fewer nodes; a node's height is chosen by coin flip. Redis uses skip lists for its sorted sets, partly because they are far easier to make concurrent than trees.
 
 ```
 Level 3:  [1] --------------------------> [9]
@@ -715,11 +645,11 @@ public:
 };
 ```
 
-Search, insert, and delete are O(log n) expected and O(n) worst case; space is O(n) (each element appears in ~2 levels on average). Skip lists trade the deterministic guarantees of balanced trees for a far simpler implementation.
+Search, insert, and delete are O(log n) expected, O(n) worst case; space is O(n), since each element appears in ~2 levels on average. You trade a balanced tree's deterministic guarantees for a much simpler implementation.
 
-## 14.16 Bloom Filters
+## 14.8 Bloom Filters
 
-A **Bloom filter** is a bit array plus k hash functions that tests set membership in O(k) time and a fraction of the space of an exact set. It can report a false positive but never a false negative: if it says "not present," the element is definitely absent. Insertion sets the k hashed bits; a lookup passes only if all k bits are set. Standard Bloom filters cannot delete (clearing a bit could evict other elements).
+A **Bloom filter** answers "have I seen this?" in a tiny fraction of the space of an exact set — as long as you can tolerate a *maybe*. It's a bit array plus k hash functions; insertion sets the k hashed bits, and a lookup passes only if all k are set. It can report a false positive but never a false negative: if it says "not present," the element is definitely absent. That asymmetry is exactly what you want in front of an expensive lookup — a database block, a web cache, a router table — to cheaply rule out absent keys. Standard Bloom filters can't delete, since clearing a bit could evict other elements.
 
 ```
 Insert "apple":  bits[3], bits[7], bits[12] ← 1
@@ -770,9 +700,7 @@ public:
 };
 ```
 
-Insert and lookup are O(k); space is O(m) bits, independent of element size. Bloom filters guard expensive lookups (database blocks, web caches, network routers) by cheaply ruling out absent keys.
-
-To support deletion, a **counting Bloom filter** replaces each bit with a small counter, incremented on insert and decremented on remove:
+Insert and lookup are O(k); space is O(m) bits, independent of element size. To support deletion, a **counting Bloom filter** replaces each bit with a small counter, incremented on insert and decremented on remove:
 
 ```cpp
 class CountingBloomFilter {
@@ -804,9 +732,9 @@ public:
 };
 ```
 
-## 14.17 Count-Min Sketch
+## 14.9 Count-Min Sketch
 
-A **Count-Min sketch** estimates element frequencies in a stream using a `d × w` counter grid and d hash functions — the counting analogue of a Bloom filter. Increment hashes the element into one cell per row and bumps it; a query returns the *minimum* of those d cells. Because collisions only ever add to a cell, the minimum is the tightest estimate and the sketch may overestimate but never underestimates.
+The **Count-Min sketch** is the counting analogue of a Bloom filter: it estimates element *frequencies* in a stream from a `d × w` counter grid and d hash functions. Increment bumps one cell per row; a query returns the *minimum* of those d cells. Because collisions only ever add to a cell, the minimum is the tightest estimate — the sketch may overestimate but never underestimates.
 
 ```
 Increment "apple":  sketch[0][h0], sketch[1][h1], sketch[2][h2]  += 1
@@ -854,9 +782,9 @@ public:
 };
 ```
 
-Increment and query are O(d); space is O(d × w). With width `w = ⌈e/ε⌉` and depth `d = ⌈ln(1/δ)⌉`, the error is at most `ε·N` (N = total increments) with probability at least `1 − δ`. For ε = δ = 0.01 that is w = 272, d = 5 — about 1,360 counters regardless of stream size. More depth raises accuracy; more width lowers collisions.
+Increment and query are O(d); space is O(d × w). With width `w = ⌈e/ε⌉` and depth `d = ⌈ln(1/δ)⌉`, the error is at most `ε·N` (N = total increments) with probability at least `1 − δ`. For ε = δ = 0.01 that's w = 272, d = 5 — about 1,360 counters regardless of stream size. More depth raises confidence; more width lowers collisions.
 
-A common use is the **heavy-hitters** problem — elements exceeding a frequency threshold:
+A common use is **heavy hitters** — elements exceeding a frequency threshold, as in network monitoring or trending-item detection:
 
 ```cpp
 vector<string> findHeavyHitters(const vector<string>& stream,
@@ -872,11 +800,11 @@ vector<string> findHeavyHitters(const vector<string>& stream,
 }
 ```
 
-Use a Count-Min sketch for large streams where approximate counts suffice and space is tight (network monitoring, trending items, query-frequency estimation); avoid it when exact counts are required or when the dataset is small enough that a hash table is cheaper. Variants include Count sketch (uses ±1 signs for lower average error, but can underestimate) and conservative-update (increments only the minimum cells to curb overestimation).
+Reach for a Count-Min sketch when the stream is large, approximate counts suffice, and space is tight; skip it when you need exact counts or the data fits a plain hash table. Variants include Count sketch (±1 signs, lower average error but can underestimate) and conservative-update (increments only the minimum cells to curb overestimation).
 
-## 14.18 Fibonacci Heap
+## 14.10 Fibonacci Heap
 
-A **Fibonacci heap** is a collection of heap-ordered trees that defers restructuring work, achieving O(1) *amortized* insert, decrease-key, and merge, with O(log n) amortized extract-min. The decrease-key bound is what matters for Dijkstra's algorithm on dense graphs, lowering its cost from O((V+E) log V) to O(V log V + E).
+A **Fibonacci heap** is a collection of heap-ordered trees that defers restructuring, buying O(1) *amortized* insert, decrease-key, and merge, with O(log n) amortized extract-min. The decrease-key bound is the one that matters: it's what lowers Dijkstra's algorithm on dense graphs from O((V+E) log V) to O(V log V + E).
 
 | Operation | Binary heap | Fibonacci heap |
 |-----------|-------------|----------------|
@@ -884,9 +812,8 @@ A **Fibonacci heap** is a collection of heap-ordered trees that defers restructu
 | Extract min | O(log n) | O(log n) amortized |
 | Decrease key | O(log n) | O(1) amortized |
 | Merge | O(n) | O(1) amortized |
-| Delete | O(log n) | O(log n) amortized |
 
-The structure keeps a circular doubly-linked *root list* with a pointer to the minimum root, plus a *marked* bit per node tracking whether it has already lost a child (used to bound decrease-key's cascading cuts). Insert and merge just splice into the root list; the real work is deferred to `extractMin`, which promotes the removed node's children to roots and then **consolidates** trees of equal degree so no two roots share a degree.
+The structure keeps a circular doubly-linked *root list* with a pointer to the minimum, plus a *marked* bit per node tracking whether it has lost a child (used to bound decrease-key's cascading cuts). Insert and merge just splice into the root list; all the real work is deferred to `extractMin`, which promotes the removed node's children to roots and then **consolidates** trees of equal degree so no two roots share one.
 
 ```cpp
 #include <vector>
@@ -1002,11 +929,11 @@ public:
 };
 ```
 
-In practice Fibonacci heaps carry large constant factors and poor cache behavior (pointer-heavy nodes), so a plain binary heap — or a pairing heap — usually wins outside of graph algorithms dominated by decrease-key. Reach for a Fibonacci heap only when decrease-key or merge is genuinely the bottleneck.
+In practice Fibonacci heaps carry large constant factors and poor cache behavior — pointer-heavy nodes, exactly the layout the intro warned against — so a plain binary heap, or a pairing heap, usually wins outside of graph algorithms dominated by decrease-key. Reach for one only when decrease-key or merge is genuinely the bottleneck.
 
-## 14.19 Suffix Array and Suffix Tree
+## 14.11 Suffix Array and Suffix Tree
 
-A **suffix array** is the sorted array of starting indices of all suffixes of a string. It supports substring search by binary search and underpins many string algorithms, at a fraction of the memory of a suffix tree. The construction below is the simple O(n² log n) comparison sort; production code uses O(n) or O(n log n) builders such as SA-IS or DC3. An accompanying LCP (longest-common-prefix) array records the overlap between adjacent suffixes.
+A **suffix array** is the sorted array of starting indices of all suffixes of a string. Sort the suffixes once and you can find any substring by binary search — at a fraction of a suffix tree's memory. The build below is the simple O(n² log n) comparison sort; production code uses an O(n) or O(n log n) builder such as SA-IS or DC3. An accompanying LCP (longest-common-prefix) array records the overlap between adjacent suffixes and unlocks most of the interesting queries.
 
 ```cpp
 #include <vector>
@@ -1087,11 +1014,11 @@ public:
 };
 ```
 
-A **suffix tree** is a compressed trie of all suffixes; with Ukkonen's algorithm it builds in O(n) and searches a pattern in O(m). It also solves longest-common-substring, longest-repeated-substring, and drives applications from LZ77 compression to DNA analysis. Suffix trees are intricate to implement correctly, so suffix arrays (plus LCP) are usually preferred in practice for comparable performance with far less code. Reach for either only when the same text is searched for many patterns or you need advanced string operations; for a single search over small text, a direct string search is simpler.
+A **suffix tree** is a compressed trie of all suffixes; Ukkonen's algorithm builds it in O(n) and searches a pattern in O(m), and it directly solves longest-common-substring, longest-repeated-substring, and drives applications from LZ77 compression to DNA analysis. But it is notoriously intricate to implement correctly, so a suffix array plus LCP is usually preferred in practice — comparable performance, far less code. Reach for either only when the same text is searched for many patterns; for a single search over small text, a direct string search ([Chapter 7](07-string-search-algorithms.md)) is simpler.
 
-## 14.20 Persistent Data Structures
+## 14.12 Persistent Data Structures
 
-A **persistent** structure keeps its previous versions when modified. Partial persistence allows reading any past version but modifying only the latest; full persistence allows modifying any version; confluent persistence allows merging versions. The standard technique is *path copying*: an update clones only the O(log n) nodes on the path it changes and shares the rest with the old version, so each version costs O(log n) extra space rather than O(n).
+A **persistent** structure keeps its old versions when modified — so you can query the past, not just the present. (Partial persistence reads any version but writes only the latest; full persistence writes any version; confluent persistence merges them.) The standard trick is *path copying*: an update clones only the O(log n) nodes on the path it changes and shares the rest with the previous version, so each version costs O(log n) extra space instead of O(n).
 
 ```cpp
 #include <vector>
@@ -1154,9 +1081,9 @@ public:
 };
 ```
 
-Persistent structures enable time-travel queries ("what was the sum at version t?"), immutable/functional data, and rollback. Use them when history matters; a regular structure is smaller and simpler when only the current state is needed.
+Persistence powers time-travel queries ("what was the sum at version t?"), immutable/functional data, and rollback. Use it when history matters; a regular structure is smaller and simpler when only the current state does.
 
-## 14.21 Failure Modes and Common Pitfalls
+## 14.13 Failure Modes and Common Pitfalls
 
 Each pitfall below is a real production bug shown as a wrong/right pair.
 
@@ -1165,16 +1092,11 @@ Each pitfall below is a real production bug shown as a wrong/right pair.
 void insert(int value) { heap.push_back(value); }            // WRONG: no heapifyUp
 void insert(int value) { heap.push_back(value); heapifyUp(heap.size() - 1); }  // CORRECT
 ```
-Extract then returns a non-extreme element; the heap is silently invalid.
+Extract then returns a non-extreme element and the heap is silently invalid.
 
-**2. Index out of bounds.** `parent(0)` computes `(0-1)/2`; heapify-up must guard `index > 0` before reading the parent. Unchecked child indices in heapify-down are the same class of bug.
+**2. Index out of bounds.** `parent(0)` computes `(0-1)/2`; heapify-up must guard `index > 0` before reading the parent, and heapify-down must bound-check both child indices.
 
-**3. Incomplete heapify-down.**
-```cpp
-// WRONG: only compares the left child, ignores the right
-// CORRECT: pick the extreme of index, left, and right, then swap
-```
-Comparing a single child breaks the heap property whenever the right child is the true extreme.
+**3. Incomplete heapify-down.** Comparing only the left child breaks the heap property whenever the right child is the true extreme — always pick the extreme of index, left, and right before swapping.
 
 **4. Trie memory leaks.** A node's destructor must recursively delete its children; otherwise every inserted word leaks its trailing nodes.
 
@@ -1185,20 +1107,30 @@ return query(2*node, start, mid, l, r) + query(2*node+1, mid + 1, end, l, r);  /
 ```
 Overlapping `mid`/`mid` ranges double-count and can recurse forever.
 
-**6. Fenwick 0-vs-1-based confusion.** Both `update` and `query` must convert the incoming 0-based index to 1-based; forgetting it in one of them yields wrong prefix sums.
+**6. Fenwick 0-vs-1-based confusion.** Both `update` and `query` must convert the incoming 0-based index to 1-based; forgetting it in one yields wrong prefix sums.
 
-## 14.22 Key Takeaways
+## 14.14 Concurrency Considerations
 
-- **Heaps** give O(log n) priority operations from a cache-friendly array.
-- **Tries** give O(m) prefix/word operations independent of dictionary size.
-- **Segment and Fenwick trees** answer range queries in O(log n); Fenwick is smaller and faster but limited to invertible aggregates.
-- **Sparse tables** give O(1) queries on static, idempotent data; **sqrt decomposition** is the simplest O(√n) all-rounder.
+This section applies the concurrency fundamentals from [Chapter 3.5](03.5-concurrency-fundamentals.md) to heaps and priority queues (see 3.5.3 for invariant-based reasoning and 3.5.9 for producer-consumer patterns).
+
+A heap's invariants — the heap property, the complete-tree shape, and `size` matching the element count — must never be observed half-updated, yet `insert` and `extractMax` are both multi-step, and between the steps the invariants are temporarily broken. Two concurrent inserts can see each other's in-progress bubble-up and write inconsistent parents; testing `size > 0` and then extracting is a race, since another thread can empty the heap in between; guarding `insert` but not `extractMax` leaves extraction racing against insertion.
+
+The practical answer is a **coarse-grained lock** — one `std::mutex` around each whole operation. Simple and correct, but it serializes all access, so throughput collapses under contention. Fine-grained per-node locking is impractical here (operations traverse the tree and would need many locks with deadlock risk), and read-write locks help little because heap operations are write-heavy. If contention is the real problem, prefer multiple thread-local heaps merged periodically, or a bounded priority queue on a `std::condition_variable` (re-checking the predicate in a loop to handle spurious wakeups). Lock-free heaps are research-grade and rarely worth it — a lock-free skip list is the usual route to a concurrent priority queue. For production, reach for `std::priority_queue` with external synchronization or a proven library, and go more exotic only when profiling demands it.
+
+## 14.15 Summary
+
+Advanced data structures each specialize one operation that basic structures handle poorly:
+
+- **Heaps** give O(log n) priority operations from a cache-friendly array; **Fibonacci heaps** improve decrease-key on paper but lose to them in practice on constants.
+- **Tries** give O(m) prefix/word operations independent of dictionary size; **suffix arrays** (plus LCP) do the same for substring search, and beat suffix trees on code and memory.
+- **Segment and Fenwick trees** answer range queries in O(log n) — Fenwick is smaller and faster but limited to invertible aggregates; **sparse tables** give O(1) on static idempotent data, and **sqrt decomposition** is the simplest O(√n) all-rounder.
 - **Skip lists, Bloom filters, and Count-Min sketches** trade exactness or determinism for simplicity and space.
-- **Fibonacci heaps** and **suffix trees** have strong asymptotics but large constants — prefer simpler structures unless their specific strength is the bottleneck.
 
-Match the structure to the dominant operation and the data's mutability.
+The systems throughline recurs: array-backed layouts beat pointer-chasing on cache, and the asymptotically fanciest structure is often the wrong practical choice because of its constant factors. Choose by the dominant operation, the data's mutability, and whether approximate answers are acceptable.
 
-## 14.23 Exercises
+The next chapter turns to **greedy algorithms**, many of which — Huffman coding among them — are built directly on the heaps introduced here.
+
+## 14.16 Exercises
 
 1. Implement a k-way merge using a min-heap.
 2. Create a trie that supports wildcard (`.`) matching.
@@ -1256,23 +1188,5 @@ Match the structure to the dominant operation and the data's mutability.
     ```
 
     This is *binary search on the answer*. The result lies in `[max(nums), sum(nums)]`: the lower bound must hold the largest single element, the upper bound puts everything in one subarray. For a candidate `mid`, a greedy pass (`canSplit`) counts how many subarrays are needed if each is capped at `mid`; feasibility is monotone in `mid`, so binary search converges on the smallest feasible cap. Time O(n·log(sum)), space O(1).
-
-## 14.24 Concurrency Considerations
-
-This section applies the concurrency fundamentals from [Chapter 3.5](03.5-concurrency-fundamentals.md) to heaps and priority queues (see Section 3.5.3 for invariant-based reasoning and 3.5.9 for producer-consumer patterns).
-
-A heap's invariants — the heap property, the complete-tree shape, and `size` matching the element count — must never be observed half-updated. But `insert` (append, increment size, bubble up) and `extractMax` (read root, move last element in, decrement size, bubble down) are multi-step: between the steps the invariants are temporarily broken. Any of these interleavings corrupts the heap or crashes:
-
-- **Partial updates**: two concurrent inserts see each other's in-progress bubble-up and both write inconsistent parents.
-- **Check-then-act**: testing `size > 0` and then extracting is a race — another thread can empty the heap in between, so the pair must be atomic.
-- **Partial locking**: guarding `insert` but not `extractMax` leaves extraction racing against insertion.
-
-The practical answer is a **coarse-grained lock**: one `std::mutex` around each whole operation. It is simple and correct but serializes all access, so throughput collapses under contention. Per-node fine-grained locking is impractical for heaps (operations traverse the tree and would need many locks with deadlock risk); read-write locks help little because heap operations are write-heavy. If contention is the problem, prefer multiple thread-local heaps merged periodically, or a bounded priority queue using a `std::condition_variable` (always re-checking the predicate in a loop to handle spurious wakeups).
-
-Lock-free heaps are research-grade and rarely worth it; lock-free skip lists are the usual route to a concurrent priority queue. For production, prefer `std::priority_queue` with external synchronization, or a proven thread-safe/lock-free library, and only reach for anything more exotic if profiling demands it.
-
-## 14.25 Summary
-
-Advanced data structures each specialize one operation that basic structures handle poorly: heaps for priority, tries and suffix structures for strings, segment and Fenwick trees (and sparse tables, sqrt decomposition) for range queries, Bloom filters and Count-Min sketches for space-efficient approximation, and persistent structures for history. The systems lesson recurs throughout — array-backed layouts beat pointer-chasing on cache, and the asymptotically fanciest structure (Fibonacci heap, suffix tree) is often the wrong practical choice because of its constant factors. Choose by the dominant operation, the data's mutability, and whether approximate answers are acceptable.
-
-The next chapter turns to **greedy algorithms**, many of which (such as Huffman coding) are built directly on the heaps introduced here.
+</content>
+</invoke>

@@ -1,204 +1,54 @@
 # Chapter 11: Graphs
 
-## 11.1 Problem Statement & Motivation
+## 11.1 When the Relationships Are the Data
 
-### What Problem Do Graphs Solve?
+Most structures in this book impose a shape on your data — a sequence, a hierarchy, a key-value mapping. A graph imposes none. It is what you reach for when the *relationships between things* are the data: who follows whom, which road connects which cities, what task blocks what other task. A graph is nothing but a set of vertices and a set of edges joining them, and that minimalism is exactly why it models everything from social networks to build dependencies to internet routing. GPS navigation, web crawlers, `make`, package managers, and recommendation engines are all graph algorithms wearing an application's clothes.
 
-Many real-world problems involve **relationships** and **connections**:
+The flexibility isn't free. Trees (Chapter 6) guarantee one parent, no cycles, and exactly `n−1` edges — constraints that make them cheap to reason about. Graphs relax all of it: any vertex may connect to any other, cycles are allowed, and there may be no root and no single connected piece at all. That freedom is what buys you the more elaborate algorithms in the rest of this chapter. If your data is genuinely a sequence, a lookup table, or a hierarchy, use the structure built for it; reach for a graph only when connectivity itself is the problem.
 
-- **Social Networks**: Friends, followers, connections
-- **Transportation**: Roads, flights, routes between cities
-- **Dependencies**: Task scheduling, build systems, prerequisites
-- **Web Structure**: Links between web pages
-- **Communication Networks**: Network topology, routing
+Formally a graph is `G = (V, E)`: a set of vertices `V` and a set of edges `E`, each edge joining two of them. A little vocabulary, fixed once, carries the whole chapter:
 
-**Naive Approaches and Their Limitations**:
+- An edge is **directed** (`u→v`, one-way, like a Twitter follow) or **undirected** (`u–v`, mutual, like a Facebook friendship). A graph of directed edges is a **digraph**.
+- An edge may carry a **weight** — a distance, cost, or capacity. Dijkstra and the MST algorithms below live on weighted graphs; BFS and DFS ignore weights entirely.
+- The **degree** of a vertex is how many edges touch it; in a digraph that splits into **in-degree** and **out-degree**.
+- A **path** is a sequence of vertices joined by edges, a **cycle** a path back to its start. A graph with no cycles is **acyclic** — a **DAG** if it is also directed. A graph is **connected** if every vertex is reachable from every other; otherwise it breaks into **components**.
 
-- **Lists/Arrays**: Can't represent relationships efficiently
-- **Trees**: Too restrictive (no cycles, single parent)
-- **Multiple Arrays**: Hard to maintain consistency, inefficient queries
+The one structural invariant that bites in practice: the stored representation must exactly match the edge set. For an undirected graph that means every edge is recorded at *both* endpoints — the single most common graph bug is storing `u→v` but forgetting `v→u`, silently making half your edges one-way. And deleting a vertex means deleting all its incident edges first, or you leave dangling references to a vertex that no longer exists.
 
-**The Graph Solution**: Graphs provide a flexible structure to model any relationship pattern - directed/undirected, weighted/unweighted, cyclic/acyclic - enabling efficient algorithms for traversal, shortest paths, and connectivity analysis.
-
-Use graphs whenever the problem is fundamentally about relationships or connectivity: modeling networks (social, computer, transportation), finding paths or reachability, analyzing dependencies (topological ordering), or optimizing routes (shortest path). Real systems built on graphs include GPS navigation over road networks, web crawlers following page links, build systems resolving task dependencies, internet routing, and recommendation engines over user-item graphs.
-
-Reach for a simpler structure when there are no real relationships to model: arrays or linked lists for ordered sequences, hash tables for key-value lookups, and trees for strictly hierarchical data. Graphs buy flexibility at the cost of more complex algorithms.
-
-## 11.2 Conceptual Overview
-
-A **graph** is a collection of vertices (nodes) connected by edges. Unlike trees (Chapter 6), graphs can have cycles and multiple paths between vertices, making them ideal for modeling complex relationships.
-
-### Intuitive Explanation
-
-Think of a graph like a map:
-- **Vertices** are cities
-- **Edges** are roads connecting cities
-- **Directed edges** are one-way streets
-- **Weighted edges** are distances or travel times
-- **Paths** are routes from one city to another
-
-### Key Characteristics
-
-- **Vertices (Nodes)**: The fundamental units
-- **Edges**: Connections between vertices (can be directed/undirected, weighted/unweighted)
-- **Cyclic/Acyclic**: Can contain cycles (unlike trees from Chapter 6)
-- **Connected/Disconnected**: May have isolated components
-
-### Graph vs. Trees
-
-| Feature | Tree | Graph |
-|---------|------|-------|
-| Connectivity | Connected | Can be disconnected |
-| Cycles | No cycles | Can have cycles |
-| Root | Has a root | No root |
-| Parent-Child | Hierarchical | No hierarchy |
-| Edges | n-1 edges (n nodes) | Can have any number |
-
-## 11.3 Abstract Model & Invariants
-
-This section defines graph correctness independent of any implementation.
-
-### Abstract Model
-
-A graph G = (V, E) consists of:
-- **Set of vertices V**: the nodes.
-- **Set of edges E**: the connections, written (u, v) for undirected and (u→v) for directed.
-- **Weight function** (optional): w: E → ℝ for weighted graphs.
-
-This builds on the connectivity invariant from Chapter 6 (Trees), but graphs relax the acyclicity constraint: they may contain cycles and multiple paths between vertices, which is why they need different representation strategies (adjacency matrix vs. list) than trees.
-
-### Core Invariants
-
-These must always hold for a graph to be correct:
-
-1. **Edge Consistency** — In an undirected graph, if (u, v) exists then (v, u) must be represented; in a directed graph (v→u) is independent of (u→v). The stored representation must match the graph's type. *Breaks when* reverse edges are missing in an undirected graph.
-2. **Vertex-Edge Relationship** — Every edge connects two existing vertices (or one vertex to itself for a self-loop); there are no dangling edges to non-existent vertices. *Breaks when* an edge references a deleted vertex.
-3. **Representation Consistency** — The adjacency list/matrix reflects exactly the current edge set, with no duplicates (unless a multigraph). *Breaks when* a vertex is deleted but its incident edges remain.
-4. **Weight Validity** (weighted graphs) — Every edge carries a weight consistent with the graph's semantics (distance, cost, etc.). *Breaks when*, for example, a negative weight appears in a distance graph.
-
-### How Operations Preserve Invariants
-
-- **Add edge (u, v)**: update both endpoints' adjacency entries (both directions for undirected), preserving edge and representation consistency.
-- **Remove vertex**: remove all incident edges first, preserving the vertex-edge relationship.
-- **Rebuild representation**: restores representation consistency after bulk changes.
-
-For example, adding edge (u, v) to an undirected graph adds v to u's list and u to v's list (and updates the matrix if used), leaving all four invariants intact.
-
-## 11.4 Operations & Interface
-
-A graph supports the following core operations:
-
-| Operation | Description | Precondition | Postcondition |
-|-----------|-------------|-------------|---------------|
-| `addVertex(v)` | Adds vertex v to graph | v is valid | Vertex v exists in graph |
-| `addEdge(u, v)` | Adds edge between u and v | u, v exist | Edge (u, v) exists |
-| `removeVertex(v)` | Removes vertex v | v exists | v and all incident edges removed |
-| `removeEdge(u, v)` | Removes edge (u, v) | Edge exists | Edge removed |
-| `hasEdge(u, v)` | Checks if edge exists | u, v exist | Returns true if edge exists |
-| `getNeighbors(v)` | Returns neighbors of v | v exists | Returns list of adjacent vertices |
-| `getDegree(v)` | Returns degree of v | v exists | Returns number of incident edges |
-
-### Behavioral Guarantees
-
-- **Add Vertex**: Vertex is added, no edges initially
-- **Add Edge**: Edge is added, both vertices updated (for undirected)
-- **Remove Vertex**: All incident edges are removed first
-- **Graph Queries**: All operations respect graph invariants
-
-## 11.5 Time & Space Complexity
-
-### Graph Representation Complexity
-
-| Operation | Adjacency Matrix | Adjacency List |
-|-----------|-----------------|----------------|
-| Space | O(V²) | O(V + E) |
-| Check Edge | O(1) | O(degree) |
-| Add Edge | O(1) | O(1) |
-| Remove Edge | O(1) | O(degree) |
-| Iterate Neighbors | O(V) | O(degree) |
-| Best For | Dense graphs | Sparse graphs |
-
-### Graph Algorithm Complexity
-
-| Algorithm | Time Complexity | Space Complexity | Notes |
-|-----------|----------------|-------------------|-------|
-| DFS | O(V + E) | O(V) | Stack/recursion |
-| BFS | O(V + E) | O(V) | Queue |
-| Dijkstra's | O((V + E) log V) | O(V) | With binary heap |
-| Bellman-Ford | O(VE) | O(V) | Negative edges OK |
-| Floyd-Warshall | O(V³) | O(V²) | All pairs shortest path |
-| Kruskal's MST | O(E log E) | O(V) | With union-find |
-| Prim's MST | O((V + E) log V) | O(V) | With binary heap |
-| Topological Sort | O(V + E) | O(V) | DFS or Kahn's |
-
-**Key Insight**: Most graph algorithms are O(V + E) for sparse graphs, but representation choice affects constant factors significantly.
-
-## 11.6 Graph Terminology and Types
-
-### Basic Terms
-
-- **Vertex (Node)**: A point in the graph
-- **Edge**: A connection between two vertices
-- **Adjacent Vertices**: Vertices connected by an edge
-- **Degree**: Number of edges incident to a vertex
-  - **In-degree**: Number of incoming edges (directed graphs)
-  - **Out-degree**: Number of outgoing edges (directed graphs)
-- **Path**: Sequence of vertices connected by edges
-- **Cycle**: Path that starts and ends at the same vertex
-- **Connected Graph**: Every vertex is reachable from every other vertex
-- **Subgraph**: A graph formed by a subset of vertices and edges
-
-### Graph Types
-
-#### 1. Undirected Graph
-Edges have no direction - connection is bidirectional.
+The type combinations show up as small pictures throughout the chapter. Undirected edges are mutual; directed edges point one way and can form directed cycles; weighted edges label each connection with a number the algorithms optimize over:
 
 ```mermaid
 graph LR
-    A --- B
-    A --- C
-    B --- D
-    C --- D
+    subgraph Undirected
+        A --- B
+        A --- C
+        B --- D
+        C --- D
+    end
+    subgraph Directed
+        E --> F
+        F --> G
+        G --> H
+        H --> E
+    end
+    subgraph Weighted
+        I -->|5| J
+        I -->|3| K
+        J -->|2| L
+        K -->|1| L
+    end
 ```
 
-#### 2. Directed Graph (Digraph)
-Edges have direction - connection is one-way.
+Two more types are worth naming because algorithms below depend on them: a **complete** graph connects every pair of vertices (the dense extreme), and a **bipartite** graph splits its vertices into two sides with no edge inside a side — the structure behind matching and two-coloring problems.
 
-```mermaid
-graph LR
-    A --> B
-    B --> C
-    C --> D
-    D --> A
-```
+## 11.2 Representations: The Memory Decision That Governs Everything
 
-#### 3. Weighted Graph
-Edges have associated weights (costs, distances, etc.).
+Before any algorithm runs, you have to decide how the graph lives in memory, and the two choices — adjacency matrix and adjacency list — are a genuine memory-versus-cache trade-off, not a formality. Everything downstream inherits it: the matrix makes "is there an edge `u→v`?" a single array access but costs `O(V²)` memory whether the graph has a million edges or three; the list costs only `O(V + E)` but answers the same question by scanning a vertex's neighbors. Almost every real graph — road networks, social graphs, web graphs — is *sparse* (`E ≪ V²`), so the adjacency list is the default. The matrix earns its keep only when the graph is dense or you need constant-time edge tests on a small graph.
 
-```mermaid
-graph LR
-    A -->|5| B
-    A -->|3| C
-    B -->|2| D
-    C -->|1| D
-```
+### 11.2.1 Adjacency Matrix
 
-#### 4. Unweighted Graph
-All edges have equal weight (or no weight).
+An **adjacency matrix** is a `V × V` array where `matrix[i][j]` holds the weight of edge `i→j` (or 0/1 for its presence). Edge lookup, insert, and delete are all `O(1)`, and the code is trivial:
 
-#### 5. Complete Graph
-Every pair of vertices is connected by an edge.
-
-#### 6. Bipartite Graph
-Vertices can be divided into two sets such that no edges exist within the same set.
-
-## 11.7 Graph Representations
-
-### 11.7.1 Adjacency Matrix
-
-An **adjacency matrix** is a 2D array where `matrix[i][j]` indicates if there's an edge between vertex `i` and vertex `j`.
-
-#### Implementation
 ```cpp
 #include <iostream>
 #include <vector>
@@ -270,62 +120,14 @@ public:
 };
 ```
 
-The matrix trades space for speed: edge lookup and edge insert/delete are O(1) and the code is trivially simple, but it costs O(V²) space regardless of edge count, wasting memory on sparse graphs and making vertex insertion/removal expensive. It shines on dense graphs.
+The catch is the `O(V²)` memory, paid whether the graph is full or nearly empty, plus expensive vertex insertion and removal. A million-vertex sparse graph would need a trillion-entry matrix — hopeless. The matrix wins only when the graph is dense enough that you'd store most of those entries anyway.
 
-### 11.7.1.1 Systems Perspective: Memory Layout and Cache Behavior
+There is a subtler reason the matrix can outrun a list even when it "shouldn't," and it comes straight from the memory hierarchy of [Chapter 3.6](03.6-memory-hierarchy-and-performance.md): the matrix is one contiguous block, so an edge query is a single cache-friendly load (~5–10 cycles), whereas an adjacency list is an array of separately allocated node chains, and walking one means pointer-chasing across scattered addresses — every hop risks a cache miss of 50–200 cycles. On a dense graph that fits in cache, the matrix's sequential layout can beat the list's asymptotically-better bounds outright. This is the same constant-factor story as binary versus linear search in [Chapter 13](13-searching-algorithms.md): Big-O picks the representation, but memory layout picks the winner.
 
-Understanding graph representation at the system level reveals critical performance trade-offs. This section applies the memory hierarchy concepts from [Chapter 3.6](03.6-memory-hierarchy-and-performance.md) to graph representations.
+### 11.2.2 Adjacency List
 
-For comprehensive coverage of memory hierarchy and cache behavior, see Chapter 3.6. Here we focus on graph-specific implications.
+An **adjacency list** stores, for each vertex, a list of its neighbors — `O(V + E)` memory, which for a sparse graph is dramatically smaller. It is the representation every algorithm in this chapter assumes unless noted, because those algorithms iterate a vertex's neighbors far more often than they test a specific edge, and neighbor iteration is exactly what the list does well (`O(degree)`, not `O(V)`).
 
-#### Memory Layout Comparison
-
-**Adjacency Matrix** (see Section 3.6.6 for contiguous memory):
-- **Memory Layout**: Contiguous 2D array (like 2D arrays from Chapter 3)
-- **Cache Performance**: Excellent for dense graphs - sequential access patterns (Section 3.6.4)
-- **Memory Overhead**: O(V²) - significant for large graphs
-- **Access Pattern**: Random access for edge queries, but matrix is cache-friendly
-
-**Adjacency List** (see Section 3.6.6 for non-contiguous memory):
-- **Memory Layout**: Array of linked lists (combines arrays from Chapter 3 with linked lists from Chapter 4)
-- **Cache Performance**: Poor - pointer chasing causes cache misses (Section 3.6.4)
-- **Memory Overhead**: O(V + E) - efficient for sparse graphs
-- **Access Pattern**: Sequential within each list, but jumping between lists hurts cache
-
-**Performance Comparison** (see Section 3.6.5 for CPU cycle details):
-```
-Operation          | Adjacency Matrix | Adjacency List
--------------------|------------------|---------------
-Edge Query         | ~5-10 cycles      | ~50-200 cycles
-Iterate Neighbors  | O(V) scans       | O(degree) - cache-friendly
-Memory (sparse)    | O(V²)            | O(V + E) - much better
-Cache Misses       | 0-1 per query    | 2-5 per neighbor
-```
-
-#### When Each Representation Wins
-
-**Use Adjacency Matrix When:**
-- Graph is dense (E ≈ V²)
-- Need frequent edge existence checks
-- Cache performance matters more than memory
-- Graph is small enough to fit in memory
-
-**Use Adjacency List When:**
-- Graph is sparse (E << V²)
-- Memory is constrained
-- Need to iterate neighbors frequently
-- Graph is large (memory savings significant)
-
-**Real-World Example:**
-- **Social Networks**: Sparse (each person has ~100-1000 friends) → Adjacency List
-- **Complete Graphs**: Dense (all pairs connected) → Adjacency Matrix
-- **Road Networks**: Sparse (each intersection connects to ~4 roads) → Adjacency List
-
-### 11.7.2 Adjacency List
-
-An **adjacency list** stores each vertex's neighbors in a list or array.
-
-#### Implementation
 ```cpp
 #include <iostream>
 #include <vector>
@@ -404,33 +206,20 @@ public:
 };
 ```
 
-#### Advantages and Disadvantages
+Its one real weakness is the edge test: checking whether `u→v` exists means scanning `u`'s neighbors, `O(degree)`. If your workload is dominated by edge existence queries on a small graph, that's the case for the matrix; otherwise the list wins on every axis that matters at scale.
 
-**Advantages:**
-- O(V + E) space complexity (efficient for sparse graphs)
-- Easy to iterate over neighbors
-- Easy to add/remove edges
-- Memory efficient
+| | Adjacency Matrix | Adjacency List |
+|--|-----------------|----------------|
+| Space | `O(V²)` | `O(V + E)` |
+| Edge exists `u→v`? | `O(1)` | `O(degree)` |
+| Add / remove edge | `O(1)` / `O(1)` | `O(1)` / `O(degree)` |
+| Iterate neighbors | `O(V)` | `O(degree)` |
+| Cache behavior | contiguous, friendly | pointer-chasing |
+| Best for | dense / small graphs | sparse / large graphs |
 
-**Disadvantages:**
-- O(degree) edge lookup
-- Slightly more complex implementation
-- Less cache-friendly than matrix
+## 11.3 Graph Traversal
 
-### 11.7.3 Comparison
-
-| Operation | Adjacency Matrix | Adjacency List |
-|-----------|-----------------|----------------|
-| Space | O(V²) | O(V + E) |
-| Check Edge | O(1) | O(degree) |
-| Add Edge | O(1) | O(1) |
-| Remove Edge | O(1) | O(degree) |
-| Iterate Neighbors | O(V) | O(degree) |
-| Best For | Dense graphs | Sparse graphs |
-
-## 11.8 Graph Traversal
-
-### 11.8.1 Depth-First Search (DFS)
+### 11.3.1 Depth-First Search (DFS)
 
 **Depth-First Search** explores as far as possible along each branch before backtracking. Think of it like exploring a maze: you go as deep as possible down one path, and only when you hit a dead end do you backtrack to try another path.
 
@@ -458,13 +247,11 @@ Using an explicit stack, we push a vertex's unvisited neighbors and always pop t
 | 5 | C | A, B, D, E, C | F |
 | 6 | F | A, B, D, E, C, F | (empty) |
 
-**Traversal order:** A → B → D → E → C → F
-
-DFS goes deep before wide, uses a stack (implicit in recursion, explicit in the iterative form), and backtracks when a vertex has no unvisited neighbors — visiting every vertex in the connected component.
+**Traversal order:** A → B → D → E → C → F. The stack is implicit in the recursive form, explicit in the iterative one; either way DFS visits every vertex in the connected component.
 
 #### DFS vs BFS on the Same Graph
 
-DFS plunges down one branch and backtracks; BFS expands level by level.
+The contrast is the whole point — DFS plunges down one branch and backtracks; BFS expands level by level:
 
 ```mermaid
 graph LR
@@ -587,15 +374,9 @@ vector<int> dfsIterative(int start) {
 }
 ```
 
-#### Applications of DFS
-- Finding connected components
-- Detecting cycles
-- Topological sorting
-- Finding strongly connected components
-- Solving mazes
-- Path finding
+DFS is the engine under a surprising number of later algorithms in this chapter: cycle detection, topological sort, bridges and articulation points, and strongly connected components are all DFS with extra bookkeeping. Anywhere you need to fully explore one region before moving on — maze solving, connected components, reachability — it is the natural traversal.
 
-### 11.8.2 Breadth-First Search (BFS)
+### 11.3.2 Breadth-First Search (BFS)
 
 **Breadth-First Search** explores all neighbors at the current depth before moving to the next level. Think of it like ripples in water: it expands outward level by level, exploring all vertices at distance 1, then all at distance 2, and so on.
 
@@ -697,27 +478,11 @@ public:
 };
 ```
 
-#### Applications of BFS
-- Shortest path in unweighted graphs
-- Level-order traversal
-- Finding minimum spanning tree (unweighted)
-- Social network analysis (degrees of separation)
-- Web crawling
-- Broadcasting in networks
+That shortest-path guarantee is why BFS, not DFS, powers "degrees of separation" in social networks, shortest-hop routing, web crawling by link distance, and network broadcast. The two traversals differ only in the container that holds pending vertices — a stack (or recursion) for DFS, a FIFO queue for BFS — but that one swap changes everything: DFS goes deep and uses memory proportional to the longest path, BFS goes wide and uses memory proportional to the widest level, and only BFS finds shortest paths in an unweighted graph.
 
-### 11.8.3 DFS vs BFS
+## 11.4 Shortest Path Algorithms
 
-| Aspect | DFS | BFS |
-|--------|-----|-----|
-| Data Structure | Stack | Queue |
-| Memory | O(h) where h is height | O(w) where w is width |
-| Path Finding | May not find shortest | Finds shortest (unweighted) |
-| Use Case | Deep exploration | Level-by-level exploration |
-| Implementation | Recursive/Iterative | Iterative |
-
-## 11.9 Shortest Path Algorithms
-
-### 11.9.1 Dijkstra's Algorithm
+### 11.4.1 Dijkstra's Algorithm
 
 **Dijkstra's algorithm** finds the shortest path from a source vertex to all other vertices in a weighted graph with non-negative edge weights. It uses a greedy approach: at each step, it selects the unvisited vertex with the smallest known distance and updates distances to its neighbors.
 
@@ -868,19 +633,12 @@ public:
 };
 ```
 
-#### Time Complexity
-- **Time**: O((V + E) log V) with binary heap
-- **Space**: O(V)
+With a binary-heap priority queue this runs in `O((V + E) log V)` time and `O(V)` space. The non-negative-weight requirement isn't a limitation to route around — it is the exact condition under which "finalize a vertex the moment it's extracted" is correct. When weights can go negative, you need the next algorithm.
 
-#### Limitations
-- Only works with non-negative edge weights
-- Does not work with negative cycles
+### 11.4.2 Bellman-Ford Algorithm
 
-### 11.9.2 Bellman-Ford Algorithm
+**Bellman-Ford** trades speed for generality: it handles negative edge weights and, as a bonus, *detects* negative cycles (where "shortest path" stops being well-defined). Instead of Dijkstra's greedy finalization, it simply relaxes every edge `V−1` times — enough for any shortest path, which can span at most `V−1` edges, to settle — then one more pass to check whether anything still improves, which would mean a negative cycle.
 
-**Bellman-Ford algorithm** finds shortest paths even with negative edge weights (but not negative cycles).
-
-#### Implementation
 ```cpp
 class BellmanFord {
 private:
@@ -945,20 +703,12 @@ public:
 };
 ```
 
-#### Time Complexity
-- **Time**: O(V × E)
-- **Space**: O(V)
+The cost of that generality is `O(V × E)` time — a full order slower than Dijkstra — so use Bellman-Ford only when negative weights actually appear.
 
-#### Advantages
-- Works with negative edge weights
-- Can detect negative cycles
-- Simpler than Dijkstra for some cases
+### 11.4.3 Floyd-Warshall Algorithm
 
-### 11.9.3 Floyd-Warshall Algorithm
+Dijkstra and Bellman-Ford give shortest paths from *one* source. When you need the distance between *every* pair of vertices, **Floyd-Warshall** does it in three nested loops and `O(V³)` time. The idea is deceptively simple: for each intermediate vertex `k`, ask whether routing through `k` shortens any pair `i→j`, and if so, take it. After considering every `k`, `dist[i][j]` holds the true shortest distance. It's compact, cache-friendly (dense arrays), and the natural choice on small dense graphs where `V³` beats running Dijkstra `V` times.
 
-**Floyd-Warshall algorithm** finds shortest paths between all pairs of vertices.
-
-#### Implementation
 ```cpp
 class FloydWarshall {
 private:
@@ -1007,36 +757,13 @@ public:
 };
 ```
 
-#### Time Complexity
-- **Time**: O(V³)
-- **Space**: O(V²)
+Beyond all-pairs distances, the same `O(V²)` space and `O(V³)` time also compute transitive closure (reachability) and detect negative cycles — a negative value on the diagonal means a vertex can reach itself at negative cost.
 
-#### Use Cases
-- All-pairs shortest paths
-- Transitive closure
-- Detecting negative cycles
+## 11.5 Union-Find (Disjoint Sets)
 
-## 11.10 Disjoint Sets (Union-Find Data Structure)
+Union-Find is not a graph structure at all — it's the little data structure that makes several graph algorithms fast, so it earns its place here. It maintains a partition of elements into disjoint sets under two operations: **find**, which returns a set's representative, and **union**, which merges two sets. That's exactly what you need to answer "are these two vertices already connected?" in near-constant time — the question at the heart of Kruskal's MST, connected-component labeling, and cycle detection in an undirected graph.
 
-A **Disjoint Set** (also called Union-Find) is a data structure that tracks a set of elements partitioned into disjoint (non-overlapping) subsets. It provides efficient operations to:
-- **Find**: Determine which subset an element belongs to
-- **Union**: Merge two subsets into one
-
-### Why Disjoint Sets Matter
-
-Disjoint sets are essential for many graph algorithms:
-- **Kruskal's Algorithm**: Detecting cycles when building MST
-- **Connected Components**: Finding all connected components in a graph
-- **Cycle Detection**: Determining if adding an edge creates a cycle
-- **Network Connectivity**: Checking if nodes are in the same network
-
-### Basic Operations
-
-1. **MakeSet(x)**: Creates a new set containing element x
-2. **Find(x)**: Returns the representative (root) of the set containing x
-3. **Union(x, y)**: Merges the sets containing x and y
-
-### Naive Implementation
+The naive version stores each element's parent and walks parent pointers to the root. It's correct but degenerates: unions can build a linked chain, making `find` `O(n)`.
 
 ```cpp
 class UnionFindNaive {
@@ -1078,13 +805,7 @@ public:
 };
 ```
 
-**Time Complexity**: 
-- Find: O(n) worst case (can form a chain)
-- Union: O(n) worst case
-
-### Optimized Implementation with Path Compression
-
-**Path Compression** flattens the tree structure during find operations, making future finds faster.
+Two optimizations fix that, and together they are what make Union-Find famous. **Path compression** flattens the tree during every `find` — after finding the root, it points each node visited straight at it, so the next query is `O(1)`:
 
 ```cpp
 class UnionFindPathCompression {
@@ -1123,13 +844,7 @@ public:
 };
 ```
 
-**Time Complexity**: 
-- Find: O(α(n)) amortized, where α is the inverse Ackermann function (practically constant)
-- Union: O(α(n)) amortized
-
-### Union by Rank (or Union by Size)
-
-**Union by Rank** keeps trees balanced by always attaching the smaller tree under the root of the larger tree.
+**Union by rank** (or by size) is the second half: when merging, always hang the shorter tree under the taller one's root, so the tree never gets needlessly deep. Combine the two and every operation is `O(α(n))` amortized, where α is the inverse Ackermann function — below 5 for any input that fits in the universe, so effectively constant.
 
 ```cpp
 class UnionFind {
@@ -1194,21 +909,10 @@ public:
 };
 ```
 
-**Time Complexity**: 
-- Find: O(α(n)) amortized
-- Union: O(α(n)) amortized
-- Space: O(n)
+Union by size is the same idea with element counts instead of heights: attach the smaller set under the larger, add the counts. Identical `O(α(n))` bound, and it makes `getSize(x)` trivial (`size[find(x)]`).
 
-### Union by Size (Alternative)
+Two applications show the pattern. Counting **connected components** is just: union every edge, then count distinct roots.
 
-Union by size is equivalent to union by rank: instead of tracking tree height, store each set's element count, attach the smaller set under the larger, and add the sizes. It gives the same O(α(n)) bound and makes a `getSize(x)` query trivial (return `size[find(x)]`).
-
-### Applications in Graph Algorithms
-
-#### 1. Kruskal's Algorithm for MST
-Disjoint sets are used to detect cycles when building the minimum spanning tree.
-
-#### 2. Finding Connected Components
 ```cpp
 int countConnectedComponents(const vector<vector<int>>& graph) {
     int n = graph.size();
@@ -1225,7 +929,8 @@ int countConnectedComponents(const vector<vector<int>>& graph) {
 }
 ```
 
-#### 3. Cycle Detection in Undirected Graph
+And **cycle detection** in an undirected graph is the same trick from the other side: if an edge's two endpoints are *already* in the same set, adding it closes a cycle.
+
 ```cpp
 bool hasCycle(const vector<pair<int, int>>& edges, int numVertices) {
     UnionFind uf(numVertices);
@@ -1244,48 +949,17 @@ bool hasCycle(const vector<pair<int, int>>& edges, int numVertices) {
 }
 ```
 
-#### 4. Network Connectivity
-```cpp
-class NetworkConnectivity {
-private:
-    UnionFind uf;
-    
-public:
-    NetworkConnectivity(int n) : uf(n) {}
-    
-    void connect(int a, int b) {
-        uf.unite(a, b);
-    }
-    
-    bool isConnected(int a, int b) {
-        return uf.connected(a, b);
-    }
-    
-    int getComponentCount() {
-        return uf.countSets();
-    }
-};
-```
+| Operation | Naive | + Path Compression | + Union by Rank |
+|-----------|-------|--------------------|-----------------|
+| Find / Union | `O(n)` | `O(log n)` amortized | `O(α(n))` amortized |
 
-### Time Complexity Analysis
+That last column is the one to remember: path compression flattens trees during `find`, union by rank keeps them shallow, and together they buy effectively constant-time connectivity — the foundation Kruskal's MST is about to stand on.
 
-| Operation | Naive | Path Compression | Path Compression + Union by Rank |
-|-----------|-------|------------------|----------------------------------|
-| Find | O(n) | O(log n) amortized | O(α(n)) amortized |
-| Union | O(n) | O(log n) amortized | O(α(n)) amortized |
-| Space | O(n) | O(n) | O(n) |
+## 11.6 Minimum Spanning Trees
 
-Where α(n) is the inverse Ackermann function, which grows extremely slowly and is practically constant (≤ 4 for any reasonable n).
+A **minimum spanning tree (MST)** is the cheapest set of edges that keeps every vertex connected — think of laying cable to wire up every building for the least total length. Both classic algorithms are greedy (Chapter 16), and both are correct for the same reason: the *cut property* guarantees the lightest edge crossing any partition of the vertices is safe to include.
 
-### Key Takeaways
-
-Path compression flattens trees during `find`, and union by rank/size keeps them shallow; together they give near-constant O(α(n)) amortized operations. Union-Find underpins Kruskal's MST, connected-component labeling, and undirected cycle detection.
-
-## 11.11 Minimum Spanning Tree (MST)
-
-A **Minimum Spanning Tree** is a subset of edges that connects all vertices with minimum total weight.
-
-### 11.11.1 Kruskal's Algorithm
+### 11.6.1 Kruskal's Algorithm
 
 **Kruskal's algorithm** builds MST by adding edges in increasing order of weight, skipping edges that would create cycles. It uses Union-Find (Disjoint Set) to efficiently check for cycles.
 
@@ -1411,13 +1085,11 @@ public:
 };
 ```
 
-#### Time Complexity
-- **Time**: O(E log E) = O(E log V)
-- **Space**: O(V)
+Sorting the edges dominates, so Kruskal runs in `O(E log E) = O(E log V)` — a clean fit for sparse graphs, where you already have an edge list in hand.
 
-### 11.11.2 Prim's Algorithm
+### 11.6.2 Prim's Algorithm
 
-**Prim's algorithm** builds MST by starting from a vertex and growing the tree. At each step, it adds the minimum-weight edge that connects a vertex in the MST to a vertex outside the MST.
+Prim grows the tree from a single vertex instead of sorting all edges up front. At each step it adds the cheapest edge leaving the current tree, using a priority queue to find it fast.
 
 #### How Prim's Works: Step-by-Step Example
 
@@ -1432,8 +1104,6 @@ Trace Prim on the same graph, starting from A. Prim grows a single tree, at each
 | 5 | E-F (3) | A, B, D, F, C, E |
 
 **MST edges:** A-B, B-D, D-F, A-C, E-F — total weight 11, the same tree Kruskal found.
-
-Prim starts from one vertex and expands outward, always adding the cheapest edge leaving the tree. Its priority-queue structure mirrors Dijkstra's, differing only in the key used (edge weight rather than accumulated path distance).
 
 #### Kruskal vs Prim: When to Use Which?
 
@@ -1510,13 +1180,11 @@ public:
 };
 ```
 
-#### Time Complexity
-- **Time**: O((V + E) log V) with binary heap
-- **Space**: O(V)
+With a binary heap Prim runs in `O((V + E) log V)`. Its inner loop is Dijkstra's almost exactly — same priority queue, same relaxation — differing only in the key: Prim keys on the single edge weight into the tree, Dijkstra on the accumulated distance from the source. Kruskal tends to win on sparse graphs (you already have the edge list), Prim on dense ones.
 
-## 11.12 Topological Sorting
+## 11.7 Topological Sorting
 
-**Topological sorting** is a linear ordering of vertices in a directed acyclic graph (DAG) such that for every directed edge (u, v), u comes before v. Think of it as arranging tasks with dependencies: if task A depends on task B, then B must come before A in the ordering.
+**Topological sort** linearizes a DAG so that every edge `u→v` points forward: if task A depends on task B, B comes first. It is the algorithm behind build systems, package managers, and course-prerequisite planners — anywhere dependencies must be resolved into an order.
 
 #### How Topological Sort Works: Step-by-Step Example
 
@@ -1638,89 +1306,15 @@ public:
 };
 ```
 
-### Applications
-- Task scheduling
-- Build systems (make, gradle)
-- Course prerequisites
-- Event ordering
+## 11.8 Bridges and Articulation Points
 
-## 11.13 Finding Bridges in a Graph
+Some connections are load-bearing: remove them and the graph falls apart. A **bridge** is such an edge and an **articulation point** such a vertex — a critical link whose removal increases the number of connected components. Both answer the same production question (which single failure partitions the network?), and remarkably both fall out of one DFS carrying two timestamps per vertex:
 
-A **bridge** (also called a cut edge) is an edge whose removal increases the number of connected components in the graph. Bridges are critical edges that, if removed, disconnect the graph.
+- `disc[u]` — when DFS first reached `u`, its discovery time.
+- `low[u]` — the earliest `disc` reachable from `u`'s subtree via tree edges plus at most one back edge; intuitively, the highest ancestor that subtree can escape back to.
 
-### Algorithm Overview
+A tree edge `(u, v)` is a **bridge** exactly when `low[v] > disc[u]`: everything below `v` can reach nothing discovered before `u`, so that edge is its only link to the rest of the graph. If instead `low[v] ≤ disc[u]`, some back edge climbs above `u` and gives an alternate route — not a bridge. In a plain path `0–1–2` every edge is a bridge (cutting any one strands a tail); add one back edge to form a cycle and the edges it spans stop being bridges, because now each has a detour.
 
-We use DFS with the concept of **discovery time** and **low link value**:
-- **Discovery time (disc[u])**: When vertex u is first visited during DFS
-- **Low link (low[u])**: The earliest discovery time of any vertex reachable from u (including u itself) via tree edges and back edges
-
-### Understanding the Bridge Condition: `low[v] > disc[u]`
-
-The condition `low[v] > disc[u]` identifies bridges through a key insight: **if removing edge (u, v) disconnects the graph, then v and its descendants cannot reach any ancestor of u**.
-
-#### Intuitive Explanation
-
-**What `disc[u]` represents:**
-- `disc[u]` is the timestamp when we first discovered vertex u during DFS
-- If u was discovered at time 5, then `disc[u] = 5`
-- All ancestors of u in the DFS tree were discovered **before** time 5
-
-**What `low[v]` represents:**
-- `low[v]` is the earliest discovery time reachable from v
-- If v can reach an ancestor of u (via back edges), then `low[v] ≤ disc[u]`
-- If v **cannot** reach any ancestor of u, then `low[v] > disc[u]`
-
-**Why `low[v] > disc[u]` means (u, v) is a bridge:**
-
-1. **If `low[v] > disc[u]`**: 
-   - v and all its descendants can only reach vertices discovered **after** u
-   - They cannot reach u or any ancestor of u
-   - Removing edge (u, v) disconnects v's subtree from the rest of the graph
-   - **Therefore, (u, v) is a bridge**
-
-2. **If `low[v] ≤ disc[u]`**:
-   - v can reach u or an ancestor of u (via some back edge)
-   - Even if we remove (u, v), v's subtree remains connected through the back edge
-   - **Therefore, (u, v) is NOT a bridge**
-
-#### Visual Example
-
-Consider this graph:
-```
-    0
-   / \
-  1   2
-  |   |
-  3---4
-```
-
-**DFS Tree (starting from 0):**
-```
-    0 (disc=1)
-   / \
-  1   2 (disc=3)
-  |   |
-  3   4 (disc=5)
-  |
-  (back edge 3-4)
-```
-
-**Analysis:**
-- Edge (0, 1): `low[1] = 1` (can reach 0), `disc[0] = 1` → `low[1] ≤ disc[0]` → **NOT a bridge**
-- Edge (0, 2): `low[2] = 3` (can reach 2), `disc[0] = 1` → `low[2] > disc[0]` → **IS a bridge**
-- Edge (1, 3): `low[3] = 1` (can reach 0 via back edge 3-4-2-0), `disc[1] = 2` → `low[3] < disc[1]` → **NOT a bridge**
-
-**Why edge (0, 2) is a bridge:**
-- If we remove (0, 2), vertex 2 and its subtree (including 4) become disconnected
-- Even though there's a back edge (3-4), it doesn't help because 3 is in a different subtree
-
-**Why edge (1, 3) is NOT a bridge:**
-- If we remove (1, 3), vertex 3 can still reach 0 via: 3 → 4 → 2 → 0
-- The back edge (3-4) provides an alternative path
-
-**Key insight:** a bridge is an edge that is the *only* path connecting two parts of the graph. If `low[v] > disc[u]`, v's subtree can reach nothing discovered before u, so edge (u, v) is its sole link to the rest of the graph and is therefore a bridge. Any back edge to an ancestor would make `low[v] ≤ disc[u]` and disqualify it.
-
-### Implementation
 ```cpp
 #include <vector>
 #include <list>
@@ -1793,129 +1387,12 @@ public:
 };
 ```
 
-### Time Complexity
-- **Time**: O(V + E)
-- **Space**: O(V)
+Bridge-finding is a single DFS, `O(V + E)`, and is the standard tool for network-reliability and critical-connection analysis.
 
-### Applications
-- Network reliability analysis
-- Finding critical connections
-- Graph connectivity analysis
+An **articulation point** is the vertex analogue, found by the same DFS with two adjustments. The condition softens from `>` to `>=`: a non-root vertex `u` is an articulation point when some child `v` has `low[v] >= disc[u]`. The equality case is the whole difference. If `v`'s subtree can climb back to `u` *itself* but no higher, cutting the *edge* `(u, v)` disconnects nothing — which is exactly why it wasn't a bridge — yet deleting the *vertex* `u` still severs that subtree. Removing a vertex is strictly more destructive than removing an edge, so the bar is lower.
 
-## 11.14 Finding Articulation Points
+The root needs its own rule, because it has no ancestor to escape to and the low-link test is meaningless there. Instead, the root is an articulation point precisely when it has two or more DFS children: two independent subtrees joined only through it. (Every bridge forces an articulation point at one of its ends, but not the reverse — a vertex can be critical without any single edge being.)
 
-An **articulation point** (also called a cut vertex) is a vertex whose removal increases the number of connected components in the graph. Unlike bridges (which are edges), articulation points are vertices that are critical to graph connectivity.
-
-### Algorithm Overview
-
-Similar to bridge finding, we use DFS with discovery time and low link value. A vertex u is an articulation point if:
-1. **u is root** and has at least 2 children, OR
-2. **u is not root** and has a child v such that `low[v] >= disc[u]`
-
-### Understanding the Articulation Point Condition: `low[v] >= disc[u]`
-
-The condition `low[v] >= disc[u]` identifies articulation points through a similar insight to bridges, but with an important difference: **we use `>=` instead of `>`**.
-
-#### Intuitive Explanation
-
-**Key Difference from Bridges:**
-- **Bridge condition**: `low[v] > disc[u]` (strictly greater)
-- **Articulation point condition**: `low[v] >= disc[u]` (greater or equal)
-
-**Why the difference?**
-
-When checking if edge (u, v) is a bridge:
-- If `low[v] = disc[u]`, v can reach u itself (but not ancestors)
-- Removing edge (u, v) might not disconnect if there's another path to u
-- **But** removing vertex u would disconnect v's subtree
-
-**What `low[v] >= disc[u]` means:**
-
-1. **If `low[v] > disc[u]`**:
-   - v cannot reach u or any ancestor of u
-   - Removing u disconnects v's entire subtree
-   - **u is an articulation point**
-
-2. **If `low[v] = disc[u]`**:
-   - v can reach u itself, but not any ancestor of u
-   - Even if v can reach u, removing u still disconnects v's subtree
-   - **u is an articulation point** (this is why we use `>=`)
-
-3. **If `low[v] < disc[u]`**:
-   - v can reach an ancestor of u (via back edge)
-   - Removing u doesn't disconnect v's subtree (alternative path exists)
-   - **u is NOT an articulation point**
-
-#### Visual Example
-
-Consider this graph:
-```
-    0
-   / \
-  1   2
-  |   |
-  3---4
-  |
-  5
-```
-
-**DFS Tree (starting from 0):**
-```
-    0 (disc=1)
-   / \
-  1   2 (disc=3)
-  |   |
-  3   4 (disc=5)
-  |
-  5 (disc=6)
-```
-
-**Analysis:**
-
-**Vertex 0 (Root):**
-- Has 2 children (1 and 2)
-- **IS an articulation point** (root with 2+ children)
-
-**Vertex 1:**
-- Child 3: `low[3] = 1` (can reach 0 via back edge 3-4-2-0), `disc[1] = 2`
-- `low[3] < disc[1]` → **NOT an articulation point**
-
-**Vertex 3:**
-- Child 5: `low[5] = 6` (can only reach 5), `disc[3] = 4`
-- `low[5] > disc[3]` → **IS an articulation point**
-- If we remove 3, vertex 5 becomes disconnected
-
-**Why vertex 3 is an articulation point:**
-- Vertex 5 can only reach vertices discovered at time 6 or later
-- It cannot reach vertex 3 (disc=4) or any ancestor
-- Removing vertex 3 disconnects vertex 5 from the rest of the graph
-
-#### Why Root Needs Special Handling
-
-**Root case (2+ children):**
-- If root has only 1 child, removing root doesn't disconnect (the child subtree remains connected)
-- If root has 2+ children, removing root disconnects the subtrees (they're only connected through root)
-- **Example**: In a tree, the root is an articulation point if it has degree > 1
-
-**Non-root case (`low[v] >= disc[u]`):**
-- If `low[v] >= disc[u]`, v's subtree cannot reach any ancestor of u
-- Removing u disconnects v's subtree
-- **u is an articulation point**
-
-**Key insight:** an articulation point is a vertex that is the *only* connection between its parent and at least one child subtree. If `low[v] >= disc[u]`, that subtree cannot reach any ancestor of u, so removing u disconnects it. The condition uses `>=` (not the bridge's strict `>`) because even a subtree that can reach u *itself* is still severed when u is removed.
-
-#### Comparison: Bridges vs. Articulation Points
-
-| Aspect | Bridges | Articulation Points |
-|--------|---------|---------------------|
-| **What** | Critical edge | Critical vertex |
-| **Condition** | `low[v] > disc[u]` | `low[v] >= disc[u]` |
-| **Why different** | Edge removal: need strict `>` | Vertex removal: need `>=` (can reach u itself) |
-| **Root case** | N/A | Needs 2+ children |
-
-**Important Note**: If edge (u, v) is a bridge, then either u or v (or both) must be an articulation point, but the reverse is not always true.
-
-### Implementation
 ```cpp
 class ArticulationPointFinder {
 private:
@@ -2001,24 +1478,14 @@ public:
 };
 ```
 
-### Time Complexity
-- **Time**: O(V + E)
-- **Space**: O(V)
+Also `O(V + E)`. Together, bridges and articulation points are the standard vocabulary for network-vulnerability analysis: the single edges and nodes whose failure fragments the system.
 
-### Applications
-- Network vulnerability analysis
-- Finding critical nodes
-- Social network analysis
+## 11.9 Strongly Connected Components
 
-## 11.15 Strongly Connected Components
+In a directed graph, a **strongly connected component (SCC)** is a maximal set of vertices where every one can reach every other — mutual reachability, not just connectivity. SCCs matter in compiler control-flow analysis, dependency resolution (a cycle of mutually-dependent modules is an SCC), and web-graph structure. Two `O(V + E)` algorithms find them.
 
-A **Strongly Connected Component (SCC)** in a directed graph is a maximal set of vertices where every vertex is reachable from every other vertex.
+**Kosaraju's algorithm** is the more intuitive: run DFS on the graph recording finish order, then run DFS on the *transpose* (all edges reversed) in reverse-finish order — each DFS tree in the second pass is one SCC. Two passes, both linear.
 
-### Kosaraju's Algorithm
-
-Kosaraju's algorithm finds all SCCs in O(V + E) time using two DFS passes.
-
-#### Implementation
 ```cpp
 class StronglyConnectedComponents {
 private:
@@ -2176,29 +1643,12 @@ public:
 };
 ```
 
-### Time Complexity
-- **Time**: O(V + E) for both algorithms
-- **Space**: O(V)
+**Tarjan's algorithm** does the same job in a *single* DFS by keeping vertices on a stack and using the same `disc`/`low` timestamps as bridge-finding: when a vertex's `low` equals its own `disc`, it's the root of an SCC, and everything above it on the stack is that component. One pass instead of two, at the cost of trickier bookkeeping.
 
-### Applications
-- Compiler design (control flow analysis)
-- Social network analysis
-- Web page ranking
-- Dependency resolution
+## 11.10 0-1 BFS
 
-## 11.16 0-1 BFS
+When every edge weight is 0 or 1, you don't need Dijkstra's `log` factor. **0-1 BFS** replaces the priority queue with a double-ended queue: relax an edge of weight 0 and push the neighbor to the *front* (same distance layer), weight 1 and push to the *back* (next layer). The deque stays sorted by distance for free, so the whole thing runs in `O(V + E)` — Dijkstra's answer at BFS's cost. It's the right tool for grid problems mixing free and unit moves, or "teleport" edges of weight 0.
 
-**0-1 BFS** is a special case of BFS for graphs where edge weights are either 0 or 1. It's more efficient than Dijkstra's algorithm for this case.
-
-### Algorithm Overview
-
-Instead of a priority queue, we use a deque (double-ended queue):
-- Edges with weight 0 are added to the front
-- Edges with weight 1 are added to the back
-
-This ensures vertices are processed in order of distance.
-
-### Implementation
 ```cpp
 #include <deque>
 #include <vector>
@@ -2302,23 +1752,10 @@ public:
 };
 ```
 
-### Time Complexity
-- **Time**: O(V + E) - more efficient than Dijkstra's O((V + E) log V)
-- **Space**: O(V)
+## 11.11 A Few Everyday Graph Routines
 
-### When to Use
-- Graph has only 0 and 1 edge weights
-- Need shortest paths in unweighted graph with some "free" edges
-- More efficient than Dijkstra for 0-1 weighted graphs
+Three short functions come up constantly and are worth seeing because each is a two-line variation on a traversal you already know. **Connected components** is DFS restarted from every unvisited vertex, one component per restart:
 
-### Applications
-- Grid problems with free moves and cost moves
-- Problems with "teleportation" edges (weight 0)
-- Network routing with binary costs
-
-## 11.17 Graph Applications
-
-### 11.17.1 Finding Connected Components
 ```cpp
 vector<vector<int>> findConnectedComponents(const vector<list<int>>& graph) {
     int n = graph.size();
@@ -2347,7 +1784,8 @@ vector<vector<int>> findConnectedComponents(const vector<list<int>>& graph) {
 }
 ```
 
-### 11.17.2 Cycle Detection
+**Cycle detection** in a directed graph is DFS tracking the current recursion stack — an edge back to a vertex still on the stack is a cycle (the same `recStack` idea that made topological sort detect impossible orderings):
+
 ```cpp
 bool hasCycle(const vector<list<int>>& graph) {
     int n = graph.size();
@@ -2380,7 +1818,8 @@ bool hasCycle(const vector<list<int>>& graph) {
 }
 ```
 
-### 11.17.3 Bipartite Graph Check
+And a **bipartite check** is BFS two-coloring: give each vertex the opposite color of its neighbor, and if you ever need a vertex to hold both colors, the graph isn't bipartite:
+
 ```cpp
 bool isBipartite(const vector<list<int>>& graph) {
     int n = graph.size();
@@ -2412,63 +1851,9 @@ bool isBipartite(const vector<list<int>>& graph) {
 }
 ```
 
-## 11.18 Key Takeaways
+## 11.12 A* Search
 
-1. **Graphs** represent relationships and connections between entities
-2. **Adjacency matrix** is good for dense graphs, **adjacency list** for sparse graphs
-3. **DFS** explores deeply, **BFS** explores level-by-level
-4. **Dijkstra's** finds shortest paths with non-negative weights
-5. **Bellman-Ford** handles negative weights but not negative cycles
-6. **Floyd-Warshall** finds all-pairs shortest paths
-7. **Kruskal** and **Prim** find minimum spanning trees
-8. **Topological sort** orders vertices in a DAG
-9. **Bridges and articulation points** identify critical edges and vertices
-10. **Strongly Connected Components** find maximal strongly connected subgraphs
-11. **0-1 BFS** efficiently handles graphs with binary edge weights
-12. Graphs have many real-world applications
-
-## 11.19 Exercises
-
-1. Implement a graph class that supports both adjacency matrix and adjacency list representations.
-
-2. Implement DFS and BFS iteratively and recursively, and compare their performance.
-
-3. Modify Dijkstra's algorithm to reconstruct the actual shortest path, not just the distance.
-
-4. Implement a function to detect if a graph is strongly connected.
-
-5. Implement an algorithm to find all cycles in a directed graph.
-
-6. Create a function to find the longest path in a DAG.
-
-7. Implement Tarjan's algorithm for finding strongly connected components.
-
-8. Compare the performance of Kosaraju's and Tarjan's algorithms for SCC.
-
-9. Implement a function to check if a graph is Eulerian (has Eulerian path/cycle).
-
-10. Create a graph visualization tool that can display small graphs.
-
-## 11.20 A* Algorithm
-
-**A\* (A-star)** is an informed search algorithm that finds the shortest path between nodes in a weighted graph. It combines Dijkstra's algorithm with a heuristic function to guide the search more efficiently.
-
-### How A* Works
-
-A* uses:
-- **g(n)**: Actual cost from start to node n
-- **h(n)**: Heuristic estimate from node n to goal
-- **f(n) = g(n) + h(n)**: Total estimated cost
-
-The algorithm prioritizes nodes with lower f(n) values.
-
-### Key Properties
-
-- **Admissible Heuristic**: h(n) never overestimates the true cost
-- **Consistent Heuristic**: h(n) ≤ cost(n, n') + h(n') for all neighbors n'
-- **Optimal**: Finds shortest path if heuristic is admissible
-
-### Implementation
+A* is Dijkstra with a sense of direction. Dijkstra expands outward blindly, equally in all directions; A* adds a **heuristic** `h(n)` estimating the remaining distance to the goal and prioritizes nodes by `f(n) = g(n) + h(n)` — cost-so-far plus estimated cost-to-go. That nudges the search toward the target instead of exploring the whole graph, which is why games and robotics pathfinders use it. The one rule that keeps it correct: the heuristic must be **admissible** — never *over*estimate the true remaining cost. Straight-line (or Manhattan, on a grid) distance is the classic admissible choice. Set `h(n) = 0` and A* degenerates back into Dijkstra.
 
 ```cpp
 #include <iostream>
@@ -2597,38 +1982,11 @@ public:
 };
 ```
 
-### When to Use A*
+The three shortest-path tools now form a ladder: BFS for unweighted graphs, Dijkstra when weights matter but you have no heuristic, A* when you do. Use the most informed one your problem allows.
 
-**Use A* When**:
-- Need shortest path in weighted graph
-- Have good heuristic function
-- Pathfinding in games, robotics, navigation
+## 11.13 Network Flow
 
-**Use Dijkstra When**:
-- No good heuristic available
-- Need all shortest paths from source
-
-**Use BFS When**:
-- Unweighted graph
-- Need shortest path in terms of edges
-
-#### Network Flow Algorithms
-
-**Network flow** problems involve finding the maximum flow or minimum cut in a flow network. These are fundamental in optimization and graph theory.
-
-### Ford-Fulkerson Algorithm
-
-The **Ford-Fulkerson algorithm** finds the maximum flow in a flow network using augmenting paths.
-
-#### Key Concepts
-
-- **Flow Network**: Directed graph with capacities on edges
-- **Source**: Node producing flow
-- **Sink**: Node consuming flow
-- **Augmenting Path**: Path from source to sink with available capacity
-- **Residual Graph**: Graph showing remaining capacity
-
-### Implementation
+A different question about weighted graphs: given a network of pipes with capacities, a **source**, and a **sink**, how much can flow from source to sink at once? The **Ford-Fulkerson** method answers it by repeatedly finding an *augmenting path* — any source-to-sink route with spare capacity — and pushing as much flow as its tightest edge allows, updating a *residual graph* that tracks remaining capacity (and lets flow be "pushed back" to reroute). When no augmenting path remains, the flow is maximal. Finding each path with BFS (the Edmonds-Karp refinement below) bounds the work at `O(V·E²)`.
 
 ```cpp
 #include <iostream>
@@ -2716,31 +2074,13 @@ public:
 };
 ```
 
-### Applications
+Max flow is more useful than it looks: by the max-flow/min-cut theorem the maximum flow equals the *minimum cut* — the cheapest set of edges whose removal severs source from sink — so the same code solves bipartite matching, network reliability, and resource-allocation problems that don't look like flow at all. Faster variants trade complexity for speed: Edmonds-Karp is `O(V·E²)`, Dinic's `O(V²·E)`.
 
-1. **Maximum Bipartite Matching**: Find maximum matching in bipartite graph
-2. **Minimum Cut**: Find minimum edges to disconnect source and sink
-3. **Network Reliability**: Calculate maximum flow capacity
-4. **Resource Allocation**: Distribute resources optimally
+## 11.14 Graph Coloring
 
-### Time Complexity
+**Graph coloring** assigns a color to each vertex so that no edge joins two of the same color; the fewest colors that suffice is the graph's **chromatic number**. It's the abstract form of conflict-free scheduling: exam timetabling, register allocation in compilers (variables that are live at once conflict), and map coloring are all colorings. The catch is that finding the chromatic number is NP-hard, so in practice you either settle for a fast greedy approximation or brute-force small instances with backtracking.
 
-- **Ford-Fulkerson**: O(E × max_flow) - can be slow for large flows
-- **Edmonds-Karp**: O(V × E²) - uses BFS for augmenting paths
-- **Dinic's Algorithm**: O(V² × E) - more efficient in practice
-
-#### Graph Coloring
-
-**Graph coloring** is the problem of assigning colors to vertices such that no two adjacent vertices have the same color. The minimum number of colors needed is the **chromatic number**.
-
-### Applications
-
-1. **Scheduling**: Assign time slots to courses (no conflicts)
-2. **Register Allocation**: Assign CPU registers to variables
-3. **Map Coloring**: Color map regions (four-color theorem)
-4. **Sudoku**: Special case of graph coloring
-
-### Greedy Coloring Algorithm
+The greedy version scans vertices in order, giving each the lowest color not used by an already-colored neighbor. Fast (`O(V + E)`) but not optimal — its color count depends on vertex order:
 
 ```cpp
 #include <iostream>
@@ -2829,7 +2169,7 @@ public:
 };
 ```
 
-### Backtracking for Optimal Coloring
+Backtracking gives the exact answer for small graphs by trying colors and undoing choices that lead to a dead end — optimal, but exponential, so reserve it for when the exact chromatic number genuinely matters and the graph is small:
 
 ```cpp
 // Backtracking to find minimum colors (optimal but slow)
@@ -2875,191 +2215,52 @@ vector<int> graphColoringBacktracking(vector<vector<int>>& graph, int maxColors)
 }
 ```
 
-### When to Use
+Greedy coloring is the default; reach for backtracking only when you need the true minimum on a small graph.
 
-**Use Greedy Coloring When**:
-- Need fast approximate solution
-- Graph is sparse
-- Optimal coloring not required
+## 11.15 Concurrency: Traversing a Shared Graph
 
-**Use Backtracking When**:
-- Need optimal solution
-- Graph is small
-- Exact chromatic number required
+Parallelizing graph work runs straight into the concurrency fundamentals of [Chapter 3.5](03.5-concurrency-fundamentals.md), and the sharpest hazard is the `visited` array. Two threads that both read `visited[v] == false` will both process `v` — the classic check-then-act race — corrupting results or looping forever. The fix is to make the check-and-set a single atomic step:
 
-## 11.21 Concurrency Considerations
-
-This section applies the concurrency fundamentals from [Chapter 3.5](03.5-concurrency-fundamentals.md) to graph traversal (BFS/DFS). See Section 3.5.3 for invariant-based reasoning and Section 3.5.4 for race conditions.
-
-### 11.21.1 Shared-State Invariants
-
-**Graph Structure Invariants** (see Section 3.5.3):
-1. **Adjacency Invariant**: "Adjacency lists/matrix correctly represent edges"
-2. **Visited State Invariant**: "Visited flags accurately track traversal state"
-3. **Distance Invariant**: "Distance values correctly represent shortest paths (for BFS/Dijkstra)"
-
-**What Must Not Be Observed Half-Updated**:
-- Visited flags during concurrent traversal
-- Distance values during concurrent shortest path computation
-- Adjacency list modifications during traversal
-
-### 11.21.2 Operations That Must Be Atomic
-
-**BFS Traversal** (see Section 3.5.4):
-```cpp
-void bfs(int start) {
-    queue<int> q;
-    vector<bool> visited(numVertices, false);
-    q.push(start);
-    visited[start] = true;  // Step 1: Mark visited
-    
-    while (!q.empty()) {
-        int u = q.front();
-        q.pop();
-        
-        for (int v : adj[u]) {
-            if (!visited[v]) {        // Step 2: Check
-                visited[v] = true;     // Step 3: Mark
-                q.push(v);            // Step 4: Enqueue
-            }
-        }
-    }
-}
-```
-
-**Tie to Invariants**: Check-then-act race condition threatens **Visited State Invariant**. Two threads may both see `visited[v] = false` and both process the vertex.
-
-**Graph Modification During Traversal**:
-```cpp
-// Thread 1: Traversing graph
-for (int v : adj[u]) {  // Reading adjacency list
-    // Thread 2: Adding edge here!
-    process(v);
-}
-```
-
-**Tie to Invariants**: Graph modification during traversal threatens **Adjacency Invariant**.
-
-**Operations Requiring Atomicity**:
-- **Visited flag updates**: Check and set must be atomic (use atomic operations)
-- **Distance updates**: Read-modify-write must be atomic
-- **Graph modification**: Entire edge addition/removal must be atomic (or use immutable graph)
-
-### 11.21.3 Naïve Approaches and Why They Fail
-
-**1. Partial Updates**:
-```cpp
-// Both threads see visited[v] = false
-// Both process vertex v
-```
-**Why It Fails**: Check-then-act is not atomic. Invariant violation: **Visited State Invariant** broken.
-
-**2. Check-Then-Act Bugs**:
-```cpp
-if (!visited[v]) {     // Check
-    // Another thread marks visited[v] here!
-    visited[v] = true;  // Mark
-    process(v);       // Process (may process twice)
-}
-```
-**Why It Fails**: Check and mark are not atomic. Invariant violation: **Visited State Invariant** broken.
-
-**3. Locking Only Part of the Structure**:
-```cpp
-// Locking only during edge addition, not during traversal
-void addEdge(int u, int v) {
-    std::lock_guard<std::mutex> lock(mtx);
-    adj[u].push_back(v);
-}
-// But traversal is unprotected!
-for (int v : adj[u]) {  // Race condition!
-    process(v);
-}
-```
-**Why It Fails**: Traversal and modification are not mutually exclusive. Invariant violation: **Adjacency Invariant** broken.
-
-### 11.21.4 Locking Strategies
-
-**Coarse-Grained Lock** (see Section 3.5.8):
-```cpp
-class ThreadSafeGraph {
-    std::vector<std::vector<int>> adj;
-    std::mutex mtx;
-    
-public:
-    void addEdge(int u, int v) {
-        std::lock_guard<std::mutex> lock(mtx);
-        adj[u].push_back(v);
-    }
-};
-```
-- ✅ Simple, prevents all race conditions
-- ❌ Very low parallelism
-
-**Fine-Grained Lock (Per-Vertex)**:
-```cpp
-std::vector<std::mutex> vertex_locks(numVertices);
-
-void addEdge(int u, int v) {
-    // Lock both vertices (always in same order to avoid deadlock)
-    std::lock(vertex_locks[u], vertex_locks[v]);
-    std::lock_guard<std::mutex> lock1(vertex_locks[u], std::adopt_lock);
-    std::lock_guard<std::mutex> lock2(vertex_locks[v], std::adopt_lock);
-    adj[u].push_back(v);
-    adj[v].push_back(u);  // For undirected graph
-}
-```
-- ✅ Higher parallelism
-- ❌ Complex, risk of deadlock if lock order violated (see Section 3.5.7)
-- ❌ High memory overhead
-
-**Read-Only Traversal**:
-- If graph is immutable during traversal, no synchronization needed
-- Use copy-on-write for modifications
-
-**Atomic Operations for Visited Flags**:
 ```cpp
 std::vector<std::atomic<bool>> visited(numVertices);
-if (!visited[v].exchange(true)) {  // Atomic check-and-set
+if (!visited[v].exchange(true)) {   // atomic: only one thread sees false
     q.push(v);
 }
 ```
-- ✅ Lock-free for visited flags
-- ✅ Good for parallel BFS
 
-### 11.21.5 Performance and Scalability Implications
+One `exchange` both tests and claims the vertex, so exactly one thread ever enters. That lock-free pattern is what makes parallel BFS practical: process each level's vertices in parallel, each claimed by an atomic exchange.
 
-**Contention** (see Section 3.5.8):
-- Coarse-grained locking: Very high contention, throughput collapses
-- Fine-grained locking: Lower contention, but deadlock risk
-- Atomic operations: Lower contention for visited flags
+Mutating the graph *during* traversal is the other trap — an edge added mid-iteration can invalidate the adjacency list a thread is walking. If you must allow concurrent structure changes, a coarse-grained lock around the whole graph is simple and correct but serializes everything; per-vertex locks buy parallelism at the cost of deadlock risk (always acquire in a fixed order). The honest production advice is to avoid the problem: keep the graph **immutable** during read-heavy traversal so no synchronization is needed, or use a graph-processing framework (Pregel, GraphX) built to handle the concurrency. Don't hand-roll fine-grained graph locking unless profiling proves you need it.
 
-**Throughput Collapse Under Load**:
-- With many threads, coarse-grained locking becomes severe bottleneck
-- Fine-grained locking or atomic operations help significantly
+## 11.16 Summary
 
-**Parallel BFS/DFS Strategies**:
-- **Level-by-level parallelization (BFS)**: Process all vertices at level `i` in parallel
-- **Component-based parallelization**: Process different connected components in parallel
-- **Edge-based parallelization**: Process edges in parallel (for algorithms like MST)
+Graphs are the structure for data whose essence is *relationships*, and the through-line of this chapter is that two upfront choices govern everything after: the representation (adjacency list for the sparse graphs that dominate reality, matrix for dense or small ones — a real memory-and-cache decision) and the traversal (DFS to go deep, BFS to find shortest unweighted paths). Almost every named algorithm here is one of those two with extra bookkeeping.
 
-### 11.21.6 When Not to Do This Yourself
+| Algorithm | Time | Notes |
+|-----------|------|-------|
+| DFS / BFS | `O(V + E)` | traversal; BFS = shortest unweighted path |
+| Dijkstra | `O((V + E) log V)` | shortest path, non-negative weights |
+| Bellman-Ford | `O(V·E)` | negative weights; detects negative cycles |
+| Floyd-Warshall | `O(V³)` | all-pairs shortest paths |
+| Kruskal / Prim | `O(E log V)` | minimum spanning tree |
+| Topological sort | `O(V + E)` | DAG ordering (Kahn's or DFS) |
+| Bridges / articulation pts | `O(V + E)` | critical edges / vertices, one DFS |
+| SCC (Kosaraju / Tarjan) | `O(V + E)` | mutual reachability in a digraph |
+| 0-1 BFS | `O(V + E)` | shortest path with 0/1 weights |
+| A* | heuristic-dependent | Dijkstra with a goal-directed heuristic |
 
-**Use Library Implementations**:
-- Graph processing frameworks (e.g., GraphX, Pregel) that handle concurrency
-- Thread-safe graph libraries from well-tested sources
-- Immutable graph structures for read-heavy workloads
+### Exercises
 
-**Avoid Premature Optimization**:
-- Start with coarse-grained locking or immutable graphs
-- Only optimize to fine-grained if profiling shows it's necessary
-- Consider graph processing frameworks for complex parallel algorithms
+1. Implement a graph class supporting both adjacency-matrix and adjacency-list representations, and measure the crossover density where the matrix's edge test beats the list's.
+2. Implement DFS and BFS both recursively and iteratively, and compare their performance and memory on deep versus wide graphs.
+3. Extend Dijkstra to reconstruct the actual shortest path, not just the distance.
+4. Write a function that decides whether a directed graph is strongly connected.
+5. Find all cycles in a directed graph.
+6. Find the longest path in a DAG (hint: topological order makes this linear).
+7. Implement Tarjan's SCC algorithm and compare it against Kosaraju's on the same inputs.
+8. Detect whether an undirected graph has an Eulerian path or circuit.
+9. Implement 0-1 BFS on a grid with free and unit-cost moves, and verify it against Dijkstra.
+10. Build a small graph visualizer that renders a graph and highlights its bridges and articulation points.
 
-**For Production**: Consider graph processing frameworks that handle concurrency, or use immutable graphs for read-heavy workloads. See Section 3.5.10 for guidance on using libraries.
-
-## 11.22 Summary
-
-Graphs are fundamental data structures that model relationships and connections. Understanding graph representations, traversal algorithms, shortest path algorithms, and minimum spanning tree algorithms is essential for solving many computational problems. The choice of representation and algorithm depends on the specific problem requirements, graph characteristics, and performance constraints.
-
-In the next chapters, we'll explore more advanced topics including searching algorithms and advanced data structures that build upon these graph concepts.
+The next chapters build on this foundation, moving into searching algorithms and more advanced structures.
 
