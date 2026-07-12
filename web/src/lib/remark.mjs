@@ -60,7 +60,10 @@ export function remarkRewriteLinks(repoUrl) {
     visit(tree, (node) => {
       if (node.type !== 'link' || typeof node.url !== 'string') return;
       const url = node.url;
-      if (/^(https?:|mailto:|#)/.test(url)) return;
+      // Leave alone: external, mailto, in-page anchors, and absolute site paths
+      // (e.g. /chapters/foo written directly in MDX) — only relative repo paths
+      // and sibling .md links get rewritten below.
+      if (/^(https?:|mailto:|#|\/)/.test(url)) return;
 
       const chapterMatch = url.match(/^(?:\.\/|\.\.\/chapters\/)?(\d+(?:\.\d+)?)-([a-z0-9-]+)\.md(#.*)?$/i);
       if (chapterMatch) {

@@ -258,9 +258,10 @@ simultaneously doing other things. That is worth being honest about:
   measuring the adder in both cases and the memory system in neither. If a benchmark tells
   you an effect does not exist, suspect the benchmark.
 
-The code is a few hundred lines and worth reading if you intend to benchmark anything
-yourself: [`kernels.ts`](https://github.com/sb2k16/data-structures-book/blob/main/web/src/bench/kernels.ts)
-holds the measurement loops and the reasoning behind each one.
+The measurement code is a few hundred lines and worth studying if you intend to benchmark
+anything yourself — [Chapter 19](/chapters/benchmarking-and-load-testing) walks through the
+same techniques (defeating the optimizer, timing the minimum, warming the cache) and the
+reasoning behind each one.
 
 ---
 
