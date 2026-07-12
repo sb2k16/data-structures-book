@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en" data-theme="">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>Data Structures on Systems — an audio course</title>
+<meta name="description" content="A narrated slide course on how modern software systems actually use data structures — from the cache line to the cluster."/>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%232a78d6'/%3E%3Cg stroke='white' stroke-width='1.8' fill='none'%3E%3Crect x='4' y='8' width='16' height='8' rx='1.2'/%3E%3Cpath d='M8 8v8M12 8v8M16 8v8'/%3E%3C/g%3E%3C/svg%3E"/>
+<style>
+:root{
+  --bg:#fcfcfb; --panel:#f4f4f1; --panel2:#eaeae5; --line:#dcdcd6; --line2:#c3c2b7;
+  --ink:#0b0b0b; --ink2:#52514e; --ink3:#87867e; --accent:#2a78d6; --accent2:#1baf7a; --band:#0b0b0b; --banda:.04;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){
+  --bg:#151514; --panel:#1e1e1c; --panel2:#282826; --line:#34342f; --line2:#4a4a44;
+  --ink:#fafaf7; --ink2:#c3c2b7; --ink3:#8f8e84; --accent:#4c92ea; --accent2:#22b985; --band:#ffffff; --banda:.05;
+}}
+:root[data-theme=dark]{
+  --bg:#151514; --panel:#1e1e1c; --panel2:#282826; --line:#34342f; --line2:#4a4a44;
+  --ink:#fafaf7; --ink2:#c3c2b7; --ink3:#8f8e84; --accent:#4c92ea; --accent2:#22b985; --band:#ffffff; --banda:.05;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow:hidden;
+  display:flex;flex-direction:column;height:100dvh}
+.mono{font-family:var(--mono)}
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+
+/* top bar */
+.top{display:flex;align-items:center;gap:14px;padding:14px 22px;border-bottom:1px solid var(--line);flex:none}
+.brand{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:640;letter-spacing:-.01em}
+.brand svg{color:var(--accent)}
+.top .spacer{margin-left:auto}
+.counter{font-family:var(--mono);font-size:13px;color:var(--ink3);font-variant-numeric:tabular-nums}
+.tbtn{color:var(--ink3);padding:7px;border-radius:7px}
+.tbtn:hover{color:var(--ink);background:var(--panel2)}
+
+/* arc rail */
+.arc{display:flex;flex-wrap:wrap;align-items:center;gap:7px;padding:9px 22px;border-bottom:1px solid var(--line);
+  font-size:11px;font-family:var(--mono);color:var(--ink3);letter-spacing:.02em;flex:none;overflow-x:auto}
+.arc-step{white-space:nowrap;transition:color .3s}
+.arc-step[data-on]{color:var(--accent);font-weight:600}
+.arc-sep{color:var(--line2)}
+
+/* stage */
+.stage{position:relative;flex:1 1 auto;min-height:0;cursor:pointer;overflow:hidden}
+/* Inactive slides hide instantly (no crossfade ghost); only the entering slide animates. */
+.slide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:clamp(20px,4vw,64px);
+  opacity:0;visibility:hidden;transform:translateY(10px);transition:none}
+.slide[data-active]{opacity:1;visibility:visible;transform:none;transition:opacity .5s ease,transform .5s ease}
+.slide-inner{width:100%;max-width:920px}
+.kicker{font-family:var(--mono);font-size:clamp(11px,1.4vw,13px);text-transform:uppercase;letter-spacing:.12em;color:var(--accent);margin-bottom:14px}
+.title{font-size:clamp(30px,6.2vw,68px);line-height:1.03;letter-spacing:-.03em;font-weight:730;text-wrap:balance;margin-bottom:.35em}
+.lead{font-size:clamp(17px,2.5vw,27px);line-height:1.3;color:var(--ink2);font-weight:480;text-wrap:balance;letter-spacing:-.01em}
+.body{margin-top:clamp(18px,3vh,34px);display:flex;flex-direction:column;gap:16px}
+.sub{font-size:clamp(14px,1.7vw,18px);line-height:1.6;color:var(--ink2);max-width:60ch}
+.sub strong{color:var(--ink);font-weight:640}
+.sub.weakness{color:var(--ink3)}.sub.weakness strong{color:var(--ink2)}
+.sub.tag,.tag{font-family:var(--mono);font-size:13px;color:var(--ink3);letter-spacing:.01em}
+.two{display:flex;align-items:center;gap:clamp(20px,5vw,60px);flex-wrap:wrap}
+.two .cap{font-size:13px;color:var(--ink3);margin-top:6px}
+.big{font-size:clamp(34px,6vw,64px);font-weight:700;letter-spacing:-.03em;color:var(--accent)}
+.eq,.two .eq{font-size:20px;color:var(--ink3);font-family:var(--mono)}
+.verdict{margin-top:6px;font-size:clamp(18px,2.4vw,26px);font-weight:600}
+.verdict .cap{font-size:14px;color:var(--ink3);font-weight:400;margin-top:6px;font-family:var(--sans)}
+
+/* visuals */
+.viz{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;max-width:560px}
+.viz svg{width:100%;height:auto;display:block}
+.viz figcaption{margin-top:10px;font-size:12.5px;color:var(--ink3);font-family:var(--mono);letter-spacing:.01em}
+.staircase .band{fill:var(--band);opacity:var(--banda)}
+.staircase .grid{stroke:var(--line);stroke-width:1}
+.staircase .curve{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
+.staircase .dot{fill:var(--accent);stroke:var(--panel);stroke-width:2}
+.staircase .lbl{fill:var(--ink3);font-size:11px;font-weight:600;font-family:var(--mono)}
+.staircase .axis{fill:var(--ink3);font-size:10px;font-family:var(--mono)}
+.bars{display:flex;flex-direction:column;gap:14px;max-width:560px}
+.bar-row{display:grid;grid-template-columns:130px 1fr auto;align-items:center;gap:14px}
+.bar-lbl{font-size:14px;font-weight:600}
+.bar-track{height:12px;background:var(--panel2);border-radius:4px;overflow:hidden}
+.bar-fill{display:block;height:100%;background:var(--accent);border-radius:0 4px 4px 0}
+.bar-val{font-size:14px;color:var(--ink2);font-variant-numeric:tabular-nums}
+.bar-cap{font-size:13.5px;color:var(--ink3);margin-top:2px}
+.ratio{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--ink);margin-right:6px}
+.btree .node rect{fill:none;stroke:var(--accent);stroke-width:1.8}
+.btree .key{stroke:var(--line2);stroke-width:1}
+.btree .link{stroke:var(--line2);stroke-width:1.4}
+
+/* narrator */
+.narrator{flex:none;display:flex;align-items:center;gap:16px;padding:13px 22px;border-top:1px solid var(--line);background:var(--panel)}
+.play{width:46px;height:46px;flex:none;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;transition:transform .12s}
+.play:active{transform:scale(.94)}
+.play svg{width:20px;height:20px}
+.nav{color:var(--ink3);padding:8px;border-radius:8px}
+.nav:hover{color:var(--ink);background:var(--panel2)}
+.nav:disabled{opacity:.3;cursor:default}
+.track-wrap{flex:1;min-width:0}
+.caption{font-size:13.5px;line-height:1.5;color:var(--ink2);height:2.9em;overflow:hidden;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin-bottom:8px}
+.prog{height:4px;background:var(--panel2);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;width:0;background:var(--accent);border-radius:3px}
+.hint{font-size:11px;color:var(--ink3);font-family:var(--mono);white-space:nowrap}
+@media (max-width:640px){
+  .arc{font-size:10px}.caption{-webkit-line-clamp:2}.hint{display:none}
+  .narrator{gap:11px;padding:11px 15px}.top{padding:12px 15px}.arc{padding:8px 15px}
+  .bar-row{grid-template-columns:96px 1fr auto;gap:9px}
+}
+@media (prefers-reduced-motion:reduce){.slide{transition:opacity .01s}*{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+  <div class="top">
+    <span class="brand">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="2" y="8" width="20" height="8" rx="1.5" stroke="currentColor" stroke-width="1.8"/><path d="M7 8v8M12 8v8M17 8v8" stroke="currentColor" stroke-width="1.8"/></svg>
+      Data Structures on Systems
+    </span>
+    <span class="spacer"></span>
+    <span class="counter"><span id="cur">1</span> / 14</span>
+    <button class="tbtn" id="theme" aria-label="Toggle theme" title="Toggle light/dark">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4" class="sun-c"/><g class="sun-r"><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></g><path class="moon" d="M20 14.5A8 8 0 019.5 4 8.5 8.5 0 1020 14.5z" fill="currentColor" stroke="none" style="display:none"/></svg>
+    </button>
+  </div>
+
+  <div class="arc" id="arc"><span class="arc-step" data-arc="0">Array</span><span class="arc-sep">&rsaquo;</span><span class="arc-step" data-arc="1">List</span><span class="arc-sep">&rsaquo;</span><span class="arc-step" data-arc="2">Stack</span><span class="arc-sep">&rsaquo;</span><span class="arc-step" data-arc="3">Hash</span><span class="arc-sep">&rsaquo;</span><span class="arc-step" data-arc="4">Tree</span><span class="arc-sep">&rsaquo;</span><span class="arc-step" data-arc="5">B-tree</span><span class="arc-sep">&rsaquo;</span><span class="arc-step" data-arc="6">LSM</span><span class="arc-sep">&rsaquo;</span><span class="arc-step" data-arc="7">Cluster</span></div>
+
+  <div class="stage" id="stage">
+  <section class="slide" data-i="0" data-active aria-hidden="false">
+    <div class="slide-inner">
+      <div class="kicker">An audio course</div>
+      <h2 class="title">Data Structures on Systems</h2>
+      <p class="lead">From the cache line to the cluster.</p>
+      <div class="body"><p class="sub">Press play. A synthetic narrator will walk you through the whole story — no reading required.</p></div>
+    </div>
+  </section>
+  <section class="slide" data-i="1"  aria-hidden="true">
+    <div class="slide-inner">
+      <div class="kicker">The hidden truth</div>
+      <h2 class="title">Big-O hides two things</h2>
+      <p class="lead">The constant factor, and where the data lives.</p>
+      <div class="body"><div class="two"><div><div class="mono big">O(n)</div><div class="cap">sum each value</div></div><div class="eq">vs</div><div><div class="mono big">O(n)</div><div class="cap">hash each value</div></div></div><p class="sub">Same growth. On a real machine, often <strong>10 to 50 times apart</strong>.</p></div>
+    </div>
+  </section>
+  <section class="slide" data-i="2"  aria-hidden="true">
+    <div class="slide-inner">
+      <div class="kicker">The machine</div>
+      <h2 class="title">The memory mountain</h2>
+      <p class="lead">A cache hit and a cache miss are both O(1).</p>
+      <div class="body">
+<figure class="viz staircase" aria-label="Latency rising from L1 cache to DRAM">
+  <svg viewBox="0 0 520 200" role="img">
+    <rect x="210" y="8" width="110" height="150" class="band"/>
+    <rect x="430" y="8" width="82" height="150" class="band"/>
+    <line x1="8" x2="512" y1="40" y2="40" class="grid"/><line x1="8" x2="512" y1="77" y2="77" class="grid"/><line x1="8" x2="512" y1="114" y2="114" class="grid"/>
+    <text x="90" y="24" class="lbl">L1</text><text x="255" y="24" class="lbl">L2</text>
+    <text x="360" y="24" class="lbl">L3</text><text x="455" y="24" class="lbl">DRAM</text>
+    <polyline class="curve" points="14,150 44,149 74,151 104,148 134,150 164,149 210,120 240,108 270,101 300,96 320,86 350,52 390,26 430,18 470,12 506,10"/>
+    <circle cx="14" cy="150" r="3.5" class="dot"/><circle cx="74" cy="151" r="3.5" class="dot"/><circle cx="134" cy="150" r="3.5" class="dot"/><circle cx="210" cy="120" r="3.5" class="dot"/><circle cx="270" cy="101" r="3.5" class="dot"/><circle cx="320" cy="86" r="3.5" class="dot"/><circle cx="390" cy="26" r="3.5" class="dot"/><circle cx="470" cy="12" r="3.5" class="dot"/><circle cx="506" cy="10" r="3.5" class="dot"/>
+    <text x="12" y="176" class="axis">4 KiB</text><text x="470" y="176" class="axis">128 MiB</text>
+  </svg>
+  <figcaption>~1&#8202;ns &nbsp;&rarr;&nbsp; ~100&#8202;ns · one array access, either way</figcaption>
+</figure><p class="sub">One is about <strong>a hundred times</strong> slower than the other. Big-O cannot see the difference.</p></div>
+    </div>
+  </section>
+  <section class="slide" data-i="3"  aria-hidden="true">
+    <div class="slide-inner">
+      <div class="kicker">Chapter 1 — the foundation</div>
+      <h2 class="title">Arrays</h2>
+      <p class="lead">The structure the hardware was built to love.</p>
+      <div class="body"><p class="sub"><strong>Contiguous memory.</strong> Elements sit end to end, so the processor prefetches the next one before you ask. Perfect cache behavior — the memory system's best case.</p><p class="sub weakness">The one weakness: inserting in the middle means shifting everything after it. <span class="mono">O(n)</span>.</p></div>
+    </div>
+  </section>
+  <section class="slide" data-i="4"  aria-hidden="true">
+    <div class="slide-inner">
+      <div class="kicker">Chapter 2 — the trade</div>
+      <h2 class="title">Linked lists</h2>
+      <p class="lead">O(1) insertion — by giving up the cache.</p>
+      <div class="body"><p class="sub">Scatter the elements across memory and link them with pointers, and you can splice one in anywhere in constant time.</p><div class="verdict"><span class="mono">std::list</span> &nbsp;vs&nbsp; <span class="mono">std::vector</span><div class="cap">on real hardware, the vector usually wins — by a lot</div></div></div>
+    </div>
+  </section>
+  <section class="slide" data-i="5"  aria-hidden="true">
+    <div class="slide-inner">
+      <div class="kicker">Chapter 3 — restriction as a feature</div>
+      <h2 class="title">Stacks & queues</h2>
+      <p class="lead">The two most useful limits on a sequence.</p>
+      <div class="body"><div class="two"><div><div class="mono big">LIFO</div><div class="cap">stack — push &amp; pop one end</div></div><div><div class="mono big">FIFO</div><div class="cap">queue — in one end, out the other</div></div></div><p class="sub">The most important stack in computing is the one every program runs on: <strong>the call stack.</strong></p></div>
+    </div>
+  </section>
+  <section class="slide" data-i="6"  aria-hidden="true">
+    <div class="slide-inner">
+      <div class="kicker">Chapter 4 — compute, don't search</div>
+      <h2 class="title">Hash tables</h2>
+      <p class="lead">O(1) lookup — at the cost of all order.</p>
+      <div class="body"><p class="sub">Instead of <em>searching</em> for where a key lives, a hash table <strong>computes</strong> it. Run the key through a hash function, go straight to that slot.</p><p class="sub weakness">The price: ask for "the smallest key" or "everything between 100 and 200" and it has no idea.</p></div>
+    </div>
+  </section>
+  <section class="slide" data-i="7"  aria-hidden="true">
+    <div class="slide-inner">
+      <div class="kicker">The systems lesson nobody teaches</div>
+      <h2 class="title">Chaining vs open addressing</h2>
+      <p class="lead">Both O(1) average. One is 2× faster.</p>
+      <div class="body">
+<figure class="viz bars" aria-label="Open addressing about 2.7 times faster than chaining">
+  <div class="bar-row"><span class="bar-lbl">Open addressing</span><span class="bar-track"><span class="bar-fill" style="width:37%"></span></span><span class="bar-val mono">18 ns</span></div>
+  <div class="bar-row"><span class="bar-lbl">Separate chaining</span><span class="bar-track"><span class="bar-fill" style="width:100%"></span></span><span class="bar-val mono">48 ns</span></div>
+  <div class="bar-cap"><span class="ratio">2.7&times;</span> — identical data, identical O(1) average</div>
+</figure><p class="sub">Chaining chases a scattered pointer — a cache miss. Open addressing probes a flat array — a cache hit. <strong>Same complexity, different memory.</strong></p></div>
+    </div>
+  </section>
+  <section class="slide" data-i="8"  aria-hidden="true">
+    <div class="slide-inner">
+      <div class="kicker">Chapter 5 — order restored</div>
+      <h2 class="title">Trees</h2>
+      <p class="lead">Ordering AND O(log n) — what hashing threw away.</p>
+      <div class="body"><p class="sub">A balanced binary search tree keeps data sorted <em>and</em> gives logarithmic search, insert, and delete — all at once. Left is smaller, right is larger, all the way down.</p><p class="sub weakness">But a binary tree pays a cache miss on <em>every</em> level.</p></div>
+    </div>
+  </section>
+  <section class="slide" data-i="9"  aria-hidden="true">
+    <div class="slide-inner">
+      <div class="kicker">Chapter 6 — the tree the machine wants</div>
+      <h2 class="title">B-trees</h2>
+      <p class="lead">Why every database index is a B-tree.</p>
+      <div class="body">
+<figure class="viz btree" aria-label="A shallow B-tree with wide nodes">
+  <svg viewBox="0 0 520 150" role="img">
+    <g class="node"><rect x="150" y="12" width="220" height="26" rx="5"/><line x1="181" x2="181" y1="12" y2="38" class="key"/><line x1="212" x2="212" y1="12" y2="38" class="key"/><line x1="243" x2="243" y1="12" y2="38" class="key"/><line x1="274" x2="274" y1="12" y2="38" class="key"/><line x1="305" x2="305" y1="12" y2="38" class="key"/><line x1="336" x2="336" y1="12" y2="38" class="key"/></g>
+    <g class="node"><rect x="40" y="86" width="120" height="24" rx="5"/><line x1="70" x2="70" y1="86" y2="110" class="key"/><line x1="100" x2="100" y1="86" y2="110" class="key"/><line x1="130" x2="130" y1="86" y2="110" class="key"/></g><g class="node"><rect x="200" y="86" width="120" height="24" rx="5"/><line x1="230" x2="230" y1="86" y2="110" class="key"/><line x1="260" x2="260" y1="86" y2="110" class="key"/><line x1="290" x2="290" y1="86" y2="110" class="key"/></g><g class="node"><rect x="360" y="86" width="120" height="24" rx="5"/><line x1="390" x2="390" y1="86" y2="110" class="key"/><line x1="420" x2="420" y1="86" y2="110" class="key"/><line x1="450" x2="450" y1="86" y2="110" class="key"/></g>
+    <line x1="260" x2="100" y1="38" y2="86" class="link"/><line x1="260" x2="260" y1="38" y2="86" class="link"/><line x1="260" x2="420" y1="38" y2="86" class="link"/>
+  </svg>
+  <figcaption>32 keys per node &rarr; ~4 levels for a million keys, each a single cache line</figcaption>
+</figure><p class="sub">Pack many keys into one cache-line-sized node. The tree gets <strong>shallow</strong> — 4 levels instead of 20 — and each level is one cache line. Roughly <strong>8× faster</strong> on the same keys.</p></div>
+    </div>
+  </section>
+  <section class="slide" data-i="10"  aria-hidden="true">
+    <div class="slide-inner">
+      <div class="kicker">Chapter 7 — writing at scale</div>
+      <h2 class="title">LSM trees</h2>
+      <p class="lead">Turn every random write into a sequential append.</p>
+      <div class="body"><p class="sub">B-trees update in place — random writes scattered across the disk, the thing storage is worst at. The LSM tree never writes in place: buffer in memory, flush sorted files, merge in the background.</p><p class="sub tag">RocksDB · Cassandra · the write path of search engines</p></div>
+    </div>
+  </section>
+  <section class="slide" data-i="11"  aria-hidden="true">
+    <div class="slide-inner">
+      <div class="kicker">Chapter 8 — the last wall</div>
+      <h2 class="title">Out to the cluster</h2>
+      <p class="lead">When one machine is no longer enough.</p>
+      <div class="body"><p class="sub">Spread the data across many machines. To decide which machine owns a key, you reach back to the very first idea: <strong>hashing.</strong></p><p class="sub"><span class="mono">hash(key) % N</span> — and <strong>consistent hashing</strong> lets N change without reshuffling the world.</p></div>
+    </div>
+  </section>
+  <section class="slide" data-i="12"  aria-hidden="true">
+    <div class="slide-inner">
+      <div class="kicker">The one lesson</div>
+      <h2 class="title">Big-O starts the conversation.</h2>
+      <p class="lead">The machine finishes it.</p>
+      <div class="body"><p class="sub">Between two algorithms in the same complexity class — where most real decisions live — the <strong>constant factor</strong> and the <strong>memory access pattern</strong> break the tie. And the only way to know is to measure.</p></div>
+    </div>
+  </section>
+  <section class="slide" data-i="13"  aria-hidden="true">
+    <div class="slide-inner">
+      <div class="kicker">Keep going</div>
+      <h2 class="title">Run it yourself.</h2>
+      <p class="lead">Data Structures on Systems</p>
+      <div class="body"><p class="sub">The full book runs these benchmarks live in your browser, on your own CPU. Read it, fork it, and watch the memory hierarchy appear on your own machine.</p><p class="sub mono tag">sb2k16.github.io</p></div>
+    </div>
+  </section></div>
+
+  <div class="narrator">
+    <button class="play" id="play" aria-label="Play narration">
+      <svg id="play-i" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+    </button>
+    <button class="nav" id="prev" aria-label="Previous slide"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <div class="track-wrap">
+      <div class="caption" id="caption"></div>
+      <div class="prog"><div class="prog-fill" id="fill"></div></div>
+    </div>
+    <button class="nav" id="next" aria-label="Next slide"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+    <span class="hint">space · &larr; &rarr;</span>
+  </div>
+
+  <audio preload="auto" src="audio/s0.m4a" data-i="0"></audio>
+<audio preload="none" src="audio/s1.m4a" data-i="1"></audio>
+<audio preload="none" src="audio/s2.m4a" data-i="2"></audio>
+<audio preload="none" src="audio/s3.m4a" data-i="3"></audio>
+<audio preload="none" src="audio/s4.m4a" data-i="4"></audio>
+<audio preload="none" src="audio/s5.m4a" data-i="5"></audio>
+<audio preload="none" src="audio/s6.m4a" data-i="6"></audio>
+<audio preload="none" src="audio/s7.m4a" data-i="7"></audio>
+<audio preload="none" src="audio/s8.m4a" data-i="8"></audio>
+<audio preload="none" src="audio/s9.m4a" data-i="9"></audio>
+<audio preload="none" src="audio/s10.m4a" data-i="10"></audio>
+<audio preload="none" src="audio/s11.m4a" data-i="11"></audio>
+<audio preload="none" src="audio/s12.m4a" data-i="12"></audio>
+<audio preload="none" src="audio/s13.m4a" data-i="13"></audio>
+
+<script>
+const CAPS = ["Welcome to Data Structures on Systems. This is a listen and learn course, so you can put the screen down and just follow along. Here is the one idea that ties it all together. Data structures are not a catalog of things to memorize. They are a story. Each one exists because the one before it hit a wall. We will follow that story all the way down to the cache line the processor fetches, and all the way out to the cluster of machines a database runs on. Let's begin.","Most books teach data structures as abstractions and stop at big oh notation. You learn that a hash table is constant time and a tree is logarithmic, and you move on. That is necessary, but it is not enough. Big oh was designed to throw away two things. The constant factor, and the cost of touching memory. And on a real machine, running real software, those two things are often the entire story. Two loops that are both big oh of n can differ in speed by ten, or fifty times. Keep that in mind. It is the thread running through everything that follows.","Here is the fact that everything else rests on. A modern processor does not read from main memory at one speed. It keeps small, fast caches in front of the big, slow memory. Reading from the fastest cache takes about one nanosecond. Reading from main memory takes about a hundred. That is a hundred to one. And here is the trap. Reading a value that happens to be in cache, and reading one that is not, look identical in your code. Both are a single array access. Both are constant time. Big oh cannot tell them apart, but your users can feel the difference.","So let's start the story. The array is the oldest data structure and still the most important, because it is the one the hardware loves. An array is just its elements laid end to end in one unbroken block of memory. That single property, being contiguous, gives you two gifts. Instant access to any element by its index, and a walk through the array that the prefetcher can predict perfectly. There are no pointers to chase and no cache misses to stall on. This is why a plain array, or a vector, is the right default for a sequence of things. Its one real weakness is inserting in the middle, which means shifting everything after it. And that weakness is exactly the problem the next structure sets out to solve.","The linked list makes a bold trade. To get constant time insertion anywhere, it stops storing elements together. Instead each node lives wherever the allocator happened to put it, linked to the next one by a pointer. Now inserting is cheap. But walking the list means following those pointers, and each one jumps to an unpredictable address. That is a cache miss on every single element. So here is the lesson that every experienced engineer eventually learns. Between a linked list and an array, on real hardware, the array almost always wins, even for workloads that look tailor made for a list. When in doubt, use a vector. The cache locality beats the cheap insert.","Sometimes the smart move is to take a general structure and restrict it. A stack lets you push and pop from only one end. Last in, first out. A queue lets you add at one end and remove from the other. First in, first out. That restriction is not a limitation. It is a feature. It makes the operations constant time, predictable, and easy to reason about. And the most important stack in all of computing is the one every program runs on. The call stack. Every function call pushes a frame, every return pops one. Recursion depth is literally how full that stack is, and a stack overflow is that structure running out of room.","Now for maybe the most used data structure in all of software. The hash table asks a bold question. What if finding a value took the same time whether you had a hundred of them or a hundred million? It pulls this off with one impudent trick. Instead of searching for where a key lives, it computes where the key lives. You run the key through a hash function, get a number, and go straight to that slot. No scanning. The catch, and there is always a catch, is that it throws away all order to get there. Ask a hash table for the smallest key, or everything in a range, and it has no idea. That question belongs to a tree, which we will get to shortly.","Here is where this book earns its title. When two keys collide in a hash table, you have to handle it. The textbook way, called separate chaining, hangs a little linked list off each slot. The other way, open addressing, keeps everything in one flat array and just probes forward. On paper these are identical. Both are constant time on average. But watch the machine. Chaining follows a pointer to a scattered node, which is a cache miss. Open addressing reads the next slot in a flat array, which is already in cache. Same complexity. But open addressing is about twice as fast, purely because of how it touches memory. That is why the fastest hash tables in the world are open addressed.","The hash table gave us constant time lookup but destroyed all ordering. What if we need both? That is what a balanced binary search tree provides. It keeps your data in sorted order, and gives you logarithmic search, insert, and delete, all at the same time. The rule is simple. For every node, everything smaller is on the left, everything larger on the right. Walk it in order and the data comes out sorted. This is the structure behind an ordered map or set in most languages. But it has a hardware problem waiting for us. A binary tree makes one decision per node, and each step jumps to a scattered child. That is a cache miss on every level. And for a million items, that is about twenty misses per lookup.","So how do we fix a tree that misses the cache on every level? The answer is almost obvious once you see the problem. A cache miss brings in a whole line of memory whether you use one key or thirty two. So, use thirty two. Pack many keys into each node, sized to a cache line or a disk page, and the tree becomes dramatically shallower. Four levels instead of twenty. Fewer levels, and each one is a single fetch that does real work. This is the B tree. It is the same logarithmic complexity as a binary tree, but roughly eight times faster on real hardware. And it is why every database index on earth, in Postgres, in MySQL, in your file system, is a B tree, and not a binary tree.","B trees are wonderful for reading, but they have a weakness. Every write has to update a leaf in place, and at scale those are random writes scattered across the disk, which is exactly what storage hardware is worst at. The log structured merge tree begins from one stubborn idea. Never do a random write. Everything should be a sequential append, because that is the one thing disks are fast at. So writes go into memory first, then get flushed to disk in sorted, immutable files, and a background process merges those files over time. This is the engine inside RocksDB, Cassandra, and the write path of modern search systems. It trades slightly slower reads for enormously faster writes.","Eventually even the best single machine is not enough. The data, or the traffic, exceeds what one node can hold. So you spread it across many machines. And to decide which machine owns which key, you reach all the way back to the very first idea in this story. Hashing. You hash the key to pick a server. The problem is that adding or removing a server changes the math and reshuffles almost everything. The fix is called consistent hashing, and it lets the cluster grow and shrink while moving only a tiny fraction of the keys. So the largest databases in the world are, at their core, a hash table whose slots are machines, each one running a log structured merge tree. The data structures you started with are the ones running the whole thing.","So if there is one lesson to take from all of this, it is this. Big oh notation starts the conversation. It tells you how something scales, and that matters enormously. But the machine finishes the conversation. Between two algorithms in the same complexity class, which is where most real engineering decisions actually live, the constant factor and the memory access pattern break the tie. And the only way to truly know which is faster is to measure it, on the hardware you actually run on. Your intuition was calibrated for a machine that no longer exists.","That is the whole arc, from a single contiguous array all the way to a distributed database. If you want to go deeper, the full book is free, and every claim about performance in it runs as a live benchmark, in your browser, on your own processor. You do not have to take any number on faith. You can watch the memory mountain appear on your own machine. Thanks for listening, and happy building."], ARCMAP = [-1,-1,-1,0,1,2,3,3,4,5,6,7,-1,-1], N = 14;
+const audios = [...document.querySelectorAll('audio')];
+const slides = [...document.querySelectorAll('.slide')];
+const arcSteps = [...document.querySelectorAll('.arc-step')];
+const $ = (id) => document.getElementById(id);
+let cur = 0, playing = false, autoplay = true;
+
+function setTheme(t){ document.documentElement.dataset.theme = t; try{localStorage.setItem('deck-theme',t)}catch(e){}
+  document.querySelector('.sun-c').style.display = t==='dark'?'none':'';
+  document.querySelector('.sun-r').style.display = t==='dark'?'none':'';
+  document.querySelector('.moon').style.display = t==='dark'?'block':'none'; }
+(function initTheme(){ let t; try{t=localStorage.getItem('deck-theme')}catch(e){}
+  if(!t) t = matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'; setTheme(t); })();
+$('theme').onclick = () => setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');
+
+function renderArc(){ const a = ARCMAP[cur]; arcSteps.forEach((s,i)=> s.toggleAttribute('data-on', i===a)); }
+function setPlayIcon(){ $('play-i').innerHTML = playing
+  ? '<path d="M6 4h4v16H6zM14 4h4v16h-4z"/>' : '<path d="M8 5v14l11-7z"/>'; }
+
+function stopAll(){ audios.forEach(a=>{ a.pause(); }); }
+function show(i, {play=autoplay}={}){
+  if(i<0||i>=N) return;
+  stopAll();
+  slides[cur].removeAttribute('data-active'); slides[cur].setAttribute('aria-hidden','true');
+  cur = i;
+  slides[cur].setAttribute('data-active',''); slides[cur].setAttribute('aria-hidden','false');
+  $('cur').textContent = cur+1;
+  $('caption').textContent = CAPS[cur];
+  $('fill').style.width='0%';
+  $('prev').disabled = cur===0; $('next').disabled = cur===N-1;
+  renderArc();
+  // preload neighbour
+  if(audios[cur+1]) audios[cur+1].preload='auto';
+  const a = audios[cur]; a.currentTime = 0;
+  if(play){ a.play().then(()=>{playing=true;setPlayIcon();}).catch(()=>{playing=false;setPlayIcon();}); }
+  else { playing=false; setPlayIcon(); }
+}
+function toggle(){ const a=audios[cur];
+  if(playing){ a.pause(); playing=false; } else { autoplay=true; a.play().catch(()=>{}); playing=true; }
+  setPlayIcon(); }
+
+audios.forEach((a,i)=>{
+  a.addEventListener('timeupdate',()=>{ if(i===cur && a.duration) $('fill').style.width=(a.currentTime/a.duration*100)+'%'; });
+  a.addEventListener('ended',()=>{ if(i===cur){ $('fill').style.width='100%';
+    if(cur<N-1 && autoplay){ setTimeout(()=>show(cur+1,{play:true}), 650); } else { playing=false; setPlayIcon(); } } });
+});
+
+$('play').onclick = toggle;
+$('prev').onclick = () => show(cur-1);
+$('next').onclick = () => show(cur+1);
+$('stage').onclick = (e)=>{ const r=$('stage').getBoundingClientRect(); (e.clientX-r.left)/r.width < .25 ? show(cur-1) : show(cur+1); };
+arcSteps.forEach((s)=> s.onclick = ()=>{ const a=+s.dataset.arc; const t=ARCMAP.indexOf(a); if(t>=0) show(t); });
+document.addEventListener('keydown',(e)=>{
+  if(e.key===' '){e.preventDefault();toggle();}
+  else if(e.key==='ArrowRight'||e.key==='PageDown'){show(cur+1);}
+  else if(e.key==='ArrowLeft'||e.key==='PageUp'){show(cur-1);}
+  else if(e.key==='Home'){show(0);} else if(e.key==='End'){show(N-1);}
+});
+
+// init caption/state; first slide waits for a user gesture to start audio (autoplay policy)
+$('caption').textContent = CAPS[0]; renderArc(); $('prev').disabled=true; setPlayIcon();
+</script>
+</body>
+</html>
