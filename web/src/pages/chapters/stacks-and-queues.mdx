@@ -6,6 +6,8 @@ description: Stacks and queues are the two most useful restrictions you can put 
 
 import InProduction from '../../components/InProduction.astro';
 import InterviewChecklist from '../../components/InterviewChecklist.astro';
+import CppProblem from '../../components/problem/CppProblem';
+import { validParentheses } from '../../lib/problems';
 
 The last chapter, [linked lists](/chapters/linked-lists), bought you the freedom to insert or delete
 *anywhere* in a sequence. Stacks and queues do the opposite thing on purpose: they take that freedom
@@ -107,6 +109,15 @@ run off the end of the allotted space and the program dies.
 - **Ring buffers in the kernel and in audio** — network packet rings (NIC ↔ kernel) and lock-free single-producer/single-consumer audio queues, where an allocation or a lock on the hot path would mean a dropped packet or an audible glitch.
 - **Expression evaluation and parsing** — the shunting-yard algorithm uses a stack to turn infix math into postfix; compilers and calculators lean on it constantly.
 </InProduction>
+
+## Try it: valid parentheses
+
+This is *the* problem a stack was made for. Given a string of brackets — `()`, `[]`, `{}` — decide
+whether they're balanced and correctly nested. Push each opener; on a closer, the top of the stack
+must be its match, or the string is invalid. The LIFO order is exactly the nesting order, which is
+why the stack is the whole solution. Fill in `isValid` and run the tests.
+
+<CppProblem client:visible starter={validParentheses.starter} harness={validParentheses.harness} />
 
 ## Interview checklist
 

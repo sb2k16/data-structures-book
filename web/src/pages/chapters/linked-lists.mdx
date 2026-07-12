@@ -7,6 +7,8 @@ description: The linked list buys O(1) insertion by giving up the contiguity tha
 import Compare from '../../components/bench/Compare';
 import InProduction from '../../components/InProduction.astro';
 import InterviewChecklist from '../../components/InterviewChecklist.astro';
+import CppProblem from '../../components/problem/CppProblem';
+import { reverseList } from '../../lib/problems';
 
 The last chapter ended on the [array](/chapters/basic-data-structures)'s one genuine weakness:
 because its elements are packed contiguously, inserting or deleting anywhere but the end means
@@ -143,6 +145,15 @@ above — not the "list of ints" from a textbook.
 
 Notice the pattern: every one of these holds the node directly and never traverses to find it. That
 is the only shape in which the linked list's O(1) splice pays off.
+
+## Try it: reverse a linked list
+
+The definitive linked-list exercise, and it's pure pointer rewiring: walk the list and flip each
+node's `next` to point at the node before it. The one habit that makes or breaks it — save `next`
+into a temporary *before* you overwrite it, or you lose the rest of the list. No cache tricks here,
+just careful pointer bookkeeping. Fill in `reverseList` and run the tests.
+
+<CppProblem client:visible starter={reverseList.starter} harness={reverseList.harness} prelude={reverseList.prelude} />
 
 ## Interview checklist
 

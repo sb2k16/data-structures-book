@@ -7,6 +7,8 @@ description: The array is the structure the hardware loves — contiguous memory
 import Compare from '../../components/bench/Compare';
 import InProduction from '../../components/InProduction.astro';
 import InterviewChecklist from '../../components/InterviewChecklist.astro';
+import CppProblem from '../../components/problem/CppProblem';
+import { maxSubarray } from '../../lib/problems';
 
 The array is the oldest data structure and still the most important one, because it is the
 structure the hardware was built to love. Everything you learned in the last two chapters —
@@ -103,6 +105,15 @@ fastest systems in the world are the ones that lean into its cache behavior hard
 - **`reserve()` when you know the size.** It converts a series of reallocations into a single allocation — often a free 2–3× on a hot build loop.
 - **Insert and delete at the end, not the middle.** If your workload is front-insertion-heavy, that's a signal to use a `std::deque` (a chunked array) or to rethink the algorithm — not to reach for a linked list, whose cache penalty usually costs more than the O(1) splice saves.
 - **Arrange arrays for the access pattern.** If you loop over one field of many records, store that field contiguously. The AoS→SoA flip above is one of the cheapest large wins in performance work.
+
+## Try it: the maximum subarray
+
+The array's superpower is the fast sequential scan, and Kadane's algorithm is that scan at its
+purest: find the contiguous subarray with the largest sum, in a single `O(n)` pass over
+contiguous memory. As you walk the array, you only need two numbers — the best sum ending at the
+current element, and the best you've seen anywhere. Fill in `maxSubArray` and run the tests.
+
+<CppProblem client:visible starter={maxSubarray.starter} harness={maxSubarray.harness} />
 
 ## Interview checklist
 
