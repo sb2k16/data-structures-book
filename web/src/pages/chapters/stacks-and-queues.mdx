@@ -7,7 +7,9 @@ description: Stacks and queues are the two most useful restrictions you can put 
 import InProduction from '../../components/InProduction.astro';
 import InterviewChecklist from '../../components/InterviewChecklist.astro';
 import CppProblem from '../../components/problem/CppProblem';
+import AlgoViz from '../../components/problem/AlgoViz';
 import { validParentheses } from '../../lib/problems';
+import { parensTrace } from '../../lib/traces';
 
 The last chapter, [linked lists](/chapters/linked-lists), bought you the freedom to insert or delete
 *anywhere* in a sequence. Stacks and queues do the opposite thing on purpose: they take that freedom
@@ -118,6 +120,8 @@ must be its match, or the string is invalid. The LIFO order is exactly the nesti
 why the stack is the whole solution. Fill in `isValid` and run the tests.
 
 <CppProblem client:visible starter={validParentheses.starter} harness={validParentheses.harness} />
+
+<AlgoViz client:visible kind="parens" steps={parensTrace} title="Watch it run: valid parentheses" />
 
 ## Interview checklist
 

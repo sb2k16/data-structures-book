@@ -8,7 +8,9 @@ import Compare from '../../components/bench/Compare';
 import InProduction from '../../components/InProduction.astro';
 import InterviewChecklist from '../../components/InterviewChecklist.astro';
 import CppProblem from '../../components/problem/CppProblem';
+import AlgoViz from '../../components/problem/AlgoViz';
 import { maxSubarray } from '../../lib/problems';
+import { kadaneTrace } from '../../lib/traces';
 
 The array is the oldest data structure and still the most important one, because it is the
 structure the hardware was built to love. Everything you learned in the last two chapters —
@@ -114,6 +116,8 @@ contiguous memory. As you walk the array, you only need two numbers — the best
 current element, and the best you've seen anywhere. Fill in `maxSubArray` and run the tests.
 
 <CppProblem client:visible starter={maxSubarray.starter} harness={maxSubarray.harness} />
+
+<AlgoViz client:visible kind="kadane" steps={kadaneTrace} title="Watch it run: Kadane's, one pass" />
 
 ## Interview checklist
 
