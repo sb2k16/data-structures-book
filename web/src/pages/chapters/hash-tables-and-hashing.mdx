@@ -8,7 +8,9 @@ import Compare from '../../components/bench/Compare';
 import InProduction from '../../components/InProduction.astro';
 import InterviewChecklist from '../../components/InterviewChecklist.astro';
 import CppProblem from '../../components/problem/CppProblem';
+import AlgoViz from '../../components/problem/AlgoViz';
 import { twoSumOnePass } from '../../lib/problems';
+import { twoSumTrace } from '../../lib/traces';
 
 Every data structure exists because the one before it had a problem.
 
@@ -180,6 +182,11 @@ Fill in the function and run the tests — your C++ is compiled and checked righ
 browser. (This is a taste of the full practice set.)
 
 <CppProblem client:visible starter={twoSumOnePass.starter} harness={twoSumOnePass.harness} />
+
+Once it passes, watch the reference solution execute step by step — the array, the hash map
+filling as you scan, and the moment the complement is found:
+
+<AlgoViz client:visible steps={twoSumTrace} title="Watch it run: two-sum, one pass" />
 
 ## Interview checklist
 
