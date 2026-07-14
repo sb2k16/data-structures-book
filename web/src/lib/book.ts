@@ -56,7 +56,8 @@ export const CHAPTERS: ChapterMeta[] = [
     number: '3.5',
     title: 'Concurrency for Data Structures',
     part: 'Linear Structures',
-    blurb: 'Locks, atomics, and what "thread-safe" costs you in cycles.',
+    blurb: 'Locks, atomics, and what "thread-safe" costs you — with the data race and its fix animated step by step.',
+    custom: true,
   },
   {
     id: 'memory-hierarchy-and-performance',

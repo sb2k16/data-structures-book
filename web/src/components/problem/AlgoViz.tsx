@@ -11,7 +11,7 @@ import type { Step } from '../../lib/traces';
  *   twoSum — array + hash map     kadane — array + running window
  *   parens — string + stack       list   — nodes + flipping pointers
  */
-type Kind = 'twoSum' | 'kadane' | 'parens' | 'list';
+type Kind = 'twoSum' | 'kadane' | 'parens' | 'list' | 'binarySearch' | 'bst' | 'btree' | 'lsm' | 'concurrency';
 
 interface Props {
   steps: Step[];
@@ -137,11 +137,230 @@ function ListStage({ st }: { st: any }) {
   );
 }
 
+function BinarySearchStage({ st }: { st: any }) {
+  const arr: number[] = st.array ?? [];
+  const cellS = (i: number) => {
+    if (i === st.result && st.result >= 0) return GREEN;
+    if (i === st.mid) return ACCENT;
+    if (i < st.lo || i > st.hi) return { border: 'var(--border)', bg: 'var(--surface-2)', dim: true };
+    return ACCENT_SOFT;
+  };
+  return (
+    <>
+      <Label>sorted array · <span style={{ color: 'var(--accent)' }}>blue = midpoint</span>, live window shaded, eliminated half greyed</Label>
+      <div className="flex flex-wrap gap-2">
+        {arr.map((v, i) => {
+          const s = cellS(i) as any;
+          return (
+            <div key={i} className="flex flex-col items-center" style={{ opacity: s.dim ? 0.35 : 1 }}>
+              <Cell v={v} label={i} s={{ border: s.border, bg: s.bg }} />
+              <span className="mt-1 h-3 font-mono text-[10px] font-bold" style={{ color: 'var(--accent)' }}>
+                {i === st.lo && i === st.hi ? 'lo·hi' : i === st.lo ? 'lo' : i === st.hi ? 'hi' : ''}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Stat k="target" v={st.target} />
+        <Stat k="window" v={`[${st.lo}, ${st.hi}]`} />
+        <Stat k="size" v={Math.max(0, st.hi - st.lo + 1)} />
+      </div>
+    </>
+  );
+}
+
+/** Lay out a tree: leaves get consecutive x slots, a parent sits above its children's centre. */
+function layoutTree(rootId: number, childrenOf: (id: number) => number[]) {
+  const pos = new Map<number, { x: number; depth: number }>();
+  let leaf = 0;
+  let maxDepth = 0;
+  const visit = (id: number, depth: number): number => {
+    maxDepth = Math.max(maxDepth, depth);
+    const kids = childrenOf(id).filter((k) => k !== -1 && k !== undefined && k !== null);
+    if (kids.length === 0) {
+      const x = leaf++;
+      pos.set(id, { x, depth });
+      return x;
+    }
+    const xs = kids.map((k) => visit(k, depth + 1));
+    const x = (Math.min(...xs) + Math.max(...xs)) / 2;
+    pos.set(id, { x, depth });
+    return x;
+  };
+  if (rootId !== -1 && rootId !== undefined) visit(rootId, 0);
+  return { pos, leaves: Math.max(1, leaf), maxDepth };
+}
+
+function BSTStage({ st }: { st: any }) {
+  const tree: { id: number; val: number; left: number; right: number }[] = st.tree ?? [];
+  const byId = new Map(tree.map((n) => [n.id, n]));
+  const { pos, leaves, maxDepth } = layoutTree(st.root, (id) => { const n = byId.get(id); return n ? [n.left, n.right] : []; });
+  const path: number[] = st.path ?? [];
+  const cur = byId.get(st.current_id);
+  const found = !!cur && cur.val === st.target; // search hit or freshly-inserted node
+  const XU = 62, YU = 74, PAD = 26;
+  const W = leaves * XU, H = (maxDepth + 1) * YU;
+  const cx = (id: number) => (pos.get(id)!.x + 0.5) * XU;
+  const cy = (id: number) => pos.get(id)!.depth * YU + PAD;
+  const fill = (id: number) => id === st.current_id ? (found ? 'var(--series-2)' : 'var(--accent)') : path.includes(id) ? 'color-mix(in srgb, var(--accent) 12%, var(--surface-1))' : 'var(--surface-1)';
+  const stroke = (id: number) => id === st.current_id ? (found ? 'var(--series-2)' : 'var(--accent)') : path.includes(id) ? 'color-mix(in srgb, var(--accent) 45%, var(--border))' : 'var(--border-strong)';
+  const textColor = (id: number) => id === st.current_id ? '#fff' : 'var(--text-primary)';
+  return (
+    <>
+      <Label>binary search tree · <span style={{ color: 'var(--accent)' }}>blue = node being compared</span>, path shaded</Label>
+      <div className="overflow-x-auto">
+        <svg viewBox={`0 0 ${W} ${H}`} width={W} style={{ maxWidth: '100%', height: 'auto' }} role="img">
+          {tree.map((n) => [n.left, n.right].filter((c) => c !== -1).map((c) => (
+            <line key={`${n.id}-${c}`} x1={cx(n.id)} y1={cy(n.id)} x2={cx(c)} y2={cy(c)} stroke="var(--border-strong)" strokeWidth={1.5} />
+          )))}
+          {tree.map((n) => (
+            <g key={n.id}>
+              <circle cx={cx(n.id)} cy={cy(n.id)} r={18} fill={fill(n.id)} stroke={stroke(n.id)} strokeWidth={2} />
+              <text x={cx(n.id)} y={cy(n.id)} textAnchor="middle" dominantBaseline="central" fontSize={14} fontWeight={600} fill={textColor(n.id)} style={{ fontFamily: 'var(--font-mono, monospace)' }}>{n.val}</text>
+            </g>
+          ))}
+        </svg>
+      </div>
+    </>
+  );
+}
+
+function BTreeStage({ st }: { st: any }) {
+  const tree: { id: number; keys: number[]; children: number[]; leaf: boolean }[] = st.tree ?? [];
+  const byId = new Map(tree.map((n) => [n.id, n]));
+  const { pos, leaves, maxDepth } = layoutTree(st.root, (id) => byId.get(id)?.children ?? []);
+  const KW = 32, KH = 34, GAPX = 34, YU = 92, PAD = 22;
+  const nodeW = (n: { keys: number[] }) => n.keys.length * KW + 12;
+  const unit = 3 * KW + GAPX; // horizontal slot per leaf
+  const W = leaves * unit, H = (maxDepth + 1) * YU;
+  const cx = (id: number) => (pos.get(id)!.x + 0.5) * unit;
+  const cy = (id: number) => pos.get(id)!.depth * YU + PAD;
+  return (
+    <>
+      <Label>B-tree (order 4: up to 3 keys per node) · <span style={{ color: 'var(--accent)' }}>blue = active node</span>, <span style={{ color: '#e0803a' }}>orange = splitting</span></Label>
+      <div className="overflow-x-auto">
+        <svg viewBox={`0 0 ${W} ${H}`} width={W} style={{ maxWidth: '100%', height: 'auto' }} role="img">
+          {tree.map((n) => n.children.filter((c) => c !== -1).map((c) => (
+            <line key={`${n.id}-${c}`} x1={cx(n.id)} y1={cy(n.id) + KH / 2} x2={cx(c)} y2={cy(c) - KH / 2} stroke="var(--border-strong)" strokeWidth={1.5} />
+          )))}
+          {tree.map((n) => {
+            const w = nodeW(n);
+            const active = n.id === st.active, splitting = n.id === st.splitting;
+            const border = splitting ? '#e0803a' : active ? 'var(--accent)' : 'var(--border-strong)';
+            const bg = splitting ? 'color-mix(in srgb, #e0803a 12%, var(--surface-1))' : active ? 'color-mix(in srgb, var(--accent) 10%, var(--surface-1))' : 'var(--surface-1)';
+            return (
+              <g key={n.id}>
+                <rect x={cx(n.id) - w / 2} y={cy(n.id) - KH / 2} width={w} height={KH} rx={7} fill={bg} stroke={border} strokeWidth={2} />
+                {n.keys.map((k, ki) => {
+                  const kx = cx(n.id) - w / 2 + 6 + ki * KW + KW / 2;
+                  return (
+                    <g key={ki}>
+                      {ki > 0 && <line x1={kx - KW / 2} y1={cy(n.id) - KH / 2 + 5} x2={kx - KW / 2} y2={cy(n.id) + KH / 2 - 5} stroke="var(--border)" strokeWidth={1} />}
+                      <text x={kx} y={cy(n.id)} textAnchor="middle" dominantBaseline="central" fontSize={13} fontWeight={600} fill={st.promoted === k && (active || splitting) ? 'var(--accent)' : 'var(--text-primary)'} style={{ fontFamily: 'var(--font-mono, monospace)' }}>{k}</text>
+                    </g>
+                  );
+                })}
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+    </>
+  );
+}
+
+function Run({ keys, tone }: { keys: number[]; tone: 'l0' | 'l1' }) {
+  const border = tone === 'l1' ? 'var(--series-2)' : 'var(--accent)';
+  const bg = tone === 'l1' ? 'color-mix(in srgb, var(--series-2) 12%, var(--surface-1))' : 'color-mix(in srgb, var(--accent) 10%, var(--surface-1))';
+  return (
+    <div className="flex items-center gap-1 rounded-lg border-2 px-1.5 py-1" style={{ borderColor: border, background: bg }}>
+      {keys.map((k, i) => <span key={i} className="font-mono text-xs font-semibold tabular-nums" style={{ color: 'var(--text-primary)' }}>{k}{i < keys.length - 1 && <span style={{ color: 'var(--text-muted)' }}> · </span>}</span>)}
+    </div>
+  );
+}
+
+function LsmStage({ st }: { st: any }) {
+  const mem: number[] = st.memtable ?? [];
+  const cap: number = st.cap ?? 4;
+  const l0: number[][] = st.l0 ?? [];
+  const l1: number[][] = st.l1 ?? [];
+  const flushing = st.phase === 'flush', compacting = st.phase === 'compact';
+  return (
+    <>
+      <Label>memtable <span style={{ textTransform: 'none', letterSpacing: 0, color: 'var(--text-muted)' }}>· in-memory, sorted{flushing ? ' — flushing ↓' : ''}</span></Label>
+      <div className="flex flex-wrap gap-2" style={{ opacity: flushing ? 0.5 : 1 }}>
+        {Array.from({ length: cap }).map((_, i) => (
+          <Cell key={i} v={mem[i] ?? ''} s={i < mem.length ? ACCENT : { border: 'var(--border)', bg: 'var(--surface-2)' }} />
+        ))}
+      </div>
+      <div className="mt-5"><Label>L0 <span style={{ textTransform: 'none', letterSpacing: 0, color: 'var(--text-muted)' }}>· on-disk sorted runs (immutable){compacting ? ' — compacting ↓' : ''}</span></Label>
+        <div className="flex min-h-[2.25rem] flex-wrap items-center gap-3" style={{ opacity: compacting ? 0.5 : 1 }}>
+          {l0.length === 0 ? <span className="text-sm" style={{ color: 'var(--text-muted)' }}>empty</span> : l0.map((run, i) => <Run key={i} keys={run} tone="l0" />)}
+        </div>
+      </div>
+      <div className="mt-5"><Label>L1 <span style={{ textTransform: 'none', letterSpacing: 0, color: 'var(--text-muted)' }}>· larger merged run</span></Label>
+        <div className="flex min-h-[2.25rem] flex-wrap items-center gap-3">
+          {l1.length === 0 ? <span className="text-sm" style={{ color: 'var(--text-muted)' }}>empty</span> : l1.map((run, i) => <Run key={i} keys={run} tone="l1" />)}
+        </div>
+      </div>
+    </>
+  );
+}
+
+const RACE_INSTR = ['LOAD   r ← counter', 'INC    r', 'STORE  counter ← r'];
+const LOCK_INSTR = ['LOCK', 'LOAD   r ← counter', 'INC    r', 'STORE  counter ← r', 'UNLOCK'];
+
+function ThreadCol({ name, t, active, instr }: { name: string; t: any; active: boolean; instr: string[] }) {
+  return (
+    <div className="flex-1 rounded-lg border-2 p-3" style={{ borderColor: active ? 'var(--accent)' : 'var(--border)', background: active ? 'color-mix(in srgb, var(--accent) 6%, var(--surface-1))' : 'var(--surface-1)' }}>
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: active ? 'var(--accent)' : 'var(--text-muted)' }}>{name}</span>
+        {t.blocked && <span className="rounded px-1.5 py-0.5 text-[10px] font-semibold" style={{ background: 'color-mix(in srgb, #e0803a 18%, transparent)', color: '#c06a28' }}>BLOCKED</span>}
+      </div>
+      <div className="flex flex-col gap-1">
+        {instr.map((line, i) => {
+          const cur = i === t.pc && !t.blocked;
+          return (
+            <div key={i} className="rounded px-2 py-1 font-mono text-[11px] leading-tight" style={{ background: cur ? 'var(--accent)' : 'transparent', color: cur ? '#fff' : i < t.pc ? 'var(--text-muted)' : 'var(--text-secondary)' }}>{line}</div>
+          );
+        })}
+      </div>
+      <div className="mt-2 font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>register r = <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{t.reg === null || t.reg === undefined ? '—' : t.reg}</span></div>
+    </div>
+  );
+}
+
+function ConcurrencyStage({ st }: { st: any }) {
+  const locked = st.mode === 'locked';
+  const instr = locked ? LOCK_INSTR : RACE_INSTR;
+  const ts = st.threads ?? [{}, {}];
+  return (
+    <>
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <span className="rounded-md border-2 px-3 py-1.5 font-mono text-sm font-semibold" style={{ borderColor: 'var(--accent)', background: 'color-mix(in srgb, var(--accent) 12%, var(--surface-1))', color: 'var(--text-primary)' }}>shared counter = {st.counter}</span>
+        {locked && <span className="rounded-md border px-2.5 py-1 text-xs" style={{ borderColor: 'var(--border-strong)', background: 'var(--surface-1)', color: 'var(--text-secondary)' }}>🔒 lock: <span className="font-mono font-semibold" style={{ color: 'var(--text-primary)' }}>{st.lockOwner === null || st.lockOwner === undefined ? 'free' : st.lockOwner === 0 ? 'Thread A' : 'Thread B'}</span></span>}
+      </div>
+      <div className="flex gap-3">
+        <ThreadCol name="Thread A" t={ts[0]} active={st.active === 0} instr={instr} />
+        <ThreadCol name="Thread B" t={ts[1]} active={st.active === 1} instr={instr} />
+      </div>
+      {st.result === 'lost' && <div className="mt-4 rounded-lg border-2 px-3 py-2 text-sm font-semibold" style={{ borderColor: '#e34948', background: 'color-mix(in srgb, #e34948 8%, transparent)', color: '#e34948' }}>✗ Lost update — two increments ran, but counter = 1. Expected 2.</div>}
+      {st.result === 'correct' && <div className="mt-4 rounded-lg border-2 px-3 py-2 text-sm font-semibold" style={{ borderColor: 'var(--series-2)', background: 'color-mix(in srgb, var(--series-2) 8%, transparent)', color: 'var(--series-2)' }}>✓ counter = 2 — both increments landed. The critical section was atomic.</div>}
+    </>
+  );
+}
+
 function Stage({ kind, st }: { kind: Kind; st: any }) {
   if (!st) return null;
   if (kind === 'kadane') return <KadaneStage st={st} />;
   if (kind === 'parens') return <ParensStage st={st} />;
   if (kind === 'list') return <ListStage st={st} />;
+  if (kind === 'binarySearch') return <BinarySearchStage st={st} />;
+  if (kind === 'bst') return <BSTStage st={st} />;
+  if (kind === 'btree') return <BTreeStage st={st} />;
+  if (kind === 'lsm') return <LsmStage st={st} />;
+  if (kind === 'concurrency') return <ConcurrencyStage st={st} />;
   return <TwoSumStage st={st} />;
 }
 

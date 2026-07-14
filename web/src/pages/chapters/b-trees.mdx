@@ -7,6 +7,8 @@ description: The binary search tree is O(log n) and still too slow, because ever
 import Compare from '../../components/bench/Compare';
 import InProduction from '../../components/InProduction.astro';
 import InterviewChecklist from '../../components/InterviewChecklist.astro';
+import AlgoViz from '../../components/problem/AlgoViz';
+import { btreeTrace } from '../../lib/traces-systems';
 
 The [previous chapter](/chapters/trees-and-binary-trees) left a loose thread. A balanced binary
 search tree is `O(log n)` for lookup — asymptotically excellent — and yet no database in the world
@@ -33,6 +35,14 @@ before descending. Now each expensive memory fetch does real work, and because e
 children instead of two, the tree is dramatically **shallower**: a B-tree with 32 keys per node
 holds a million keys in about four levels instead of twenty. Fewer levels, and each level is one
 cache line instead of a scattered pointer. That is the entire idea of a **B-tree**.
+
+Width has a cost, though: nodes must be kept between half-full and full so the tree stays balanced
+and shallow. The mechanism is the **split** — when a node overflows, its median key moves up to the
+parent and the node divides in two. Splits are the only thing that makes a B-tree taller, and they
+happen from the bottom up, which is why every leaf always ends at the same depth. Watch a full leaf
+split and grow the tree, then a second insert ride into the existing root:
+
+<AlgoViz client:visible kind="btree" steps={btreeTrace} title="Watch it run: B-tree insert and node split" />
 
 ## The payoff, measured
 

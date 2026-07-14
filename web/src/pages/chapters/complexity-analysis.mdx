@@ -5,6 +5,8 @@ description: Big-O, and the two things it deliberately hides — the constant fa
 ---
 
 import Compare from '../../components/bench/Compare';
+import AlgoViz from '../../components/problem/AlgoViz';
+import { binarySearchTrace } from '../../lib/traces';
 
 Complexity analysis answers one question: as the input grows, how does the cost grow with
 it? That question matters enormously, and Big-O notation is the right tool for it. But Big-O
@@ -57,7 +59,14 @@ void allPairs(const std::vector<int>& a) {
 }
 ```
 
-That is genuinely most of the notation. The interesting part — the part most books skip — is
+That is genuinely most of the notation. Before we push on, it is worth *seeing* where O(log n)
+comes from, because it is the one class that feels like magic. Binary search throws away half of
+what remains at every step — so a thousand elements take ten comparisons, a million take twenty.
+Watch the search window collapse:
+
+<AlgoViz client:visible kind="binarySearch" steps={binarySearchTrace} title="Watch it run: binary search halves the space" />
+
+The interesting part — the part most books skip — is
 what happens when two algorithms land in the *same* Big-O class, because that is where real
 engineering decisions actually live, and Big-O has just told you it cannot help.
 

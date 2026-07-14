@@ -1,0 +1,250 @@
+---
+layout: ../../layouts/MdxChapter.astro
+slug: concurrency-fundamentals
+description: Every structure so far assumed one thread — a luxury. The moment two threads touch the same data, correct-looking code becomes intermittently wrong. This chapter is the mental model — races, locks, visibility, deadlock — you need before any structure can be called thread-safe.
+---
+
+import InProduction from '../../components/InProduction.astro';
+import InterviewChecklist from '../../components/InterviewChecklist.astro';
+import AlgoViz from '../../components/problem/AlgoViz';
+import { concurrencyRaceTrace, concurrencyLockedTrace } from '../../lib/traces-systems';
+
+Every data structure in this book so far has assumed one thread. That assumption is a luxury. The
+moment two threads touch the same structure, code that was obviously correct becomes subtly,
+intermittently wrong — and the bug only shows up on the customer's 64-core machine, at 3 a.m., once
+every ten million requests.
+
+There is one skill underneath all of concurrency, and it is worth stating before anything else: **a
+concurrent operation is correct only if *every possible interleaving* of it with other threads
+preserves the structure's invariants.** Locks, atomics, memory ordering, lock-free tricks — all of
+it exists to make that one sentence true. We stay in shared-memory territory: multiple threads, one
+address space, locks as the default, lock-free as a preview.
+
+## Why one thread was a luxury
+
+In single-threaded code you reason in program order: each statement finishes before the next starts.
+`counter++` is *one thing that happens*. Under concurrency that intuition is a lie, because
+`counter++` is really three machine steps — load, add, store — and the scheduler can suspend a thread
+between any two of them. Watch two threads each run `counter++` once, interleaved so that one
+increment is silently lost:
+
+<AlgoViz client:visible kind="concurrency" steps={concurrencyRaceTrace} title="Watch it run: a data race loses an update" />
+
+Nothing is broken in either thread's code. The bug lives in the *gap* between their steps: Thread B
+read the counter before Thread A stored its result, so B computed from a stale value and its write
+clobbered A's. This is a **lost update**, the most common shape of a **data race** — two threads
+touch the same location, at least one writes, and nothing synchronizes them. In C++ a data race is
+not "you get a stale value"; it is undefined behavior, and the standard makes no promises at all.
+
+The same gap corrupts pointer surgery. Between these two lines the list is in a state its invariant
+forbids — `new_node` points into the chain, but nothing points at `new_node` yet:
+
+```cpp
+void insertAfter(Node* prev, Node* new_node) {
+    new_node->next = prev->next;   // step 1
+    prev->next = new_node;         // step 2  ← a reader between 1 and 2 sees a half-linked list
+}
+```
+
+Making incorrect code faster with threads only lets it be wrong in parallel. Correctness first.
+
+## What a lock actually promises
+
+The fix is **atomicity**: make the whole load-modify-store sequence indivisible, so no other thread
+can observe it half-done. A **critical section** is the region that touches shared state; **mutual
+exclusion** is the guarantee that only one thread is inside it at a time; a **mutex** is the tool
+that provides it. In C++ you rarely lock by hand — an RAII guard ties the lock to a scope, so it is
+released even if the body throws:
+
+```cpp
+std::mutex mtx;
+long counter = 0;
+
+void safeIncrement() {
+    std::lock_guard<std::mutex> lock(mtx);  // acquire
+    ++counter;                              // critical section: one thread only
+}                                           // release on scope exit
+```
+
+Run the same two threads again, now each taking the lock before it touches the counter. Whoever
+loses the race blocks until the winner is completely done, so no interleaving can slip between load
+and store:
+
+<AlgoViz client:visible kind="concurrency" steps={concurrencyLockedTrace} title="Watch it run: a mutex makes it atomic" />
+
+A lock gives you two things. The obvious one is mutual exclusion. The one people forget is
+**visibility via happens-before**: every write a thread makes before it unlocks is guaranteed visible
+to the next thread that locks the same mutex. That second guarantee is what makes the data you
+protected actually *readable* by the next thread — and it is why "just mark it `volatile`" is not a
+substitute for a lock. What a lock does *not* do is make your logic correct: it won't save you from a
+check-then-act race across two separate acquisitions, and it can't tell you *which* state needs
+protecting. That judgment is yours.
+
+## Visibility is a separate problem from atomicity
+
+Atomicity is about indivisibility; visibility is about whether a write ever reaches another thread's
+eyes. They are independent, and this snippet — correct-looking, and broken — shows why:
+
+```cpp
+bool ready = false;
+int  data  = 0;
+
+void producer() { data = 42; ready = true; }       // Thread 1
+void consumer() { while (!ready) {} use(data); }   // Thread 2 — may read data == 0
+```
+
+Every write here is a single-word store, so each is atomic. Yet the consumer can spin out of the
+loop and still read `data == 0`, because nothing establishes happens-before between the threads. The
+compiler may reorder the two independent stores, the CPU may commit them out of order, and the
+consumer's core may hold a stale cached `data`. "Works on my machine" means your machine's memory
+model happened to hide the bug; a weaker-ordered CPU (ARM, POWER) will not. The fix is any real
+synchronization — a mutex around both, or making `ready` a `std::atomic<bool>`.
+
+**A hardware footnote — false sharing.** Cache coherence operates on whole cache lines (~64 bytes),
+not individual variables. If two threads hammer two *different* atomics that happen to sit in the
+same line, the coherence protocol bounces that line between cores on every write, and your
+"independent" counters run an order of magnitude slower than they should. No logical conflict, pure
+hardware contention — this is why giving each thread its own counter sometimes buys no speedup at
+all. Pad to a line (`alignas(64)`) and the contention vanishes.
+
+## Deadlock
+
+A deadlock is not a slow program; it is a stopped one. Threads block forever, each holding a resource
+the next one needs. It is a correctness bug, and because it depends on rare interleavings, it sails
+through testing and surfaces in production. The canonical trigger is two threads locking the same
+pair in opposite orders:
+
+```cpp
+// Thread A: lock(from) then lock(to)
+// Thread B: lock(to)   then lock(from)
+// A holds from and waits for to; B holds to and waits for from. Frozen.
+```
+
+Deadlock needs four conditions at once — mutual exclusion, hold-and-wait, no preemption, and circular
+wait — so breaking any one prevents it. In practice you break **circular wait** with a consistent
+lock order. For a fixed pair, `std::scoped_lock` acquires both with a deadlock-free algorithm; for
+any two of N objects, impose a total order (a stable proxy like the address works) and always lock in
+it:
+
+```cpp
+void transfer(Account& from, Account& to, long amount) {
+    std::scoped_lock lock(from.mtx, to.mtx);   // both at once, deadlock-free (C++17)
+    from.balance -= amount;
+    to.balance   += amount;
+}
+```
+
+Two habits prevent most deadlocks regardless of strategy: hold locks for the shortest possible scope,
+and never call unknown code — a callback, a virtual method — while holding a lock, because you don't
+know what *it* will try to lock.
+
+## Lock granularity
+
+Once locking is correct, the question is how *much* one lock protects. **Coarse-grained** locking
+puts one mutex around the whole structure: trivially correct, and trivially serial — every operation
+waits for every other, so throughput flatlines no matter how many cores you add. **Fine-grained**
+locking splits the structure so independent parts have independent locks — one lock per hash bucket,
+say, so operations on different buckets proceed in parallel:
+
+```cpp
+class FineGrainedHashTable {
+    std::vector<Bucket>     buckets;
+    std::vector<std::mutex> bucket_locks;    // one lock per bucket
+public:
+    void insert(int key, int value) {
+        size_t b = hash(key) % buckets.size();
+        std::lock_guard<std::mutex> lock(bucket_locks[b]);
+        buckets[b].insert(key, value);
+    }
+};
+```
+
+You buy scalability and pay in complexity: more memory for locks, real deadlock risk once an
+operation needs two of them, and structure-wide operations like resizing that must suddenly
+coordinate every lock. The guidance is unglamorous and correct: **start coarse, measure, and refine
+to fine-grained only where a profiler shows contention.** Fine-grained locking you didn't need is
+just deadlock risk you didn't need.
+
+## A preview of lock-free
+
+Lock-free algorithms drop locks entirely, building operations directly on atomic hardware
+instructions so no thread can block another by holding a lock. The foundation is **compare-and-swap**
+(CAS): atomically, "if this location still holds the value I expect, replace it; otherwise tell me it
+changed." CAS turns a read-modify-write into a retry loop — read, compute, CAS; if someone got there
+first, loop with the fresh value.
+
+The one lock-free pattern you can and should use freely is the atomic counter — no pointer to
+reclaim, no way to go wrong:
+
+```cpp
+std::atomic<long> count{0};
+count.fetch_add(1, std::memory_order_relaxed);   // atomic, wait-free, cheap
+```
+
+A lock-free *stack* looks just as short — point a new node at the head, then CAS the head — but the
+`delete` on pop is where it stops being easy. The **ABA problem**: between your read of the head and
+your CAS, another thread pops A, pops B, and pushes A back; your CAS sees `A` and *succeeds*, but the
+list underneath has changed. And **memory reclamation**: another thread may still be dereferencing
+the node you just freed. Real lock-free structures solve these with hazard pointers or epoch-based
+reclamation — each a small research project. The takeaway is blunt: **do not ship a hand-rolled
+lock-free structure.** Use Intel TBB, Folly, or Boost.Lockfree; this section exists so you can reason
+about them, not reinvent them.
+
+## Where this actually lives
+
+<InProduction>
+- **`std::shared_mutex` / reader-writer locks** — when reads vastly outnumber writes (a config map, a routing table), a reader-writer lock lets any number of readers run together while writers get exclusive access. Reach for it only when reads truly dominate *and* the read section is long enough to be worth sharing.
+- **Concurrent hash maps** — Java's `ConcurrentHashMap`, C++ folly's `ConcurrentHashMap`, and Go's sharded maps are the fine-grained-locking idea shipped: lock striping over buckets so unrelated keys never contend.
+- **The producer-consumer queue** — a mutex plus two condition variables (`not_full`, `not_empty`) is the beating heart of every thread pool, task scheduler, and logging pipeline. `wait(lock, predicate)` is the correct idiom; a bare wait invites spurious-wakeup bugs.
+- **Read-Copy-Update (RCU) in the Linux kernel** — readers run with zero synchronization while writers build a new version and swap it in atomically, reclaiming the old copy once every reader has moved on. Read-mostly kernel data at massive scale.
+- **Atomic counters and sequence numbers** — metrics, reference counts (`std::shared_ptr`'s control block), and ID generators lean on `fetch_add`, the one lock-free primitive that is always safe to reach for.
+</InProduction>
+
+## Interview checklist
+
+<InterviewChecklist>
+**Say this, not that.** "Wrap it in a lock" is the junior answer. The engineer's version names the
+invariant and the interleaving: "`counter++` is load-modify-store; two threads can interleave those
+sub-steps and lose an update, so the whole sequence must be atomic — a mutex for anything larger than
+a word, `std::atomic` for a single word. And the lock buys visibility, not just exclusion."
+
+**The concepts interviewers are really testing**
+- **Data race vs. logical race.** A data race is unsynchronized access with a write (undefined
+  behavior). A logical race — classic *check-then-act*, `if (!q.empty()) q.pop()` — survives even
+  *with* locks if the check and act aren't under the same held lock.
+- **What a mutex guarantees.** Mutual exclusion *and* happens-before visibility. `volatile` gives
+  neither — it is not a threading tool.
+- **Deadlock's four conditions**, and that a consistent lock order (or `std::scoped_lock`) breaks the
+  circular-wait one.
+- **Coarse vs. fine-grained locking**, and the discipline: start coarse, measure, refine only at
+  measured contention.
+- **CAS and the ABA problem** — enough to explain why hand-rolled lock-free is a trap and what
+  hazard pointers/epochs are for.
+
+**Common mistakes**
+- Locking one access but not another to the same data — the unlocked path still races.
+- Holding a lock while calling a callback or blocking on I/O — a deadlock and a scalability bug in one.
+- Assuming atomic implies ordered — `relaxed` atomics are atomic but establish no happens-before.
+- Reaching for lock-free (or even a reader-writer lock) with no measurement — usually slower and far
+  buggier than a plain mutex.
+</InterviewChecklist>
+
+## Takeaways
+
+- Concurrency adds **interleavings**, not just parallelism. An operation is correct only if *every*
+  interleaving preserves the structure's invariants — so the first question about any shared
+  operation is "which invariant does it touch, and can any interleaving catch it broken?"
+- A **data race** is unsynchronized shared access with a write; the usual shape is a **lost update**
+  from a non-atomic read-modify-store. Make the whole sequence atomic — a mutex, or `std::atomic` for
+  a single word.
+- A lock buys **mutual exclusion *and* visibility**. Visibility is a separate problem from
+  atomicity — unsynchronized writes may never become visible, or become visible out of order, on
+  real hardware.
+- **Deadlock** is a correctness bug; break circular wait with a consistent lock order. **Lock
+  granularity** is a performance knob: start coarse, refine only at measured contention.
+- Prefer proven libraries — `std::mutex`, `std::shared_mutex`, `std::atomic`, concurrent containers —
+  over hand-rolled synchronization, and **never** ship a hand-rolled lock-free structure.
+
+Next, [the memory hierarchy](/chapters/memory-hierarchy) — where these threads, locks, and cache
+lines meet the physical machine, and the 100× that Big-O cannot see becomes something you can
+measure.

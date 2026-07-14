@@ -6,6 +6,8 @@ description: Trees exist to give you ordering AND O(log n) at once — the thing
 
 import InProduction from '../../components/InProduction.astro';
 import InterviewChecklist from '../../components/InterviewChecklist.astro';
+import AlgoViz from '../../components/problem/AlgoViz';
+import { bstTrace } from '../../lib/traces';
 
 The [hash table](/chapters/hash-tables-and-hashing) bought you O(1) lookup, and it charged a
 price you may not have noticed at the time: it threw away order. Ask a hash table for the
@@ -85,6 +87,12 @@ That's why the tree can do the things the hash table couldn't. Sorted iteration 
 in-order walk. Min is "keep going left"; max is "keep going right." A range query — every key in
 `[lo, hi]` — is an in-order walk that prunes subtrees entirely outside the range. None of these
 cost more than they should, and none are even expressible on a hash table.
+
+Watch the invariant do the work: every comparison discards a whole subtree, so an insert or a
+lookup follows one root-to-leaf path instead of scanning. That is the halving — the same idea as
+binary search, now over a structure you can also mutate cheaply.
+
+<AlgoViz client:visible kind="bst" steps={bstTrace} title="Watch it run: insert and search in a BST" />
 
 ## The balance problem: where O(log n) breaks
 

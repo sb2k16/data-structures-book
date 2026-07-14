@@ -841,3 +841,1086 @@ export const reverseTrace: Step[] = [
   "type": "done"
  }
 ];
+
+export const bstTrace: Step[] = [
+ {
+  "highlight": {
+   "code_line": 0
+  },
+  "message": "Starting insert(65). Current tree has 7 nodes.",
+  "state": {
+   "current_id": -1,
+   "op": "insert",
+   "path": [],
+   "root": 0,
+   "target": 65,
+   "tree": [
+    {
+     "id": 0,
+     "left": 1,
+     "right": 2,
+     "val": 50
+    },
+    {
+     "id": 1,
+     "left": 3,
+     "right": 4,
+     "val": 30
+    },
+    {
+     "id": 2,
+     "left": 5,
+     "right": 6,
+     "val": 70
+    },
+    {
+     "id": 3,
+     "left": -1,
+     "right": -1,
+     "val": 20
+    },
+    {
+     "id": 4,
+     "left": -1,
+     "right": -1,
+     "val": 40
+    },
+    {
+     "id": 5,
+     "left": -1,
+     "right": -1,
+     "val": 60
+    },
+    {
+     "id": 6,
+     "left": -1,
+     "right": -1,
+     "val": 80
+    }
+   ]
+  },
+  "step": 1,
+  "type": "start_op"
+ },
+ {
+  "highlight": {
+   "code_line": 1
+  },
+  "message": "Compare 65 with node 50 (id=0).",
+  "state": {
+   "current_id": 0,
+   "op": "insert",
+   "path": [
+    0
+   ],
+   "root": 0,
+   "target": 65,
+   "tree": [
+    {
+     "id": 0,
+     "left": 1,
+     "right": 2,
+     "val": 50
+    },
+    {
+     "id": 1,
+     "left": 3,
+     "right": 4,
+     "val": 30
+    },
+    {
+     "id": 2,
+     "left": 5,
+     "right": 6,
+     "val": 70
+    },
+    {
+     "id": 3,
+     "left": -1,
+     "right": -1,
+     "val": 20
+    },
+    {
+     "id": 4,
+     "left": -1,
+     "right": -1,
+     "val": 40
+    },
+    {
+     "id": 5,
+     "left": -1,
+     "right": -1,
+     "val": 60
+    },
+    {
+     "id": 6,
+     "left": -1,
+     "right": -1,
+     "val": 80
+    }
+   ]
+  },
+  "step": 2,
+  "type": "compare"
+ },
+ {
+  "highlight": {
+   "code_line": 3
+  },
+  "message": "65 >= 50 — go right from node 0.",
+  "state": {
+   "current_id": 0,
+   "op": "insert",
+   "path": [
+    0
+   ],
+   "root": 0,
+   "target": 65,
+   "tree": [
+    {
+     "id": 0,
+     "left": 1,
+     "right": 2,
+     "val": 50
+    },
+    {
+     "id": 1,
+     "left": 3,
+     "right": 4,
+     "val": 30
+    },
+    {
+     "id": 2,
+     "left": 5,
+     "right": 6,
+     "val": 70
+    },
+    {
+     "id": 3,
+     "left": -1,
+     "right": -1,
+     "val": 20
+    },
+    {
+     "id": 4,
+     "left": -1,
+     "right": -1,
+     "val": 40
+    },
+    {
+     "id": 5,
+     "left": -1,
+     "right": -1,
+     "val": 60
+    },
+    {
+     "id": 6,
+     "left": -1,
+     "right": -1,
+     "val": 80
+    }
+   ]
+  },
+  "step": 3,
+  "type": "go_right"
+ },
+ {
+  "highlight": {
+   "code_line": 1
+  },
+  "message": "Compare 65 with node 70 (id=2).",
+  "state": {
+   "current_id": 2,
+   "op": "insert",
+   "path": [
+    0,
+    2
+   ],
+   "root": 0,
+   "target": 65,
+   "tree": [
+    {
+     "id": 0,
+     "left": 1,
+     "right": 2,
+     "val": 50
+    },
+    {
+     "id": 1,
+     "left": 3,
+     "right": 4,
+     "val": 30
+    },
+    {
+     "id": 2,
+     "left": 5,
+     "right": 6,
+     "val": 70
+    },
+    {
+     "id": 3,
+     "left": -1,
+     "right": -1,
+     "val": 20
+    },
+    {
+     "id": 4,
+     "left": -1,
+     "right": -1,
+     "val": 40
+    },
+    {
+     "id": 5,
+     "left": -1,
+     "right": -1,
+     "val": 60
+    },
+    {
+     "id": 6,
+     "left": -1,
+     "right": -1,
+     "val": 80
+    }
+   ]
+  },
+  "step": 4,
+  "type": "compare"
+ },
+ {
+  "highlight": {
+   "code_line": 2
+  },
+  "message": "65 < 70 — go left from node 2.",
+  "state": {
+   "current_id": 2,
+   "op": "insert",
+   "path": [
+    0,
+    2
+   ],
+   "root": 0,
+   "target": 65,
+   "tree": [
+    {
+     "id": 0,
+     "left": 1,
+     "right": 2,
+     "val": 50
+    },
+    {
+     "id": 1,
+     "left": 3,
+     "right": 4,
+     "val": 30
+    },
+    {
+     "id": 2,
+     "left": 5,
+     "right": 6,
+     "val": 70
+    },
+    {
+     "id": 3,
+     "left": -1,
+     "right": -1,
+     "val": 20
+    },
+    {
+     "id": 4,
+     "left": -1,
+     "right": -1,
+     "val": 40
+    },
+    {
+     "id": 5,
+     "left": -1,
+     "right": -1,
+     "val": 60
+    },
+    {
+     "id": 6,
+     "left": -1,
+     "right": -1,
+     "val": 80
+    }
+   ]
+  },
+  "step": 5,
+  "type": "go_left"
+ },
+ {
+  "highlight": {
+   "code_line": 1
+  },
+  "message": "Compare 65 with node 60 (id=5).",
+  "state": {
+   "current_id": 5,
+   "op": "insert",
+   "path": [
+    0,
+    2,
+    5
+   ],
+   "root": 0,
+   "target": 65,
+   "tree": [
+    {
+     "id": 0,
+     "left": 1,
+     "right": 2,
+     "val": 50
+    },
+    {
+     "id": 1,
+     "left": 3,
+     "right": 4,
+     "val": 30
+    },
+    {
+     "id": 2,
+     "left": 5,
+     "right": 6,
+     "val": 70
+    },
+    {
+     "id": 3,
+     "left": -1,
+     "right": -1,
+     "val": 20
+    },
+    {
+     "id": 4,
+     "left": -1,
+     "right": -1,
+     "val": 40
+    },
+    {
+     "id": 5,
+     "left": -1,
+     "right": -1,
+     "val": 60
+    },
+    {
+     "id": 6,
+     "left": -1,
+     "right": -1,
+     "val": 80
+    }
+   ]
+  },
+  "step": 6,
+  "type": "compare"
+ },
+ {
+  "highlight": {
+   "code_line": 3
+  },
+  "message": "65 >= 60 — go right from node 5.",
+  "state": {
+   "current_id": 5,
+   "op": "insert",
+   "path": [
+    0,
+    2,
+    5
+   ],
+   "root": 0,
+   "target": 65,
+   "tree": [
+    {
+     "id": 0,
+     "left": 1,
+     "right": 2,
+     "val": 50
+    },
+    {
+     "id": 1,
+     "left": 3,
+     "right": 4,
+     "val": 30
+    },
+    {
+     "id": 2,
+     "left": 5,
+     "right": 6,
+     "val": 70
+    },
+    {
+     "id": 3,
+     "left": -1,
+     "right": -1,
+     "val": 20
+    },
+    {
+     "id": 4,
+     "left": -1,
+     "right": -1,
+     "val": 40
+    },
+    {
+     "id": 5,
+     "left": -1,
+     "right": -1,
+     "val": 60
+    },
+    {
+     "id": 6,
+     "left": -1,
+     "right": -1,
+     "val": 80
+    }
+   ]
+  },
+  "step": 7,
+  "type": "go_right"
+ },
+ {
+  "highlight": {
+   "code_line": 4
+  },
+  "message": "Inserted 65 as right child of node 60 (id=7).",
+  "state": {
+   "current_id": 7,
+   "op": "insert",
+   "path": [
+    0,
+    2,
+    5,
+    7
+   ],
+   "root": 0,
+   "target": 65,
+   "tree": [
+    {
+     "id": 0,
+     "left": 1,
+     "right": 2,
+     "val": 50
+    },
+    {
+     "id": 1,
+     "left": 3,
+     "right": 4,
+     "val": 30
+    },
+    {
+     "id": 2,
+     "left": 5,
+     "right": 6,
+     "val": 70
+    },
+    {
+     "id": 3,
+     "left": -1,
+     "right": -1,
+     "val": 20
+    },
+    {
+     "id": 4,
+     "left": -1,
+     "right": -1,
+     "val": 40
+    },
+    {
+     "id": 5,
+     "left": -1,
+     "right": 7,
+     "val": 60
+    },
+    {
+     "id": 6,
+     "left": -1,
+     "right": -1,
+     "val": 80
+    },
+    {
+     "id": 7,
+     "left": -1,
+     "right": -1,
+     "val": 65
+    }
+   ]
+  },
+  "step": 8,
+  "type": "inserted"
+ },
+ {
+  "highlight": {
+   "code_line": 0
+  },
+  "message": "Starting search(40). Current tree has 8 nodes.",
+  "state": {
+   "current_id": -1,
+   "op": "search",
+   "path": [],
+   "root": 0,
+   "target": 40,
+   "tree": [
+    {
+     "id": 0,
+     "left": 1,
+     "right": 2,
+     "val": 50
+    },
+    {
+     "id": 1,
+     "left": 3,
+     "right": 4,
+     "val": 30
+    },
+    {
+     "id": 2,
+     "left": 5,
+     "right": 6,
+     "val": 70
+    },
+    {
+     "id": 3,
+     "left": -1,
+     "right": -1,
+     "val": 20
+    },
+    {
+     "id": 4,
+     "left": -1,
+     "right": -1,
+     "val": 40
+    },
+    {
+     "id": 5,
+     "left": -1,
+     "right": 7,
+     "val": 60
+    },
+    {
+     "id": 6,
+     "left": -1,
+     "right": -1,
+     "val": 80
+    },
+    {
+     "id": 7,
+     "left": -1,
+     "right": -1,
+     "val": 65
+    }
+   ]
+  },
+  "step": 9,
+  "type": "start_op"
+ },
+ {
+  "highlight": {
+   "code_line": 1
+  },
+  "message": "Compare 40 with node 50 (id=0).",
+  "state": {
+   "current_id": 0,
+   "op": "search",
+   "path": [
+    0
+   ],
+   "root": 0,
+   "target": 40,
+   "tree": [
+    {
+     "id": 0,
+     "left": 1,
+     "right": 2,
+     "val": 50
+    },
+    {
+     "id": 1,
+     "left": 3,
+     "right": 4,
+     "val": 30
+    },
+    {
+     "id": 2,
+     "left": 5,
+     "right": 6,
+     "val": 70
+    },
+    {
+     "id": 3,
+     "left": -1,
+     "right": -1,
+     "val": 20
+    },
+    {
+     "id": 4,
+     "left": -1,
+     "right": -1,
+     "val": 40
+    },
+    {
+     "id": 5,
+     "left": -1,
+     "right": 7,
+     "val": 60
+    },
+    {
+     "id": 6,
+     "left": -1,
+     "right": -1,
+     "val": 80
+    },
+    {
+     "id": 7,
+     "left": -1,
+     "right": -1,
+     "val": 65
+    }
+   ]
+  },
+  "step": 10,
+  "type": "compare"
+ },
+ {
+  "highlight": {
+   "code_line": 2
+  },
+  "message": "40 < 50 — go left from node 0.",
+  "state": {
+   "current_id": 0,
+   "op": "search",
+   "path": [
+    0
+   ],
+   "root": 0,
+   "target": 40,
+   "tree": [
+    {
+     "id": 0,
+     "left": 1,
+     "right": 2,
+     "val": 50
+    },
+    {
+     "id": 1,
+     "left": 3,
+     "right": 4,
+     "val": 30
+    },
+    {
+     "id": 2,
+     "left": 5,
+     "right": 6,
+     "val": 70
+    },
+    {
+     "id": 3,
+     "left": -1,
+     "right": -1,
+     "val": 20
+    },
+    {
+     "id": 4,
+     "left": -1,
+     "right": -1,
+     "val": 40
+    },
+    {
+     "id": 5,
+     "left": -1,
+     "right": 7,
+     "val": 60
+    },
+    {
+     "id": 6,
+     "left": -1,
+     "right": -1,
+     "val": 80
+    },
+    {
+     "id": 7,
+     "left": -1,
+     "right": -1,
+     "val": 65
+    }
+   ]
+  },
+  "step": 11,
+  "type": "go_left"
+ },
+ {
+  "highlight": {
+   "code_line": 1
+  },
+  "message": "Compare 40 with node 30 (id=1).",
+  "state": {
+   "current_id": 1,
+   "op": "search",
+   "path": [
+    0,
+    1
+   ],
+   "root": 0,
+   "target": 40,
+   "tree": [
+    {
+     "id": 0,
+     "left": 1,
+     "right": 2,
+     "val": 50
+    },
+    {
+     "id": 1,
+     "left": 3,
+     "right": 4,
+     "val": 30
+    },
+    {
+     "id": 2,
+     "left": 5,
+     "right": 6,
+     "val": 70
+    },
+    {
+     "id": 3,
+     "left": -1,
+     "right": -1,
+     "val": 20
+    },
+    {
+     "id": 4,
+     "left": -1,
+     "right": -1,
+     "val": 40
+    },
+    {
+     "id": 5,
+     "left": -1,
+     "right": 7,
+     "val": 60
+    },
+    {
+     "id": 6,
+     "left": -1,
+     "right": -1,
+     "val": 80
+    },
+    {
+     "id": 7,
+     "left": -1,
+     "right": -1,
+     "val": 65
+    }
+   ]
+  },
+  "step": 12,
+  "type": "compare"
+ },
+ {
+  "highlight": {
+   "code_line": 3
+  },
+  "message": "40 > 30 — go right from node 1.",
+  "state": {
+   "current_id": 1,
+   "op": "search",
+   "path": [
+    0,
+    1
+   ],
+   "root": 0,
+   "target": 40,
+   "tree": [
+    {
+     "id": 0,
+     "left": 1,
+     "right": 2,
+     "val": 50
+    },
+    {
+     "id": 1,
+     "left": 3,
+     "right": 4,
+     "val": 30
+    },
+    {
+     "id": 2,
+     "left": 5,
+     "right": 6,
+     "val": 70
+    },
+    {
+     "id": 3,
+     "left": -1,
+     "right": -1,
+     "val": 20
+    },
+    {
+     "id": 4,
+     "left": -1,
+     "right": -1,
+     "val": 40
+    },
+    {
+     "id": 5,
+     "left": -1,
+     "right": 7,
+     "val": 60
+    },
+    {
+     "id": 6,
+     "left": -1,
+     "right": -1,
+     "val": 80
+    },
+    {
+     "id": 7,
+     "left": -1,
+     "right": -1,
+     "val": 65
+    }
+   ]
+  },
+  "step": 13,
+  "type": "go_right"
+ },
+ {
+  "highlight": {
+   "code_line": 1
+  },
+  "message": "Compare 40 with node 40 (id=4).",
+  "state": {
+   "current_id": 4,
+   "op": "search",
+   "path": [
+    0,
+    1,
+    4
+   ],
+   "root": 0,
+   "target": 40,
+   "tree": [
+    {
+     "id": 0,
+     "left": 1,
+     "right": 2,
+     "val": 50
+    },
+    {
+     "id": 1,
+     "left": 3,
+     "right": 4,
+     "val": 30
+    },
+    {
+     "id": 2,
+     "left": 5,
+     "right": 6,
+     "val": 70
+    },
+    {
+     "id": 3,
+     "left": -1,
+     "right": -1,
+     "val": 20
+    },
+    {
+     "id": 4,
+     "left": -1,
+     "right": -1,
+     "val": 40
+    },
+    {
+     "id": 5,
+     "left": -1,
+     "right": 7,
+     "val": 60
+    },
+    {
+     "id": 6,
+     "left": -1,
+     "right": -1,
+     "val": 80
+    },
+    {
+     "id": 7,
+     "left": -1,
+     "right": -1,
+     "val": 65
+    }
+   ]
+  },
+  "step": 14,
+  "type": "compare"
+ },
+ {
+  "highlight": {
+   "code_line": 5
+  },
+  "message": "Found 40 at node id=4!",
+  "state": {
+   "current_id": 4,
+   "op": "search",
+   "path": [
+    0,
+    1,
+    4
+   ],
+   "root": 0,
+   "target": 40,
+   "tree": [
+    {
+     "id": 0,
+     "left": 1,
+     "right": 2,
+     "val": 50
+    },
+    {
+     "id": 1,
+     "left": 3,
+     "right": 4,
+     "val": 30
+    },
+    {
+     "id": 2,
+     "left": 5,
+     "right": 6,
+     "val": 70
+    },
+    {
+     "id": 3,
+     "left": -1,
+     "right": -1,
+     "val": 20
+    },
+    {
+     "id": 4,
+     "left": -1,
+     "right": -1,
+     "val": 40
+    },
+    {
+     "id": 5,
+     "left": -1,
+     "right": 7,
+     "val": 60
+    },
+    {
+     "id": 6,
+     "left": -1,
+     "right": -1,
+     "val": 80
+    },
+    {
+     "id": 7,
+     "left": -1,
+     "right": -1,
+     "val": 65
+    }
+   ]
+  },
+  "step": 15,
+  "type": "found"
+ }
+];
+export const binarySearchTrace: Step[] = [
+ {
+  "highlight": {
+   "code_line": 0
+  },
+  "message": "Binary search for target=13 in sorted array of size 9. Initialize lo=0, hi=8.",
+  "state": {
+   "array": [
+    1,
+    3,
+    5,
+    7,
+    9,
+    11,
+    13,
+    15,
+    17
+   ],
+   "hi": 8,
+   "lo": 0,
+   "mid": -1,
+   "result": -1,
+   "target": 13
+  },
+  "step": 1,
+  "type": "init"
+ },
+ {
+  "highlight": {
+   "code_line": 1
+  },
+  "message": "lo=0 hi=8 mid=4 → arr[mid]=9 vs target=13.",
+  "state": {
+   "array": [
+    1,
+    3,
+    5,
+    7,
+    9,
+    11,
+    13,
+    15,
+    17
+   ],
+   "hi": 8,
+   "lo": 0,
+   "mid": 4,
+   "result": -1,
+   "target": 13
+  },
+  "step": 2,
+  "type": "step"
+ },
+ {
+  "highlight": {
+   "code_line": 1
+  },
+  "message": "lo=5 hi=8 mid=6 → arr[mid]=13 vs target=13.",
+  "state": {
+   "array": [
+    1,
+    3,
+    5,
+    7,
+    9,
+    11,
+    13,
+    15,
+    17
+   ],
+   "hi": 8,
+   "lo": 5,
+   "mid": 6,
+   "result": -1,
+   "target": 13
+  },
+  "step": 3,
+  "type": "step"
+ },
+ {
+  "highlight": {
+   "code_line": 2
+  },
+  "message": "arr[6]=13 == target=13. Found at index 6!",
+  "state": {
+   "array": [
+    1,
+    3,
+    5,
+    7,
+    9,
+    11,
+    13,
+    15,
+    17
+   ],
+   "hi": 8,
+   "lo": 5,
+   "mid": 6,
+   "result": 6,
+   "target": 13
+  },
+  "step": 4,
+  "type": "found"
+ }
+];

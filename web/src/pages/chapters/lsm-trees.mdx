@@ -6,6 +6,8 @@ description: B-trees make reads fast but scatter random writes across the disk. 
 
 import InProduction from '../../components/InProduction.astro';
 import InterviewChecklist from '../../components/InterviewChecklist.astro';
+import AlgoViz from '../../components/problem/AlgoViz';
+import { lsmTrace } from '../../lib/traces-systems';
 
 The [B-tree](/chapters/b-trees) is the right answer for reads. It keeps data ordered, answers point
 lookups in a few shallow, cache-friendly steps, and streams ranges from its linked leaves. But it
@@ -54,6 +56,11 @@ graph TD
 
 Every arrow that touches disk is a sequential write. That is the payoff: an LSM tree absorbs writes
 at close to the disk's sequential speed, far above what a B-tree's random leaf updates allow.
+
+Follow a batch of writes through the whole path — into the sorted memtable, flushed to L0 as
+immutable runs, then compacted into a single larger run in L1:
+
+<AlgoViz client:visible kind="lsm" steps={lsmTrace} title="Watch it run: memtable → flush → compaction" />
 
 ## What it costs: reads and write amplification
 
