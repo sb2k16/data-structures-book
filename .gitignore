@@ -109,3 +109,5 @@ web/node_modules/
 web/dist/
 web/.astro/
 web/.env
+.vercel
+.env*
