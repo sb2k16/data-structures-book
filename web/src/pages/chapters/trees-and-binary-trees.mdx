@@ -7,6 +7,8 @@ description: Trees exist to give you ordering AND O(log n) at once — the thing
 import InProduction from '../../components/InProduction.astro';
 import InterviewChecklist from '../../components/InterviewChecklist.astro';
 import AlgoViz from '../../components/problem/AlgoViz';
+import CodeTabs from '../../components/CodeTabs.astro';
+import { treeSearch, treeInorder } from '../../lib/snippets';
 import { bstTrace } from '../../lib/traces';
 
 The [hash table](/chapters/hash-tables-and-hashing) bought you O(1) lookup, and it charged a
@@ -55,16 +57,7 @@ you're done. Every comparison discards an entire subtree. In a balanced tree tha
 remaining nodes each step — O(log n), the same "throw away half" logic as binary search, but on a
 structure you can also insert into cheaply.
 
-```cpp
-Node* search(Node* node, int key) {
-    while (node) {
-        if (key == node->data) return node;   // found it
-        node = key < node->data ? node->left   // answer is left
-                                : node->right;  // answer is right
-    }
-    return nullptr;                             // fell off the tree: absent
-}
-```
+<CodeTabs snippets={treeSearch} />
 
 Insert follows the exact same walk: descend as if searching, and when you fall off the bottom,
 that empty spot is precisely where the key belongs. Hang a new node there and the invariant still
@@ -74,14 +67,7 @@ holds. Delete is the only fiddly one — removing a node with two children means
 The payoff of the invariant is the part hash tables can't touch. Walk the tree **left, node,
 right** — an in-order traversal — and you visit the keys in *sorted order*, every time:
 
-```cpp
-void inorder(Node* node) {
-    if (!node) return;
-    inorder(node->left);            // everything smaller, first
-    std::cout << node->data << ' '; // then this node
-    inorder(node->right);           // then everything larger
-}
-```
+<CodeTabs snippets={treeInorder} />
 
 That's why the tree can do the things the hash table couldn't. Sorted iteration is just an
 in-order walk. Min is "keep going left"; max is "keep going right." A range query — every key in

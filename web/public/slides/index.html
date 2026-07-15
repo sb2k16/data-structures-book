@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-<title>Data Structures on Systems — an audio course</title>
-<meta name="description" content="A narrated slide course on how modern software systems actually use data structures — from the cache line to the cluster."/>
+<title>Data Structures on Systems — the slide deck</title>
+<meta name="description" content="A visual tour of how modern software systems actually use data structures — from the cache line to the cluster. Each slide links to its full chapter."/>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%232a78d6'/%3E%3Cg stroke='white' stroke-width='1.8' fill='none'%3E%3Crect x='4' y='8' width='16' height='8' rx='1.2'/%3E%3Cpath d='M8 8v8M12 8v8M16 8v8'/%3E%3C/g%3E%3C/svg%3E"/>
 <style>
 :root{
@@ -123,11 +123,11 @@ button{font:inherit;color:inherit;cursor:pointer;background:none;border:none}
 .nav{color:var(--ink3);padding:8px;border-radius:8px}
 .nav:hover{color:var(--ink);background:var(--panel2)}
 .nav:disabled{opacity:.3;cursor:default}
-.track-wrap{flex:1;min-width:0}
-.caption{font-size:13.5px;line-height:1.5;color:var(--ink2);height:2.9em;overflow:hidden;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin-bottom:8px}
-.prog{height:4px;background:var(--panel2);border-radius:3px;overflow:hidden}
-.prog-fill{height:100%;width:0;background:var(--accent);border-radius:3px}
+.chapref{flex:0 1 auto;display:flex;align-items:center;justify-content:center;gap:8px;margin:0 auto;
+  padding:9px 16px;border-radius:9px;background:var(--panel2);color:var(--accent);
+  font-size:14px;font-weight:600;text-decoration:none;transition:background .12s}
+.chapref:hover{background:color-mix(in srgb, var(--accent) 16%, var(--panel2))}
+.chapref svg{flex:none}
 .hint{font-size:11px;color:var(--ink3);font-family:var(--mono);white-space:nowrap}
 @media (max-width:640px){
   .arc{font-size:10px}.caption{-webkit-line-clamp:2}.hint{display:none}
@@ -159,10 +159,10 @@ button{font:inherit;color:inherit;cursor:pointer;background:none;border:none}
   <div class="stage" id="stage">
   <section class="slide" data-i="0" data-active aria-hidden="false">
     <div class="slide-inner">
-      <div class="kicker">An audio course</div>
+      <div class="kicker">The slide deck</div>
       <h2 class="title">Data Structures on Systems</h2>
       <p class="lead">From the cache line to the cluster.</p>
-      <div class="body"><p class="sub">Press play. A synthetic narrator will walk you through the whole story — no reading required.</p></div>
+      <div class="body"><p class="sub">The whole story in fourteen slides. Move through with the arrows or click a slide — and open the full chapter for any of them from the link below.</p></div>
     </div>
   </section>
   <section class="slide" data-i="1"  aria-hidden="true">
@@ -292,16 +292,16 @@ button{font:inherit;color:inherit;cursor:pointer;background:none;border:none}
       <div class="kicker">Keep going</div>
       <h2 class="title">Run it yourself.</h2>
       <p class="lead">Data Structures on Systems</p>
-      <div class="body"><p class="sub">The full book runs these benchmarks live in your browser, on your own CPU. Read it, fork it, and watch the memory hierarchy appear on your own machine.</p><p class="sub mono tag">sb2k16.github.io</p></div>
+      <div class="body"><p class="sub">The full book runs these benchmarks live in your browser, on your own CPU. Read it, fork it, and watch the memory hierarchy appear on your own machine.</p><p class="sub mono tag">data-structures-on-systems.vercel.app</p></div>
     </div>
   </section>
 
     <div class="contents" id="contents">
       <div class="contents-inner">
         <div class="contents-head">
-          <div class="kicker">An audio course · 14 chapters · ~12 min</div>
-          <h1 class="contents-title">Pick a chapter, press play.</h1>
-          <p class="contents-sub">A synthetic narrator reads each slide. Jump to any chapter below, or <button class="linkbtn" id="playall">play straight through &rarr;</button></p>
+          <div class="kicker">The slide deck · 14 slides</div>
+          <h1 class="contents-title">Pick a slide.</h1>
+          <p class="contents-sub">Each slide links to the full chapter it summarizes. Jump to any slide below, or <button class="linkbtn" id="playall">start from the beginning &rarr;</button></p>
         </div>
         <ol class="chapter-list">
           <li><button class="chapter" data-goto="0">
@@ -367,40 +367,35 @@ button{font:inherit;color:inherit;cursor:pointer;background:none;border:none}
   </div>
 
   <div class="narrator">
-    <button class="play" id="play" aria-label="Play narration">
-      <svg id="play-i" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-    </button>
     <button class="nav" id="prev" aria-label="Previous slide"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
-    <div class="track-wrap">
-      <div class="caption" id="caption"></div>
-      <div class="prog"><div class="prog-fill" id="fill"></div></div>
-    </div>
+    <a class="chapref" id="chapref" href="/"><span class="chapref-txt">Read the chapter</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
     <button class="nav" id="next" aria-label="Next slide"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
-    <span class="hint">space · &larr; &rarr;</span>
+    <span class="hint">&larr; &rarr; &middot; click slide</span>
   </div>
 
-  <audio preload="auto" src="audio/s0.m4a" data-i="0"></audio>
-<audio preload="none" src="audio/s1.m4a" data-i="1"></audio>
-<audio preload="none" src="audio/s2.m4a" data-i="2"></audio>
-<audio preload="none" src="audio/s3.m4a" data-i="3"></audio>
-<audio preload="none" src="audio/s4.m4a" data-i="4"></audio>
-<audio preload="none" src="audio/s5.m4a" data-i="5"></audio>
-<audio preload="none" src="audio/s6.m4a" data-i="6"></audio>
-<audio preload="none" src="audio/s7.m4a" data-i="7"></audio>
-<audio preload="none" src="audio/s8.m4a" data-i="8"></audio>
-<audio preload="none" src="audio/s9.m4a" data-i="9"></audio>
-<audio preload="none" src="audio/s10.m4a" data-i="10"></audio>
-<audio preload="none" src="audio/s11.m4a" data-i="11"></audio>
-<audio preload="none" src="audio/s12.m4a" data-i="12"></audio>
-<audio preload="none" src="audio/s13.m4a" data-i="13"></audio>
-
 <script>
-const CAPS = ["Welcome to Data Structures on Systems. This is a listen and learn course, so you can put the screen down and just follow along. Here is the one idea that ties it all together. Data structures are not a catalog of things to memorize. They are a story. Each one exists because the one before it hit a wall. We will follow that story all the way down to the cache line the processor fetches, and all the way out to the cluster of machines a database runs on. Let's begin.","Most books teach data structures as abstractions and stop at big oh notation. You learn that a hash table is constant time and a tree is logarithmic, and you move on. That is necessary, but it is not enough. Big oh was designed to throw away two things. The constant factor, and the cost of touching memory. And on a real machine, running real software, those two things are often the entire story. Two loops that are both big oh of n can differ in speed by ten, or fifty times. Keep that in mind. It is the thread running through everything that follows.","Here is the fact that everything else rests on. A modern processor does not read from main memory at one speed. It keeps small, fast caches in front of the big, slow memory. Reading from the fastest cache takes about one nanosecond. Reading from main memory takes about a hundred. That is a hundred to one. And here is the trap. Reading a value that happens to be in cache, and reading one that is not, look identical in your code. Both are a single array access. Both are constant time. Big oh cannot tell them apart, but your users can feel the difference.","So let's start the story. The array is the oldest data structure and still the most important, because it is the one the hardware loves. An array is just its elements laid end to end in one unbroken block of memory. That single property, being contiguous, gives you two gifts. Instant access to any element by its index, and a walk through the array that the prefetcher can predict perfectly. There are no pointers to chase and no cache misses to stall on. This is why a plain array, or a vector, is the right default for a sequence of things. Its one real weakness is inserting in the middle, which means shifting everything after it. And that weakness is exactly the problem the next structure sets out to solve.","The linked list makes a bold trade. To get constant time insertion anywhere, it stops storing elements together. Instead each node lives wherever the allocator happened to put it, linked to the next one by a pointer. Now inserting is cheap. But walking the list means following those pointers, and each one jumps to an unpredictable address. That is a cache miss on every single element. So here is the lesson that every experienced engineer eventually learns. Between a linked list and an array, on real hardware, the array almost always wins, even for workloads that look tailor made for a list. When in doubt, use a vector. The cache locality beats the cheap insert.","Sometimes the smart move is to take a general structure and restrict it. A stack lets you push and pop from only one end. Last in, first out. A queue lets you add at one end and remove from the other. First in, first out. That restriction is not a limitation. It is a feature. It makes the operations constant time, predictable, and easy to reason about. And the most important stack in all of computing is the one every program runs on. The call stack. Every function call pushes a frame, every return pops one. Recursion depth is literally how full that stack is, and a stack overflow is that structure running out of room.","Now for maybe the most used data structure in all of software. The hash table asks a bold question. What if finding a value took the same time whether you had a hundred of them or a hundred million? It pulls this off with one impudent trick. Instead of searching for where a key lives, it computes where the key lives. You run the key through a hash function, get a number, and go straight to that slot. No scanning. The catch, and there is always a catch, is that it throws away all order to get there. Ask a hash table for the smallest key, or everything in a range, and it has no idea. That question belongs to a tree, which we will get to shortly.","Here is where this book earns its title. When two keys collide in a hash table, you have to handle it. The textbook way, called separate chaining, hangs a little linked list off each slot. The other way, open addressing, keeps everything in one flat array and just probes forward. On paper these are identical. Both are constant time on average. But watch the machine. Chaining follows a pointer to a scattered node, which is a cache miss. Open addressing reads the next slot in a flat array, which is already in cache. Same complexity. But open addressing is about twice as fast, purely because of how it touches memory. That is why the fastest hash tables in the world are open addressed.","The hash table gave us constant time lookup but destroyed all ordering. What if we need both? That is what a balanced binary search tree provides. It keeps your data in sorted order, and gives you logarithmic search, insert, and delete, all at the same time. The rule is simple. For every node, everything smaller is on the left, everything larger on the right. Walk it in order and the data comes out sorted. This is the structure behind an ordered map or set in most languages. But it has a hardware problem waiting for us. A binary tree makes one decision per node, and each step jumps to a scattered child. That is a cache miss on every level. And for a million items, that is about twenty misses per lookup.","So how do we fix a tree that misses the cache on every level? The answer is almost obvious once you see the problem. A cache miss brings in a whole line of memory whether you use one key or thirty two. So, use thirty two. Pack many keys into each node, sized to a cache line or a disk page, and the tree becomes dramatically shallower. Four levels instead of twenty. Fewer levels, and each one is a single fetch that does real work. This is the B tree. It is the same logarithmic complexity as a binary tree, but roughly eight times faster on real hardware. And it is why every database index on earth, in Postgres, in MySQL, in your file system, is a B tree, and not a binary tree.","B trees are wonderful for reading, but they have a weakness. Every write has to update a leaf in place, and at scale those are random writes scattered across the disk, which is exactly what storage hardware is worst at. The log structured merge tree begins from one stubborn idea. Never do a random write. Everything should be a sequential append, because that is the one thing disks are fast at. So writes go into memory first, then get flushed to disk in sorted, immutable files, and a background process merges those files over time. This is the engine inside RocksDB, Cassandra, and the write path of modern search systems. It trades slightly slower reads for enormously faster writes.","Eventually even the best single machine is not enough. The data, or the traffic, exceeds what one node can hold. So you spread it across many machines. And to decide which machine owns which key, you reach all the way back to the very first idea in this story. Hashing. You hash the key to pick a server. The problem is that adding or removing a server changes the math and reshuffles almost everything. The fix is called consistent hashing, and it lets the cluster grow and shrink while moving only a tiny fraction of the keys. So the largest databases in the world are, at their core, a hash table whose slots are machines, each one running a log structured merge tree. The data structures you started with are the ones running the whole thing.","So if there is one lesson to take from all of this, it is this. Big oh notation starts the conversation. It tells you how something scales, and that matters enormously. But the machine finishes the conversation. Between two algorithms in the same complexity class, which is where most real engineering decisions actually live, the constant factor and the memory access pattern break the tie. And the only way to truly know which is faster is to measure it, on the hardware you actually run on. Your intuition was calibrated for a machine that no longer exists.","That is the whole arc, from a single contiguous array all the way to a distributed database. If you want to go deeper, the full book is free, and every claim about performance in it runs as a live benchmark, in your browser, on your own processor. You do not have to take any number on faith. You can watch the memory mountain appear on your own machine. Thanks for listening, and happy building."], ARCMAP = [-1,-1,-1,0,1,2,3,3,4,5,6,7,-1,-1], N = 14;
-const audios = [...document.querySelectorAll('audio')];
+// Each slide links to the book chapter it summarizes.
+const CHAP = [
+  {t:'Read the book',         u:'/'},
+  {t:'Complexity Analysis',   u:'/chapters/complexity-analysis/'},
+  {t:'Memory Hierarchy',      u:'/chapters/memory-hierarchy/'},
+  {t:'Arrays and Strings',    u:'/chapters/basic-data-structures/'},
+  {t:'Linked Lists',          u:'/chapters/linked-lists/'},
+  {t:'Stacks and Queues',     u:'/chapters/stacks-and-queues/'},
+  {t:'Hash Tables',           u:'/chapters/hash-tables-and-hashing/'},
+  {t:'Hash Tables',           u:'/chapters/hash-tables-and-hashing/'},
+  {t:'Trees and Binary Trees',u:'/chapters/trees-and-binary-trees/'},
+  {t:'B-Trees',               u:'/chapters/b-trees/'},
+  {t:'LSM Trees',             u:'/chapters/lsm-trees/'},
+  {t:'Hash Tables',           u:'/chapters/hash-tables-and-hashing/'},
+  {t:'Complexity Analysis',   u:'/chapters/complexity-analysis/'},
+  {t:'All chapters',          u:'/chapters/'},
+];
+const ARCMAP = [-1,-1,-1,0,1,2,3,3,4,5,6,7,-1,-1], N = 14;
 const slides = [...document.querySelectorAll('.slide')];
 const arcSteps = [...document.querySelectorAll('.arc-step')];
 const $ = (id) => document.getElementById(id);
-let cur = 0, playing = false, autoplay = true;
+let cur = 0;
 
 function setTheme(t){ document.documentElement.dataset.theme = t; try{localStorage.setItem('deck-theme',t)}catch(e){}
   document.querySelector('.sun-c').style.display = t==='dark'?'none':'';
@@ -411,66 +406,48 @@ function setTheme(t){ document.documentElement.dataset.theme = t; try{localStora
 $('theme').onclick = () => setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');
 
 function renderArc(){ const a = ARCMAP[cur]; arcSteps.forEach((s,i)=> s.toggleAttribute('data-on', i===a)); }
-function setPlayIcon(){ $('play-i').innerHTML = playing
-  ? '<path d="M6 4h4v16H6zM14 4h4v16h-4z"/>' : '<path d="M8 5v14l11-7z"/>'; }
+function updateRef(){ const c = CHAP[cur]; const ref = $('chapref');
+  ref.href = c.u; ref.querySelector('.chapref-txt').textContent = cur===0 || cur===13 ? c.t : 'Read: ' + c.t; }
 
-function stopAll(){ audios.forEach(a=>{ a.pause(); }); }
-function show(i, {play=autoplay}={}){
+function show(i){
   if(i<0||i>=N) return;
-  stopAll();
   slides[cur].removeAttribute('data-active'); slides[cur].setAttribute('aria-hidden','true');
   cur = i;
   slides[cur].setAttribute('data-active',''); slides[cur].setAttribute('aria-hidden','false');
   $('cur').textContent = cur+1;
-  $('caption').textContent = CAPS[cur];
-  $('fill').style.width='0%';
   $('prev').disabled = cur===0; $('next').disabled = cur===N-1;
-  renderArc();
-  // preload neighbour
-  if(audios[cur+1]) audios[cur+1].preload='auto';
-  const a = audios[cur]; a.currentTime = 0;
-  if(play){ a.play().then(()=>{playing=true;setPlayIcon();}).catch(()=>{playing=false;setPlayIcon();}); }
-  else { playing=false; setPlayIcon(); }
+  renderArc(); updateRef();
 }
-function toggle(){ const a=audios[cur];
-  if(playing){ a.pause(); playing=false; } else { autoplay=true; a.play().catch(()=>{}); playing=true; }
-  setPlayIcon(); }
 
-audios.forEach((a,i)=>{
-  a.addEventListener('timeupdate',()=>{ if(i===cur && a.duration) $('fill').style.width=(a.currentTime/a.duration*100)+'%'; });
-  a.addEventListener('ended',()=>{ if(i===cur){ $('fill').style.width='100%';
-    if(cur<N-1 && autoplay){ setTimeout(()=>show(cur+1,{play:true}), 650); } else { playing=false; setPlayIcon(); } } });
-});
-
-$('play').onclick = toggle;
 $('prev').onclick = () => show(cur-1);
 $('next').onclick = () => show(cur+1);
-$('stage').onclick = (e)=>{ const r=$('stage').getBoundingClientRect(); (e.clientX-r.left)/r.width < .25 ? show(cur-1) : show(cur+1); };
+// Click the slide to advance; the left quarter goes back. Ignore clicks on the chapter link.
+$('stage').onclick = (e)=>{ if(e.target.closest('.chapref')) return;
+  const r=$('stage').getBoundingClientRect(); (e.clientX-r.left)/r.width < .25 ? show(cur-1) : show(cur+1); };
 arcSteps.forEach((s)=> s.onclick = ()=>{ const a=+s.dataset.arc; const t=ARCMAP.indexOf(a); if(t>=0) show(t); });
 document.addEventListener('keydown',(e)=>{
-  if(document.getElementById('contents').hasAttribute('data-open')) return; // menu handles its own keys
-  if(e.key===' '){e.preventDefault();toggle();}
-  else if(e.key==='ArrowRight'||e.key==='PageDown'){show(cur+1);}
+  if($('contents').hasAttribute('data-open')) return; // menu handles its own keys
+  if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){e.preventDefault();show(cur+1);}
   else if(e.key==='ArrowLeft'||e.key==='PageUp'){show(cur-1);}
   else if(e.key==='Home'){show(0);} else if(e.key==='End'){show(N-1);}
 });
 
-// --- contents / chapter menu ---
+// --- contents / slide menu ---
 const contents = $('contents');
 // The menu lives inside #stage, so stop its clicks from reaching the
 // click-anywhere-to-advance handler on the stage behind it.
 contents.addEventListener('click', (e) => e.stopPropagation());
-function openMenu(){ audios[cur].pause(); playing=false; setPlayIcon(); contents.setAttribute('data-open',''); }
+function openMenu(){ contents.setAttribute('data-open',''); }
 function closeMenu(){ contents.removeAttribute('data-open'); }
-function jump(i){ closeMenu(); autoplay=true; show(i,{play:true}); }
+function jump(i){ closeMenu(); show(i); }
 $('menu').onclick = () => contents.hasAttribute('data-open') ? closeMenu() : openMenu();
 $('playall').onclick = () => jump(0);
 [...document.querySelectorAll('.chapter')].forEach(btn => btn.onclick = () => jump(+btn.dataset.goto));
 // ESC closes the menu (only once a slide is showing)
 document.addEventListener('keydown',(e)=>{ if(e.key==='Escape' && contents.hasAttribute('data-open')) closeMenu(); });
 
-// init caption/state; open the chapter menu as the landing view
-$('caption').textContent = CAPS[0]; renderArc(); $('prev').disabled=true; setPlayIcon();
+// init state; open the slide menu as the landing view
+renderArc(); updateRef(); $('prev').disabled=true;
 openMenu();
 </script>
 </body>
