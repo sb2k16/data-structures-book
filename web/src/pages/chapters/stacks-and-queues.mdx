@@ -6,7 +6,7 @@ description: Stacks and queues are the two most useful restrictions you can put 
 
 import InProduction from '../../components/InProduction.astro';
 import InterviewChecklist from '../../components/InterviewChecklist.astro';
-import CppProblem from '../../components/problem/CppProblem';
+import CodeProblem from '../../components/problem/CodeProblem';
 import AlgoViz from '../../components/problem/AlgoViz';
 import { validParentheses } from '../../lib/problems';
 import { parensTrace } from '../../lib/traces';
@@ -117,9 +117,9 @@ run off the end of the allotted space and the program dies.
 This is *the* problem a stack was made for. Given a string of brackets — `()`, `[]`, `{}` — decide
 whether they're balanced and correctly nested. Push each opener; on a closer, the top of the stack
 must be its match, or the string is invalid. The LIFO order is exactly the nesting order, which is
-why the stack is the whole solution. Fill in `isValid` and run the tests.
+why the stack is the whole solution. Fill in the function and run the tests.
 
-<CppProblem client:visible starter={validParentheses.starter} harness={validParentheses.harness} />
+<CodeProblem client:visible problem={validParentheses} />
 
 <AlgoViz client:visible kind="parens" steps={parensTrace} title="Watch it run: valid parentheses" />
 

@@ -1,17 +1,20 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { LANG_ORDER, LANGUAGES, type Lang } from '../../lib/languages';
+import { setLang, useLang } from '../../lib/langStore';
+import type { ProblemSet } from '../../lib/problems';
 
 /**
- * An in-page coding problem: the reader writes a C++ function, hits Run, and it
- * is compiled and judged against tests entirely from the browser — no backend.
+ * An in-page coding problem the reader solves in the language of their choice.
+ * The editor's code is wrapped (prelude + solution + test harness) into one
+ * program and POSTed to Wandbox — a public, CORS-open compiler service — so it
+ * runs entirely from the browser, no backend.
  *
- * Execution: the editor's code is wrapped (prelude + solution + test harness)
- * into one program and POSTed to Wandbox, a public compiler service that allows
- * cross-origin calls. The harness is plain C++ that prints one [PASS]/[FAIL]
- * line per case plus a [SUMMARY]; this component just counts them.
+ * The harness (per language) prints one [PASS]/[FAIL] line per case plus a
+ * [SUMMARY]; this component just counts them, so the parser is language-neutral.
+ * Language is a page-wide preference (see langStore), so switching on one
+ * problem switches every block on the page.
  *
- * This is the free-tier taste of the practice loop; the full adaptive problem
- * set and AI coaching live behind Codexa. Problems here are original and
- * systems-flavored — never lifted from another site.
+ * Problems here are original and systems-flavored — never lifted from another site.
  */
 
 interface TestLine {
@@ -20,26 +23,36 @@ interface TestLine {
 }
 
 interface Props {
-  /** Editor starting content — the function stub the reader fills in. */
-  starter: string;
-  /** C++ appended after the solution: a main() that runs tests and prints results. */
-  harness: string;
-  /** Prepended before the solution (includes etc.). */
-  prelude?: string;
+  problem: ProblemSet;
   rows?: number;
 }
 
-const DEFAULT_PRELUDE = '#include <bits/stdc++.h>\nusing namespace std;\n';
-
 type Status = 'idle' | 'running' | 'done' | 'error';
 
-export default function CppProblem({ starter, harness, prelude = DEFAULT_PRELUDE, rows = 10 }: Props) {
-  const [code, setCode] = useState(starter);
+export default function CodeProblem({ problem, rows = 10 }: Props) {
+  const chosen = useLang();
+  // Languages this problem actually ships, in display order.
+  const available = useMemo(
+    () => LANG_ORDER.filter((l) => problem[l]),
+    [problem],
+  );
+  // Fall back to C++ (or the first available) if the chosen language isn't ported yet.
+  const lang: Lang = problem[chosen] ? chosen : available[0] ?? 'cpp';
+  const variant = problem[lang]!;
+
+  const [codeByLang, setCodeByLang] = useState<Partial<Record<Lang, string>>>({});
+  const code = codeByLang[lang] ?? variant.starter;
+  const setCode = (v: string) => setCodeByLang((m) => ({ ...m, [lang]: v }));
+
   const [status, setStatus] = useState<Status>('idle');
   const [tests, setTests] = useState<TestLine[]>([]);
   const [summary, setSummary] = useState<{ pass: number; total: number } | null>(null);
   const [compileError, setCompileError] = useState('');
   const [runtime, setRuntime] = useState('');
+
+  // Clear results when the language changes — old output would be confusing.
+  const clearResults = () => { setStatus('idle'); setTests([]); setSummary(null); setCompileError(''); setRuntime(''); };
+  useEffect(clearResults, [lang]);
 
   const passedAll = summary !== null && summary.pass === summary.total && summary.total > 0;
 
@@ -50,12 +63,12 @@ export default function CppProblem({ starter, harness, prelude = DEFAULT_PRELUDE
     setCompileError('');
     setRuntime('');
 
-    const program = `${prelude}\n${code}\n${harness}\n`;
+    const program = `${variant.prelude}\n${code}\n${variant.harness}\n`;
     try {
       const res = await fetch('https://wandbox.org/api/compile.json', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ compiler: 'gcc-head', options: 'c++17', code: program }),
+        body: JSON.stringify({ compiler: variant.compiler, options: variant.options, code: program }),
         signal: AbortSignal.timeout(30_000),
       });
       if (!res.ok) throw new Error(`compiler service returned ${res.status}`);
@@ -66,7 +79,6 @@ export default function CppProblem({ starter, harness, prelude = DEFAULT_PRELUDE
       };
 
       if (data.compiler_error && data.compiler_error.trim()) {
-        // Strip the noisy wrapper line numbers; keep it readable.
         setCompileError(data.compiler_error.trim());
         setStatus('error');
         return;
@@ -114,14 +126,36 @@ export default function CppProblem({ starter, harness, prelude = DEFAULT_PRELUDE
       style={{ borderColor: 'var(--border)', background: 'var(--surface-2)' }}
     >
       <div
-        className="flex items-center justify-between border-b px-4 py-2"
+        className="flex items-center justify-between gap-2 border-b px-3 py-2"
         style={{ borderColor: 'var(--border)' }}
       >
-        <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-          Try it · C++
-        </span>
+        <div className="flex items-center gap-1" role="tablist" aria-label="Language">
+          {available.map((l) => {
+            const active = l === lang;
+            return (
+              <button
+                key={l}
+                role="tab"
+                aria-selected={active}
+                onClick={() => setLang(l)}
+                className="rounded-md px-2.5 py-1 text-xs font-semibold transition-colors"
+                style={{
+                  background: active ? 'var(--accent)' : 'transparent',
+                  color: active ? '#fff' : 'var(--text-muted)',
+                }}
+              >
+                {LANGUAGES[l].label}
+              </button>
+            );
+          })}
+          {!problem[chosen] && (
+            <span className="ml-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+              (shown in {LANGUAGES[lang].label})
+            </span>
+          )}
+        </div>
         <button
-          onClick={() => { setCode(starter); setStatus('idle'); setTests([]); setSummary(null); setCompileError(''); setRuntime(''); }}
+          onClick={() => { setCode(variant.starter); clearResults(); }}
           className="text-xs"
           style={{ color: 'var(--text-muted)' }}
         >
@@ -133,7 +167,6 @@ export default function CppProblem({ starter, harness, prelude = DEFAULT_PRELUDE
         value={code}
         onChange={(e) => setCode(e.target.value)}
         onKeyDown={(e) => {
-          // Insert two spaces on Tab instead of leaving the editor.
           if (e.key === 'Tab') {
             e.preventDefault();
             const el = e.currentTarget;
@@ -147,7 +180,7 @@ export default function CppProblem({ starter, harness, prelude = DEFAULT_PRELUDE
         rows={Math.max(rows, lineCount + 1)}
         className="block w-full resize-y border-0 px-4 py-3 font-mono text-[13px] leading-relaxed outline-none"
         style={{ background: 'var(--surface-1)', color: 'var(--text-primary)', tabSize: 2 }}
-        aria-label="C++ solution editor"
+        aria-label={`${LANGUAGES[lang].label} solution editor`}
       />
 
       <div className="flex flex-wrap items-center gap-3 border-t px-4 py-3" style={{ borderColor: 'var(--border)' }}>
@@ -161,7 +194,7 @@ export default function CppProblem({ starter, harness, prelude = DEFAULT_PRELUDE
         </button>
         {status === 'running' && (
           <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            compiling your C++ on a public compiler service…
+            running your {LANGUAGES[lang].label} on a public compiler service…
           </span>
         )}
         {summary && status === 'done' && (
