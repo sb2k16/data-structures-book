@@ -13,6 +13,10 @@
  * harnesses use real newlines and print(), so they read as ordinary source.
  */
 import type { Lang } from './languages';
+import {
+  twoSumJava, twoSumGo, maxSubArrayJava, maxSubArrayGo,
+  isValidJava, isValidGo, reverseListJava, reverseListGo,
+} from './problemsExtra';
 
 export interface ProblemVariant {
   compiler: string;
@@ -32,6 +36,8 @@ const PY = { compiler: 'cpython-3.13.8', options: '', prelude: '' };
 
 /** Hash tables — two-sum in one pass. */
 export const twoSumOnePass: ProblemSet = {
+  java: twoSumJava,
+  go: twoSumGo,
   cpp: {
     ...CPP,
     starter: `vector<int> twoSum(vector<int>& nums, int target) {
@@ -93,6 +99,8 @@ print(f"[SUMMARY] {_pass}/{_tot}")`,
 
 /** Arrays — Kadane's maximum subarray (the one-pass scan). */
 export const maxSubarray: ProblemSet = {
+  java: maxSubArrayJava,
+  go: maxSubArrayGo,
   cpp: {
     ...CPP,
     starter: `int maxSubArray(vector<int>& nums) {
@@ -144,6 +152,8 @@ print(f"[SUMMARY] {_p}/{_t}")`,
 
 /** Stacks & queues — valid parentheses (the canonical stack problem). */
 export const validParentheses: ProblemSet = {
+  java: isValidJava,
+  go: isValidGo,
   cpp: {
     ...CPP,
     starter: `bool isValid(string s) {
@@ -201,6 +211,8 @@ print(f"[SUMMARY] {_p}/{_t}")`,
 
 /** Linked lists — reverse a singly linked list (pointer rewiring). */
 export const reverseList: ProblemSet = {
+  java: reverseListJava,
+  go: reverseListGo,
   cpp: {
     compiler: 'gcc-head',
     options: 'c++17',
