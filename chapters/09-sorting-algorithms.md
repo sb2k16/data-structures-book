@@ -49,6 +49,17 @@ void insertionSort(std::vector<int>& a) {
 }
 ```
 
+```python
+def insertion_sort(a):
+    for i in range(1, len(a)):
+        key = a[i]
+        j = i
+        while j > 0 and a[j - 1] > key:   # shift larger elements right
+            a[j] = a[j - 1]
+            j -= 1
+        a[j] = key                        # drop key into the gap
+```
+
 Three properties make it punch far above its complexity class. It is **adaptive**: on already-sorted or nearly-sorted input the inner loop never runs, so it degrades gracefully to `O(n)` — one linear pass. It is **stable**: equal elements never jump past each other because the comparison is strictly `>`. And it has a **tiny constant factor** — no recursion, no partitioning, no bookkeeping, just a linear scan with the occasional shift. On small inputs, "tiny constant factor" beats "good asymptotics" every time, because `n²` with a small constant is less than `n log n` with a large one when `n` is 16. That crossover is exactly why real sorts fall back to insertion sort for small subarrays. Hold that thought.
 
 Selection sort — repeatedly find the minimum of the remaining elements and swap it into place — is insertion sort's less useful cousin: also `O(n²)`, but *not* adaptive (it always scans the full remainder) and not stable. Its one virtue is that it performs at most `n` swaps total, which matters only when writes are far more expensive than reads, as on some flash memory. Bubble sort has no virtues worth the page; we'll leave it as a name to recognize.
@@ -76,6 +87,33 @@ void mergeSort(std::vector<int>& a, int lo, int hi) {
     mergeSort(a, mid + 1, hi);
     merge(a, lo, mid, hi);
 }
+```
+
+```python
+def merge(a, lo, mid, hi):
+    L = a[lo:mid + 1]
+    R = a[mid + 1:hi + 1]
+    i = j = 0
+    k = lo
+    while i < len(L) and j < len(R):
+        if L[i] <= R[j]:              # <= keeps it stable
+            a[k] = L[i]; i += 1
+        else:
+            a[k] = R[j]; j += 1
+        k += 1
+    while i < len(L):
+        a[k] = L[i]; i += 1; k += 1
+    while j < len(R):
+        a[k] = R[j]; j += 1; k += 1
+
+
+def merge_sort(a, lo, hi):
+    if lo >= hi:
+        return
+    mid = lo + (hi - lo) // 2          # not (lo+hi)//2 — matches the C++ convention
+    merge_sort(a, lo, mid)
+    merge_sort(a, mid + 1, hi)
+    merge(a, lo, mid, hi)
 ```
 
 Two details carry systems weight. The `<=` in the merge is what makes merge sort **stable**: when the fronts tie, we take from the left run, which held the earlier element. Flip it to `<` and stability is gone. And `mid = lo + (hi - lo) / 2` instead of `(lo + hi) / 2` avoids integer overflow when the indices are large — the same bug that lived in the JDK's binary search for nine years. It costs nothing to write it correctly.
@@ -113,6 +151,31 @@ void quickSort(std::vector<int>& a, int lo, int hi) {
 }
 ```
 
+```python
+def partition(a, lo, hi):
+    pivot = a[hi]                    # pivot = last element (Lomuto scheme)
+    i = lo - 1                       # i tracks the end of the "<= pivot" region
+    for j in range(lo, hi):
+        if a[j] <= pivot:
+            i += 1
+            a[i], a[j] = a[j], a[i]
+    a[i + 1], a[hi] = a[hi], a[i + 1]
+    return i + 1                     # pivot's final resting index
+
+
+def quick_sort(a, lo, hi):
+    while lo < hi:
+        p = partition(a, lo, hi)
+        # Recurse into the smaller side, loop on the larger:
+        # keeps stack depth O(log n) even on bad pivots.
+        if p - lo < hi - p:
+            quick_sort(a, lo, p - 1)
+            lo = p + 1
+        else:
+            quick_sort(a, p + 1, hi)
+            hi = p - 1
+```
+
 Quicksort is usually the fastest comparison sort in practice, for one reason above all: it sorts **in place** with a tight partition loop and excellent constant factors. But it hides a trap. The pivot choice decides the split, and a bad pivot gives a lopsided one. Feed the code above an already-sorted array and `a[hi]` — the largest element — is the pivot every time, so each partition peels off exactly one element: `n` levels of recursion, `O(n²)` work, and on the naive recursive version, a stack overflow. The cruel irony is that the worst case is triggered by the *best*-looking input.
 
 Two defenses matter. The first is the tail-call trick already in the code: always recurse into the smaller partition and loop on the larger, which caps stack depth at `O(log n)` regardless of pivots. The second is to **stop letting the input choose the pivot**:
@@ -123,6 +186,13 @@ int randomizedPartition(std::vector<int>& a, int lo, int hi) {
     std::swap(a[r], a[hi]);
     return partition(a, lo, hi);
 }
+```
+
+```python
+def randomized_partition(a, lo, hi):
+    r = random.randint(lo, hi)          # random index in [lo, hi]
+    a[r], a[hi] = a[hi], a[r]
+    return partition(a, lo, hi)
 ```
 
 A random pivot makes the `O(n²)` case astronomically unlikely for any *particular* input — an adversary can no longer hand you a sorted array to blow up. Production libraries go further: `std::sort` uses **median-of-three** (or median-of-medians) pivots and, crucially, a hard fallback we'll see in a moment.
@@ -151,6 +221,25 @@ void heapSort(std::vector<int>& a) {
         heapify(a, i, 0);                  // restore heap on the shrunk range
     }
 }
+```
+
+```python
+def heapify(a, n, i):
+    largest, l, r = i, 2 * i + 1, 2 * i + 2
+    if l < n and a[l] > a[largest]: largest = l
+    if r < n and a[r] > a[largest]: largest = r
+    if largest != i:
+        a[i], a[largest] = a[largest], a[i]
+        heapify(a, n, largest)             # sift the demoted element down
+
+
+def heap_sort(a):
+    n = len(a)
+    for i in range(n // 2 - 1, -1, -1):    # build heap bottom-up: O(n)
+        heapify(a, n, i)
+    for i in range(n - 1, 0, -1):          # extract max n-1 times: O(n log n)
+        a[0], a[i] = a[i], a[0]
+        heapify(a, i, 0)                   # restore heap on the shrunk range
 ```
 
 The properties are the selling point: **`O(n log n)` in every case** — no adversarial input degrades it — and **`O(1)` extra space**. It is not stable, and in practice it is the *slowest* of the three `O(n log n)` sorts, because `heapify` hops between a parent at index `i` and children at `2i+1` and `2i+2` — addresses that fan out across memory and defeat the cache and the prefetcher. That combination, bulletproof worst case but poor real-world speed, is exactly why heapsort's main job today is to be a *safety net* for quicksort rather than a front-line sort.
@@ -220,6 +309,24 @@ void countingSort(std::vector<int>& a) {
 }
 ```
 
+```python
+def counting_sort(a):
+    if not a:
+        return
+    lo = min(a)
+    hi = max(a)
+    count = [0] * (hi - lo + 1)
+    for x in a:
+        count[x - lo] += 1
+    for i in range(1, len(count)):
+        count[i] += count[i - 1]                 # prefix sum -> end positions
+    out = [0] * len(a)
+    for i in range(len(a) - 1, -1, -1):          # right-to-left keeps it stable
+        count[a[i] - lo] -= 1
+        out[count[a[i] - lo]] = a[i]
+    a[:] = out
+```
+
 Counting sort is a rocket when `k` is small (sorting a million values in `[0, 255]`) and a memory disaster when `k` is large — sorting 32-bit integers this way would allocate a four-billion-entry table. That's where **radix sort** comes in: it runs counting sort digit by digit, least-significant first, relying on counting sort's stability to preserve the ordering of previous digits. For `d`-digit keys it is `O(d · (n + k))` with a small `k` (10 for decimal digits, or 256 for byte-at-a-time), effectively `O(n)` when `d` is a constant.
 
 ```cpp
@@ -241,6 +348,31 @@ void radixSort(std::vector<int>& a) {   // non-negative integers
     for (int exp = 1; hi / exp > 0; exp *= 10)
         countingSortByDigit(a, exp);
 }
+```
+
+```python
+def counting_sort_by_digit(a, exp):
+    out = [0] * len(a)
+    count = [0] * 10
+    for x in a:
+        count[(x // exp) % 10] += 1
+    for i in range(1, 10):
+        count[i] += count[i - 1]
+    for i in range(len(a) - 1, -1, -1):          # stable placement
+        d = (a[i] // exp) % 10
+        count[d] -= 1
+        out[count[d]] = a[i]
+    a[:] = out
+
+
+def radix_sort(a):                                # non-negative integers
+    if not a:
+        return
+    hi = max(a)
+    exp = 1
+    while hi // exp > 0:
+        counting_sort_by_digit(a, exp)
+        exp *= 10
 ```
 
 These are not magic. They only apply to keys you can decompose into small bounded pieces — integers, fixed-width strings — and they are not in-place. But when they apply, they beat every comparison sort, which is why radix sort shows up sorting integer keys in databases and why bucketing schemes underpin a lot of large-scale data processing. (**Bucket sort** is the same idea for uniformly distributed floating-point keys: scatter into `n` buckets by value, sort each small bucket, concatenate — `O(n)` on average, `O(n²)` if the distribution clumps everything into one bucket.)

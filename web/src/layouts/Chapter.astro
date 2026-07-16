@@ -95,3 +95,39 @@ const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
     </aside>
   </div>
 </Base>
+
+<!-- Multi-language code tabs: shared styles + one driver for both the rehype
+     grouping (markdown chapters) and the <CodeTabs> component (MDX chapters).
+     Bound to the page-wide language preference used by the runnable editor. -->
+<style is:global>
+  .code-tabs { margin: 1.5rem 0; border: 1px solid var(--border); border-radius: 0.75rem; overflow: hidden; background: var(--surface-2); }
+  .code-tabs .ct-bar { display: flex; align-items: center; gap: 0.25rem; border-bottom: 1px solid var(--border); padding: 0.4rem 0.6rem; }
+  .code-tabs .ct-tab { border: 0; background: transparent; cursor: pointer; border-radius: 0.375rem; padding: 0.25rem 0.625rem; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.01em; color: var(--text-muted); }
+  .code-tabs .ct-tab[aria-selected='true'] { background: var(--accent); color: #fff; }
+  .code-tabs .ct-panel[hidden] { display: none; }
+  .code-tabs .ct-panel :where(pre.astro-code) { margin: 0; border-radius: 0; }
+</style>
+<script>
+  // Drives every .code-tabs on the page off the shared `dsos-lang` preference
+  // (same key/event as langStore.ts), so a tab switch here, in another block,
+  // or in the runnable editor all stay in lockstep. Runs once per page.
+  const KEY = 'dsos-lang';
+  const cur = (): string => { try { return localStorage.getItem(KEY) || 'cpp'; } catch { return 'cpp'; } };
+  const apply = (root: Element, lang: string) => {
+    const panels = [...root.querySelectorAll<HTMLElement>('.ct-panel')];
+    const eff = panels.some((p) => p.dataset.lang === lang) ? lang : 'cpp';
+    panels.forEach((p) => { p.hidden = p.dataset.lang !== eff; });
+    root.querySelectorAll<HTMLElement>('.ct-tab').forEach((t) => t.setAttribute('aria-selected', String(t.dataset.lang === eff)));
+  };
+  const applyAll = () => document.querySelectorAll('.code-tabs').forEach((r) => apply(r, cur()));
+  document.querySelectorAll('.code-tabs').forEach((root) => {
+    apply(root, cur());
+    root.querySelectorAll<HTMLElement>('.ct-tab').forEach((t) =>
+      t.addEventListener('click', () => {
+        try { localStorage.setItem(KEY, t.dataset.lang!); } catch {}
+        window.dispatchEvent(new CustomEvent('dsos-lang-change'));
+      }));
+  });
+  window.addEventListener('dsos-lang-change', applyAll);
+  window.addEventListener('storage', applyAll);
+</script>

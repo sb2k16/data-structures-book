@@ -1,72 +1,37 @@
 ---
 /**
- * A tabbed, multi-language prose code block. Each snippet is highlighted at
- * build time by the same Shiki themes as the book's fenced code (so it matches
- * exactly, dark mode included). The visible language is the page-wide
- * preference shared with the runnable CodeProblem editor via the `dsos-lang`
- * localStorage key and the `dsos-lang-change` window event — so switching a
- * tab anywhere switches every code block on the page.
+ * Tabbed, multi-language prose code block for MDX chapters. Emits the exact
+ * .code-tabs / .ct-bar / .ct-tab / .ct-panel markup that the rehypeCodeTabs
+ * plugin produces for plain-markdown chapters, so a single shared style + script
+ * (in Chapter.astro) drives both. Snippets are highlighted at build time by the
+ * same Shiki themes as the book's fenced code. The visible language is the
+ * page-wide preference shared with the runnable CodeProblem editor.
  *
- * Usage:
  *   <CodeTabs snippets={[{ lang: 'cpp', code: `...` }, { lang: 'py', code: `...` }]} />
  */
 import { Code } from 'astro:components';
 
 type Lang = 'cpp' | 'py' | 'java' | 'go';
 interface Snippet { lang: Lang; code: string; }
-const { snippets, title } = Astro.props as { snippets: Snippet[]; title?: string };
+const { snippets } = Astro.props as { snippets: Snippet[] };
 
 const LABEL: Record<Lang, string> = { cpp: 'C++', py: 'Python', java: 'Java', go: 'Go' };
 const SHIKI: Record<Lang, string> = { cpp: 'cpp', py: 'python', java: 'java', go: 'go' };
+const ORDER: Lang[] = ['cpp', 'py', 'java', 'go'];
+const items = [...snippets].sort((a, b) => ORDER.indexOf(a.lang) - ORDER.indexOf(b.lang));
 ---
 
-<div class="code-tabs not-prose my-6 overflow-hidden rounded-xl border" style="border-color: var(--border); background: var(--surface-2)">
-  <div class="flex items-center gap-1 border-b px-3 py-2" style="border-color: var(--border)" role="tablist" aria-label="Language">
-    {snippets.map((s) => (
-      <button class="ct-tab rounded-md px-2.5 py-1 text-xs font-semibold transition-colors" data-lang={s.lang} role="tab" style="color: var(--text-muted)">
+<div class="code-tabs">
+  <div class="ct-bar" role="tablist">
+    {items.map((s) => (
+      <button class="ct-tab" type="button" role="tab" data-lang={s.lang} aria-selected={s.lang === 'cpp' ? 'true' : 'false'}>
         {LABEL[s.lang]}
       </button>
     ))}
-    {title && <span class="ml-auto text-xs" style="color: var(--text-muted)">{title}</span>}
   </div>
-  {snippets.map((s) => (
-    <div class="ct-panel" data-lang={s.lang}>
+  {items.map((s) => (
+    <div class="ct-panel" data-lang={s.lang} hidden={s.lang !== 'cpp'}>
       <Code code={s.code} lang={SHIKI[s.lang] as any} themes={{ light: 'github-light', dark: 'github-dark' }} wrap={false} />
     </div>
   ))}
 </div>
-
-<style>
-  .code-tabs .ct-tab[aria-selected='true'] { background: var(--accent); color: #fff !important; }
-  .code-tabs .ct-panel[hidden] { display: none; }
-  .code-tabs :global(.astro-code) { margin: 0; padding: 1rem 1.1rem; border-radius: 0; font-size: 13px; line-height: 1.6; overflow-x: auto; }
-</style>
-
-<script>
-  // Vanilla, framework-free: syncs with the shared language preference used by
-  // the React CodeProblem editor. Hoisted + bundled by Astro, so this runs once
-  // per page regardless of how many <CodeTabs> are present.
-  const KEY = 'dsos-lang';
-  const cur = (): string => {
-    try { return localStorage.getItem(KEY) || 'cpp'; } catch { return 'cpp'; }
-  };
-  const apply = (root: Element, lang: string) => {
-    const panels = [...root.querySelectorAll<HTMLElement>('.ct-panel')];
-    const eff = panels.some((p) => p.dataset.lang === lang) ? lang : 'cpp';
-    panels.forEach((p) => { p.hidden = p.dataset.lang !== eff; });
-    root.querySelectorAll<HTMLElement>('.ct-tab').forEach((t) =>
-      t.setAttribute('aria-selected', String(t.dataset.lang === eff)));
-  };
-  const applyAll = () => document.querySelectorAll('.code-tabs').forEach((r) => apply(r, cur()));
-
-  document.querySelectorAll('.code-tabs').forEach((root) => {
-    apply(root, cur());
-    root.querySelectorAll<HTMLElement>('.ct-tab').forEach((t) =>
-      t.addEventListener('click', () => {
-        try { localStorage.setItem(KEY, t.dataset.lang!); } catch {}
-        window.dispatchEvent(new CustomEvent('dsos-lang-change'));
-      }));
-  });
-  window.addEventListener('dsos-lang-change', applyAll);
-  window.addEventListener('storage', applyAll);
-</script>

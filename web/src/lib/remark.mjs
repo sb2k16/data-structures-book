@@ -108,6 +108,91 @@ export function rehypeWrapTables() {
   };
 }
 
+/**
+ * Group adjacent multi-language code blocks into tabs. Authors write consecutive
+ * fenced blocks (```cpp then ```python then ```java …) with nothing but blank
+ * lines between them; this runs on hast AFTER Shiki (so each <pre> carries
+ * data-language) and wraps such a run in the same .code-tabs markup the
+ * <CodeTabs> component emits. A shared script (in Chapter.astro) drives the
+ * tabs off the page-wide language preference. Natural chapters never place
+ * distinct-language fences back-to-back, so only intentional groups are caught.
+ */
+const CT_LANG = { cpp: 'cpp', 'c++': 'cpp', python: 'py', py: 'py', java: 'java', go: 'go' };
+const CT_LABEL = { cpp: 'C++', py: 'Python', java: 'Java', go: 'Go' };
+const CT_ORDER = ['cpp', 'py', 'java', 'go'];
+
+function ctPreLang(n) {
+  if (n && n.type === 'element' && n.tagName === 'pre') {
+    const dl = n.properties && n.properties.dataLanguage;
+    if (typeof dl === 'string' && CT_LANG[dl]) return CT_LANG[dl];
+  }
+  return null;
+}
+function ctIsWs(n) {
+  return n && n.type === 'text' && (n.value == null || !n.value.trim());
+}
+function ctBuildTabs(pres) {
+  const items = pres
+    .map((p) => ({ lang: ctPreLang(p), pre: p }))
+    .sort((a, b) => CT_ORDER.indexOf(a.lang) - CT_ORDER.indexOf(b.lang));
+  const bar = {
+    type: 'element',
+    tagName: 'div',
+    properties: { className: ['ct-bar'], role: 'tablist' },
+    children: items.map((it) => ({
+      type: 'element',
+      tagName: 'button',
+      properties: { className: ['ct-tab'], type: 'button', dataLang: it.lang, ariaSelected: it.lang === 'cpp' ? 'true' : 'false' },
+      children: [{ type: 'text', value: CT_LABEL[it.lang] }],
+    })),
+  };
+  const panels = items.map((it) => ({
+    type: 'element',
+    tagName: 'div',
+    properties: { className: ['ct-panel'], dataLang: it.lang, hidden: it.lang !== 'cpp' },
+    children: [it.pre],
+  }));
+  return { type: 'element', tagName: 'div', properties: { className: ['code-tabs'] }, children: [bar, ...panels] };
+}
+function ctProcess(children) {
+  const out = [];
+  for (let i = 0; i < children.length; ) {
+    if (ctPreLang(children[i])) {
+      const group = [];
+      let j = i;
+      while (j < children.length) {
+        if (ctPreLang(children[j])) { group.push(children[j]); j++; }
+        else if (ctIsWs(children[j])) {
+          let k = j + 1;
+          while (k < children.length && ctIsWs(children[k])) k++;
+          if (k < children.length && ctPreLang(children[k])) j = k;
+          else break;
+        } else break;
+      }
+      const langs = group.map(ctPreLang);
+      if (group.length >= 2 && new Set(langs).size === langs.length) {
+        out.push(ctBuildTabs(group));
+        i = j;
+        continue;
+      }
+    }
+    out.push(children[i]);
+    i++;
+  }
+  return out;
+}
+export function rehypeCodeTabs() {
+  return (tree) => {
+    const walk = (node) => {
+      if (node.children) {
+        node.children = ctProcess(node.children);
+        for (const c of node.children) walk(c);
+      }
+    };
+    walk(tree);
+  };
+}
+
 function escapeHtml(s) {
   return s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
 }

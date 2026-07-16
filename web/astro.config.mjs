@@ -12,6 +12,7 @@ import {
   remarkMermaid,
   remarkRewriteLinks,
   rehypeWrapTables,
+  rehypeCodeTabs,
 } from './src/lib/remark.mjs';
 
 const REPO_URL = 'https://github.com/sb2k16/data-structures-book';
@@ -34,6 +35,7 @@ export default defineConfig({
         rehypeSlug,
         [rehypeAutolinkHeadings, { behavior: 'wrap', properties: { className: 'heading-anchor' } }],
         rehypeWrapTables,
+        rehypeCodeTabs,
       ],
     }),
   },
