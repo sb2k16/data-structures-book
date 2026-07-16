@@ -133,19 +133,47 @@ const schema = {
 
     {/* Mermaid is ~1MB; only pull it in on pages that actually contain a diagram. */}
     <script>
-      const diagrams = document.querySelectorAll('pre.mermaid');
+      const diagrams = document.querySelectorAll<HTMLElement>('pre.mermaid');
       if (diagrams.length > 0) {
         const { default: mermaid } = await import('mermaid');
+        const root = document.documentElement;
+        const css = getComputedStyle(root);
+        const v = (name: string, fallback: string) => css.getPropertyValue(name).trim() || fallback;
         const dark =
-          document.documentElement.dataset.theme === 'dark' ||
-          (!document.documentElement.dataset.theme &&
-            matchMedia('(prefers-color-scheme: dark)').matches);
+          root.dataset.theme === 'dark' ||
+          (!root.dataset.theme && matchMedia('(prefers-color-scheme: dark)').matches);
+        // Theme the diagrams with the book's own palette so they read as native,
+        // not generic mermaid. Rendered once with the theme active at load.
         mermaid.initialize({
           startOnLoad: false,
-          theme: dark ? 'dark' : 'neutral',
-          fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+          securityLevel: 'loose', // allow <br/> in labels
+          theme: 'base',
+          themeVariables: {
+            fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+            fontSize: '14px',
+            background: 'transparent',
+            primaryColor: v('--surface-2', dark ? '#1e1e1c' : '#f4f4f1'),
+            primaryBorderColor: v('--accent', '#2a78d6'),
+            primaryTextColor: v('--text-primary', dark ? '#fafaf7' : '#0b0b0b'),
+            secondaryColor: v('--surface-3', dark ? '#282826' : '#eaeae5'),
+            tertiaryColor: v('--surface-1', dark ? '#151514' : '#fcfcfb'),
+            lineColor: v('--text-muted', dark ? '#8f8e84' : '#87867e'),
+            textColor: v('--text-secondary', dark ? '#c3c2b7' : '#52514e'),
+            nodeBorder: v('--accent', '#2a78d6'),
+            clusterBkg: 'transparent',
+            edgeLabelBackground: v('--surface-1', dark ? '#151514' : '#fcfcfb'),
+          },
         });
-        await mermaid.run({ nodes: Array.from(diagrams) as HTMLElement[] });
+        // Render each diagram on its own, so a single unparseable one can't take
+        // down the rest of the page (mermaid.run rejects the whole batch on any error).
+        for (const node of diagrams) {
+          try {
+            await mermaid.run({ nodes: [node] });
+          } catch (err) {
+            node.dataset.mermaidError = '';
+            console.warn('mermaid: skipped a diagram that failed to parse', err);
+          }
+        }
       }
     </script>
   </body>
