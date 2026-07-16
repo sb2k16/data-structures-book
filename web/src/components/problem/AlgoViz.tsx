@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import type { Step } from '../../lib/traces';
 
 /**
@@ -25,16 +26,39 @@ const ACCENT_SOFT = { border: 'color-mix(in srgb, var(--accent) 45%, var(--borde
 const NEUTRAL = { border: 'var(--border)', bg: 'var(--surface-1)' };
 
 function Cell({ v, label, s }: { v: string | number; label?: string | number; s: { border: string; bg: string } }) {
+  // Colours stay on a CSS transition (they use var() which motion can't tween);
+  // motion adds a springy scale-pop so the active/best cell lifts as the
+  // highlight sweeps across the array.
+  const pop = s.border === ACCENT.border || s.border === GREEN.border;
   return (
     <div className="flex flex-col items-center">
-      <div
+      <motion.div
         className="flex h-11 min-w-[2.75rem] items-center justify-center rounded-lg border-2 px-2 font-mono text-sm font-semibold tabular-nums transition-colors"
         style={{ borderColor: s.border, background: s.bg, color: 'var(--text-primary)' }}
+        animate={{ scale: pop ? 1.12 : 1 }}
+        transition={{ type: 'spring', stiffness: 460, damping: 24 }}
       >
         {v}
-      </div>
+      </motion.div>
       {label !== undefined && <span className="mt-1 font-mono text-[10px]" style={{ color: 'var(--text-muted)' }}>{label}</span>}
     </div>
+  );
+}
+
+/** A stack/queue item that slides in on push and out on pop. */
+function StackItem({ children, s }: { children: React.ReactNode; s: { border: string; bg: string } }) {
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: -14, scale: 0.8 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 14, scale: 0.8 }}
+      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+      className="flex h-11 min-w-[2.75rem] flex-col items-center justify-center rounded-lg border-2 px-2 font-mono text-sm font-semibold tabular-nums transition-colors"
+      style={{ borderColor: s.border, background: s.bg, color: 'var(--text-primary)' }}
+    >
+      {children}
+    </motion.div>
   );
 }
 
@@ -68,7 +92,22 @@ function TwoSumStage({ st }: { st: any }) {
       <div className="mt-4"><Label>hash map · value → index</Label>
         <div className="flex min-h-[2rem] flex-wrap gap-2">
           {Object.entries(map).length === 0 && <span className="text-sm" style={{ color: 'var(--text-muted)' }}>empty</span>}
-          {Object.entries(map).map(([k, val]) => <span key={k} className="rounded-md border px-2.5 py-1 font-mono text-xs" style={{ borderColor: 'var(--border-strong)', background: 'var(--surface-1)', color: 'var(--text-secondary)' }}>{k} <span style={{ color: 'var(--text-muted)' }}>→</span> {val}</span>)}
+          <AnimatePresence mode="popLayout" initial={false}>
+            {Object.entries(map).map(([k, val]) => (
+              <motion.span
+                key={k}
+                layout
+                initial={{ opacity: 0, scale: 0.7 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.7 }}
+                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                className="rounded-md border px-2.5 py-1 font-mono text-xs"
+                style={{ borderColor: 'var(--border-strong)', background: 'var(--surface-1)', color: 'var(--text-secondary)' }}
+              >
+                {k} <span style={{ color: 'var(--text-muted)' }}>→</span> {val}
+              </motion.span>
+            ))}
+          </AnimatePresence>
         </div>
       </div>
     </>
@@ -103,7 +142,11 @@ function ParensStage({ st }: { st: any }) {
       <div className="mt-4"><Label>stack {stack.length > 0 && <span style={{ textTransform: 'none', letterSpacing: 0 }}>(top on the right)</span>}</Label>
         <div className="flex min-h-[2.75rem] flex-wrap items-end gap-2">
           {stack.length === 0 && <span className="text-sm" style={{ color: 'var(--text-muted)' }}>empty</span>}
-          {stack.map((c, i) => <Cell key={i} v={c} label={i === stack.length - 1 ? 'top' : undefined} s={i === stack.length - 1 ? ACCENT : NEUTRAL} />)}
+          <AnimatePresence mode="popLayout" initial={false}>
+            {stack.map((c, i) => (
+              <StackItem key={i} s={i === stack.length - 1 ? ACCENT : NEUTRAL}>{c}</StackItem>
+            ))}
+          </AnimatePresence>
         </div>
       </div>
       {st.valid === false && <div className="mt-3 text-sm font-semibold" style={{ color: '#e34948' }}>✗ Not valid.</div>}
