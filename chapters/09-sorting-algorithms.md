@@ -60,6 +60,34 @@ def insertion_sort(a):
         a[j] = key                        # drop key into the gap
 ```
 
+```java
+void insertionSort(int[] a) {
+    for (int i = 1; i < a.length; i++) {
+        int key = a[i];
+        int j = i;
+        while (j > 0 && a[j - 1] > key) {   // shift larger elements right
+            a[j] = a[j - 1];
+            j--;
+        }
+        a[j] = key;                         // drop key into the gap
+    }
+}
+```
+
+```go
+func insertionSort(a []int) {
+    for i := 1; i < len(a); i++ {
+        key := a[i]
+        j := i
+        for j > 0 && a[j-1] > key { // shift larger elements right
+            a[j] = a[j-1]
+            j--
+        }
+        a[j] = key // drop key into the gap
+    }
+}
+```
+
 Three properties make it punch far above its complexity class. It is **adaptive**: on already-sorted or nearly-sorted input the inner loop never runs, so it degrades gracefully to `O(n)` — one linear pass. It is **stable**: equal elements never jump past each other because the comparison is strictly `>`. And it has a **tiny constant factor** — no recursion, no partitioning, no bookkeeping, just a linear scan with the occasional shift. On small inputs, "tiny constant factor" beats "good asymptotics" every time, because `n²` with a small constant is less than `n log n` with a large one when `n` is 16. That crossover is exactly why real sorts fall back to insertion sort for small subarrays. Hold that thought.
 
 Selection sort — repeatedly find the minimum of the remaining elements and swap it into place — is insertion sort's less useful cousin: also `O(n²)`, but *not* adaptive (it always scans the full remainder) and not stable. Its one virtue is that it performs at most `n` swaps total, which matters only when writes are far more expensive than reads, as on some flash memory. Bubble sort has no virtues worth the page; we'll leave it as a name to recognize.
@@ -114,6 +142,64 @@ def merge_sort(a, lo, hi):
     merge_sort(a, lo, mid)
     merge_sort(a, mid + 1, hi)
     merge(a, lo, mid, hi)
+```
+
+```java
+void merge(int[] a, int lo, int mid, int hi) {
+    int[] L = Arrays.copyOfRange(a, lo, mid + 1);
+    int[] R = Arrays.copyOfRange(a, mid + 1, hi + 1);
+    int i = 0, j = 0, k = lo;
+    while (i < L.length && j < R.length)
+        a[k++] = (L[i] <= R[j]) ? L[i++] : R[j++];   // <= keeps it stable
+    while (i < L.length) a[k++] = L[i++];
+    while (j < R.length) a[k++] = R[j++];
+}
+
+void mergeSort(int[] a, int lo, int hi) {
+    if (lo >= hi) return;
+    int mid = lo + (hi - lo) / 2;          // not (lo+hi)/2 — that can overflow
+    mergeSort(a, lo, mid);
+    mergeSort(a, mid + 1, hi);
+    merge(a, lo, mid, hi);
+}
+```
+
+```go
+func merge(a []int, lo, mid, hi int) {
+    L := append([]int(nil), a[lo:mid+1]...)
+    R := append([]int(nil), a[mid+1:hi+1]...)
+    i, j, k := 0, 0, lo
+    for i < len(L) && j < len(R) {
+        if L[i] <= R[j] { // <= keeps it stable
+            a[k] = L[i]
+            i++
+        } else {
+            a[k] = R[j]
+            j++
+        }
+        k++
+    }
+    for i < len(L) {
+        a[k] = L[i]
+        i++
+        k++
+    }
+    for j < len(R) {
+        a[k] = R[j]
+        j++
+        k++
+    }
+}
+
+func mergeSort(a []int, lo, hi int) {
+    if lo >= hi {
+        return
+    }
+    mid := lo + (hi-lo)/2 // not (lo+hi)/2 — that can overflow
+    mergeSort(a, lo, mid)
+    mergeSort(a, mid+1, hi)
+    merge(a, lo, mid, hi)
+}
 ```
 
 Two details carry systems weight. The `<=` in the merge is what makes merge sort **stable**: when the fronts tie, we take from the left run, which held the earlier element. Flip it to `<` and stability is gone. And `mid = lo + (hi - lo) / 2` instead of `(lo + hi) / 2` avoids integer overflow when the indices are large — the same bug that lived in the JDK's binary search for nine years. It costs nothing to write it correctly.
@@ -176,6 +262,65 @@ def quick_sort(a, lo, hi):
             hi = p - 1
 ```
 
+```java
+int partition(int[] a, int lo, int hi) {
+    int pivot = a[hi];        // pivot = last element (Lomuto scheme)
+    int i = lo - 1;           // i tracks the end of the "<= pivot" region
+    for (int j = lo; j < hi; j++)
+        if (a[j] <= pivot) {
+            i++;
+            int t = a[i]; a[i] = a[j]; a[j] = t;
+        }
+    int t = a[i + 1]; a[i + 1] = a[hi]; a[hi] = t;
+    return i + 1;             // pivot's final resting index
+}
+
+void quickSort(int[] a, int lo, int hi) {
+    while (lo < hi) {
+        int p = partition(a, lo, hi);
+        // Recurse into the smaller side, loop on the larger:
+        // keeps stack depth O(log n) even on bad pivots.
+        if (p - lo < hi - p) {
+            quickSort(a, lo, p - 1);
+            lo = p + 1;
+        } else {
+            quickSort(a, p + 1, hi);
+            hi = p - 1;
+        }
+    }
+}
+```
+
+```go
+func partition(a []int, lo, hi int) int {
+    pivot := a[hi] // pivot = last element (Lomuto scheme)
+    i := lo - 1    // i tracks the end of the "<= pivot" region
+    for j := lo; j < hi; j++ {
+        if a[j] <= pivot {
+            i++
+            a[i], a[j] = a[j], a[i]
+        }
+    }
+    a[i+1], a[hi] = a[hi], a[i+1]
+    return i + 1 // pivot's final resting index
+}
+
+func quickSort(a []int, lo, hi int) {
+    for lo < hi {
+        p := partition(a, lo, hi)
+        // Recurse into the smaller side, loop on the larger:
+        // keeps stack depth O(log n) even on bad pivots.
+        if p-lo < hi-p {
+            quickSort(a, lo, p-1)
+            lo = p + 1
+        } else {
+            quickSort(a, p+1, hi)
+            hi = p - 1
+        }
+    }
+}
+```
+
 Quicksort is usually the fastest comparison sort in practice, for one reason above all: it sorts **in place** with a tight partition loop and excellent constant factors. But it hides a trap. The pivot choice decides the split, and a bad pivot gives a lopsided one. Feed the code above an already-sorted array and `a[hi]` — the largest element — is the pivot every time, so each partition peels off exactly one element: `n` levels of recursion, `O(n²)` work, and on the naive recursive version, a stack overflow. The cruel irony is that the worst case is triggered by the *best*-looking input.
 
 Two defenses matter. The first is the tail-call trick already in the code: always recurse into the smaller partition and loop on the larger, which caps stack depth at `O(log n)` regardless of pivots. The second is to **stop letting the input choose the pivot**:
@@ -193,6 +338,22 @@ def randomized_partition(a, lo, hi):
     r = random.randint(lo, hi)          # random index in [lo, hi]
     a[r], a[hi] = a[hi], a[r]
     return partition(a, lo, hi)
+```
+
+```java
+int randomizedPartition(int[] a, int lo, int hi) {
+    int r = lo + ThreadLocalRandom.current().nextInt(hi - lo + 1);   // random index in [lo, hi]
+    int t = a[r]; a[r] = a[hi]; a[hi] = t;
+    return partition(a, lo, hi);
+}
+```
+
+```go
+func randomizedPartition(a []int, lo, hi int) int {
+    r := lo + rand.Intn(hi-lo+1) // random index in [lo, hi]
+    a[r], a[hi] = a[hi], a[r]
+    return partition(a, lo, hi)
+}
 ```
 
 A random pivot makes the `O(n²)` case astronomically unlikely for any *particular* input — an adversary can no longer hand you a sorted array to blow up. Production libraries go further: `std::sort` uses **median-of-three** (or median-of-medians) pivots and, crucially, a hard fallback we'll see in a moment.
@@ -240,6 +401,55 @@ def heap_sort(a):
     for i in range(n - 1, 0, -1):          # extract max n-1 times: O(n log n)
         a[0], a[i] = a[i], a[0]
         heapify(a, i, 0)                   # restore heap on the shrunk range
+```
+
+```java
+void heapify(int[] a, int n, int i) {
+    int largest = i, l = 2 * i + 1, r = 2 * i + 2;
+    if (l < n && a[l] > a[largest]) largest = l;
+    if (r < n && a[r] > a[largest]) largest = r;
+    if (largest != i) {
+        int t = a[i]; a[i] = a[largest]; a[largest] = t;
+        heapify(a, n, largest);   // sift the demoted element down
+    }
+}
+
+void heapSort(int[] a) {
+    int n = a.length;
+    for (int i = n / 2 - 1; i >= 0; i--)   // build heap bottom-up: O(n)
+        heapify(a, n, i);
+    for (int i = n - 1; i > 0; i--) {      // extract max n-1 times: O(n log n)
+        int t = a[0]; a[0] = a[i]; a[i] = t;
+        heapify(a, i, 0);                  // restore heap on the shrunk range
+    }
+}
+```
+
+```go
+func heapify(a []int, n, i int) {
+    largest, l, r := i, 2*i+1, 2*i+2
+    if l < n && a[l] > a[largest] {
+        largest = l
+    }
+    if r < n && a[r] > a[largest] {
+        largest = r
+    }
+    if largest != i {
+        a[i], a[largest] = a[largest], a[i]
+        heapify(a, n, largest) // sift the demoted element down
+    }
+}
+
+func heapSort(a []int) {
+    n := len(a)
+    for i := n/2 - 1; i >= 0; i-- { // build heap bottom-up: O(n)
+        heapify(a, n, i)
+    }
+    for i := n - 1; i > 0; i-- { // extract max n-1 times: O(n log n)
+        a[0], a[i] = a[i], a[0]
+        heapify(a, i, 0) // restore heap on the shrunk range
+    }
+}
 ```
 
 The properties are the selling point: **`O(n log n)` in every case** — no adversarial input degrades it — and **`O(1)` extra space**. It is not stable, and in practice it is the *slowest* of the three `O(n log n)` sorts, because `heapify` hops between a parent at index `i` and children at `2i+1` and `2i+2` — addresses that fan out across memory and defeat the cache and the prefetcher. That combination, bulletproof worst case but poor real-world speed, is exactly why heapsort's main job today is to be a *safety net* for quicksort rather than a front-line sort.
@@ -327,6 +537,52 @@ def counting_sort(a):
     a[:] = out
 ```
 
+```java
+void countingSort(int[] a) {
+    if (a.length == 0) return;
+    int lo = a[0], hi = a[0];
+    for (int x : a) { if (x < lo) lo = x; if (x > hi) hi = x; }
+    int[] count = new int[hi - lo + 1];
+    for (int x : a) count[x - lo]++;
+    for (int i = 1; i < count.length; i++)
+        count[i] += count[i - 1];               // prefix sum -> end positions
+    int[] out = new int[a.length];
+    for (int i = a.length - 1; i >= 0; i--)     // right-to-left keeps it stable
+        out[--count[a[i] - lo]] = a[i];
+    System.arraycopy(out, 0, a, 0, a.length);
+}
+```
+
+```go
+func countingSort(a []int) {
+    if len(a) == 0 {
+        return
+    }
+    lo, hi := a[0], a[0]
+    for _, x := range a {
+        if x < lo {
+            lo = x
+        }
+        if x > hi {
+            hi = x
+        }
+    }
+    count := make([]int, hi-lo+1)
+    for _, x := range a {
+        count[x-lo]++
+    }
+    for i := 1; i < len(count); i++ {
+        count[i] += count[i-1] // prefix sum -> end positions
+    }
+    out := make([]int, len(a))
+    for i := len(a) - 1; i >= 0; i-- { // right-to-left keeps it stable
+        count[a[i]-lo]--
+        out[count[a[i]-lo]] = a[i]
+    }
+    copy(a, out)
+}
+```
+
 Counting sort is a rocket when `k` is small (sorting a million values in `[0, 255]`) and a memory disaster when `k` is large — sorting 32-bit integers this way would allocate a four-billion-entry table. That's where **radix sort** comes in: it runs counting sort digit by digit, least-significant first, relying on counting sort's stability to preserve the ordering of previous digits. For `d`-digit keys it is `O(d · (n + k))` with a small `k` (10 for decimal digits, or 256 for byte-at-a-time), effectively `O(n)` when `d` is a constant.
 
 ```cpp
@@ -375,6 +631,62 @@ def radix_sort(a):                                # non-negative integers
         exp *= 10
 ```
 
+```java
+void countingSortByDigit(int[] a, int exp) {
+    int[] out = new int[a.length];
+    int[] count = new int[10];
+    for (int x : a) count[(x / exp) % 10]++;
+    for (int i = 1; i < 10; i++) count[i] += count[i - 1];
+    for (int i = a.length - 1; i >= 0; i--) {   // stable placement
+        int d = (a[i] / exp) % 10;
+        out[--count[d]] = a[i];
+    }
+    System.arraycopy(out, 0, a, 0, a.length);
+}
+
+void radixSort(int[] a) {   // non-negative integers
+    if (a.length == 0) return;
+    int hi = a[0];
+    for (int x : a) if (x > hi) hi = x;
+    for (int exp = 1; hi / exp > 0; exp *= 10)
+        countingSortByDigit(a, exp);
+}
+```
+
+```go
+func countingSortByDigit(a []int, exp int) {
+    out := make([]int, len(a))
+    var count [10]int
+    for _, x := range a {
+        count[(x/exp)%10]++
+    }
+    for i := 1; i < 10; i++ {
+        count[i] += count[i-1]
+    }
+    for i := len(a) - 1; i >= 0; i-- { // stable placement
+        d := (a[i] / exp) % 10
+        count[d]--
+        out[count[d]] = a[i]
+    }
+    copy(a, out)
+}
+
+func radixSort(a []int) { // non-negative integers
+    if len(a) == 0 {
+        return
+    }
+    hi := a[0]
+    for _, x := range a {
+        if x > hi {
+            hi = x
+        }
+    }
+    for exp := 1; hi/exp > 0; exp *= 10 {
+        countingSortByDigit(a, exp)
+    }
+}
+```
+
 These are not magic. They only apply to keys you can decompose into small bounded pieces — integers, fixed-width strings — and they are not in-place. But when they apply, they beat every comparison sort, which is why radix sort shows up sorting integer keys in databases and why bucketing schemes underpin a lot of large-scale data processing. (**Bucket sort** is the same idea for uniformly distributed floating-point keys: scatter into `n` buckets by value, sort each small bucket, concatenate — `O(n)` on average, `O(n²)` if the distribution clumps everything into one bucket.)
 
 ## Stability, and why it quietly matters
@@ -404,7 +716,7 @@ graph TD
     Keys -->|Yes| Radix["Counting / radix sort<br/>O(n)"]
     Keys -->|No| Stable{Need stability?}
     Stable -->|Yes| Merge["stable_sort / Timsort<br/>O(n log n), stable"]
-    Stable -->|No| WorstCase{Need worst-case<br/>guarantee + O(1) space?}
+    Stable -->|No| WorstCase{"Need worst-case guarantee + O(1) space?"}
     WorstCase -->|Yes| Heap["Heapsort"]
     WorstCase -->|No| Quick["std::sort (introsort)<br/>the default"]
 ```

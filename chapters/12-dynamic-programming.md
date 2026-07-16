@@ -38,6 +38,24 @@ def fibonacci_naive(n):
     return fibonacci_naive(n - 1) + fibonacci_naive(n - 2)
 ```
 
+```java
+// Naive recursive Fibonacci - O(2^n) time
+static long fibonacciNaive(int n) {
+    if (n <= 1) return n;
+    return fibonacciNaive(n - 1) + fibonacciNaive(n - 2);
+}
+```
+
+```go
+// Naive recursive Fibonacci - O(2^n) time
+func fibonacciNaive(n int) int64 {
+    if n <= 1 {
+        return int64(n)
+    }
+    return fibonacciNaive(n-1) + fibonacciNaive(n-2)
+}
+```
+
 Draw its call tree and the waste is obvious:
 
 ```
@@ -82,6 +100,39 @@ def fibonacci_memo(n, memo=None):
         return memo[n]
     memo[n] = fibonacci_memo(n - 1, memo) + fibonacci_memo(n - 2, memo)
     return memo[n]
+```
+
+```java
+// Memoized Fibonacci - O(n) time
+static long fibonacciMemo(int n, Map<Integer, Long> memo) {
+    if (n <= 1) return n;
+    if (memo.containsKey(n)) return memo.get(n);
+    long result = fibonacciMemo(n - 1, memo) + fibonacciMemo(n - 2, memo);
+    memo.put(n, result);
+    return result;
+}
+
+static long fibonacciMemo(int n) {
+    return fibonacciMemo(n, new HashMap<>());
+}
+```
+
+```go
+// Memoized Fibonacci - O(n) time
+func fibonacciMemo(n int) int64 {
+    return fibMemo(n, make(map[int]int64))
+}
+
+func fibMemo(n int, memo map[int]int64) int64 {
+    if n <= 1 {
+        return int64(n)
+    }
+    if v, ok := memo[n]; ok {
+        return v
+    }
+    memo[n] = fibMemo(n-1, memo) + fibMemo(n-2, memo)
+    return memo[n]
+}
 ```
 
 **Tabulation** builds the same answers iteratively from the base cases, with no recursion (and no stack-overflow risk) and a predictable, sequential access pattern:
@@ -132,6 +183,60 @@ def fibonacci_optimized(n):
         prev2 = prev1
         prev1 = current
     return current
+```
+
+```java
+// Tabulated Fibonacci - O(n) time, O(n) space
+static long fibonacciTab(int n) {
+    if (n <= 1) return n;
+    long[] dp = new long[n + 1];
+    dp[0] = 0;
+    dp[1] = 1;
+    for (int i = 2; i <= n; i++) dp[i] = dp[i - 1] + dp[i - 2];
+    return dp[n];
+}
+
+// Space-optimized - O(n) time, O(1) space
+static long fibonacciOptimized(int n) {
+    if (n <= 1) return n;
+    long prev2 = 0, prev1 = 1, current = 0;
+    for (int i = 2; i <= n; i++) {
+        current = prev1 + prev2;
+        prev2 = prev1;
+        prev1 = current;
+    }
+    return current;
+}
+```
+
+```go
+// Tabulated Fibonacci - O(n) time, O(n) space
+func fibonacciTab(n int) int64 {
+    if n <= 1 {
+        return int64(n)
+    }
+    dp := make([]int64, n+1)
+    dp[0] = 0
+    dp[1] = 1
+    for i := 2; i <= n; i++ {
+        dp[i] = dp[i-1] + dp[i-2]
+    }
+    return dp[n]
+}
+
+// Space-optimized - O(n) time, O(1) space
+func fibonacciOptimized(n int) int64 {
+    if n <= 1 {
+        return int64(n)
+    }
+    var prev2, prev1, current int64 = 0, 1, 0
+    for i := 2; i <= n; i++ {
+        current = prev1 + prev2
+        prev2 = prev1
+        prev1 = current
+    }
+    return current
+}
 ```
 
 That last version is the endgame of most 1D DP: once `dp[i]` depends only on the two values before it, the table collapses to two scalars. *Keep only the state the recurrence actually reads* — a move that recurs throughout the chapter.
@@ -229,6 +334,38 @@ def climb_stairs_optimized(n):
     return current
 ```
 
+```java
+static int climbStairsOptimized(int n) {
+    if (n <= 2) return n;
+    int prev2 = 1;  // ways to reach step 1
+    int prev1 = 2;  // ways to reach step 2
+    int current = 0;
+    for (int i = 3; i <= n; i++) {
+        current = prev1 + prev2;
+        prev2 = prev1;
+        prev1 = current;
+    }
+    return current;
+}
+```
+
+```go
+func climbStairsOptimized(n int) int {
+    if n <= 2 {
+        return n
+    }
+    prev2 := 1 // ways to reach step 1
+    prev1 := 2 // ways to reach step 2
+    current := 0
+    for i := 3; i <= n; i++ {
+        current = prev1 + prev2
+        prev2 = prev1
+        prev1 = current
+    }
+    return current
+}
+```
+
 ### House Robber
 
 Maximize the loot without robbing two adjacent houses: at each house, either skip it (`dp[i-1]`) or rob it (`dp[i-2] + nums[i]`).
@@ -285,6 +422,65 @@ def rob_optimized(nums):
     return prev1
 ```
 
+```java
+// Tabulation
+static int rob(int[] nums) {
+    if (nums.length == 0) return 0;
+    if (nums.length == 1) return nums[0];
+    int[] dp = new int[nums.length];
+    dp[0] = nums[0];
+    dp[1] = Math.max(nums[0], nums[1]);
+    for (int i = 2; i < nums.length; i++)
+        dp[i] = Math.max(dp[i - 1], dp[i - 2] + nums[i]);
+    return dp[nums.length - 1];
+}
+
+// Space-optimized O(1)
+static int robOptimized(int[] nums) {
+    if (nums.length == 0) return 0;
+    int prev2 = 0, prev1 = nums[0];
+    for (int i = 1; i < nums.length; i++) {
+        int current = Math.max(prev1, prev2 + nums[i]);
+        prev2 = prev1;
+        prev1 = current;
+    }
+    return prev1;
+}
+```
+
+```go
+// Tabulation
+func rob(nums []int) int {
+    if len(nums) == 0 {
+        return 0
+    }
+    if len(nums) == 1 {
+        return nums[0]
+    }
+    dp := make([]int, len(nums))
+    dp[0] = nums[0]
+    dp[1] = max(nums[0], nums[1])
+    for i := 2; i < len(nums); i++ {
+        dp[i] = max(dp[i-1], dp[i-2]+nums[i])
+    }
+    return dp[len(nums)-1]
+}
+
+// Space-optimized O(1)
+func robOptimized(nums []int) int {
+    if len(nums) == 0 {
+        return 0
+    }
+    prev2, prev1 := 0, nums[0]
+    for i := 1; i < len(nums); i++ {
+        current := max(prev1, prev2+nums[i])
+        prev2 = prev1
+        prev1 = current
+    }
+    return prev1
+}
+```
+
 ### Longest Common Subsequence (LCS)
 
 Length of the longest subsequence common to two strings. If the current characters match, extend the diagonal; otherwise take the better of dropping one character from either string.
@@ -314,6 +510,40 @@ def longest_common_subsequence(text1, text2):
             else:
                 dp[i][j] = max(dp[i - 1][j], dp[i][j - 1])
     return dp[m][n]
+```
+
+```java
+static int longestCommonSubsequence(String text1, String text2) {
+    int m = text1.length(), n = text2.length();
+    int[][] dp = new int[m + 1][n + 1];
+    for (int i = 1; i <= m; i++)
+        for (int j = 1; j <= n; j++)
+            if (text1.charAt(i - 1) == text2.charAt(j - 1))
+                dp[i][j] = 1 + dp[i - 1][j - 1];
+            else
+                dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+    return dp[m][n];
+}
+```
+
+```go
+func longestCommonSubsequence(text1, text2 string) int {
+    m, n := len(text1), len(text2)
+    dp := make([][]int, m+1)
+    for i := range dp {
+        dp[i] = make([]int, n+1)
+    }
+    for i := 1; i <= m; i++ {
+        for j := 1; j <= n; j++ {
+            if text1[i-1] == text2[j-1] {
+                dp[i][j] = 1 + dp[i-1][j-1]
+            } else {
+                dp[i][j] = max(dp[i-1][j], dp[i][j-1])
+            }
+        }
+    }
+    return dp[m][n]
+}
 ```
 
 To recover the subsequence itself, keep the full table and backtrack from `(m, n)`:
@@ -363,6 +593,65 @@ def get_lcs(text1, text2):
     return lcs
 ```
 
+```java
+static String getLCS(String text1, String text2) {
+    int m = text1.length(), n = text2.length();
+    int[][] dp = new int[m + 1][n + 1];
+    for (int i = 1; i <= m; i++)
+        for (int j = 1; j <= n; j++)
+            dp[i][j] = (text1.charAt(i - 1) == text2.charAt(j - 1))
+                ? 1 + dp[i - 1][j - 1]
+                : Math.max(dp[i - 1][j], dp[i][j - 1]);
+
+    StringBuilder lcs = new StringBuilder();
+    int i = m, j = n;
+    while (i > 0 && j > 0) {
+        if (text1.charAt(i - 1) == text2.charAt(j - 1)) {
+            lcs.insert(0, text1.charAt(i - 1)); i--; j--;
+        } else if (dp[i - 1][j] > dp[i][j - 1]) i--;
+        else j--;
+    }
+    return lcs.toString();
+}
+```
+
+```go
+func getLCS(text1, text2 string) string {
+    m, n := len(text1), len(text2)
+    dp := make([][]int, m+1)
+    for i := range dp {
+        dp[i] = make([]int, n+1)
+    }
+    for i := 1; i <= m; i++ {
+        for j := 1; j <= n; j++ {
+            if text1[i-1] == text2[j-1] {
+                dp[i][j] = 1 + dp[i-1][j-1]
+            } else {
+                dp[i][j] = max(dp[i-1][j], dp[i][j-1])
+            }
+        }
+    }
+
+    var lcs []byte
+    i, j := m, n
+    for i > 0 && j > 0 {
+        if text1[i-1] == text2[j-1] {
+            lcs = append(lcs, text1[i-1])
+            i--
+            j--
+        } else if dp[i-1][j] > dp[i][j-1] {
+            i--
+        } else {
+            j--
+        }
+    }
+    for l, r := 0, len(lcs)-1; l < r; l, r = l+1, r-1 { // built back-to-front; reverse
+        lcs[l], lcs[r] = lcs[r], lcs[l]
+    }
+    return string(lcs)
+}
+```
+
 ### Edit Distance (Levenshtein)
 
 Minimum insert/delete/replace operations to turn `word1` into `word2`. Converting to or from the empty string costs the string's length; on a mismatch, take the cheapest of delete, insert, or replace.
@@ -404,6 +693,52 @@ def min_distance(word1, word2):
     return dp[m][n]
 ```
 
+```java
+static int minDistance(String word1, String word2) {
+    int m = word1.length(), n = word2.length();
+    int[][] dp = new int[m + 1][n + 1];
+    for (int i = 0; i <= m; i++) dp[i][0] = i;  // i deletions
+    for (int j = 0; j <= n; j++) dp[0][j] = j;  // j insertions
+    for (int i = 1; i <= m; i++)
+        for (int j = 1; j <= n; j++)
+            if (word1.charAt(i - 1) == word2.charAt(j - 1))
+                dp[i][j] = dp[i - 1][j - 1];
+            else
+                dp[i][j] = 1 + Math.min(dp[i - 1][j],           // delete
+                               Math.min(dp[i][j - 1],           // insert
+                                        dp[i - 1][j - 1]));      // replace
+    return dp[m][n];
+}
+```
+
+```go
+func minDistance(word1, word2 string) int {
+    m, n := len(word1), len(word2)
+    dp := make([][]int, m+1)
+    for i := range dp {
+        dp[i] = make([]int, n+1)
+    }
+    for i := 0; i <= m; i++ {
+        dp[i][0] = i // i deletions
+    }
+    for j := 0; j <= n; j++ {
+        dp[0][j] = j // j insertions
+    }
+    for i := 1; i <= m; i++ {
+        for j := 1; j <= n; j++ {
+            if word1[i-1] == word2[j-1] {
+                dp[i][j] = dp[i-1][j-1]
+            } else {
+                dp[i][j] = 1 + min(dp[i-1][j], // delete
+                    dp[i][j-1],   // insert
+                    dp[i-1][j-1]) // replace
+            }
+        }
+    }
+    return dp[m][n]
+}
+```
+
 Each row depends only on the previous one, so a rolling array cuts space to O(min(m,n)):
 
 ```cpp
@@ -439,6 +774,52 @@ def min_distance_optimized(word1, word2):
                        else 1 + min(prev[j], curr[j - 1], prev[j - 1]))
         prev = curr[:]
     return prev[n]
+```
+
+```java
+static int minDistanceOptimized(String word1, String word2) {
+    if (word1.length() < word2.length()) {
+        String tmp = word1; word1 = word2; word2 = tmp;
+    }
+    int m = word1.length(), n = word2.length();
+    int[] prev = new int[n + 1], curr = new int[n + 1];
+    for (int j = 0; j <= n; j++) prev[j] = j;
+    for (int i = 1; i <= m; i++) {
+        curr[0] = i;
+        for (int j = 1; j <= n; j++)
+            curr[j] = (word1.charAt(i - 1) == word2.charAt(j - 1))
+                ? prev[j - 1]
+                : 1 + Math.min(prev[j], Math.min(curr[j - 1], prev[j - 1]));
+        int[] tmp = prev; prev = curr; curr = tmp;
+    }
+    return prev[n];
+}
+```
+
+```go
+func minDistanceOptimized(word1, word2 string) int {
+    if len(word1) < len(word2) {
+        word1, word2 = word2, word1
+    }
+    m, n := len(word1), len(word2)
+    prev := make([]int, n+1)
+    curr := make([]int, n+1)
+    for j := 0; j <= n; j++ {
+        prev[j] = j
+    }
+    for i := 1; i <= m; i++ {
+        curr[0] = i
+        for j := 1; j <= n; j++ {
+            if word1[i-1] == word2[j-1] {
+                curr[j] = prev[j-1]
+            } else {
+                curr[j] = 1 + min(prev[j], curr[j-1], prev[j-1])
+            }
+        }
+        prev, curr = curr, prev
+    }
+    return prev[n]
+}
 ```
 
 ### Coin Change
@@ -487,6 +868,64 @@ def coin_change_ways(coins, amount):
         for i in range(coin, amount + 1):
             dp[i] += dp[i - coin]
     return dp[amount]
+```
+
+```java
+// Minimum coins
+static int coinChange(int[] coins, int amount) {
+    int[] dp = new int[amount + 1];
+    Arrays.fill(dp, amount + 1);  // sentinel > any real answer
+    dp[0] = 0;
+    for (int i = 1; i <= amount; i++)
+        for (int coin : coins)
+            if (coin <= i)
+                dp[i] = Math.min(dp[i], dp[i - coin] + 1);
+    return dp[amount] > amount ? -1 : dp[amount];
+}
+
+// Count the number of ways to make change
+static int coinChangeWays(int[] coins, int amount) {
+    int[] dp = new int[amount + 1];
+    dp[0] = 1;
+    for (int coin : coins)          // coins outer loop -> combinations, not permutations
+        for (int i = coin; i <= amount; i++)
+            dp[i] += dp[i - coin];
+    return dp[amount];
+}
+```
+
+```go
+// Minimum coins
+func coinChange(coins []int, amount int) int {
+    dp := make([]int, amount+1)
+    for i := range dp {
+        dp[i] = amount + 1 // sentinel > any real answer
+    }
+    dp[0] = 0
+    for i := 1; i <= amount; i++ {
+        for _, coin := range coins {
+            if coin <= i {
+                dp[i] = min(dp[i], dp[i-coin]+1)
+            }
+        }
+    }
+    if dp[amount] > amount {
+        return -1
+    }
+    return dp[amount]
+}
+
+// Count the number of ways to make change
+func coinChangeWays(coins []int, amount int) int {
+    dp := make([]int, amount+1)
+    dp[0] = 1
+    for _, coin := range coins { // coins outer loop -> combinations, not permutations
+        for i := coin; i <= amount; i++ {
+            dp[i] += dp[i-coin]
+        }
+    }
+    return dp[amount]
+}
 ```
 
 ### Longest Increasing Subsequence (LIS)
@@ -541,6 +980,75 @@ def length_of_lis_optimized(nums):
     return len(tails)
 ```
 
+```java
+// O(n^2)
+static int lengthOfLIS(int[] nums) {
+    int n = nums.length;
+    int[] dp = new int[n];
+    Arrays.fill(dp, 1);
+    for (int i = 1; i < n; i++)
+        for (int j = 0; j < i; j++)
+            if (nums[j] < nums[i])
+                dp[i] = Math.max(dp[i], dp[j] + 1);
+    int best = 0;
+    for (int v : dp) best = Math.max(best, v);
+    return best;
+}
+
+// O(n log n): tails[k] = smallest possible tail of an increasing subsequence of length k+1
+static int lengthOfLISOptimized(int[] nums) {
+    List<Integer> tails = new ArrayList<>();
+    for (int num : nums) {
+        int lo = 0, hi = tails.size();       // lower_bound for num
+        while (lo < hi) {
+            int mid = (lo + hi) / 2;
+            if (tails.get(mid) < num) lo = mid + 1;
+            else hi = mid;
+        }
+        if (lo == tails.size()) tails.add(num);
+        else tails.set(lo, num);
+    }
+    return tails.size();
+}
+```
+
+```go
+// O(n^2)
+func lengthOfLIS(nums []int) int {
+    n := len(nums)
+    dp := make([]int, n)
+    for i := range dp {
+        dp[i] = 1
+    }
+    for i := 1; i < n; i++ {
+        for j := 0; j < i; j++ {
+            if nums[j] < nums[i] {
+                dp[i] = max(dp[i], dp[j]+1)
+            }
+        }
+    }
+    best := 0
+    for _, v := range dp {
+        best = max(best, v)
+    }
+    return best
+}
+
+// O(n log n): tails[k] = smallest possible tail of an increasing subsequence of length k+1
+func lengthOfLISOptimized(nums []int) int {
+    tails := []int{}
+    for _, num := range nums {
+        i := sort.SearchInts(tails, num) // lower_bound for num
+        if i == len(tails) {
+            tails = append(tails, num)
+        } else {
+            tails[i] = num
+        }
+    }
+    return len(tails)
+}
+```
+
 To reconstruct the subsequence, record a parent index whenever `dp[i]` is extended, then follow parents back from the best endpoint:
 
 ```cpp
@@ -582,6 +1090,63 @@ def get_lis(nums):
     return lis
 ```
 
+```java
+static List<Integer> getLIS(int[] nums) {
+    int n = nums.length;
+    int[] dp = new int[n], parent = new int[n];
+    Arrays.fill(dp, 1);
+    Arrays.fill(parent, -1);
+    for (int i = 1; i < n; i++)
+        for (int j = 0; j < i; j++)
+            if (nums[j] < nums[i] && dp[j] + 1 > dp[i]) {
+                dp[i] = dp[j] + 1;
+                parent[i] = j;
+            }
+    int maxIndex = 0;
+    for (int i = 1; i < n; i++)
+        if (dp[i] > dp[maxIndex]) maxIndex = i;
+    List<Integer> lis = new ArrayList<>();
+    for (int cur = maxIndex; cur != -1; cur = parent[cur])
+        lis.add(nums[cur]);
+    Collections.reverse(lis);
+    return lis;
+}
+```
+
+```go
+func getLIS(nums []int) []int {
+    n := len(nums)
+    dp := make([]int, n)
+    parent := make([]int, n)
+    for i := range dp {
+        dp[i] = 1
+        parent[i] = -1
+    }
+    for i := 1; i < n; i++ {
+        for j := 0; j < i; j++ {
+            if nums[j] < nums[i] && dp[j]+1 > dp[i] {
+                dp[i] = dp[j] + 1
+                parent[i] = j
+            }
+        }
+    }
+    maxIndex := 0
+    for i := 1; i < n; i++ {
+        if dp[i] > dp[maxIndex] {
+            maxIndex = i
+        }
+    }
+    var lis []int
+    for cur := maxIndex; cur != -1; cur = parent[cur] {
+        lis = append(lis, nums[cur])
+    }
+    for l, r := 0, len(lis)-1; l < r; l, r = l+1, r-1 {
+        lis[l], lis[r] = lis[r], lis[l]
+    }
+    return lis
+}
+```
+
 ## 12.5 Two-dimensional DP
 
 ### Unique Paths
@@ -605,6 +1170,32 @@ def unique_paths_optimized(m, n):
         for j in range(1, n):
             prev[j] += prev[j - 1]   # prev[j] (above) + prev[j-1] (left, already updated)
     return prev[n - 1]
+```
+
+```java
+static int uniquePathsOptimized(int m, int n) {
+    int[] prev = new int[n];
+    Arrays.fill(prev, 1);
+    for (int i = 1; i < m; i++)
+        for (int j = 1; j < n; j++)
+            prev[j] += prev[j - 1];   // prev[j] (above) + prev[j-1] (left, already updated)
+    return prev[n - 1];
+}
+```
+
+```go
+func uniquePathsOptimized(m, n int) int {
+    prev := make([]int, n)
+    for i := range prev {
+        prev[i] = 1
+    }
+    for i := 1; i < m; i++ {
+        for j := 1; j < n; j++ {
+            prev[j] += prev[j-1] // prev[j] (above) + prev[j-1] (left, already updated)
+        }
+    }
+    return prev[n-1]
+}
 ```
 
 With obstacles, a blocked cell contributes zero paths:
@@ -642,6 +1233,54 @@ def unique_paths_with_obstacles(obstacle_grid):
     return dp[m - 1][n - 1]
 ```
 
+```java
+static int uniquePathsWithObstacles(int[][] obstacleGrid) {
+    int m = obstacleGrid.length, n = obstacleGrid[0].length;
+    int[][] dp = new int[m][n];
+    dp[0][0] = obstacleGrid[0][0] == 0 ? 1 : 0;
+    for (int i = 1; i < m; i++)
+        dp[i][0] = (obstacleGrid[i][0] == 0 && dp[i - 1][0] == 1) ? 1 : 0;
+    for (int j = 1; j < n; j++)
+        dp[0][j] = (obstacleGrid[0][j] == 0 && dp[0][j - 1] == 1) ? 1 : 0;
+    for (int i = 1; i < m; i++)
+        for (int j = 1; j < n; j++)
+            if (obstacleGrid[i][j] == 0)
+                dp[i][j] = dp[i - 1][j] + dp[i][j - 1];
+    return dp[m - 1][n - 1];
+}
+```
+
+```go
+func uniquePathsWithObstacles(obstacleGrid [][]int) int {
+    m, n := len(obstacleGrid), len(obstacleGrid[0])
+    dp := make([][]int, m)
+    for i := range dp {
+        dp[i] = make([]int, n)
+    }
+    if obstacleGrid[0][0] == 0 {
+        dp[0][0] = 1
+    }
+    for i := 1; i < m; i++ {
+        if obstacleGrid[i][0] == 0 && dp[i-1][0] == 1 {
+            dp[i][0] = 1
+        }
+    }
+    for j := 1; j < n; j++ {
+        if obstacleGrid[0][j] == 0 && dp[0][j-1] == 1 {
+            dp[0][j] = 1
+        }
+    }
+    for i := 1; i < m; i++ {
+        for j := 1; j < n; j++ {
+            if obstacleGrid[i][j] == 0 {
+                dp[i][j] = dp[i-1][j] + dp[i][j-1]
+            }
+        }
+    }
+    return dp[m-1][n-1]
+}
+```
+
 ### Minimum Path Sum in a Triangle
 
 Minimum root-to-bottom path sum, filled from the bottom row up. The rolling-array version reuses the last row in place:
@@ -665,6 +1304,32 @@ def minimum_total_optimized(triangle):
         for j in range(i + 1):
             dp[j] = triangle[i][j] + min(dp[j], dp[j + 1])
     return dp[0]
+```
+
+```java
+static int minimumTotalOptimized(List<List<Integer>> triangle) {
+    int n = triangle.size();
+    int[] dp = new int[n];
+    for (int j = 0; j < n; j++) dp[j] = triangle.get(n - 1).get(j);  // start from the bottom row
+    for (int i = n - 2; i >= 0; i--)
+        for (int j = 0; j <= i; j++)
+            dp[j] = triangle.get(i).get(j) + Math.min(dp[j], dp[j + 1]);
+    return dp[0];
+}
+```
+
+```go
+func minimumTotalOptimized(triangle [][]int) int {
+    n := len(triangle)
+    dp := make([]int, n)
+    copy(dp, triangle[n-1]) // start from the bottom row
+    for i := n - 2; i >= 0; i-- {
+        for j := 0; j <= i; j++ {
+            dp[j] = triangle[i][j] + min(dp[j], dp[j+1])
+        }
+    }
+    return dp[0]
+}
 ```
 
 ## 12.6 Two more classics: palindromes and word break
@@ -700,6 +1365,41 @@ def longest_palindrome_subseq_optimized(s):
     return curr[n - 1]
 ```
 
+```java
+static int longestPalindromeSubseqOptimized(String s) {
+    int n = s.length();
+    int[] prev = new int[n], curr = new int[n];
+    for (int i = n - 1; i >= 0; i--) {
+        curr[i] = 1;                                // single character
+        for (int j = i + 1; j < n; j++)
+            curr[j] = (s.charAt(i) == s.charAt(j)) ? 2 + prev[j - 1]
+                                                   : Math.max(prev[j], curr[j - 1]);
+        prev = curr.clone();
+    }
+    return curr[n - 1];
+}
+```
+
+```go
+func longestPalindromeSubseqOptimized(s string) int {
+    n := len(s)
+    prev := make([]int, n)
+    curr := make([]int, n)
+    for i := n - 1; i >= 0; i-- {
+        curr[i] = 1 // single character
+        for j := i + 1; j < n; j++ {
+            if s[i] == s[j] {
+                curr[j] = 2 + prev[j-1]
+            } else {
+                curr[j] = max(prev[j], curr[j-1])
+            }
+        }
+        copy(prev, curr)
+    }
+    return curr[n-1]
+}
+```
+
 **Word Break.** Can `s` be segmented into dictionary words? `dp[i]` is true if `s[0..i-1]` is segmentable:
 
 ```cpp
@@ -729,6 +1429,40 @@ def word_break(s, word_dict):
     return dp[n]
 ```
 
+```java
+static boolean wordBreak(String s, List<String> wordDict) {
+    int n = s.length();
+    Set<String> words = new HashSet<>(wordDict);
+    boolean[] dp = new boolean[n + 1];
+    dp[0] = true;
+    for (int i = 1; i <= n; i++)
+        for (int j = 0; j < i; j++)
+            if (dp[j] && words.contains(s.substring(j, i))) { dp[i] = true; break; }
+    return dp[n];
+}
+```
+
+```go
+func wordBreak(s string, wordDict []string) bool {
+    n := len(s)
+    words := make(map[string]bool)
+    for _, w := range wordDict {
+        words[w] = true
+    }
+    dp := make([]bool, n+1)
+    dp[0] = true
+    for i := 1; i <= n; i++ {
+        for j := 0; j < i; j++ {
+            if dp[j] && words[s[j:i]] {
+                dp[i] = true
+                break
+            }
+        }
+    }
+    return dp[n]
+}
+```
+
 ## 12.7 Knapsack variants
 
 The 0/1 knapsack — each item used at most once — is the mental model for most DP: at each item, take it or skip it. Its 1D optimization iterates capacity **backwards** so an item can't be reused within its own pass:
@@ -754,6 +1488,30 @@ def knapsack_optimized(weights, values, capacity):
     return dp[capacity]
 ```
 
+```java
+// 0/1 Knapsack, O(capacity) space
+static int knapsackOptimized(int[] weights, int[] values, int capacity) {
+    int[] dp = new int[capacity + 1];
+    for (int i = 0; i < weights.length; i++)
+        for (int w = capacity; w >= weights[i]; w--)   // backwards -> 0/1 semantics
+            dp[w] = Math.max(dp[w], dp[w - weights[i]] + values[i]);
+    return dp[capacity];
+}
+```
+
+```go
+// 0/1 Knapsack, O(capacity) space
+func knapsackOptimized(weights, values []int, capacity int) int {
+    dp := make([]int, capacity+1)
+    for i := 0; i < len(weights); i++ {
+        for w := capacity; w >= weights[i]; w-- { // backwards -> 0/1 semantics
+            dp[w] = max(dp[w], dp[w-weights[i]]+values[i])
+        }
+    }
+    return dp[capacity]
+}
+```
+
 **Unbounded knapsack** allows unlimited copies; the capacity loop runs **forward**, so an item's own updated value can be reused:
 
 ```cpp
@@ -777,6 +1535,31 @@ def unbounded_knapsack(weights, values, capacity):
     return dp[capacity]
 ```
 
+```java
+static int unboundedKnapsack(int[] weights, int[] values, int capacity) {
+    int[] dp = new int[capacity + 1];
+    for (int w = 1; w <= capacity; w++)
+        for (int i = 0; i < weights.length; i++)
+            if (weights[i] <= w)
+                dp[w] = Math.max(dp[w], dp[w - weights[i]] + values[i]);
+    return dp[capacity];
+}
+```
+
+```go
+func unboundedKnapsack(weights, values []int, capacity int) int {
+    dp := make([]int, capacity+1)
+    for w := 1; w <= capacity; w++ {
+        for i := 0; i < len(weights); i++ {
+            if weights[i] <= w {
+                dp[w] = max(dp[w], dp[w-weights[i]]+values[i])
+            }
+        }
+    }
+    return dp[capacity]
+}
+```
+
 **Subset Sum** — is there a subset summing to `target`? — is the boolean specialization of 0/1 knapsack:
 
 ```cpp
@@ -798,6 +1581,30 @@ def subset_sum(nums, target):
         for j in range(target, num - 1, -1):   # backwards -> each item once
             dp[j] = dp[j] or dp[j - num]
     return dp[target]
+```
+
+```java
+static boolean subsetSum(int[] nums, int target) {
+    boolean[] dp = new boolean[target + 1];
+    dp[0] = true;
+    for (int num : nums)
+        for (int j = target; j >= num; j--)   // backwards -> each item once
+            dp[j] = dp[j] || dp[j - num];
+    return dp[target];
+}
+```
+
+```go
+func subsetSum(nums []int, target int) bool {
+    dp := make([]bool, target+1)
+    dp[0] = true
+    for _, num := range nums {
+        for j := target; j >= num; j-- { // backwards -> each item once
+            dp[j] = dp[j] || dp[j-num]
+        }
+    }
+    return dp[target]
+}
 ```
 
 That single forward-vs-backward line is the entire difference between unbounded and 0/1 semantics. (Fractional knapsack, by contrast, is solved greedily, not by DP — [Chapter 16](16-greedy-algorithms.md).)
@@ -855,6 +1662,63 @@ class SubsetSumSolver:
         return self._can_make_sum_memo(0, target)
 ```
 
+```java
+class SubsetSumSolver {
+    private final int[] numbers;
+    private final Map<String, Boolean> memo = new HashMap<>();   // key = "index,target"
+
+    SubsetSumSolver(int[] nums) { numbers = nums; }
+
+    private boolean canMakeSumMemo(int index, int target) {
+        if (target == 0) return true;
+        if (index >= numbers.length || target < 0) return false;
+
+        String key = index + "," + target;
+        Boolean cached = memo.get(key);
+        if (cached != null) return cached;
+
+        boolean result = canMakeSumMemo(index + 1, target - numbers[index]) // include
+                      || canMakeSumMemo(index + 1, target);                 // exclude
+        memo.put(key, result);
+        return result;
+    }
+
+    boolean canMakeSum(int target) { return canMakeSumMemo(0, target); }
+}
+```
+
+```go
+type SubsetSumSolver struct {
+    numbers []int
+    memo    map[[2]int]bool // key = {index, target}
+}
+
+func NewSubsetSumSolver(nums []int) *SubsetSumSolver {
+    return &SubsetSumSolver{numbers: nums, memo: make(map[[2]int]bool)}
+}
+
+func (s *SubsetSumSolver) canMakeSumMemo(index, target int) bool {
+    if target == 0 {
+        return true
+    }
+    if index >= len(s.numbers) || target < 0 {
+        return false
+    }
+    key := [2]int{index, target}
+    if v, ok := s.memo[key]; ok {
+        return v
+    }
+    result := s.canMakeSumMemo(index+1, target-s.numbers[index]) || // include
+        s.canMakeSumMemo(index+1, target) // exclude
+    s.memo[key] = result
+    return result
+}
+
+func (s *SubsetSumSolver) CanMakeSum(target int) bool {
+    return s.canMakeSumMemo(0, target)
+}
+```
+
 The same shape extends to multiple constraints — a 3D knapsack keys its memo on `(index, remainingWeight, remainingVolume)`:
 
 ```cpp
@@ -909,6 +1773,63 @@ class Knapsack3D:
         return self._solve(0, max_w, max_v, wt, val, vol)
 ```
 
+```java
+class Knapsack3D {
+    private final Map<String, Integer> memo = new HashMap<>();
+
+    private int solve(int index, int w, int v, int[] wt, int[] val, int[] vol) {
+        if (index >= wt.length || w < 0 || v < 0) return 0;
+        String key = index + "," + w + "," + v;
+        Integer cached = memo.get(key);
+        if (cached != null) return cached;
+
+        int notTake = solve(index + 1, w, v, wt, val, vol);
+        int take = 0;
+        if (wt[index] <= w && vol[index] <= v)
+            take = val[index] + solve(index + 1, w - wt[index], v - vol[index], wt, val, vol);
+
+        int result = Math.max(notTake, take);
+        memo.put(key, result);
+        return result;
+    }
+
+    int knapsack(int[] wt, int[] val, int[] vol, int maxW, int maxV) {
+        return solve(0, maxW, maxV, wt, val, vol);
+    }
+}
+```
+
+```go
+type Knapsack3D struct {
+    memo map[[3]int]int
+}
+
+func NewKnapsack3D() *Knapsack3D {
+    return &Knapsack3D{memo: make(map[[3]int]int)}
+}
+
+func (k *Knapsack3D) solve(index, w, v int, wt, val, vol []int) int {
+    if index >= len(wt) || w < 0 || v < 0 {
+        return 0
+    }
+    key := [3]int{index, w, v}
+    if cached, ok := k.memo[key]; ok {
+        return cached
+    }
+    notTake := k.solve(index+1, w, v, wt, val, vol)
+    take := 0
+    if wt[index] <= w && vol[index] <= v {
+        take = val[index] + k.solve(index+1, w-wt[index], v-vol[index], wt, val, vol)
+    }
+    k.memo[key] = max(notTake, take)
+    return k.memo[key]
+}
+
+func (k *Knapsack3D) Knapsack(wt, val, vol []int, maxW, maxV int) int {
+    return k.solve(0, maxW, maxV, wt, val, vol)
+}
+```
+
 The lesson is state design, not backtracking mechanics: a good key collapses the search space, while a key that encodes an entire path (a full board layout, say) never repeats and so memoizes nothing.
 
 ## 12.9 Ten must-know DP patterns
@@ -954,6 +1875,45 @@ def min_path_sum(grid):
     return dp[m - 1][n - 1]
 ```
 
+```java
+// LeetCode 64: Minimum Path Sum
+static int minPathSum(int[][] grid) {
+    int m = grid.length, n = grid[0].length;
+    int[][] dp = new int[m][n];
+    dp[0][0] = grid[0][0];
+    for (int j = 1; j < n; j++) dp[0][j] = dp[0][j - 1] + grid[0][j];
+    for (int i = 1; i < m; i++) dp[i][0] = dp[i - 1][0] + grid[i][0];
+    for (int i = 1; i < m; i++)
+        for (int j = 1; j < n; j++)
+            dp[i][j] = grid[i][j] + Math.min(dp[i - 1][j], dp[i][j - 1]);
+    return dp[m - 1][n - 1];
+}
+```
+
+```go
+// LeetCode 64: Minimum Path Sum
+func minPathSum(grid [][]int) int {
+    m, n := len(grid), len(grid[0])
+    dp := make([][]int, m)
+    for i := range dp {
+        dp[i] = make([]int, n)
+    }
+    dp[0][0] = grid[0][0]
+    for j := 1; j < n; j++ {
+        dp[0][j] = dp[0][j-1] + grid[0][j]
+    }
+    for i := 1; i < m; i++ {
+        dp[i][0] = dp[i-1][0] + grid[i][0]
+    }
+    for i := 1; i < m; i++ {
+        for j := 1; j < n; j++ {
+            dp[i][j] = grid[i][j] + min(dp[i-1][j], dp[i][j-1])
+        }
+    }
+    return dp[m-1][n-1]
+}
+```
+
 ### Pattern 3: Knapsack (Pick or Skip)
 
 At each item, decide take or skip. Signal words: "subset", "partition", "can you make sum X". The 1D optimization iterates capacity **backwards** for 0/1 semantics (§12.7).
@@ -986,6 +1946,44 @@ def can_partition(nums):
         for s in range(target, num - 1, -1):
             dp[s] = dp[s] or dp[s - num]
     return dp[target]
+```
+
+```java
+// LeetCode 416: Partition Equal Subset Sum (subset sum to totalSum/2)
+static boolean canPartition(int[] nums) {
+    int totalSum = 0;
+    for (int num : nums) totalSum += num;
+    if (totalSum % 2 != 0) return false;
+    int target = totalSum / 2;
+    boolean[] dp = new boolean[target + 1];
+    dp[0] = true;
+    for (int num : nums)
+        for (int sum = target; sum >= num; sum--)
+            dp[sum] = dp[sum] || dp[sum - num];
+    return dp[target];
+}
+```
+
+```go
+// LeetCode 416: Partition Equal Subset Sum (subset sum to totalSum/2)
+func canPartition(nums []int) bool {
+    totalSum := 0
+    for _, num := range nums {
+        totalSum += num
+    }
+    if totalSum%2 != 0 {
+        return false
+    }
+    target := totalSum / 2
+    dp := make([]bool, target+1)
+    dp[0] = true
+    for _, num := range nums {
+        for sum := target; sum >= num; sum-- {
+            dp[sum] = dp[sum] || dp[sum-num]
+        }
+    }
+    return dp[target]
+}
 ```
 
 ### Pattern 4: Longest Subsequence / Subarray
@@ -1034,6 +2032,56 @@ def max_coins(nums):
     return dp[1][n]
 ```
 
+```java
+// LeetCode 312: Burst Balloons -- dp[i][j] over balloon k burst LAST in [i,j]
+static int maxCoins(int[] nums) {
+    int n = nums.length;
+    int[] balloons = new int[n + 2];
+    Arrays.fill(balloons, 1);
+    for (int i = 0; i < n; i++) balloons[i + 1] = nums[i];
+    int[][] dp = new int[n + 2][n + 2];
+    for (int len = 1; len <= n; len++)
+        for (int i = 1; i <= n - len + 1; i++) {
+            int j = i + len - 1;
+            for (int k = i; k <= j; k++) {
+                int coins = balloons[i - 1] * balloons[k] * balloons[j + 1]
+                          + dp[i][k - 1] + dp[k + 1][j];
+                dp[i][j] = Math.max(dp[i][j], coins);
+            }
+        }
+    return dp[1][n];
+}
+```
+
+```go
+// LeetCode 312: Burst Balloons -- dp[i][j] over balloon k burst LAST in [i,j]
+func maxCoins(nums []int) int {
+    n := len(nums)
+    balloons := make([]int, n+2)
+    for i := range balloons {
+        balloons[i] = 1
+    }
+    for i := 0; i < n; i++ {
+        balloons[i+1] = nums[i]
+    }
+    dp := make([][]int, n+2)
+    for i := range dp {
+        dp[i] = make([]int, n+2)
+    }
+    for length := 1; length <= n; length++ {
+        for i := 1; i <= n-length+1; i++ {
+            j := i + length - 1
+            for k := i; k <= j; k++ {
+                coins := balloons[i-1]*balloons[k]*balloons[j+1] +
+                    dp[i][k-1] + dp[k+1][j]
+                dp[i][j] = max(dp[i][j], coins)
+            }
+        }
+    }
+    return dp[1][n]
+}
+```
+
 Matrix Chain Multiplication shares the structure — `dp[i][j]` is the minimum scalar multiplications to multiply matrices `i..j`:
 
 ```cpp
@@ -1064,6 +2112,43 @@ def matrix_chain_order(p):   # len(p) == num_matrices + 1
                 dp[i][j] = min(dp[i][j],
                                dp[i][k] + dp[k + 1][j] + p[i] * p[k + 1] * p[j + 1])
     return dp[0][n - 1]
+```
+
+```java
+static int matrixChainOrder(int[] p) {   // p.length == numMatrices + 1
+    int n = p.length - 1;
+    int[][] dp = new int[n][n];
+    for (int len = 2; len <= n; len++)
+        for (int i = 0; i + len - 1 < n; i++) {
+            int j = i + len - 1;
+            dp[i][j] = Integer.MAX_VALUE;
+            for (int k = i; k < j; k++)
+                dp[i][j] = Math.min(dp[i][j],
+                                    dp[i][k] + dp[k + 1][j] + p[i] * p[k + 1] * p[j + 1]);
+        }
+    return dp[0][n - 1];
+}
+```
+
+```go
+func matrixChainOrder(p []int) int { // len(p) == numMatrices + 1
+    n := len(p) - 1
+    dp := make([][]int, n)
+    for i := range dp {
+        dp[i] = make([]int, n)
+    }
+    for length := 2; length <= n; length++ {
+        for i := 0; i+length-1 < n; i++ {
+            j := i + length - 1
+            dp[i][j] = math.MaxInt
+            for k := i; k < j; k++ {
+                dp[i][j] = min(dp[i][j],
+                    dp[i][k]+dp[k+1][j]+p[i]*p[k+1]*p[j+1])
+            }
+        }
+    }
+    return dp[0][n-1]
+}
 ```
 
 ### Pattern 6: DP on Strings
@@ -1112,6 +2197,58 @@ def is_match(s, p):
     return dp[m][n]
 ```
 
+```java
+// LeetCode 10: Regular Expression Matching
+static boolean isMatch(String s, String p) {
+    int m = s.length(), n = p.length();
+    boolean[][] dp = new boolean[m + 1][n + 1];
+    dp[0][0] = true;
+    for (int j = 2; j <= n; j++)                 // patterns like a*, a*b* matching ""
+        if (p.charAt(j - 1) == '*') dp[0][j] = dp[0][j - 2];
+    for (int i = 1; i <= m; i++)
+        for (int j = 1; j <= n; j++) {
+            if (p.charAt(j - 1) == '*') {
+                dp[i][j] = dp[i][j - 2];         // '*' matches zero of preceding
+                if (p.charAt(j - 2) == '.' || p.charAt(j - 2) == s.charAt(i - 1))
+                    dp[i][j] = dp[i][j] || dp[i - 1][j];  // or one/more
+            } else if (p.charAt(j - 1) == '.' || p.charAt(j - 1) == s.charAt(i - 1)) {
+                dp[i][j] = dp[i - 1][j - 1];
+            }
+        }
+    return dp[m][n];
+}
+```
+
+```go
+// LeetCode 10: Regular Expression Matching
+func isMatch(s, p string) bool {
+    m, n := len(s), len(p)
+    dp := make([][]bool, m+1)
+    for i := range dp {
+        dp[i] = make([]bool, n+1)
+    }
+    dp[0][0] = true
+    for j := 2; j <= n; j++ { // patterns like a*, a*b* matching ""
+        if p[j-1] == '*' {
+            dp[0][j] = dp[0][j-2]
+        }
+    }
+    for i := 1; i <= m; i++ {
+        for j := 1; j <= n; j++ {
+            if p[j-1] == '*' {
+                dp[i][j] = dp[i][j-2] // '*' matches zero of preceding
+                if p[j-2] == '.' || p[j-2] == s[i-1] {
+                    dp[i][j] = dp[i][j] || dp[i-1][j] // or one/more
+                }
+            } else if p[j-1] == '.' || p[j-1] == s[i-1] {
+                dp[i][j] = dp[i-1][j-1]
+            }
+        }
+    }
+    return dp[m][n]
+}
+```
+
 ### Pattern 7: DP on Trees
 
 Post-order DFS returns DP values from children that the parent combines. Signal words: "tree", "subtree". Time O(n), space O(h). House Robber III returns `{rob, notRob}` per node:
@@ -1152,6 +2289,51 @@ def rob_helper(root):                              # (rob this node, don't rob t
 def rob(root):
     res = rob_helper(root)
     return max(res[0], res[1])
+```
+
+```java
+class TreeNode {
+    int val;
+    TreeNode left, right;
+    TreeNode(int x) { val = x; }
+}
+
+static int[] robHelper(TreeNode root) {          // {rob this node, don't rob this node}
+    if (root == null) return new int[]{0, 0};
+    int[] l = robHelper(root.left);
+    int[] r = robHelper(root.right);
+    int rob = root.val + l[1] + r[1];             // rob node -> children must be skipped
+    int notRob = Math.max(l[0], l[1]) + Math.max(r[0], r[1]);
+    return new int[]{rob, notRob};
+}
+
+static int rob(TreeNode root) {
+    int[] res = robHelper(root);
+    return Math.max(res[0], res[1]);
+}
+```
+
+```go
+type TreeNode struct {
+    Val         int
+    Left, Right *TreeNode
+}
+
+func robHelper(root *TreeNode) (int, int) { // (rob this node, don't rob this node)
+    if root == nil {
+        return 0, 0
+    }
+    lRob, lNot := robHelper(root.Left)
+    rRob, rNot := robHelper(root.Right)
+    rob := root.Val + lNot + rNot // rob node -> children must be skipped
+    notRob := max(lRob, lNot) + max(rRob, rNot)
+    return rob, notRob
+}
+
+func rob(root *TreeNode) int {
+    r, notR := robHelper(root)
+    return max(r, notR)
+}
 ```
 
 ### Pattern 8: DP on Graphs (DAG)
@@ -1208,6 +2390,74 @@ def longest_path_dag(n, graph, source):
     return dp
 ```
 
+```java
+// Longest path from a source in a weighted DAG
+static int[] longestPathDAG(int n, List<List<int[]>> graph, int source) {
+    int[] inDeg = new int[n];
+    for (int u = 0; u < n; u++)
+        for (int[] e : graph.get(u)) inDeg[e[0]]++;    // e = {v, w}
+    Deque<Integer> queue = new ArrayDeque<>();
+    for (int i = 0; i < n; i++) if (inDeg[i] == 0) queue.add(i);
+    List<Integer> topo = new ArrayList<>();
+    while (!queue.isEmpty()) {
+        int u = queue.poll();
+        topo.add(u);
+        for (int[] e : graph.get(u)) if (--inDeg[e[0]] == 0) queue.add(e[0]);
+    }
+    int[] dp = new int[n];
+    Arrays.fill(dp, Integer.MIN_VALUE);
+    dp[source] = 0;
+    for (int u : topo)
+        if (dp[u] != Integer.MIN_VALUE)
+            for (int[] e : graph.get(u))
+                dp[e[0]] = Math.max(dp[e[0]], dp[u] + e[1]);
+    return dp;
+}
+```
+
+```go
+// Longest path from a source in a weighted DAG
+func longestPathDAG(n int, graph [][][2]int, source int) []int {
+    inDeg := make([]int, n)
+    for u := 0; u < n; u++ {
+        for _, e := range graph[u] { // e = {v, w}
+            inDeg[e[0]]++
+        }
+    }
+    var queue []int
+    for i := 0; i < n; i++ {
+        if inDeg[i] == 0 {
+            queue = append(queue, i)
+        }
+    }
+    var topo []int
+    for len(queue) > 0 {
+        u := queue[0]
+        queue = queue[1:]
+        topo = append(topo, u)
+        for _, e := range graph[u] {
+            inDeg[e[0]]--
+            if inDeg[e[0]] == 0 {
+                queue = append(queue, e[0])
+            }
+        }
+    }
+    dp := make([]int, n)
+    for i := range dp {
+        dp[i] = math.MinInt
+    }
+    dp[source] = 0
+    for _, u := range topo {
+        if dp[u] != math.MinInt {
+            for _, e := range graph[u] {
+                dp[e[0]] = max(dp[e[0]], dp[u]+e[1])
+            }
+        }
+    }
+    return dp
+}
+```
+
 ### Pattern 9: Bitmask DP
 
 Encode a set of elements as the bits of an integer. Signal words: "subset", "visited", "all cities". Time typically O(2ⁿ·n), space O(2ⁿ). The Traveling Salesman Problem keys on `dp[mask][last]` = min cost to have visited `mask`, ending at `last`:
@@ -1258,6 +2508,65 @@ def tsp(dist):
     return result
 ```
 
+```java
+static int tsp(int[][] dist) {
+    int n = dist.length, maskLimit = 1 << n;
+    int[][] dp = new int[maskLimit][n];
+    for (int[] row : dp) Arrays.fill(row, Integer.MAX_VALUE);
+    dp[1][0] = 0;                                   // start at city 0
+    for (int mask = 1; mask < maskLimit; mask++)
+        for (int last = 0; last < n; last++) {
+            if ((mask & (1 << last)) == 0 || dp[mask][last] == Integer.MAX_VALUE) continue;
+            for (int next = 0; next < n; next++) {
+                if ((mask & (1 << next)) != 0) continue;
+                int nm = mask | (1 << next);
+                dp[nm][next] = Math.min(dp[nm][next], dp[mask][last] + dist[last][next]);
+            }
+        }
+    int result = Integer.MAX_VALUE, full = maskLimit - 1;
+    for (int last = 1; last < n; last++)
+        if (dp[full][last] != Integer.MAX_VALUE)
+            result = Math.min(result, dp[full][last] + dist[last][0]);
+    return result;
+}
+```
+
+```go
+func tsp(dist [][]int) int {
+    n := len(dist)
+    maskLimit := 1 << n
+    dp := make([][]int, maskLimit)
+    for i := range dp {
+        dp[i] = make([]int, n)
+        for j := range dp[i] {
+            dp[i][j] = math.MaxInt
+        }
+    }
+    dp[1][0] = 0 // start at city 0
+    for mask := 1; mask < maskLimit; mask++ {
+        for last := 0; last < n; last++ {
+            if mask&(1<<last) == 0 || dp[mask][last] == math.MaxInt {
+                continue
+            }
+            for next := 0; next < n; next++ {
+                if mask&(1<<next) != 0 {
+                    continue
+                }
+                nm := mask | (1 << next)
+                dp[nm][next] = min(dp[nm][next], dp[mask][last]+dist[last][next])
+            }
+        }
+    }
+    result, full := math.MaxInt, maskLimit-1
+    for last := 1; last < n; last++ {
+        if dp[full][last] != math.MaxInt {
+            result = min(result, dp[full][last]+dist[last][0])
+        }
+    }
+    return result
+}
+```
+
 ### Pattern 10: State Machine DP
 
 Track discrete states (holding/not holding, transactions used) and their transitions. Signal words: "buy/sell", "hold", "cooldown". The stock-with-cooldown problem cycles through hold → sold → rest:
@@ -1286,6 +2595,34 @@ def max_profit(prices):
         sold = prev_hold + price                   # sell today
         rest = max(prev_rest, prev_sold)           # stay resting, or exit cooldown
     return max(sold, rest)
+```
+
+```java
+// LeetCode 309: Buy/Sell with Cooldown, O(1) space
+static int maxProfit(int[] prices) {
+    int hold = Integer.MIN_VALUE, sold = 0, rest = 0;
+    for (int price : prices) {
+        int prevHold = hold, prevSold = sold, prevRest = rest;
+        hold = Math.max(prevHold, prevRest - price);   // keep holding, or buy from rest
+        sold = prevHold + price;                        // sell today
+        rest = Math.max(prevRest, prevSold);            // stay resting, or exit cooldown
+    }
+    return Math.max(sold, rest);
+}
+```
+
+```go
+// LeetCode 309: Buy/Sell with Cooldown, O(1) space
+func maxProfit(prices []int) int {
+    hold, sold, rest := math.MinInt, 0, 0
+    for _, price := range prices {
+        prevHold, prevSold, prevRest := hold, sold, rest
+        hold = max(prevHold, prevRest-price) // keep holding, or buy from rest
+        sold = prevHold + price              // sell today
+        rest = max(prevRest, prevSold)       // stay resting, or exit cooldown
+    }
+    return max(sold, rest)
+}
 ```
 
 At-most-k transactions generalizes this by tracking a buy/sell pair per transaction (for k=2: `buy1, sell1, buy2, sell2`). *Digit DP* — processing a number digit by digit to count values with a property — and *interval DP* (Pattern 5) round out the family.

@@ -38,6 +38,22 @@ def factorial(n):
     return n * factorial(n - 1)       # recursive case: n shrinks toward 1
 ```
 
+```java
+long factorial(int n) {
+    if (n <= 1) return 1;            // base case
+    return n * factorial(n - 1);     // recursive case: n shrinks toward 1
+}
+```
+
+```go
+func factorial(n int) int64 {
+    if n <= 1 {
+        return 1 // base case
+    }
+    return int64(n) * factorial(n-1) // recursive case: n shrinks toward 1
+}
+```
+
 Watch `factorial(5)` run and you can see the stack grow on the way down and unwind on the way back up — the return values are computed only as the frames pop:
 
 ```
@@ -110,6 +126,24 @@ def factorial_iterative(n):
     return result
 ```
 
+```java
+long factorialIterative(int n) {
+    long result = 1;
+    for (int i = 2; i <= n; i++) result *= i;
+    return result;
+}
+```
+
+```go
+func factorialIterative(n int) int64 {
+    var result int64 = 1
+    for i := 2; i <= n; i++ {
+        result *= int64(i)
+    }
+    return result
+}
+```
+
 For a tree or graph walk, the honest conversion keeps the recursion's shape but moves the stack to the heap:
 
 ```cpp
@@ -138,6 +172,39 @@ def dfs(root):
             stack.append(child)
 ```
 
+```java
+// Iterative DFS: the explicit stack replaces the call stack,
+// lives on the heap, and can grow far past the OS depth limit.
+void dfs(Node root) {
+    Deque<Node> stack = new ArrayDeque<>();
+    if (root != null) stack.push(root);
+    while (!stack.isEmpty()) {
+        Node n = stack.pop();
+        process(n);
+        for (Node child : n.children) stack.push(child);
+    }
+}
+```
+
+```go
+// Iterative DFS: the explicit stack replaces the call stack,
+// lives on the heap, and can grow far past any recursion limit.
+func dfs(root *Node) {
+    var stack []*Node
+    if root != nil {
+        stack = append(stack, root)
+    }
+    for len(stack) > 0 {
+        n := stack[len(stack)-1]
+        stack = stack[:len(stack)-1]
+        process(n)
+        for _, child := range n.children {
+            stack = append(stack, child)
+        }
+    }
+}
+```
+
 This is the standard defense when a recursive tree walk might see pathological depth: same traversal, no call-stack ceiling.
 
 ## Tail recursion
@@ -156,6 +223,22 @@ def factorial_tail(n, acc=1):
     if n <= 1:
         return acc
     return factorial_tail(n - 1, n * acc)   # nothing happens after this call
+```
+
+```java
+long factorialTail(int n, long acc) {
+    if (n <= 1) return acc;
+    return factorialTail(n - 1, n * acc);   // nothing happens after this call
+}
+```
+
+```go
+func factorialTail(n int, acc int64) int64 {
+    if n <= 1 {
+        return acc
+    }
+    return factorialTail(n-1, int64(n)*acc) // nothing happens after this call
+}
 ```
 
 One caveat aimed squarely at systems code: **C++ does not guarantee tail-call optimization.** GCC and Clang usually do it at `-O2`, but the standard permits them not to, and a debug build (`-O0`) generally won't — so a "tail-recursive" C++ function can still blow the stack. Languages that guarantee TCO (Scheme, and Scala via `@tailrec`) let you lean on it. In C++, if you need the depth guarantee, write the loop.
@@ -190,6 +273,33 @@ def binary_search(a, lo, hi, target):
             else binary_search(a, mid + 1, hi, target))
 ```
 
+```java
+int binarySearch(int[] a, int lo, int hi, int target) {
+    if (lo > hi) return -1;                       // base case: not found
+    int mid = lo + (hi - lo) / 2;                 // avoids lo+hi overflow
+    if (a[mid] == target) return mid;
+    return a[mid] > target
+        ? binarySearch(a, lo, mid - 1, target)
+        : binarySearch(a, mid + 1, hi, target);
+}
+```
+
+```go
+func binarySearch(a []int, lo, hi, target int) int {
+    if lo > hi {
+        return -1 // base case: not found
+    }
+    mid := lo + (hi-lo)/2 // avoids lo+hi overflow
+    if a[mid] == target {
+        return mid
+    }
+    if a[mid] > target {
+        return binarySearch(a, lo, mid-1, target)
+    }
+    return binarySearch(a, mid+1, hi, target)
+}
+```
+
 **Multiple / exponential recursion** — two or more calls on *overlapping* subproblems, and the tree explodes. Naive Fibonacci is the cautionary tale; we fix it in the next section.
 
 Three more classics, each a clean recursive shape:
@@ -215,6 +325,27 @@ def hanoi(n, from_peg, to_peg, via_peg):
     hanoi(n - 1, via_peg, to_peg, from_peg)
 ```
 
+```java
+void hanoi(int n, char from, char to, char via) {
+    if (n == 1) { System.out.println("Move disk 1: " + from + " -> " + to); return; }
+    hanoi(n - 1, from, via, to);
+    System.out.println("Move disk " + n + ": " + from + " -> " + to);
+    hanoi(n - 1, via, to, from);
+}
+```
+
+```go
+func hanoi(n int, from, to, via rune) {
+    if n == 1 {
+        fmt.Printf("Move disk 1: %c -> %c\n", from, to)
+        return
+    }
+    hanoi(n-1, from, via, to)
+    fmt.Printf("Move disk %d: %c -> %c\n", n, from, to)
+    hanoi(n-1, via, to, from)
+}
+```
+
 **Fast exponentiation** — halving the exponent turns O(n) multiplications into O(log n), which is also O(log n) depth:
 
 ```cpp
@@ -233,6 +364,27 @@ def power(x, n):                     # assumes n >= 0
     return half * half if n % 2 == 0 else x * half * half
 ```
 
+```java
+double power(double x, int n) {          // assumes n >= 0
+    if (n == 0) return 1.0;
+    double half = power(x, n / 2);
+    return (n % 2 == 0) ? half * half : x * half * half;
+}
+```
+
+```go
+func power(x float64, n int) float64 { // assumes n >= 0
+    if n == 0 {
+        return 1.0
+    }
+    half := power(x, n/2)
+    if n%2 == 0 {
+        return half * half
+    }
+    return x * half * half
+}
+```
+
 **Reverse a string in place** — swap the ends, recurse inward, stop when the pointers meet:
 
 ```cpp
@@ -249,6 +401,24 @@ def reverse(s, lo, hi):              # s is a list of characters (strings are im
         return
     s[lo], s[hi] = s[hi], s[lo]
     reverse(s, lo + 1, hi - 1)
+```
+
+```java
+void reverse(char[] s, int lo, int hi) {
+    if (lo >= hi) return;                // base case: pointers crossed
+    char tmp = s[lo]; s[lo] = s[hi]; s[hi] = tmp;
+    reverse(s, lo + 1, hi - 1);
+}
+```
+
+```go
+func reverse(s []byte, lo, hi int) { // s is a mutable byte slice
+    if lo >= hi { // base case: pointers crossed
+        return
+    }
+    s[lo], s[hi] = s[hi], s[lo]
+    reverse(s, lo+1, hi-1)
+}
 ```
 
 ## Memoization: the bridge to dynamic programming
@@ -298,6 +468,41 @@ def fib(n, memo=None):
     return memo[n]
 ```
 
+```java
+long fib(int n, long[] memo) {
+    if (n <= 1) return n;
+    if (memo[n] != -1) return memo[n];              // already solved
+    return memo[n] = fib(n - 1, memo) + fib(n - 2, memo);
+}
+
+long fib(int n) {
+    long[] memo = new long[n + 1];
+    Arrays.fill(memo, -1);
+    return fib(n, memo);
+}
+```
+
+```go
+func fibMemo(n int, memo []int64) int64 {
+    if n <= 1 {
+        return int64(n)
+    }
+    if memo[n] != -1 { // already solved
+        return memo[n]
+    }
+    memo[n] = fibMemo(n-1, memo) + fibMemo(n-2, memo)
+    return memo[n]
+}
+
+func fib(n int) int64 {
+    memo := make([]int64, n+1)
+    for i := range memo {
+        memo[i] = -1
+    }
+    return fibMemo(n, memo)
+}
+```
+
 This is **top-down dynamic programming**, full stop. The moment a recursion has overlapping subproblems, memoization converts it to DP; flip the direction and fill the table bottom-up and you have removed the recursion (and its stack) entirely. Chapter 12 develops this into a discipline — for now, the reflex to build is: *overlapping subproblems ⇒ cache them.*
 
 ## Backtracking: recursion that undoes its choices
@@ -344,6 +549,31 @@ def subsets(nums, i, cur, out):
     subsets(nums, i + 1, cur, out)
 ```
 
+```java
+void subsets(int[] nums, int i, List<Integer> cur, List<List<Integer>> out) {
+    if (i == nums.length) { out.add(new ArrayList<>(cur)); return; }
+    cur.add(nums[i]);                       // choose to include nums[i]
+    subsets(nums, i + 1, cur, out);
+    cur.remove(cur.size() - 1);             // undo, then explore excluding it
+    subsets(nums, i + 1, cur, out);
+}
+```
+
+```go
+func subsets(nums []int, i int, cur []int, out *[][]int) {
+    if i == len(nums) {
+        cp := make([]int, len(cur))
+        copy(cp, cur)
+        *out = append(*out, cp)
+        return
+    }
+    cur = append(cur, nums[i]) // choose to include nums[i]
+    subsets(nums, i+1, cur, out)
+    cur = cur[:len(cur)-1] // undo, then explore excluding it
+    subsets(nums, i+1, cur, out)
+}
+```
+
 Permutations use the same shape with a swap as the reversible move — swap an element into place, recurse, swap it back:
 
 ```cpp
@@ -367,6 +597,33 @@ def permute(nums, start, out):
         nums[start], nums[i] = nums[i], nums[start]   # choose nums[i] for this position
         permute(nums, start + 1, out)
         nums[start], nums[i] = nums[i], nums[start]   # undo the swap
+```
+
+```java
+void permute(int[] nums, int start, List<int[]> out) {
+    if (start == nums.length) { out.add(nums.clone()); return; }
+    for (int i = start; i < nums.length; i++) {
+        int t = nums[start]; nums[start] = nums[i]; nums[i] = t;   // choose nums[i]
+        permute(nums, start + 1, out);
+        t = nums[start]; nums[start] = nums[i]; nums[i] = t;       // undo the swap
+    }
+}
+```
+
+```go
+func permute(nums []int, start int, out *[][]int) {
+    if start == len(nums) {
+        cp := make([]int, len(nums))
+        copy(cp, nums)
+        *out = append(*out, cp)
+        return
+    }
+    for i := start; i < len(nums); i++ {
+        nums[start], nums[i] = nums[i], nums[start] // choose nums[i] for this position
+        permute(nums, start+1, out)
+        nums[start], nums[i] = nums[i], nums[start] // undo the swap
+    }
+}
 ```
 
 ## Pruning: where backtracking earns its keep
@@ -428,6 +685,65 @@ def count_n_queens(n):
     return solutions
 ```
 
+```java
+int countNQueens(int n) {
+    int[] col = new int[n];
+    int[] solutions = {0};
+    place(col, n, 0, solutions);
+    return solutions[0];
+}
+
+// Try every column for `row`, recursing only on placements that survive pruning.
+void place(int[] col, int n, int row, int[] solutions) {
+    if (row == n) { solutions[0]++; return; }   // all rows filled: a full solution
+    for (int c = 0; c < n; c++) {
+        boolean safe = true;
+        for (int r = 0; r < row; r++) {          // check against queens above
+            if (col[r] == c || Math.abs(col[r] - c) == row - r) { safe = false; break; }
+        }
+        if (safe) {                              // prune: only descend into valid boards
+            col[row] = c;
+            place(col, n, row + 1, solutions);   // col[row] is overwritten next iteration,
+        }                                        // so no explicit undo is needed
+    }
+}
+```
+
+```go
+func countNQueens(n int) int {
+    col := make([]int, n)
+    solutions := 0
+
+    // Try every column for `row`, recursing only on placements that survive pruning.
+    var place func(row int)
+    place = func(row int) {
+        if row == n { // all rows filled: a full solution
+            solutions++
+            return
+        }
+        for c := 0; c < n; c++ {
+            safe := true
+            for r := 0; r < row; r++ { // check against queens above
+                diff := col[r] - c
+                if diff < 0 {
+                    diff = -diff
+                }
+                if col[r] == c || diff == row-r {
+                    safe = false
+                    break
+                }
+            }
+            if safe { // prune: only descend into valid boards
+                col[row] = c
+                place(row + 1) // col[row] is overwritten next iteration,
+            } // so no explicit undo is needed
+        }
+    }
+    place(0)
+    return solutions
+}
+```
+
 Two rows can share a diagonal exactly when their column gap equals their row gap — that's the `abs(col[r] - c) == row - r` test. Without this check the search visits nⁿ placements; with it, whole branches vanish the instant a conflict appears, and 8-Queens finishes instantly. To find just *one* solution instead of counting all, have `place` return `bool` and propagate `true` up the moment a full board is reached — the recursion then unwinds without exploring the rest of the tree.
 
 **Sudoku** escalates the same idea. Scan for an empty cell, try each digit that doesn't already conflict, recurse, and undo on failure — the conflict check prunes the vast majority of the 9⁸¹ raw possibilities:
@@ -480,6 +796,67 @@ def solve_sudoku(b):
                         b[r][c] = '.'                         # undo
                 return False                                  # no digit fits: dead end
     return True                                               # no empty cells: solved
+```
+
+```java
+boolean isValid(char[][] b, int row, int col, char num) {
+    for (int k = 0; k < 9; k++) {
+        if (b[row][k] == num || b[k][col] == num) return false;          // row, column
+        int br = 3 * (row / 3) + k / 3, bc = 3 * (col / 3) + k % 3;
+        if (b[br][bc] == num) return false;                              // 3x3 box
+    }
+    return true;
+}
+
+boolean solveSudoku(char[][] b) {
+    for (int r = 0; r < 9; r++)
+        for (int c = 0; c < 9; c++)
+            if (b[r][c] == '.') {
+                for (char num = '1'; num <= '9'; num++)
+                    if (isValid(b, r, c, num)) {
+                        b[r][c] = num;                  // choose
+                        if (solveSudoku(b)) return true;
+                        b[r][c] = '.';                  // undo
+                    }
+                return false;                           // no digit fits: dead end
+            }
+    return true;                                        // no empty cells: solved
+}
+```
+
+```go
+func isValid(b [][]byte, row, col int, num byte) bool {
+    for k := 0; k < 9; k++ {
+        if b[row][k] == num || b[k][col] == num { // row, column
+            return false
+        }
+        br, bc := 3*(row/3)+k/3, 3*(col/3)+k%3
+        if b[br][bc] == num { // 3x3 box
+            return false
+        }
+    }
+    return true
+}
+
+func solveSudoku(b [][]byte) bool {
+    for r := 0; r < 9; r++ {
+        for c := 0; c < 9; c++ {
+            if b[r][c] == '.' {
+                for num := byte('1'); num <= '9'; num++ {
+                    if isValid(b, r, c, num) {
+                        b[r][c] = num // choose
+                        if solveSudoku(b) {
+                            return true
+                        }
+                        b[r][c] = '.' // undo
+                    }
+                }
+                return false // no digit fits: dead end
+            }
+        }
+    }
+    return true // no empty cells: solved
+}
 ```
 
 You can prune harder still with **constraint propagation**: instead of filling cells left-to-right, always expand the cell with the *fewest* legal digits (the minimum-remaining-values heuristic). Fewer branches at the top of the tree means a smaller tree overall — the same lever, pulled earlier. This is the entry point to the whole field of constraint solvers.

@@ -61,6 +61,50 @@ def naive_search(text, pattern):
     return matches
 ```
 
+```java
+import java.util.ArrayList;
+import java.util.List;
+
+// O(n*m) worst case, O(1) extra space.
+class Naive {
+    static List<Integer> naiveSearch(String text, String pattern) {
+        List<Integer> matches = new ArrayList<>();
+        int n = text.length();
+        int m = pattern.length();
+
+        for (int i = 0; i <= n - m; i++) {   // n - m < 0 short-circuits the loop
+            int j;
+            for (j = 0; j < m; j++) {
+                if (text.charAt(i + j) != pattern.charAt(j)) break;
+            }
+            if (j == m) matches.add(i);   // full pattern matched
+        }
+        return matches;
+    }
+}
+```
+
+```go
+// O(n*m) worst case, O(1) extra space.
+func naiveSearch(text, pattern string) []int {
+	var matches []int
+	n, m := len(text), len(pattern)
+
+	for i := 0; i <= n-m; i++ { // n - m < 0 short-circuits the loop
+		j := 0
+		for ; j < m; j++ {
+			if text[i+j] != pattern[j] {
+				break
+			}
+		}
+		if j == m { // full pattern matched
+			matches = append(matches, i)
+		}
+	}
+	return matches
+}
+```
+
 The waste is easiest to see on a pathological input. Searching `"ABABCABAB"` in `"ABABCABABDABABCABAB"`, position 0 matches all nine characters, position 1 fails on the first, position 2 matches four before failing on the `C` — and every one of those partial matches is thrown away. When the next position is checked, the algorithm has already compared some of those same characters and simply forgets. That amnesia is what KMP fixes.
 
 ```
@@ -168,6 +212,106 @@ class RabinKarp:
             if i < n - m:
                 text_hash = self._recalculate_hash(text_hash, text[i], text[i + m])
         return matches
+```
+
+```java
+import java.util.ArrayList;
+import java.util.List;
+
+class RabinKarp {
+    private static final int BASE = 256;         // treat text as base-256 digits
+    private static final int MOD  = 1000000007;  // a large prime keeps collisions rare
+    private long power;                          // BASE^(m-1) mod MOD, for the rolling update
+
+    private long calculateHash(String str, int length) {
+        long hash = 0;
+        for (int i = 0; i < length; i++)
+            hash = (hash * BASE + str.charAt(i)) % MOD;
+        return hash;
+    }
+
+    // Drop oldChar's contribution, fold in newChar. O(1).
+    private long recalculateHash(long oldHash, char oldChar, char newChar) {
+        long newHash = (oldHash - oldChar * power % MOD + MOD) % MOD;
+        return (newHash * BASE + newChar) % MOD;
+    }
+
+    public List<Integer> search(String text, String pattern) {
+        List<Integer> matches = new ArrayList<>();
+        int n = text.length();
+        int m = pattern.length();
+        if (m == 0 || m > n) return matches;
+
+        // Precompute BASE^(m-1) mod MOD modularly — never floating-point pow().
+        power = 1;
+        for (int i = 0; i < m - 1; i++) power = (power * BASE) % MOD;
+
+        long patternHash = calculateHash(pattern, m);
+        long textHash    = calculateHash(text, m);
+
+        for (int i = 0; i <= n - m; i++) {
+            // Verify on every hash hit — a hash match is necessary, not sufficient.
+            if (patternHash == textHash && text.regionMatches(i, pattern, 0, m))
+                matches.add(i);
+            if (i < n - m)
+                textHash = recalculateHash(textHash, text.charAt(i), text.charAt(i + m));
+        }
+        return matches;
+    }
+}
+```
+
+```go
+const (
+	base = 256        // treat text as base-256 digits
+	mod  = 1000000007 // a large prime keeps collisions rare
+)
+
+type RabinKarp struct {
+	power int64 // BASE^(m-1) mod MOD, for the rolling update
+}
+
+func (rk *RabinKarp) calculateHash(s string, length int) int64 {
+	var hash int64
+	for i := 0; i < length; i++ {
+		hash = (hash*base + int64(s[i])) % mod
+	}
+	return hash
+}
+
+// Drop oldChar's contribution, fold in newChar. O(1).
+func (rk *RabinKarp) recalculateHash(oldHash int64, oldChar, newChar byte) int64 {
+	newHash := (oldHash - int64(oldChar)*rk.power%mod + mod) % mod
+	return (newHash*base + int64(newChar)) % mod
+}
+
+func (rk *RabinKarp) search(text, pattern string) []int {
+	var matches []int
+	n, m := len(text), len(pattern)
+	if m == 0 || m > n {
+		return matches
+	}
+
+	// Precompute BASE^(m-1) mod MOD modularly — never floating-point pow().
+	rk.power = 1
+	for i := 0; i < m-1; i++ {
+		rk.power = (rk.power * base) % mod
+	}
+
+	patternHash := rk.calculateHash(pattern, m)
+	textHash := rk.calculateHash(text, m)
+
+	for i := 0; i <= n-m; i++ {
+		// Verify on every hash hit — a hash match is necessary, not sufficient.
+		if patternHash == textHash && text[i:i+m] == pattern {
+			matches = append(matches, i)
+		}
+		if i < n-m {
+			textHash = rk.recalculateHash(textHash, text[i], text[i+m])
+		}
+	}
+	return matches
+}
 ```
 
 Two details are load-bearing. The modulus is applied at every step so the hash never overflows, and `power` is built by repeated modular multiplication rather than `pow()` — floating-point would lose the low bits that make the hash meaningful. And the verification step is not optional: distinct strings *can* share a hash, so a hash hit only tells you where to look, never that you've found a match. Skip the verify and you get false positives; that verify is also why a flood of collisions degrades the worst case to `O(n·m)`. Rabin-Karp shines when the same rolling-hash machinery serves many patterns at once (hash them all, look each window up in a set) or streams over unbounded input.
@@ -292,6 +436,109 @@ class KMP:
         return matches
 ```
 
+```java
+import java.util.ArrayList;
+import java.util.List;
+
+class KMP {
+    private int[] buildLPS(String pattern) {
+        int m = pattern.length();
+        int[] lps = new int[m];
+        int len = 0;   // length of the current longest prefix-suffix
+        int i = 1;
+        while (i < m) {
+            if (pattern.charAt(i) == pattern.charAt(len)) {
+                lps[i++] = ++len;
+            } else if (len != 0) {
+                len = lps[len - 1];   // fall back, don't advance i
+            } else {
+                lps[i++] = 0;
+            }
+        }
+        return lps;
+    }
+
+    public List<Integer> search(String text, String pattern) {
+        List<Integer> matches = new ArrayList<>();
+        int n = text.length();
+        int m = pattern.length();
+        if (m == 0) return matches;
+
+        int[] lps = buildLPS(pattern);
+        int i = 0;   // text index — never decreases
+        int j = 0;   // pattern index
+
+        while (i < n) {
+            if (pattern.charAt(j) == text.charAt(i)) { i++; j++; }
+
+            if (j == m) {
+                matches.add(i - j);
+                j = lps[j - 1];                       // keep scanning for overlaps
+            } else if (i < n && pattern.charAt(j) != text.charAt(i)) {
+                if (j != 0) j = lps[j - 1];
+                else        i++;
+            }
+        }
+        return matches;
+    }
+}
+```
+
+```go
+type KMP struct{}
+
+func (k *KMP) buildLPS(pattern string) []int {
+	m := len(pattern)
+	lps := make([]int, m)
+	length := 0 // length of the current longest prefix-suffix
+	i := 1
+	for i < m {
+		if pattern[i] == pattern[length] {
+			length++
+			lps[i] = length
+			i++
+		} else if length != 0 {
+			length = lps[length-1] // fall back, don't advance i
+		} else {
+			lps[i] = 0
+			i++
+		}
+	}
+	return lps
+}
+
+func (k *KMP) search(text, pattern string) []int {
+	var matches []int
+	n, m := len(text), len(pattern)
+	if m == 0 {
+		return matches
+	}
+
+	lps := k.buildLPS(pattern)
+	i := 0 // text index — never decreases
+	j := 0 // pattern index
+
+	for i < n {
+		if pattern[j] == text[i] {
+			i++
+			j++
+		}
+
+		if j == m {
+			matches = append(matches, i-j)
+			j = lps[j-1] // keep scanning for overlaps
+		} else if i < n && pattern[j] != text[i] {
+			if j != 0 {
+				j = lps[j-1]
+			} else {
+				i++
+			}
+		}
+	}
+	return matches
+}
+```
+
 Guaranteed `O(n+m)` with no worst case to fear and only `O(m)` space, KMP is the reliable general-purpose choice: text-editor find, log scanning, DNA matching — anywhere a single pattern is searched under a bound you can promise.
 
 ## Boyer-Moore: match right-to-left and leap
@@ -384,6 +631,100 @@ class BoyerMoore:
         return matches
 ```
 
+```java
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+class BoyerMoore {
+    // Last index at which each byte occurs in the pattern (-1 if absent).
+    private int[] buildBadCharTable(String pattern) {
+        int[] badChar = new int[256];
+        Arrays.fill(badChar, -1);
+        for (int i = 0; i < pattern.length(); i++)
+            badChar[pattern.charAt(i) & 0xFF] = i;   // mask: no negative index on non-ASCII
+        return badChar;
+    }
+
+    // Bad-character heuristic only. The good-suffix rule can be layered on for a
+    // guaranteed better worst case; it is omitted here for clarity.
+    public List<Integer> search(String text, String pattern) {
+        List<Integer> matches = new ArrayList<>();
+        int n = text.length();
+        int m = pattern.length();
+        if (m == 0 || m > n) return matches;
+
+        int[] badChar = buildBadCharTable(pattern);
+        int s = 0;   // current alignment of pattern against text
+
+        while (s <= n - m) {
+            int j = m - 1;
+            while (j >= 0 && pattern.charAt(j) == text.charAt(s + j)) j--;   // right to left
+
+            if (j < 0) {
+                matches.add(s);
+                s += (s + m < n) ? m - badChar[text.charAt(s + m) & 0xFF] : 1;
+            } else {
+                s += Math.max(1, j - badChar[text.charAt(s + j) & 0xFF]);
+            }
+        }
+        return matches;
+    }
+}
+```
+
+```go
+type BoyerMoore struct{}
+
+// Last index at which each byte occurs in the pattern (-1 if absent).
+func (bm *BoyerMoore) buildBadCharTable(pattern string) [256]int {
+	var badChar [256]int
+	for i := range badChar {
+		badChar[i] = -1
+	}
+	for i := 0; i < len(pattern); i++ {
+		badChar[pattern[i]] = i
+	}
+	return badChar
+}
+
+// Bad-character heuristic only. The good-suffix rule can be layered on for a
+// guaranteed better worst case; it is omitted here for clarity.
+func (bm *BoyerMoore) search(text, pattern string) []int {
+	var matches []int
+	n, m := len(text), len(pattern)
+	if m == 0 || m > n {
+		return matches
+	}
+
+	badChar := bm.buildBadCharTable(pattern)
+	s := 0 // current alignment of pattern against text
+
+	for s <= n-m {
+		j := m - 1
+		for j >= 0 && pattern[j] == text[s+j] { // right to left
+			j--
+		}
+
+		if j < 0 {
+			matches = append(matches, s)
+			if s+m < n {
+				s += m - badChar[text[s+m]]
+			} else {
+				s++
+			}
+		} else {
+			shift := j - badChar[text[s+j]]
+			if shift < 1 {
+				shift = 1
+			}
+			s += shift
+		}
+	}
+	return matches
+}
+```
+
 The `max(1, ...)` matters: the bad-character rule can compute a non-positive shift (when the matching character sits to the *right* of the mismatch in the pattern), and forcing at least one step forward is what keeps the loop from stalling. Full Boyer-Moore adds a second heuristic, the **good-suffix rule** — when a suffix of the pattern matched before the mismatch, shift to realign that suffix elsewhere in the pattern — which bounds the worst case below the bad-character rule's `O(n·m)`. The bad-character rule alone is what production tools lean on, and it weakens on small alphabets (DNA's four letters mean the mismatched character usually appears nearby, so shifts stay small) while excelling on large ones. This is the algorithm behind `grep`, `ripgrep`, and `ag`.
 
 ## The Z-algorithm: one array, many uses
@@ -454,6 +795,78 @@ class ZAlgorithm:
             if z[i] == m:
                 matches.append(i - m - 1)   # map back to text index
         return matches
+```
+
+```java
+import java.util.ArrayList;
+import java.util.List;
+
+class ZAlgorithm {
+    private int[] buildZArray(String str) {
+        int n = str.length();
+        int[] z = new int[n];
+        int l = 0, r = 0;                     // current rightmost Z-box [l, r]
+        for (int i = 1; i < n; i++) {
+            if (i <= r) z[i] = Math.min(r - i + 1, z[i - l]);   // reuse prior work
+            while (i + z[i] < n && str.charAt(z[i]) == str.charAt(i + z[i])) z[i]++;
+            if (i + z[i] - 1 > r) { l = i; r = i + z[i] - 1; }
+        }
+        return z;
+    }
+
+    public List<Integer> search(String text, String pattern) {
+        List<Integer> matches = new ArrayList<>();
+        int m = pattern.length();
+        if (m == 0) return matches;
+
+        String combined = pattern + '$' + text;    // '$' must be outside the alphabet
+        int[] z = buildZArray(combined);
+
+        for (int i = m + 1; i < combined.length(); i++)
+            if (z[i] == m) matches.add(i - m - 1);   // map back to text index
+        return matches;
+    }
+}
+```
+
+```go
+type ZAlgorithm struct{}
+
+func (za *ZAlgorithm) buildZArray(s string) []int {
+	n := len(s)
+	z := make([]int, n)
+	l, r := 0, 0 // current rightmost Z-box [l, r]
+	for i := 1; i < n; i++ {
+		if i <= r {
+			z[i] = min(r-i+1, z[i-l]) // reuse prior work
+		}
+		for i+z[i] < n && s[z[i]] == s[i+z[i]] {
+			z[i]++
+		}
+		if i+z[i]-1 > r {
+			l, r = i, i+z[i]-1
+		}
+	}
+	return z
+}
+
+func (za *ZAlgorithm) search(text, pattern string) []int {
+	var matches []int
+	m := len(pattern)
+	if m == 0 {
+		return matches
+	}
+
+	combined := pattern + "$" + text // '$' must be outside the alphabet
+	z := za.buildZArray(combined)
+
+	for i := m + 1; i < len(combined); i++ {
+		if z[i] == m {
+			matches = append(matches, i-m-1) // map back to text index
+		}
+	}
+	return matches
+}
 ```
 
 It matches KMP's `O(n+m)` guarantee, but costs `O(n+m)` space for the array over the combined string. Reach for it when you want the Z-array itself — for string periodicity, longest-common-prefix queries, or the kind of derived quantities that show up in competitive programming — rather than for plain search, where KMP's smaller footprint usually wins.
@@ -648,6 +1061,173 @@ class AhoCorasick:
                 start = i - len(self.patterns[idx]) + 1
                 results.setdefault(self.patterns[idx], []).append(start)
         return results
+```
+
+```java
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+
+class AhoCorasick {
+    private static class TrieNode {
+        Map<Character, TrieNode> children = new HashMap<>();
+        TrieNode failure = null;
+        List<Integer> output = new ArrayList<>();   // indices of patterns ending here
+    }
+
+    private TrieNode root;
+    private List<String> patterns;
+
+    public AhoCorasick(List<String> patterns) {
+        this.patterns = patterns;
+        buildTrie();
+        buildFailureLinks();
+    }
+
+    private void buildTrie() {
+        root = new TrieNode();
+        for (int i = 0; i < patterns.size(); i++) {
+            TrieNode cur = root;
+            for (char c : patterns.get(i).toCharArray()) {
+                cur.children.putIfAbsent(c, new TrieNode());
+                cur = cur.children.get(c);
+            }
+            cur.output.add(i);
+        }
+    }
+
+    private void buildFailureLinks() {
+        Queue<TrieNode> q = new ArrayDeque<>();
+        for (TrieNode child : root.children.values()) { child.failure = root; q.add(child); }
+
+        while (!q.isEmpty()) {
+            TrieNode cur = q.poll();
+            for (Map.Entry<Character, TrieNode> e : cur.children.entrySet()) {
+                char c = e.getKey();
+                TrieNode child = e.getValue();
+                q.add(child);
+                TrieNode f = cur.failure;
+                while (f != null && !f.children.containsKey(c)) f = f.failure;
+                child.failure = (f != null) ? f.children.get(c) : root;
+                // inherit the failure target's matches
+                child.output.addAll(child.failure.output);
+            }
+        }
+    }
+
+    // Maps each pattern to the start positions where it occurs.
+    public Map<String, List<Integer>> search(String text) {
+        Map<String, List<Integer>> results = new HashMap<>();
+        TrieNode cur = root;
+
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            while (cur != null && !cur.children.containsKey(c)) cur = cur.failure;
+            cur = (cur != null) ? cur.children.get(c) : root;
+
+            for (int idx : cur.output) {
+                int start = i - patterns.get(idx).length() + 1;
+                results.computeIfAbsent(patterns.get(idx), k -> new ArrayList<>()).add(start);
+            }
+        }
+        return results;
+    }
+}
+```
+
+```go
+type trieNode struct {
+	children map[byte]*trieNode
+	failure  *trieNode
+	output   []int // indices of patterns ending here
+}
+
+type AhoCorasick struct {
+	root     *trieNode
+	patterns []string
+}
+
+func NewAhoCorasick(patterns []string) *AhoCorasick {
+	ac := &AhoCorasick{patterns: patterns}
+	ac.buildTrie()
+	ac.buildFailureLinks()
+	return ac
+}
+
+func (ac *AhoCorasick) buildTrie() {
+	ac.root = &trieNode{children: map[byte]*trieNode{}}
+	for i, pattern := range ac.patterns {
+		cur := ac.root
+		for j := 0; j < len(pattern); j++ {
+			c := pattern[j]
+			if cur.children[c] == nil {
+				cur.children[c] = &trieNode{children: map[byte]*trieNode{}}
+			}
+			cur = cur.children[c]
+		}
+		cur.output = append(cur.output, i)
+	}
+}
+
+func (ac *AhoCorasick) buildFailureLinks() {
+	queue := []*trieNode{}
+	for _, child := range ac.root.children {
+		child.failure = ac.root
+		queue = append(queue, child)
+	}
+
+	for len(queue) > 0 {
+		cur := queue[0]
+		queue = queue[1:]
+		for c, child := range cur.children {
+			queue = append(queue, child)
+			f := cur.failure
+			for f != nil {
+				if _, ok := f.children[c]; ok {
+					break
+				}
+				f = f.failure
+			}
+			if f != nil {
+				child.failure = f.children[c]
+			} else {
+				child.failure = ac.root
+			}
+			// inherit the failure target's matches
+			child.output = append(child.output, child.failure.output...)
+		}
+	}
+}
+
+// Maps each pattern to the start positions where it occurs.
+func (ac *AhoCorasick) search(text string) map[string][]int {
+	results := map[string][]int{}
+	cur := ac.root
+
+	for i := 0; i < len(text); i++ {
+		c := text[i]
+		for cur != nil {
+			if _, ok := cur.children[c]; ok {
+				break
+			}
+			cur = cur.failure
+		}
+		if cur != nil {
+			cur = cur.children[c]
+		} else {
+			cur = ac.root
+		}
+
+		for _, idx := range cur.output {
+			start := i - len(ac.patterns[idx]) + 1
+			results[ac.patterns[idx]] = append(results[ac.patterns[idx]], start)
+		}
+	}
+	return results
+}
 ```
 
 Tracing `"shers"`: `s`→`sh`→`she` (report `she` at 0, and via its inherited output, `he`), then `r` has no edge so failure links walk `she`→`he`→root, and `s` restarts. Preprocessing is `O(m)` in the total pattern length; the search is `O(n + z)` regardless of how many patterns there are — which is exactly why intrusion detectors (Snort, Suricata), virus scanners, and content filters are built on it. (This follows the construction at [cp-algorithms.com](https://cp-algorithms.com/string/aho_corasick.html).) Note the trie nodes are heap-allocated; production code would own them with an arena or `unique_ptr` and free them on destruction.

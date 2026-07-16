@@ -76,6 +76,49 @@ def schedule_max(jobs):
     return chosen
 ```
 
+```java
+class Interval {
+    int start, finish;
+    Interval(int start, int finish) { this.start = start; this.finish = finish; }
+}
+
+static List<Interval> scheduleMax(List<Interval> jobs) {
+    jobs.sort((a, b) -> Integer.compare(a.finish, b.finish));  // sort by finish time
+
+    List<Interval> chosen = new ArrayList<>();
+    int lastFinish = Integer.MIN_VALUE;        // nothing scheduled yet
+    for (Interval j : jobs) {
+        if (j.start >= lastFinish) {           // compatible with the last pick
+            chosen.add(j);
+            lastFinish = j.finish;
+        }
+    }
+    return chosen;
+}
+```
+
+```go
+type Interval struct {
+    start, finish int
+}
+
+func scheduleMax(jobs []Interval) []Interval {
+    sort.Slice(jobs, func(i, j int) bool { // sort by finish time
+        return jobs[i].finish < jobs[j].finish
+    })
+
+    var chosen []Interval
+    lastFinish := math.MinInt // nothing scheduled yet
+    for _, j := range jobs {
+        if j.start >= lastFinish { // compatible with the last pick
+            chosen = append(chosen, j)
+            lastFinish = j.finish
+        }
+    }
+    return chosen
+}
+```
+
 The sort is `O(n log n)` and dominates; the scan is `O(n)`. Note the loop never dereferences an out-of-range element the way a "grab `jobs[0]` first" formulation would — an empty input simply returns an empty schedule. This same skeleton, with the feasibility test swapped, solves "minimum number of rooms to hold every meeting" and "fewest intervals to remove so none overlap." Sort by finish, sweep once.
 
 ## Fractional knapsack: greedy works, and its twin where it doesn't
@@ -118,6 +161,49 @@ def fractional_knapsack(items, capacity):
         total += take * (value / weight)
         capacity -= take
     return total
+```
+
+```java
+class Item {
+    double weight, value;
+    Item(double weight, double value) { this.weight = weight; this.value = value; }
+}
+
+static double fractionalKnapsack(List<Item> items, double capacity) {
+    items.sort((a, b) -> Double.compare(b.value / b.weight, a.value / a.weight));
+
+    double total = 0.0;
+    for (Item it : items) {
+        if (capacity <= 0) break;
+        double take = Math.min(it.weight, capacity);   // whole item or a slice
+        total += take * (it.value / it.weight);
+        capacity -= take;
+    }
+    return total;
+}
+```
+
+```go
+type Item struct {
+    weight, value float64
+}
+
+func fractionalKnapsack(items []Item, capacity float64) float64 {
+    sort.Slice(items, func(i, j int) bool {
+        return items[i].value/items[i].weight > items[j].value/items[j].weight
+    })
+
+    total := 0.0
+    for _, it := range items {
+        if capacity <= 0 {
+            break
+        }
+        take := math.Min(it.weight, capacity) // whole item or a slice
+        total += take * (it.value / it.weight)
+        capacity -= take
+    }
+    return total
+}
 ```
 
 The exchange argument again: if a solution ever puts weight into a lower-density item while a higher-density item is available and not fully used, swap a sliver of the low for the high. Value goes up (or stays equal), weight is unchanged. So a fully-greedy fill is optimal. Because we can take arbitrary fractions, there's always a sliver to swap, and the argument never gets stuck.
@@ -236,6 +322,93 @@ def build_codes(n, code, out):
     build_codes(n.right, code + "1", out)
 ```
 
+```java
+class Node {
+    int freq;
+    char sym;          // meaningful only in leaves
+    Node left, right;
+    Node(int freq, char sym, Node left, Node right) {
+        this.freq = freq; this.sym = sym; this.left = left; this.right = right;
+    }
+}
+
+static Node buildHuffman(Map<Character, Integer> freqs) {
+    PriorityQueue<Node> pq = new PriorityQueue<>((a, b) -> a.freq - b.freq); // min-heap
+    for (Map.Entry<Character, Integer> e : freqs.entrySet())
+        pq.add(new Node(e.getValue(), e.getKey(), null, null));
+
+    while (pq.size() > 1) {
+        Node l = pq.poll();
+        Node r = pq.poll();
+        pq.add(new Node(l.freq + r.freq, '\0', l, r));
+    }
+    return pq.peek();   // root
+}
+
+static void buildCodes(Node n, String code, Map<Character, String> out) {
+    if (n == null) return;
+    if (n.left == null && n.right == null) {
+        // a lone symbol still needs one bit, not the empty string
+        out.put(n.sym, code.isEmpty() ? "0" : code);
+        return;
+    }
+    buildCodes(n.left,  code + "0", out);
+    buildCodes(n.right, code + "1", out);
+}
+```
+
+```go
+type Node struct {
+    freq        int
+    sym         byte // meaningful only in leaves
+    left, right *Node
+}
+
+// minHeap orders nodes by frequency (smallest on top).
+type minHeap []*Node
+
+func (h minHeap) Len() int           { return len(h) }
+func (h minHeap) Less(i, j int) bool { return h[i].freq < h[j].freq }
+func (h minHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+func (h *minHeap) Push(x any)        { *h = append(*h, x.(*Node)) }
+func (h *minHeap) Pop() any {
+    old := *h
+    n := len(old)
+    item := old[n-1]
+    *h = old[:n-1]
+    return item
+}
+
+func buildHuffman(freqs map[byte]int) *Node {
+    pq := &minHeap{}
+    for sym, f := range freqs {
+        heap.Push(pq, &Node{freq: f, sym: sym})
+    }
+    for pq.Len() > 1 {
+        l := heap.Pop(pq).(*Node)
+        r := heap.Pop(pq).(*Node)
+        heap.Push(pq, &Node{freq: l.freq + r.freq, left: l, right: r})
+    }
+    return (*pq)[0] // root
+}
+
+func buildCodes(n *Node, code string, out map[byte]string) {
+    if n == nil {
+        return
+    }
+    if n.left == nil && n.right == nil {
+        // a lone symbol still needs one bit, not the empty string
+        if code == "" {
+            code = "0"
+        }
+        out[n.sym] = code
+        return
+    }
+    buildCodes(n.left, code+"0", out)
+    buildCodes(n.right, code+"1", out)
+}
+```
+
 The correctness proof is again an exchange argument, run on tree depth: swapping the two lowest-frequency symbols down to the deepest level never increases the weighted path length, so greedy's merge is safe at every step. The one edge case worth guarding — a text with a single distinct character — is why `buildCodes` hands out `"0"` instead of an empty code: an empty code encodes nothing.
 
 ## Greedy on graphs: Dijkstra and the MST
@@ -279,6 +452,48 @@ def kruskal_mst(edges, n):
             dsu.unite(u, v)
             total += weight
     return total
+```
+
+```java
+// Kruskal's MST -- the greedy heart, assuming a DSU (union-find) type.
+class Edge { int u, v, weight; }
+
+static int kruskalMST(List<Edge> edges, int n) {
+    edges.sort((a, b) -> Integer.compare(a.weight, b.weight));
+
+    DSU dsu = new DSU(n);
+    int total = 0;
+    for (Edge e : edges) {
+        if (dsu.find(e.u) != dsu.find(e.v)) {   // adding e keeps it a forest
+            dsu.unite(e.u, e.v);
+            total += e.weight;
+        }
+    }
+    return total;
+}
+```
+
+```go
+// Kruskal's MST -- the greedy heart, assuming a DSU (union-find) type.
+type Edge struct {
+    u, v, weight int
+}
+
+func kruskalMST(edges []Edge, n int) int {
+    sort.Slice(edges, func(i, j int) bool {
+        return edges[i].weight < edges[j].weight
+    })
+
+    dsu := NewDSU(n)
+    total := 0
+    for _, e := range edges {
+        if dsu.find(e.u) != dsu.find(e.v) { // adding e keeps it a forest
+            dsu.unite(e.u, e.v)
+            total += e.weight
+        }
+    }
+    return total
+}
 ```
 
 The MST is the deepest case in this chapter of greedy being *provably* optimal — and that's not a coincidence. The set of forests of a graph forms a **matroid**, and there's a theorem that says the greedy algorithm is optimal for *any* problem whose feasible sets form a matroid. Matroids are the abstract answer to "when is greedy safe": they capture exactly the exchange structure the arguments above keep exploiting. You rarely need to invoke the theorem by name, but it's the reason MST, activity selection, and a whole class of scheduling problems all bow to the same simple loop.

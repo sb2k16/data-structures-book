@@ -66,6 +66,43 @@ def max_area(height):
     return best
 ```
 
+```java
+// Container With Most Water: widest × shortest wall wins.
+int maxArea(int[] height) {
+    int left = 0, right = height.length - 1;
+    int best = 0;
+    while (left < right) {
+        int area = Math.min(height[left], height[right]) * (right - left);
+        best = Math.max(best, area);
+        // Move the shorter wall inward — it's the limiting factor.
+        if (height[left] < height[right]) left++;
+        else right--;
+    }
+    return best;
+}
+```
+
+```go
+// Container With Most Water: widest × shortest wall wins.
+func maxArea(height []int) int {
+	left, right := 0, len(height)-1
+	best := 0
+	for left < right {
+		area := min(height[left], height[right]) * (right - left)
+		if area > best {
+			best = area
+		}
+		// Move the shorter wall inward — it's the limiting factor.
+		if height[left] < height[right] {
+			left++
+		} else {
+			right--
+		}
+	}
+	return best
+}
+```
+
 The same two-index idea drives 3Sum (fix one element, two-pointer the rest), palindrome checks (converge from both ends), and cycle detection in a linked list (slow and fast pointers). See [Chapter 3](03-basic-data-structures.md) for the array mechanics this rides on.
 
 ### Sliding window
@@ -107,6 +144,44 @@ def length_of_longest_substring(s):
     return best
 ```
 
+```java
+// Longest substring with no repeated character. Grow right; when a
+// duplicate enters, shrink left until it's gone.
+int lengthOfLongestSubstring(String s) {
+    Set<Character> window = new HashSet<>();
+    int left = 0, best = 0;
+    for (int right = 0; right < s.length(); right++) {
+        while (window.contains(s.charAt(right))) {
+            window.remove(s.charAt(left));
+            left++;
+        }
+        window.add(s.charAt(right));
+        best = Math.max(best, right - left + 1);
+    }
+    return best;
+}
+```
+
+```go
+// Longest substring with no repeated character. Grow right; when a
+// duplicate enters, shrink left until it's gone.
+func lengthOfLongestSubstring(s string) int {
+	window := make(map[byte]bool)
+	left, best := 0, 0
+	for right := 0; right < len(s); right++ {
+		for window[s[right]] {
+			delete(window, s[left])
+			left++
+		}
+		window[s[right]] = true
+		if right-left+1 > best {
+			best = right - left + 1
+		}
+	}
+	return best
+}
+```
+
 Each character enters and leaves the window at most once, so despite the inner `while`, the whole thing is O(n) — the classic amortized-analysis payoff. Maximum-sum-of-size-k, minimum window substring, and longest-repeating-character-replacement are all the same skeleton with a different "is the window valid?" test.
 
 ### Hashing for O(n)
@@ -137,6 +212,34 @@ def two_sum(nums, target):
             return [seen[need], i]
         seen[num] = i
     return []
+```
+
+```java
+// Two Sum: for each number, ask the map if its complement came before.
+int[] twoSum(int[] nums, int target) {
+    Map<Integer, Integer> seen = new HashMap<>();  // value -> index
+    for (int i = 0; i < nums.length; i++) {
+        int need = target - nums[i];
+        if (seen.containsKey(need)) return new int[]{seen.get(need), i};
+        seen.put(nums[i], i);
+    }
+    return new int[]{};
+}
+```
+
+```go
+// Two Sum: for each number, ask the map if its complement came before.
+func twoSum(nums []int, target int) []int {
+	seen := make(map[int]int) // value -> index
+	for i, num := range nums {
+		need := target - num
+		if j, ok := seen[need]; ok {
+			return []int{j, i}
+		}
+		seen[num] = i
+	}
+	return nil
+}
 ```
 
 The trick generalizes. Group anagrams by keying on the sorted string. Count subarrays summing to `k` by hashing prefix sums. Detect duplicates in one pass. Any time the brute force is "compare everything to everything," ask whether a map of what-you've-seen kills the inner loop. Just remember what [Chapter 10](10-hash-tables-and-hashing.md) drilled in: `unordered_map` is O(1) *average* but scatters memory, and it gives you no ordering — if you need sorted keys or range queries, that job belongs to a tree.
@@ -186,6 +289,60 @@ def ship_within_days(weights, days):
         else:
             lo = cap + 1             # infeasible — need more
     return lo
+```
+
+```java
+// Ship packages within `days`: find the minimum daily capacity.
+// feasible(cap) is monotonic — more capacity never needs more days.
+int shipWithinDays(int[] weights, int days) {
+    int lo = 0, hi = 0;
+    for (int w : weights) {
+        lo = Math.max(lo, w);   // must fit heaviest
+        hi += w;                // ship everything in one day
+    }
+    while (lo < hi) {
+        int cap = lo + (hi - lo) / 2;
+        int needed = 1, load = 0;
+        for (int w : weights) {
+            if (load + w > cap) { needed++; load = 0; }
+            load += w;
+        }
+        if (needed <= days) hi = cap;   // feasible — try smaller
+        else lo = cap + 1;              // infeasible — need more
+    }
+    return lo;
+}
+```
+
+```go
+// Ship packages within `days`: find the minimum daily capacity.
+// feasible(cap) is monotonic — more capacity never needs more days.
+func shipWithinDays(weights []int, days int) int {
+	lo, hi := 0, 0
+	for _, w := range weights {
+		if w > lo {
+			lo = w // must fit heaviest
+		}
+		hi += w // ship everything in one day
+	}
+	for lo < hi {
+		cap := lo + (hi-lo)/2
+		needed, load := 1, 0
+		for _, w := range weights {
+			if load+w > cap {
+				needed++
+				load = 0
+			}
+			load += w
+		}
+		if needed <= days {
+			hi = cap // feasible — try smaller
+		} else {
+			lo = cap + 1 // infeasible — need more
+		}
+	}
+	return lo
+}
 ```
 
 "Minimize the largest ...", "maximize the smallest ...", "smallest capacity/speed/time such that ..." — these phrasings are the tell. Plain binary search on a sorted array (Chapter [13](13-searching-algorithms.md)) is just the special case where the predicate is `nums[mid] >= target`.
@@ -242,6 +399,56 @@ def level_order(root):
     return levels
 ```
 
+```java
+// Level-order traversal — the canonical BFS skeleton.
+List<List<Integer>> levelOrder(TreeNode root) {
+    List<List<Integer>> levels = new ArrayList<>();
+    if (root == null) return levels;
+    Queue<TreeNode> q = new ArrayDeque<>();
+    q.add(root);
+    while (!q.isEmpty()) {
+        int n = q.size();               // freeze this level's width
+        List<Integer> level = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            TreeNode node = q.poll();
+            level.add(node.val);
+            if (node.left != null)  q.add(node.left);
+            if (node.right != null) q.add(node.right);
+        }
+        levels.add(level);
+    }
+    return levels;
+}
+```
+
+```go
+// Level-order traversal — the canonical BFS skeleton.
+func levelOrder(root *TreeNode) [][]int {
+	levels := [][]int{}
+	if root == nil {
+		return levels
+	}
+	q := []*TreeNode{root}
+	for len(q) > 0 {
+		n := len(q) // freeze this level's width
+		level := []int{}
+		for i := 0; i < n; i++ {
+			node := q[0]
+			q = q[1:]
+			level = append(level, node.Val)
+			if node.Left != nil {
+				q = append(q, node.Left)
+			}
+			if node.Right != nil {
+				q = append(q, node.Right)
+			}
+		}
+		levels = append(levels, level)
+	}
+	return levels
+}
+```
+
 **DFS** goes deep before wide, using recursion (an implicit stack) or an explicit one. It is the natural fit for path problems, connected components, cycle detection, and anything tree-shaped. "Number of islands" is a DFS flood-fill; validating a BST is a DFS with bounds. Both traversals are O(V + E). See [Chapter 11](11-graphs.md) for the full treatment, including when the graph is weighted and you need Dijkstra instead.
 
 ### Dynamic programming
@@ -276,6 +483,36 @@ def rob(nums):
         skip = max(skip, take)      # don't rob it
         take = new_take
     return max(skip, take)
+```
+
+```java
+// House Robber: at each house, take it plus best-two-back, or skip it.
+// State collapses to two rolling values — O(n) time, O(1) space.
+int rob(int[] nums) {
+    int skip = 0;   // best if we skip current
+    int take = 0;   // best if we consider current
+    for (int x : nums) {
+        int newTake = skip + x;         // rob this house
+        skip = Math.max(skip, take);    // don't rob it
+        take = newTake;
+    }
+    return Math.max(skip, take);
+}
+```
+
+```go
+// House Robber: at each house, take it plus best-two-back, or skip it.
+// State collapses to two rolling values — O(n) time, O(1) space.
+func rob(nums []int) int {
+	skip := 0 // best if we skip current
+	take := 0 // best if we consider current
+	for _, x := range nums {
+		newTake := skip + x    // rob this house
+		skip = max(skip, take) // don't rob it
+		take = newTake
+	}
+	return max(skip, take)
+}
 ```
 
 Climbing stairs, coin change, longest common subsequence, edit distance — same three moves every time: find the state, write the recurrence, decide top-down or bottom-up. [Chapter 12](12-dynamic-programming.md) is the deep dive.
@@ -321,6 +558,45 @@ def generate_parenthesis(n):
     out = []
     build("", 0, 0, n, out)
     return out
+```
+
+```java
+// Generate all valid parenthesis combinations. Helper declared first
+// so it's in scope where it's called.
+void build(String cur, int open, int close, int n, List<String> out) {
+    if (cur.length() == 2 * n) { out.add(cur); return; }
+    if (open < n)      build(cur + '(', open + 1, close, n, out);
+    if (close < open)  build(cur + ')', open, close + 1, n, out);
+}
+
+List<String> generateParenthesis(int n) {
+    List<String> out = new ArrayList<>();
+    build("", 0, 0, n, out);
+    return out;
+}
+```
+
+```go
+// Generate all valid parenthesis combinations. Helper declared first
+// so it's in scope where it's called.
+func build(cur string, open, close, n int, out *[]string) {
+	if len(cur) == 2*n {
+		*out = append(*out, cur)
+		return
+	}
+	if open < n {
+		build(cur+"(", open+1, close, n, out)
+	}
+	if close < open {
+		build(cur+")", open, close+1, n, out)
+	}
+}
+
+func generateParenthesis(n int) []string {
+	out := []string{}
+	build("", 0, 0, n, &out)
+	return out
+}
 ```
 
 The `n ≤ 20`-ish constraint is your cue: exponential search is on the table because the input is tiny.

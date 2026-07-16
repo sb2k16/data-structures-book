@@ -160,6 +160,74 @@ def merge_sort(a, lo=None, hi=None):
     merge(a, lo, mid, hi)
 ```
 
+```java
+void merge(int[] a, int lo, int mid, int hi) {
+    int[] buf = new int[hi - lo + 1];
+    int i = lo, j = mid + 1, k = 0;
+    while (i <= mid && j <= hi)               // two fingers, emit the smaller
+        buf[k++] = a[i] <= a[j] ? a[i++] : a[j++];
+    while (i <= mid) buf[k++] = a[i++];       // drain the leftovers
+    while (j <= hi)  buf[k++] = a[j++];
+    for (int t = 0; t < buf.length; t++)
+        a[lo + t] = buf[t];
+}
+
+void mergeSort(int[] a, int lo, int hi) {
+    if (lo >= hi) return;                      // base case: 0 or 1 element
+    int mid = lo + (hi - lo) / 2;              // not (lo+hi)/2 — that can overflow
+    mergeSort(a, lo, mid);
+    mergeSort(a, mid + 1, hi);
+    merge(a, lo, mid, hi);
+}
+
+void mergeSort(int[] a) {
+    if (a.length > 0) mergeSort(a, 0, a.length - 1);
+}
+```
+
+```go
+func merge(a []int, lo, mid, hi int) {
+    buf := make([]int, 0, hi-lo+1)
+    i, j := lo, mid+1
+    for i <= mid && j <= hi { // two fingers, emit the smaller
+        if a[i] <= a[j] {
+            buf = append(buf, a[i])
+            i++
+        } else {
+            buf = append(buf, a[j])
+            j++
+        }
+    }
+    for i <= mid { // drain the leftovers
+        buf = append(buf, a[i])
+        i++
+    }
+    for j <= hi {
+        buf = append(buf, a[j])
+        j++
+    }
+    for k := 0; k < len(buf); k++ {
+        a[lo+k] = buf[k]
+    }
+}
+
+func mergeSort(a []int, lo, hi int) {
+    if lo >= hi { // base case: 0 or 1 element
+        return
+    }
+    mid := lo + (hi-lo)/2 // not (lo+hi)/2 — that can overflow
+    mergeSort(a, lo, mid)
+    mergeSort(a, mid+1, hi)
+    merge(a, lo, mid, hi)
+}
+
+func mergeSortAll(a []int) {
+    if len(a) > 0 {
+        mergeSort(a, 0, len(a)-1)
+    }
+}
+```
+
 Two details here are the most common bugs in the whole chapter. The midpoint is
 `lo + (hi - lo) / 2`, never `(lo + hi) / 2`: the latter overflows a 32-bit `int` once the indices
 grow large — a bug that sat undetected in the JDK's binary search for nine years. And the wrapper
@@ -224,6 +292,50 @@ def quick_sort(a, lo, hi):
     quick_sort(a, p + 1, hi)
 ```
 
+```java
+int partition(int[] a, int lo, int hi) {
+    int r = lo + ThreadLocalRandom.current().nextInt(hi - lo + 1);
+    int t = a[r]; a[r] = a[hi]; a[hi] = t;             // random pivot → expected n log n
+    int pivot = a[hi], i = lo - 1;
+    for (int j = lo; j < hi; j++)
+        if (a[j] < pivot) { i++; t = a[i]; a[i] = a[j]; a[j] = t; }
+    t = a[i + 1]; a[i + 1] = a[hi]; a[hi] = t;
+    return i + 1;                                      // pivot's final index
+}
+
+void quickSort(int[] a, int lo, int hi) {
+    if (lo >= hi) return;
+    int p = partition(a, lo, hi);
+    quickSort(a, lo, p - 1);
+    quickSort(a, p + 1, hi);
+}
+```
+
+```go
+func partition(a []int, lo, hi int) int {
+    r := lo + rand.Intn(hi-lo+1) // random pivot → expected n log n
+    a[r], a[hi] = a[hi], a[r]
+    pivot, i := a[hi], lo-1
+    for j := lo; j < hi; j++ {
+        if a[j] < pivot {
+            i++
+            a[i], a[j] = a[j], a[i]
+        }
+    }
+    a[i+1], a[hi] = a[hi], a[i+1]
+    return i + 1 // pivot's final index
+}
+
+func quickSort(a []int, lo, hi int) {
+    if lo >= hi {
+        return
+    }
+    p := partition(a, lo, hi)
+    quickSort(a, lo, p-1)
+    quickSort(a, p+1, hi)
+}
+```
+
 The randomization is not decoration. With a fixed pivot (say, always the last element), an already
 sorted array drives partition into its `O(n²)` worst case — the single most common way quicksort
 blows up in production. A uniformly random pivot makes that worst case astronomically unlikely
@@ -257,6 +369,34 @@ def quickselect(a, lo, hi, k):
     return quickselect(a, lo, p - 1, k) if k < p else quickselect(a, p + 1, hi, k)
 ```
 
+```java
+// k is 0-indexed: k == 0 is the minimum. Expected O(n).
+int quickselect(int[] a, int lo, int hi, int k) {
+    if (lo == hi) return a[lo];
+    int p = partition(a, lo, hi);
+    if (k == p) return a[p];
+    return (k < p) ? quickselect(a, lo, p - 1, k)
+                   : quickselect(a, p + 1, hi, k);
+}
+```
+
+```go
+// k is 0-indexed: k == 0 is the minimum. Expected O(n).
+func quickselect(a []int, lo, hi, k int) int {
+    if lo == hi {
+        return a[lo]
+    }
+    p := partition(a, lo, hi)
+    if k == p {
+        return a[p]
+    }
+    if k < p {
+        return quickselect(a, lo, p-1, k)
+    }
+    return quickselect(a, p+1, hi, k)
+}
+```
+
 Recursing into one half instead of two changes the recurrence from `2T(n/2)` to `T(n/2)`, and the
 Master Theorem's Case 3 collapses it from `O(n log n)` to `O(n)` expected. This is `std::nth_element`,
 and it is how you find a median, or the top-k, without paying to sort everything you don't care
@@ -287,6 +427,31 @@ def power(x, n):
         return 1.0 / power(x, -n)
     half = power(x, n // 2)
     return half * half if n % 2 == 0 else half * half * x
+```
+
+```java
+double power(double x, long n) {
+    if (n == 0) return 1.0;
+    if (n < 0)  return 1.0 / power(x, -n);   // long so -INT_MIN can't overflow
+    double half = power(x, n / 2);
+    return (n % 2 == 0) ? half * half : half * half * x;
+}
+```
+
+```go
+func power(x float64, n int64) float64 {
+    if n == 0 {
+        return 1.0
+    }
+    if n < 0 {
+        return 1.0 / power(x, -n) // int64 so -INT_MIN can't overflow
+    }
+    half := power(x, n/2)
+    if n%2 == 0 {
+        return half * half
+    }
+    return half * half * x
+}
 ```
 
 Taking `n` as `long long` matters: negating the most negative 32-bit `int` overflows, so a naive
@@ -342,6 +507,53 @@ def max_subarray(a, lo, hi):
     return max(max_subarray(a, lo, mid),
                max_subarray(a, mid + 1, hi),
                max_crossing(a, lo, mid, hi))
+```
+
+```java
+int maxCrossing(int[] a, int lo, int mid, int hi) {
+    int sum = 0, left = Integer.MIN_VALUE;
+    for (int i = mid; i >= lo; i--) { sum += a[i]; left = Math.max(left, sum); }
+    sum = 0; int right = Integer.MIN_VALUE;
+    for (int i = mid + 1; i <= hi; i++) { sum += a[i]; right = Math.max(right, sum); }
+    return left + right;                       // must use at least one element each side
+}
+
+int maxSubarray(int[] a, int lo, int hi) {
+    if (lo == hi) return a[lo];
+    int mid = lo + (hi - lo) / 2;
+    return Math.max(Math.max(maxSubarray(a, lo, mid),
+                             maxSubarray(a, mid + 1, hi)),
+                    maxCrossing(a, lo, mid, hi));
+}
+```
+
+```go
+func maxCrossing(a []int, lo, mid, hi int) int {
+    sum, left := 0, math.MinInt
+    for i := mid; i >= lo; i-- {
+        sum += a[i]
+        if sum > left {
+            left = sum
+        }
+    }
+    sum, right := 0, math.MinInt
+    for i := mid + 1; i <= hi; i++ {
+        sum += a[i]
+        if sum > right {
+            right = sum
+        }
+    }
+    return left + right // must use at least one element each side
+}
+
+func maxSubarray(a []int, lo, hi int) int {
+    if lo == hi {
+        return a[lo]
+    }
+    mid := lo + (hi-lo)/2
+    return max(maxSubarray(a, lo, mid),
+        max(maxSubarray(a, mid+1, hi), maxCrossing(a, lo, mid, hi)))
+}
 ```
 
 The linear crossing scan makes `f(n) = O(n)`, so `T(n) = 2T(n/2) + O(n) = O(n log n)`. In practice
@@ -409,6 +621,70 @@ def count_inversions(a, lo, hi):
     return (count_inversions(a, lo, mid)
             + count_inversions(a, mid + 1, hi)
             + merge_count(a, lo, mid, hi))
+```
+
+```java
+long mergeCount(int[] a, int lo, int mid, int hi) {
+    int[] buf = new int[hi - lo + 1];
+    int i = lo, j = mid + 1, k = 0;
+    long inv = 0;
+    while (i <= mid && j <= hi) {
+        if (a[i] <= a[j]) buf[k++] = a[i++];
+        else { buf[k++] = a[j++]; inv += mid - i + 1; }  // left[i..mid] all beat a[j]
+    }
+    while (i <= mid) buf[k++] = a[i++];
+    while (j <= hi)  buf[k++] = a[j++];
+    for (int t = 0; t < buf.length; t++) a[lo + t] = buf[t];
+    return inv;
+}
+
+long countInversions(int[] a, int lo, int hi) {
+    if (lo >= hi) return 0;
+    int mid = lo + (hi - lo) / 2;
+    return countInversions(a, lo, mid)
+         + countInversions(a, mid + 1, hi)
+         + mergeCount(a, lo, mid, hi);
+}
+```
+
+```go
+func mergeCount(a []int, lo, mid, hi int) int64 {
+    buf := make([]int, 0, hi-lo+1)
+    i, j := lo, mid+1
+    var inv int64
+    for i <= mid && j <= hi {
+        if a[i] <= a[j] {
+            buf = append(buf, a[i])
+            i++
+        } else {
+            buf = append(buf, a[j])
+            j++
+            inv += int64(mid - i + 1) // left[i..mid] all beat a[j]
+        }
+    }
+    for i <= mid {
+        buf = append(buf, a[i])
+        i++
+    }
+    for j <= hi {
+        buf = append(buf, a[j])
+        j++
+    }
+    for k := 0; k < len(buf); k++ {
+        a[lo+k] = buf[k]
+    }
+    return inv
+}
+
+func countInversions(a []int, lo, hi int) int64 {
+    if lo >= hi {
+        return 0
+    }
+    mid := lo + (hi-lo)/2
+    return countInversions(a, lo, mid) +
+        countInversions(a, mid+1, hi) +
+        mergeCount(a, lo, mid, hi)
+}
 ```
 
 The count is `long long` on purpose: a reversed array of `n` elements has `n(n−1)/2` inversions,
@@ -510,6 +786,90 @@ def closest(pts, lo, hi):
 def closest_pair(pts):
     pts.sort(key=lambda p: p.x)
     return closest(pts, 0, len(pts) - 1)
+```
+
+```java
+class Point {
+    double x, y;
+    Point(double x, double y) { this.x = x; this.y = y; }
+}
+
+double dist(Point p, Point q) {
+    double dx = p.x - q.x, dy = p.y - q.y;
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
+double closest(Point[] pts, int lo, int hi) {
+    if (hi - lo <= 3) {                        // small: brute force
+        double d = Double.MAX_VALUE;
+        for (int i = lo; i <= hi; i++)
+            for (int j = i + 1; j <= hi; j++)
+                d = Math.min(d, dist(pts[i], pts[j]));
+        return d;
+    }
+    int mid = lo + (hi - lo) / 2;
+    double midX = pts[mid].x;
+    double d = Math.min(closest(pts, lo, mid), closest(pts, mid + 1, hi));
+
+    List<Point> strip = new ArrayList<>();     // points within d of the divider
+    for (int i = lo; i <= hi; i++)
+        if (Math.abs(pts[i].x - midX) < d) strip.add(pts[i]);
+    strip.sort((p, q) -> Double.compare(p.y, q.y));
+
+    for (int i = 0; i < strip.size(); i++)
+        for (int j = i + 1; j < strip.size() && strip.get(j).y - strip.get(i).y < d; j++)
+            d = Math.min(d, dist(strip.get(i), strip.get(j)));
+    return d;
+}
+
+double closestPair(Point[] pts) {
+    Arrays.sort(pts, (p, q) -> Double.compare(p.x, q.x));
+    return closest(pts, 0, pts.length - 1);
+}
+```
+
+```go
+type Point struct{ x, y float64 }
+
+func dist(p, q Point) float64 {
+    dx, dy := p.x-q.x, p.y-q.y
+    return math.Sqrt(dx*dx + dy*dy)
+}
+
+func closest(pts []Point, lo, hi int) float64 {
+    if hi-lo <= 3 { // small: brute force
+        d := math.MaxFloat64
+        for i := lo; i <= hi; i++ {
+            for j := i + 1; j <= hi; j++ {
+                d = math.Min(d, dist(pts[i], pts[j]))
+            }
+        }
+        return d
+    }
+    mid := lo + (hi-lo)/2
+    midX := pts[mid].x
+    d := math.Min(closest(pts, lo, mid), closest(pts, mid+1, hi))
+
+    var strip []Point // points within d of the divider
+    for i := lo; i <= hi; i++ {
+        if math.Abs(pts[i].x-midX) < d {
+            strip = append(strip, pts[i])
+        }
+    }
+    sort.Slice(strip, func(i, j int) bool { return strip[i].y < strip[j].y })
+
+    for i := 0; i < len(strip); i++ {
+        for j := i + 1; j < len(strip) && strip[j].y-strip[i].y < d; j++ {
+            d = math.Min(d, dist(strip[i], strip[j]))
+        }
+    }
+    return d
+}
+
+func closestPair(pts []Point) float64 {
+    sort.Slice(pts, func(i, j int) bool { return pts[i].x < pts[j].x })
+    return closest(pts, 0, len(pts)-1)
+}
 ```
 
 Re-sorting the strip by y at every level makes `f(n) = O(n log n)` and the whole thing
@@ -679,6 +1039,62 @@ def karatsuba(x, y):
     bd = karatsuba(b, d)
     mid = karatsuba(a + b, c + d) - ac - bd          # = ad + bc, one multiply
     return ac * p * p + mid * p + bd
+```
+
+```java
+int digits(long v)  { int d = 0; do { d++; v /= 10; } while (v != 0); return d; }
+long pow10(int e)   { long p = 1; while (e-- > 0) p *= 10; return p; }
+
+// Illustrative: values small enough not to overflow long.
+// Real big-integer libraries apply the identical split to arrays of limbs.
+long karatsuba(long x, long y) {
+    if (x < 10 || y < 10) return x * y;                 // base case: one digit
+    int m = Math.max(digits(x), digits(y)) / 2;
+    long p = pow10(m);
+    long a = x / p, b = x % p;                          // x = a·10^m + b
+    long c = y / p, d = y % p;                          // y = c·10^m + d
+    long ac = karatsuba(a, c);
+    long bd = karatsuba(b, d);
+    long mid = karatsuba(a + b, c + d) - ac - bd;       // = ad + bc, one multiply
+    return ac * p * p + mid * p + bd;
+}
+```
+
+```go
+func digits(v int64) int {
+    d := 0
+    for {
+        d++
+        v /= 10
+        if v == 0 {
+            break
+        }
+    }
+    return d
+}
+
+func pow10(e int) int64 {
+    p := int64(1)
+    for ; e > 0; e-- {
+        p *= 10
+    }
+    return p
+}
+
+// Illustrative: the identical split applies to arrays of limbs in real libraries.
+func karatsuba(x, y int64) int64 {
+    if x < 10 || y < 10 { // base case: one digit
+        return x * y
+    }
+    m := max(digits(x), digits(y)) / 2
+    p := pow10(m)
+    a, b := x/p, x%p // x = a·10^m + b
+    c, d := y/p, y%p // y = c·10^m + d
+    ac := karatsuba(a, c)
+    bd := karatsuba(b, d)
+    mid := karatsuba(a+b, c+d) - ac - bd // = ad + bc, one multiply
+    return ac*p*p + mid*p + bd
+}
 ```
 
 Three sub-multiplies give `T(n) = 3T(n/2) + O(n) = O(n^1.585)` — Master Theorem Case 1, leaves
