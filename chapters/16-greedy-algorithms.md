@@ -62,6 +62,20 @@ std::vector<Interval> scheduleMax(std::vector<Interval> jobs) {
 }
 ```
 
+```python
+def schedule_max(jobs):
+    # each job is a (start, finish) tuple
+    jobs.sort(key=lambda j: j[1])          # sort by finish time
+
+    chosen = []
+    last_finish = float('-inf')            # nothing scheduled yet
+    for start, finish in jobs:
+        if start >= last_finish:           # compatible with the last pick
+            chosen.append((start, finish))
+            last_finish = finish
+    return chosen
+```
+
 The sort is `O(n log n)` and dominates; the scan is `O(n)`. Note the loop never dereferences an out-of-range element the way a "grab `jobs[0]` first" formulation would — an empty input simply returns an empty schedule. This same skeleton, with the feasibility test swapped, solves "minimum number of rooms to hold every meeting" and "fewest intervals to remove so none overlap." Sort by finish, sweep once.
 
 ## Fractional knapsack: greedy works, and its twin where it doesn't
@@ -89,6 +103,21 @@ double fractionalKnapsack(std::vector<Item> items, double capacity) {
     }
     return total;
 }
+```
+
+```python
+def fractional_knapsack(items, capacity):
+    # each item is a (weight, value) tuple
+    items.sort(key=lambda it: it[1] / it[0], reverse=True)
+
+    total = 0.0
+    for weight, value in items:
+        if capacity <= 0:
+            break
+        take = min(weight, capacity)       # whole item or a slice
+        total += take * (value / weight)
+        capacity -= take
+    return total
 ```
 
 The exchange argument again: if a solution ever puts weight into a lower-density item while a higher-density item is available and not fully used, swap a sliver of the low for the high. Value goes up (or stays equal), weight is unchanged. So a fully-greedy fill is optimal. Because we can take arbitrary fractions, there's always a sliver to swap, and the argument never gets stuck.
@@ -173,6 +202,40 @@ void buildCodes(const Node* n, const std::string& code,
 }
 ```
 
+```python
+import heapq
+
+class Node:
+    def __init__(self, freq, sym=None, left=None, right=None):
+        self.freq = freq
+        self.sym = sym          # meaningful only in leaves
+        self.left = left
+        self.right = right
+
+    def __lt__(self, other):    # min-heap: smallest freq on top
+        return self.freq < other.freq
+
+def build_huffman(freqs):
+    pq = [Node(f, sym) for sym, f in freqs.items()]
+    heapq.heapify(pq)
+
+    while len(pq) > 1:
+        l = heapq.heappop(pq)
+        r = heapq.heappop(pq)
+        heapq.heappush(pq, Node(l.freq + r.freq, None, l, r))
+    return pq[0]   # root
+
+def build_codes(n, code, out):
+    if not n:
+        return
+    if not n.left and not n.right:
+        # a lone symbol still needs one bit, not the empty string
+        out[n.sym] = code if code else "0"
+        return
+    build_codes(n.left, code + "0", out)
+    build_codes(n.right, code + "1", out)
+```
+
 The correctness proof is again an exchange argument, run on tree depth: swapping the two lowest-frequency symbols down to the deepest level never increases the weighted path length, so greedy's merge is safe at every step. The one edge case worth guarding — a text with a single distinct character — is why `buildCodes` hands out `"0"` instead of an empty code: an empty code encodes nothing.
 
 ## Greedy on graphs: Dijkstra and the MST
@@ -201,6 +264,21 @@ int kruskalMST(std::vector<Edge> edges, int n) {
     }
     return total;
 }
+```
+
+```python
+# Kruskal's MST -- the greedy heart, assuming a DSU (union-find) type.
+def kruskal_mst(edges, n):
+    # each edge is a (u, v, weight) tuple
+    edges.sort(key=lambda e: e[2])
+
+    dsu = DSU(n)
+    total = 0
+    for u, v, weight in edges:
+        if dsu.find(u) != dsu.find(v):     # adding e keeps it a forest
+            dsu.unite(u, v)
+            total += weight
+    return total
 ```
 
 The MST is the deepest case in this chapter of greedy being *provably* optimal — and that's not a coincidence. The set of forests of a graph forms a **matroid**, and there's a theorem that says the greedy algorithm is optimal for *any* problem whose feasible sets form a matroid. Matroids are the abstract answer to "when is greedy safe": they capture exactly the exchange structure the arguments above keep exploiting. You rarely need to invoke the theorem by name, but it's the reason MST, activity selection, and a whole class of scheduling problems all bow to the same simple loop.

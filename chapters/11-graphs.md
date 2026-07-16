@@ -120,6 +120,46 @@ public:
 };
 ```
 
+```python
+class GraphMatrix:
+    def __init__(self, vertices, directed=False):
+        self.num_vertices = vertices
+        self.directed = directed
+        self.adj_matrix = [[0] * vertices for _ in range(vertices)]
+
+    def add_edge(self, frm, to, weight=1):
+        if 0 <= frm < self.num_vertices and 0 <= to < self.num_vertices:
+            self.adj_matrix[frm][to] = weight
+            if not self.directed:
+                self.adj_matrix[to][frm] = weight
+
+    def remove_edge(self, frm, to):
+        if 0 <= frm < self.num_vertices and 0 <= to < self.num_vertices:
+            self.adj_matrix[frm][to] = 0
+            if not self.directed:
+                self.adj_matrix[to][frm] = 0
+
+    def has_edge(self, frm, to):
+        if 0 <= frm < self.num_vertices and 0 <= to < self.num_vertices:
+            return self.adj_matrix[frm][to] != 0
+        return False
+
+    def get_weight(self, frm, to):
+        if 0 <= frm < self.num_vertices and 0 <= to < self.num_vertices:
+            return self.adj_matrix[frm][to]
+        return 0
+
+    def print(self):
+        print("Adjacency Matrix:")
+        print("  " + " ".join(str(i) for i in range(self.num_vertices)))
+        for i in range(self.num_vertices):
+            row = " ".join(str(self.adj_matrix[i][j]) for j in range(self.num_vertices))
+            print(f"{i} {row}")
+
+    def get_num_vertices(self):
+        return self.num_vertices
+```
+
 The catch is the `O(V²)` memory, paid whether the graph is full or nearly empty, plus expensive vertex insertion and removal. A million-vertex sparse graph would need a trillion-entry matrix — hopeless. The matrix wins only when the graph is dense enough that you'd store most of those entries anyway.
 
 There is a subtler reason the matrix can outrun a list even when it "shouldn't," and it comes straight from the memory hierarchy of [Chapter 3.6](03.6-memory-hierarchy-and-performance.md): the matrix is one contiguous block, so an edge query is a single cache-friendly load (~5–10 cycles), whereas an adjacency list is an array of separately allocated node chains, and walking one means pointer-chasing across scattered addresses — every hop risks a cache miss of 50–200 cycles. On a dense graph that fits in cache, the matrix's sequential layout can beat the list's asymptotically-better bounds outright. This is the same constant-factor story as binary versus linear search in [Chapter 13](13-searching-algorithms.md): Big-O picks the representation, but memory layout picks the winner.
@@ -204,6 +244,50 @@ public:
     
     int getNumVertices() const { return numVertices; }
 };
+```
+
+```python
+class Edge:
+    def __init__(self, to, weight=1):
+        self.to = to
+        self.weight = weight
+
+class GraphList:
+    def __init__(self, vertices, directed=False):
+        self.num_vertices = vertices
+        self.directed = directed
+        self.adj_list = [[] for _ in range(vertices)]
+
+    def add_edge(self, frm, to, weight=1):
+        if 0 <= frm < self.num_vertices and 0 <= to < self.num_vertices:
+            self.adj_list[frm].append(Edge(to, weight))
+            if not self.directed:
+                self.adj_list[to].append(Edge(frm, weight))
+
+    def remove_edge(self, frm, to):
+        if 0 <= frm < self.num_vertices and 0 <= to < self.num_vertices:
+            self.adj_list[frm] = [e for e in self.adj_list[frm] if e.to != to]
+            if not self.directed:
+                self.adj_list[to] = [e for e in self.adj_list[to] if e.to != frm]
+
+    def has_edge(self, frm, to):
+        if 0 <= frm < self.num_vertices:
+            return any(e.to == to for e in self.adj_list[frm])
+        return False
+
+    def get_neighbors(self, vertex):
+        if 0 <= vertex < self.num_vertices:
+            return self.adj_list[vertex]
+        return []
+
+    def print(self):
+        print("Adjacency List:")
+        for i in range(self.num_vertices):
+            neighbors = " ".join(f"({e.to}, {e.weight})" for e in self.adj_list[i])
+            print(f"{i}: {neighbors} ")
+
+    def get_num_vertices(self):
+        return self.num_vertices
 ```
 
 Its one real weakness is the edge test: checking whether `u→v` exists means scanning `u`'s neighbors, `O(degree)`. If your workload is dominated by edge existence queries on a small graph, that's the case for the matrix; otherwise the list wins on every axis that matters at scale.
@@ -344,6 +428,38 @@ public:
 };
 ```
 
+```python
+class GraphDFS:
+    def __init__(self, vertices):
+        self.num_vertices = vertices
+        self.adj_list = [[] for _ in range(vertices)]
+
+    def add_edge(self, frm, to, weight=1):
+        self.adj_list[frm].append(Edge(to, weight))
+        self.adj_list[to].append(Edge(frm, weight))
+
+    def _dfs_recursive(self, vertex, visited, result):
+        visited[vertex] = True
+        result.append(vertex)
+        for edge in self.adj_list[vertex]:
+            if not visited[edge.to]:
+                self._dfs_recursive(edge.to, visited, result)
+
+    def dfs(self, start):
+        visited = [False] * self.num_vertices
+        result = []
+        self._dfs_recursive(start, visited, result)
+        return result
+
+    def dfs_all(self):
+        visited = [False] * self.num_vertices
+        result = []
+        for i in range(self.num_vertices):
+            if not visited[i]:
+                self._dfs_recursive(i, visited, result)
+        return result
+```
+
 #### Iterative Implementation
 ```cpp
 vector<int> dfsIterative(int start) {
@@ -372,6 +488,27 @@ vector<int> dfsIterative(int start) {
     
     return result;
 }
+```
+
+```python
+def dfs_iterative(self, start):
+    visited = [False] * self.num_vertices
+    result = []
+    stack = [start]
+
+    while stack:
+        vertex = stack.pop()
+
+        if not visited[vertex]:
+            visited[vertex] = True
+            result.append(vertex)
+
+            # Push neighbors in reverse order to maintain same traversal
+            for edge in reversed(self.adj_list[vertex]):
+                if not visited[edge.to]:
+                    stack.append(edge.to)
+
+    return result
 ```
 
 DFS is the engine under a surprising number of later algorithms in this chapter: cycle detection, topological sort, bridges and articulation points, and strongly connected components are all DFS with extra bookkeeping. Anywhere you need to fully explore one region before moving on — maze solving, connected components, reachability — it is the natural traversal.
@@ -476,6 +613,62 @@ public:
         return {}; // No path found
     }
 };
+```
+
+```python
+from collections import deque
+
+class GraphBFS:
+    def __init__(self, vertices):
+        self.num_vertices = vertices
+        self.adj_list = [[] for _ in range(vertices)]
+
+    def add_edge(self, frm, to, weight=1):
+        self.adj_list[frm].append(Edge(to, weight))
+        self.adj_list[to].append(Edge(frm, weight))
+
+    def bfs(self, start):
+        visited = [False] * self.num_vertices
+        result = []
+        q = deque([start])
+        visited[start] = True
+
+        while q:
+            vertex = q.popleft()
+            result.append(vertex)
+            for edge in self.adj_list[vertex]:
+                if not visited[edge.to]:
+                    visited[edge.to] = True
+                    q.append(edge.to)
+
+        return result
+
+    def shortest_path_unweighted(self, start, end):
+        visited = [False] * self.num_vertices
+        parent = [-1] * self.num_vertices
+        q = deque([start])
+        visited[start] = True
+
+        while q:
+            vertex = q.popleft()
+
+            if vertex == end:
+                # Reconstruct path
+                path = []
+                current = end
+                while current != -1:
+                    path.append(current)
+                    current = parent[current]
+                path.reverse()
+                return path
+
+            for edge in self.adj_list[vertex]:
+                if not visited[edge.to]:
+                    visited[edge.to] = True
+                    parent[edge.to] = vertex
+                    q.append(edge.to)
+
+        return []  # No path found
 ```
 
 That shortest-path guarantee is why BFS, not DFS, powers "degrees of separation" in social networks, shortest-hop routing, web crawling by link distance, and network broadcast. The two traversals differ only in the container that holds pending vertices — a stack (or recursion) for DFS, a FIFO queue for BFS — but that one swap changes everything: DFS goes deep and uses memory proportional to the longest path, BFS goes wide and uses memory proportional to the widest level, and only BFS finds shortest paths in an unweighted graph.
@@ -633,6 +826,72 @@ public:
 };
 ```
 
+```python
+import heapq
+
+class Dijkstra:
+    def __init__(self, vertices):
+        self.num_vertices = vertices
+        self.adj_list = [[] for _ in range(vertices)]
+
+    def add_edge(self, frm, to, weight):
+        self.adj_list[frm].append(Edge(to, weight))
+
+    def shortest_path(self, start):
+        dist = [float('inf')] * self.num_vertices
+        visited = [False] * self.num_vertices
+        dist[start] = 0
+        pq = [(0, start)]
+
+        while pq:
+            _, u = heapq.heappop(pq)
+            if visited[u]:
+                continue
+            visited[u] = True
+
+            for edge in self.adj_list[u]:
+                v, weight = edge.to, edge.weight
+                if not visited[v] and dist[u] + weight < dist[v]:
+                    dist[v] = dist[u] + weight
+                    heapq.heappush(pq, (dist[v], v))
+
+        return dist
+
+    def shortest_path_to(self, start, end):
+        dist = [float('inf')] * self.num_vertices
+        parent = [-1] * self.num_vertices
+        visited = [False] * self.num_vertices
+        dist[start] = 0
+        pq = [(0, start)]
+
+        while pq:
+            _, u = heapq.heappop(pq)
+            if u == end:
+                break
+            if visited[u]:
+                continue
+            visited[u] = True
+
+            for edge in self.adj_list[u]:
+                v, weight = edge.to, edge.weight
+                if not visited[v] and dist[u] + weight < dist[v]:
+                    dist[v] = dist[u] + weight
+                    parent[v] = u
+                    heapq.heappush(pq, (dist[v], v))
+
+        # Reconstruct path
+        if dist[end] == float('inf'):
+            return []  # No path
+
+        path = []
+        current = end
+        while current != -1:
+            path.append(current)
+            current = parent[current]
+        path.reverse()
+        return path
+```
+
 With a binary-heap priority queue this runs in `O((V + E) log V)` time and `O(V)` space. The non-negative-weight requirement isn't a limitation to route around — it is the exact condition under which "finalize a vertex the moment it's extracted" is correct. When weights can go negative, you need the next algorithm.
 
 ### 11.4.2 Bellman-Ford Algorithm
@@ -703,6 +962,46 @@ public:
 };
 ```
 
+```python
+class BellmanFord:
+    def __init__(self, vertices):
+        self.num_vertices = vertices
+        self.edges = []  # each edge is a (from, to, weight) tuple
+
+    def add_edge(self, frm, to, weight):
+        self.edges.append((frm, to, weight))
+
+    def shortest_path(self, start):
+        dist = [float('inf')] * self.num_vertices
+        dist[start] = 0
+
+        # Relax edges V-1 times
+        for _ in range(self.num_vertices - 1):
+            for frm, to, weight in self.edges:
+                if dist[frm] != float('inf') and dist[frm] + weight < dist[to]:
+                    dist[to] = dist[frm] + weight
+
+        # Check for negative cycles
+        for frm, to, weight in self.edges:
+            if dist[frm] != float('inf') and dist[frm] + weight < dist[to]:
+                return []  # Negative cycle detected
+
+        return dist
+
+    def has_negative_cycle(self):
+        dist = [0] * self.num_vertices
+
+        # Relax edges V times
+        for i in range(self.num_vertices):
+            for frm, to, weight in self.edges:
+                if dist[frm] + weight < dist[to]:
+                    dist[to] = dist[frm] + weight
+                    if i == self.num_vertices - 1:
+                        return True  # Negative cycle detected
+
+        return False
+```
+
 The cost of that generality is `O(V × E)` time — a full order slower than Dijkstra — so use Bellman-Ford only when negative weights actually appear.
 
 ### 11.4.3 Floyd-Warshall Algorithm
@@ -757,6 +1056,33 @@ public:
 };
 ```
 
+```python
+class FloydWarshall:
+    def __init__(self, vertices):
+        self.num_vertices = vertices
+        self.dist = [[float('inf')] * vertices for _ in range(vertices)]
+        for i in range(vertices):
+            self.dist[i][i] = 0
+
+    def add_edge(self, frm, to, weight):
+        self.dist[frm][to] = weight
+
+    def compute_shortest_paths(self):
+        for k in range(self.num_vertices):
+            for i in range(self.num_vertices):
+                for j in range(self.num_vertices):
+                    if (self.dist[i][k] != float('inf') and
+                            self.dist[k][j] != float('inf') and
+                            self.dist[i][k] + self.dist[k][j] < self.dist[i][j]):
+                        self.dist[i][j] = self.dist[i][k] + self.dist[k][j]
+
+    def get_distance(self, frm, to):
+        return self.dist[frm][to]
+
+    def has_negative_cycle(self):
+        return any(self.dist[i][i] < 0 for i in range(self.num_vertices))
+```
+
 Beyond all-pairs distances, the same `O(V²)` space and `O(V³)` time also compute transitive closure (reachability) and detect negative cycles — a negative value on the diagonal means a vertex can reach itself at negative cost.
 
 ## 11.5 Union-Find (Disjoint Sets)
@@ -805,6 +1131,28 @@ public:
 };
 ```
 
+```python
+class UnionFindNaive:
+    def __init__(self, size):
+        self.n = size
+        # Initially, each element is its own parent
+        self.parent = list(range(size))
+
+    def find(self, x):
+        if self.parent[x] != x:
+            return self.find(self.parent[x])  # Recursive find
+        return x
+
+    def unite(self, x, y):
+        root_x = self.find(x)
+        root_y = self.find(y)
+        if root_x != root_y:
+            self.parent[root_x] = root_y
+
+    def connected(self, x, y):
+        return self.find(x) == self.find(y)
+```
+
 Two optimizations fix that, and together they are what make Union-Find famous. **Path compression** flattens the tree during every `find` — after finding the root, it points each node visited straight at it, so the next query is `O(1)`:
 
 ```cpp
@@ -842,6 +1190,27 @@ public:
         return find(x) == find(y);
     }
 };
+```
+
+```python
+class UnionFindPathCompression:
+    def __init__(self, size):
+        self.n = size
+        self.parent = list(range(size))
+
+    def find(self, x):
+        if self.parent[x] != x:
+            self.parent[x] = self.find(self.parent[x])  # Path compression
+        return self.parent[x]
+
+    def unite(self, x, y):
+        root_x = self.find(x)
+        root_y = self.find(y)
+        if root_x != root_y:
+            self.parent[root_x] = root_y
+
+    def connected(self, x, y):
+        return self.find(x) == self.find(y)
 ```
 
 **Union by rank** (or by size) is the second half: when merging, always hang the shorter tree under the taller one's root, so the tree never gets needlessly deep. Combine the two and every operation is `O(α(n))` amortized, where α is the inverse Ackermann function — below 5 for any input that fits in the universe, so effectively constant.
@@ -909,6 +1278,41 @@ public:
 };
 ```
 
+```python
+class UnionFind:
+    def __init__(self, size):
+        self.n = size
+        self.parent = list(range(size))
+        self.rank = [0] * size  # Height of tree (or use size for union by size)
+
+    def find(self, x):
+        if self.parent[x] != x:
+            self.parent[x] = self.find(self.parent[x])  # Path compression
+        return self.parent[x]
+
+    def unite(self, x, y):
+        root_x = self.find(x)
+        root_y = self.find(y)
+        if root_x == root_y:
+            return  # Already in same set
+
+        # Attach smaller rank tree under root of higher rank tree
+        if self.rank[root_x] < self.rank[root_y]:
+            self.parent[root_x] = root_y
+        elif self.rank[root_x] > self.rank[root_y]:
+            self.parent[root_y] = root_x
+        else:
+            # Ranks are same, make one root and increment its rank
+            self.parent[root_y] = root_x
+            self.rank[root_x] += 1
+
+    def connected(self, x, y):
+        return self.find(x) == self.find(y)
+
+    def count_sets(self):
+        return sum(1 for i in range(self.n) if self.parent[i] == i)
+```
+
 Union by size is the same idea with element counts instead of heights: attach the smaller set under the larger, add the counts. Identical `O(α(n))` bound, and it makes `getSize(x)` trivial (`size[find(x)]`).
 
 Two applications show the pattern. Counting **connected components** is just: union every edge, then count distinct roots.
@@ -929,6 +1333,19 @@ int countConnectedComponents(const vector<vector<int>>& graph) {
 }
 ```
 
+```python
+def count_connected_components(graph):
+    n = len(graph)
+    uf = UnionFind(n)
+
+    # Union all connected vertices
+    for i in range(n):
+        for neighbor in graph[i]:
+            uf.unite(i, neighbor)
+
+    return uf.count_sets()
+```
+
 And **cycle detection** in an undirected graph is the same trick from the other side: if an edge's two endpoints are *already* in the same set, adding it closes a cycle.
 
 ```cpp
@@ -947,6 +1364,18 @@ bool hasCycle(const vector<pair<int, int>>& edges, int numVertices) {
     
     return false;
 }
+```
+
+```python
+def has_cycle(edges, num_vertices):
+    uf = UnionFind(num_vertices)
+
+    for u, v in edges:
+        if uf.connected(u, v):
+            return True  # Cycle detected
+        uf.unite(u, v)
+
+    return False
 ```
 
 | Operation | Naive | + Path Compression | + Union by Rank |
@@ -1085,6 +1514,62 @@ public:
 };
 ```
 
+```python
+class Kruskal:
+    class _Edge:
+        def __init__(self, frm, to, weight):
+            self.frm = frm
+            self.to = to
+            self.weight = weight
+
+    class _UnionFind:
+        def __init__(self, n):
+            self.parent = list(range(n))
+            self.rank = [0] * n
+
+        def find(self, x):
+            if self.parent[x] != x:
+                self.parent[x] = self.find(self.parent[x])  # Path compression
+            return self.parent[x]
+
+        def unite(self, x, y):
+            root_x = self.find(x)
+            root_y = self.find(y)
+            if root_x == root_y:
+                return False
+            if self.rank[root_x] < self.rank[root_y]:
+                self.parent[root_x] = root_y
+            elif self.rank[root_x] > self.rank[root_y]:
+                self.parent[root_y] = root_x
+            else:
+                self.parent[root_y] = root_x
+                self.rank[root_x] += 1
+            return True
+
+    def __init__(self, vertices):
+        self.num_vertices = vertices
+        self.edges = []
+
+    def add_edge(self, frm, to, weight):
+        self.edges.append(Kruskal._Edge(frm, to, weight))
+
+    def find_mst(self):
+        self.edges.sort(key=lambda e: e.weight)
+        uf = Kruskal._UnionFind(self.num_vertices)
+        mst = []
+
+        for edge in self.edges:
+            if uf.unite(edge.frm, edge.to):
+                mst.append(edge)
+                if len(mst) == self.num_vertices - 1:
+                    break
+
+        return mst
+
+    def mst_weight(self):
+        return sum(edge.weight for edge in self.find_mst())
+```
+
 Sorting the edges dominates, so Kruskal runs in `O(E log E) = O(E log V)` — a clean fit for sparse graphs, where you already have an edge list in hand.
 
 ### 11.6.2 Prim's Algorithm
@@ -1178,6 +1663,49 @@ public:
         return mst;
     }
 };
+```
+
+```python
+class Prim:
+    def __init__(self, vertices):
+        self.num_vertices = vertices
+        self.adj_list = [[] for _ in range(vertices)]
+
+    def add_edge(self, frm, to, weight):
+        self.adj_list[frm].append(Edge(to, weight))
+        self.adj_list[to].append(Edge(frm, weight))
+
+    def find_mst(self, start=0):
+        in_mst = [False] * self.num_vertices
+        key = [float('inf')] * self.num_vertices
+        parent = [-1] * self.num_vertices
+        key[start] = 0
+        pq = [(0, start)]
+        mst = []  # each MST edge is a (from, to, weight) tuple
+
+        while pq:
+            _, u = heapq.heappop(pq)
+            if in_mst[u]:
+                continue
+            in_mst[u] = True
+
+            if parent[u] != -1:
+                # Find weight of edge from parent[u] to u
+                weight = 0
+                for edge in self.adj_list[parent[u]]:
+                    if edge.to == u:
+                        weight = edge.weight
+                        break
+                mst.append((parent[u], u, weight))
+
+            for edge in self.adj_list[u]:
+                v, weight = edge.to, edge.weight
+                if not in_mst[v] and weight < key[v]:
+                    key[v] = weight
+                    parent[v] = u
+                    heapq.heappush(pq, (key[v], v))
+
+        return mst
 ```
 
 With a binary heap Prim runs in `O((V + E) log V)`. Its inner loop is Dijkstra's almost exactly — same priority queue, same relaxation — differing only in the key: Prim keys on the single edge weight into the tree, Dijkstra on the accumulated distance from the source. Kruskal tends to win on sparse graphs (you already have the edge list), Prim on dense ones.
@@ -1306,6 +1834,70 @@ public:
 };
 ```
 
+```python
+class TopologicalSort:
+    def __init__(self, vertices):
+        self.num_vertices = vertices
+        self.adj_list = [[] for _ in range(vertices)]
+
+    def add_edge(self, frm, to):
+        self.adj_list[frm].append(to)
+
+    def _dfs(self, vertex, visited, rec_stack, result, state):
+        visited[vertex] = True
+        rec_stack[vertex] = True
+
+        for neighbor in self.adj_list[vertex]:
+            if not visited[neighbor]:
+                self._dfs(neighbor, visited, rec_stack, result, state)
+            elif rec_stack[neighbor]:
+                state['has_cycle'] = True
+
+        rec_stack[vertex] = False
+        result.append(vertex)
+
+    def topological_sort(self):
+        visited = [False] * self.num_vertices
+        rec_stack = [False] * self.num_vertices
+        result = []
+        state = {'has_cycle': False}
+
+        for i in range(self.num_vertices):
+            if not visited[i]:
+                self._dfs(i, visited, rec_stack, result, state)
+
+        if state['has_cycle']:
+            return []  # Cycle detected, no topological order
+
+        result.reverse()
+        return result
+
+    def topological_sort_kahn(self):
+        in_degree = [0] * self.num_vertices
+        result = []
+
+        # Calculate in-degrees
+        for i in range(self.num_vertices):
+            for neighbor in self.adj_list[i]:
+                in_degree[neighbor] += 1
+
+        # Add vertices with in-degree 0
+        q = deque(i for i in range(self.num_vertices) if in_degree[i] == 0)
+
+        while q:
+            u = q.popleft()
+            result.append(u)
+            for neighbor in self.adj_list[u]:
+                in_degree[neighbor] -= 1
+                if in_degree[neighbor] == 0:
+                    q.append(neighbor)
+
+        if len(result) != self.num_vertices:
+            return []  # Cycle detected
+
+        return result
+```
+
 ## 11.8 Bridges and Articulation Points
 
 Some connections are load-bearing: remove them and the graph falls apart. A **bridge** is such an edge and an **articulation point** such a vertex — a critical link whose removal increases the number of connected components. Both answer the same production question (which single failure partitions the network?), and remarkably both fall out of one DFS carrying two timestamps per vertex:
@@ -1385,6 +1977,55 @@ public:
         return bridges;
     }
 };
+```
+
+```python
+class BridgeFinder:
+    def __init__(self, vertices):
+        self.num_vertices = vertices
+        self.graph = [[] for _ in range(vertices)]
+        self.disc = [0] * vertices   # Discovery time
+        self.low = [0] * vertices    # Low link value
+        self.visited = [False] * vertices
+        self.timer = 0
+        self.bridges = []
+
+    def add_edge(self, frm, to):
+        self.graph[frm].append(to)
+        self.graph[to].append(frm)
+
+    def _dfs(self, u, parent):
+        self.visited[u] = True
+        self.timer += 1
+        self.disc[u] = self.low[u] = self.timer
+
+        for v in self.graph[u]:
+            if v == parent:
+                continue  # Skip parent edge
+
+            if not self.visited[v]:
+                self._dfs(v, u)
+                self.low[u] = min(self.low[u], self.low[v])
+                # Bridge condition: low[v] > disc[u] means v cannot reach any
+                # ancestor of u, so removing (u, v) disconnects v's subtree.
+                if self.low[v] > self.disc[u]:
+                    self.bridges.append((u, v))
+            else:
+                # Back edge - update low[u]
+                self.low[u] = min(self.low[u], self.disc[v])
+
+    def find_bridges(self):
+        self.bridges = []
+        self.visited = [False] * self.num_vertices
+        self.disc = [0] * self.num_vertices
+        self.low = [0] * self.num_vertices
+        self.timer = 0
+
+        for i in range(self.num_vertices):
+            if not self.visited[i]:
+                self._dfs(i, -1)
+
+        return self.bridges
 ```
 
 Bridge-finding is a single DFS, `O(V + E)`, and is the standard tool for network-reliability and critical-connection analysis.
@@ -1478,6 +2119,60 @@ public:
 };
 ```
 
+```python
+class ArticulationPointFinder:
+    def __init__(self, vertices):
+        self.num_vertices = vertices
+        self.graph = [[] for _ in range(vertices)]
+        self.disc = [0] * vertices
+        self.low = [0] * vertices
+        self.visited = [False] * vertices
+        self.is_articulation = [False] * vertices
+        self.timer = 0
+
+    def add_edge(self, frm, to):
+        self.graph[frm].append(to)
+        self.graph[to].append(frm)
+
+    def _dfs(self, u, parent, is_root):
+        self.visited[u] = True
+        self.timer += 1
+        self.disc[u] = self.low[u] = self.timer
+        children = 0
+
+        for v in self.graph[u]:
+            if v == parent:
+                continue
+
+            if not self.visited[v]:
+                children += 1
+                self._dfs(v, u, False)
+                self.low[u] = min(self.low[u], self.low[v])
+                # Articulation condition: low[v] >= disc[u] (uses >= not > because
+                # even if v can reach u itself, removing u still disconnects v).
+                if not is_root and self.low[v] >= self.disc[u]:
+                    self.is_articulation[u] = True
+            else:
+                self.low[u] = min(self.low[u], self.disc[v])
+
+        # Root is articulation point if it has 2+ children
+        if is_root and children >= 2:
+            self.is_articulation[u] = True
+
+    def find_articulation_points(self):
+        self.visited = [False] * self.num_vertices
+        self.is_articulation = [False] * self.num_vertices
+        self.disc = [0] * self.num_vertices
+        self.low = [0] * self.num_vertices
+        self.timer = 0
+
+        for i in range(self.num_vertices):
+            if not self.visited[i]:
+                self._dfs(i, -1, True)
+
+        return [i for i in range(self.num_vertices) if self.is_articulation[i]]
+```
+
 Also `O(V + E)`. Together, bridges and articulation points are the standard vocabulary for network-vulnerability analysis: the single edges and nodes whose failure fragments the system.
 
 ## 11.9 Strongly Connected Components
@@ -1567,6 +2262,64 @@ public:
 };
 ```
 
+```python
+class StronglyConnectedComponents:
+    def __init__(self, vertices):
+        self.num_vertices = vertices
+        self.graph = [[] for _ in range(vertices)]
+        self.reverse_graph = [[] for _ in range(vertices)]
+        self.visited = [False] * vertices
+        self.order = []
+        self.component = [-1] * vertices
+
+    def add_edge(self, frm, to):
+        self.graph[frm].append(to)
+        self.reverse_graph[to].append(frm)
+
+    def _dfs1(self, v):
+        self.visited[v] = True
+        for u in self.graph[v]:
+            if not self.visited[u]:
+                self._dfs1(u)
+        self.order.append(v)  # Add to order after processing
+
+    def _dfs2(self, v, comp_id):
+        self.visited[v] = True
+        self.component[v] = comp_id
+        for u in self.reverse_graph[v]:
+            if not self.visited[u]:
+                self._dfs2(u, comp_id)
+
+    def find_sccs(self):
+        # Step 1: First DFS on original graph
+        self.visited = [False] * self.num_vertices
+        self.order = []
+        for i in range(self.num_vertices):
+            if not self.visited[i]:
+                self._dfs1(i)
+
+        # Step 2: Second DFS on reverse graph in reverse order
+        self.visited = [False] * self.num_vertices
+        self.order.reverse()
+
+        comp_id = 0
+        for v in self.order:
+            if not self.visited[v]:
+                self._dfs2(v, comp_id)
+                comp_id += 1
+
+        # Step 3: Group vertices by component
+        components = [[] for _ in range(comp_id)]
+        for i in range(self.num_vertices):
+            components[self.component[i]].append(i)
+
+        return components
+
+    def get_component_count(self):
+        self.find_sccs()
+        return max(self.component) + 1
+```
+
 ### Tarjan's Algorithm (Alternative)
 
 Tarjan's algorithm finds SCCs in a single DFS pass using a stack.
@@ -1641,6 +2394,60 @@ public:
         return components;
     }
 };
+```
+
+```python
+class TarjanSCC:
+    def __init__(self, vertices):
+        self.num_vertices = vertices
+        self.graph = [[] for _ in range(vertices)]
+        self.disc = [0] * vertices
+        self.low = [0] * vertices
+        self.on_stack = [False] * vertices
+        self.stack = []
+        self.timer = 0
+        self.components = []
+
+    def add_edge(self, frm, to):
+        self.graph[frm].append(to)
+
+    def _dfs(self, u):
+        self.timer += 1
+        self.disc[u] = self.low[u] = self.timer
+        self.stack.append(u)
+        self.on_stack[u] = True
+
+        for v in self.graph[u]:
+            if self.disc[v] == 0:
+                self._dfs(v)
+                self.low[u] = min(self.low[u], self.low[v])
+            elif self.on_stack[v]:
+                self.low[u] = min(self.low[u], self.disc[v])
+
+        # If u is root of SCC
+        if self.low[u] == self.disc[u]:
+            component = []
+            while True:
+                v = self.stack.pop()
+                self.on_stack[v] = False
+                component.append(v)
+                if v == u:
+                    break
+            self.components.append(component)
+
+    def find_sccs(self):
+        self.components = []
+        self.disc = [0] * self.num_vertices
+        self.low = [0] * self.num_vertices
+        self.on_stack = [False] * self.num_vertices
+        self.stack = []
+        self.timer = 0
+
+        for i in range(self.num_vertices):
+            if self.disc[i] == 0:
+                self._dfs(i)
+
+        return self.components
 ```
 
 **Tarjan's algorithm** does the same job in a *single* DFS by keeping vertices on a stack and using the same `disc`/`low` timestamps as bridge-finding: when a vertex's `low` equals its own `disc`, it's the root of an SCC, and everything above it on the stack is that component. One pass instead of two, at the cost of trickier bookkeeping.
@@ -1752,6 +2559,66 @@ public:
 };
 ```
 
+```python
+from collections import deque
+
+class BFS01:
+    def __init__(self, vertices):
+        self.num_vertices = vertices
+        self.graph = [[] for _ in range(vertices)]  # entries: (to, weight) with weight 0 or 1
+
+    def add_edge(self, frm, to, weight):
+        self.graph[frm].append((to, weight))
+
+    def shortest_path(self, start):
+        dist = [float('inf')] * self.num_vertices
+        dist[start] = 0
+        dq = deque([start])
+
+        while dq:
+            u = dq.popleft()
+            for v, w in self.graph[u]:
+                if dist[u] + w < dist[v]:
+                    dist[v] = dist[u] + w
+                    if w == 0:
+                        dq.appendleft(v)  # Weight 0 - add to front
+                    else:
+                        dq.append(v)      # Weight 1 - add to back
+
+        return dist
+
+    def shortest_path_to(self, start, end):
+        dist = [float('inf')] * self.num_vertices
+        parent = [-1] * self.num_vertices
+        dist[start] = 0
+        dq = deque([start])
+
+        while dq:
+            u = dq.popleft()
+            if u == end:
+                break
+            for v, w in self.graph[u]:
+                if dist[u] + w < dist[v]:
+                    dist[v] = dist[u] + w
+                    parent[v] = u
+                    if w == 0:
+                        dq.appendleft(v)
+                    else:
+                        dq.append(v)
+
+        # Reconstruct path
+        if dist[end] == float('inf'):
+            return []
+
+        path = []
+        current = end
+        while current != -1:
+            path.append(current)
+            current = parent[current]
+        path.reverse()
+        return path
+```
+
 ## 11.11 A Few Everyday Graph Routines
 
 Three short functions come up constantly and are worth seeing because each is a two-line variation on a traversal you already know. **Connected components** is DFS restarted from every unvisited vertex, one component per restart:
@@ -1782,6 +2649,28 @@ vector<vector<int>> findConnectedComponents(const vector<list<int>>& graph) {
     
     return components;
 }
+```
+
+```python
+def find_connected_components(graph):
+    n = len(graph)
+    visited = [False] * n
+    components = []
+
+    def dfs(v, comp):
+        visited[v] = True
+        comp.append(v)
+        for neighbor in graph[v]:
+            if not visited[neighbor]:
+                dfs(neighbor, comp)
+
+    for i in range(n):
+        if not visited[i]:
+            component = []
+            dfs(i, component)
+            components.append(component)
+
+    return components
 ```
 
 **Cycle detection** in a directed graph is DFS tracking the current recursion stack — an edge back to a vertex still on the stack is a cycle (the same `recStack` idea that made topological sort detect impossible orderings):
@@ -1818,6 +2707,33 @@ bool hasCycle(const vector<list<int>>& graph) {
 }
 ```
 
+```python
+def has_cycle(graph):
+    n = len(graph)
+    visited = [False] * n
+    rec_stack = [False] * n
+
+    def dfs(v):
+        visited[v] = True
+        rec_stack[v] = True
+
+        for neighbor in graph[v]:
+            if not visited[neighbor]:
+                if dfs(neighbor):
+                    return True
+            elif rec_stack[neighbor]:
+                return True
+
+        rec_stack[v] = False
+        return False
+
+    for i in range(n):
+        if not visited[i] and dfs(i):
+            return True
+
+    return False
+```
+
 And a **bipartite check** is BFS two-coloring: give each vertex the opposite color of its neighbor, and if you ever need a vertex to hold both colors, the graph isn't bipartite:
 
 ```cpp
@@ -1849,6 +2765,28 @@ bool isBipartite(const vector<list<int>>& graph) {
     
     return true;
 }
+```
+
+```python
+def is_bipartite(graph):
+    n = len(graph)
+    color = [-1] * n
+
+    for i in range(n):
+        if color[i] == -1:
+            color[i] = 0
+            q = deque([i])
+
+            while q:
+                u = q.popleft()
+                for v in graph[u]:
+                    if color[v] == -1:
+                        color[v] = 1 - color[u]
+                        q.append(v)
+                    elif color[v] == color[u]:
+                        return False
+
+    return True
 ```
 
 ## 11.12 A* Search
@@ -1982,6 +2920,72 @@ public:
 };
 ```
 
+```python
+import heapq
+
+class AStar:
+    def __init__(self, grid):
+        self.grid = grid
+        self.rows = len(grid)
+        self.cols = len(grid[0])
+
+    # Manhattan distance heuristic (admissible for grid)
+    def _heuristic(self, x1, y1, x2, y2):
+        return abs(x1 - x2) + abs(y1 - y2)
+
+    # Get neighbors (4-directional)
+    def _get_neighbors(self, x, y):
+        neighbors = []
+        for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < self.rows and 0 <= ny < self.cols and self.grid[nx][ny] != 1:
+                neighbors.append((nx, ny))  # 1 = obstacle
+        return neighbors
+
+    def find_path(self, start, goal):
+        g_score = {start: 0}
+        parent = {start: None}
+        closed = set()
+
+        h = self._heuristic(start[0], start[1], goal[0], goal[1])
+        # entries: (f, g, node)
+        open_set = [(h, 0, start)]
+
+        while open_set:
+            _, _, current = heapq.heappop(open_set)
+
+            if current in closed:
+                continue
+            closed.add(current)
+
+            # Goal reached
+            if current == goal:
+                path = []
+                node = current
+                while node is not None:
+                    path.append(node)
+                    node = parent[node]
+                path.reverse()
+                return path
+
+            # Explore neighbors
+            for neighbor in self._get_neighbors(*current):
+                if neighbor in closed:
+                    continue
+
+                tentative_g = g_score[current] + 1  # Assuming unit cost
+
+                if neighbor in g_score and tentative_g >= g_score[neighbor]:
+                    continue
+
+                parent[neighbor] = current
+                g_score[neighbor] = tentative_g
+                nh = self._heuristic(neighbor[0], neighbor[1], goal[0], goal[1])
+                heapq.heappush(open_set, (tentative_g + nh, tentative_g, neighbor))
+
+        return []  # No path found
+```
+
 The three shortest-path tools now form a ladder: BFS for unweighted graphs, Dijkstra when weights matter but you have no heuristic, A* when you do. Use the most informed one your problem allows.
 
 ## 11.13 Network Flow
@@ -2072,6 +3076,67 @@ public:
         return maxFlow;
     }
 };
+```
+
+```python
+from collections import deque
+
+class FordFulkerson:
+    def __init__(self, num_nodes):
+        self.n = num_nodes
+        self.capacity = [[0] * num_nodes for _ in range(num_nodes)]
+        self.flow = [[0] * num_nodes for _ in range(num_nodes)]
+        self.graph = [[] for _ in range(num_nodes)]
+
+    def add_edge(self, u, v, cap):
+        self.graph[u].append(v)
+        self.graph[v].append(u)  # For residual graph
+        self.capacity[u][v] = cap
+
+    # BFS to find augmenting path
+    def _bfs(self, source, sink, parent):
+        visited = [False] * self.n
+        q = deque([source])
+        visited[source] = True
+        parent[source] = -1
+
+        while q:
+            u = q.popleft()
+            for v in self.graph[u]:
+                if not visited[v] and self.capacity[u][v] - self.flow[u][v] > 0:
+                    visited[v] = True
+                    parent[v] = u
+                    q.append(v)
+                    if v == sink:
+                        return True
+        return False
+
+    def max_flow(self, source, sink):
+        max_flow = 0
+        parent = [0] * self.n
+
+        # Find augmenting paths and update flow
+        while self._bfs(source, sink, parent):
+            path_flow = float('inf')
+
+            # Find minimum capacity in path
+            v = sink
+            while v != source:
+                u = parent[v]
+                path_flow = min(path_flow, self.capacity[u][v] - self.flow[u][v])
+                v = u
+
+            # Update flow along path
+            v = sink
+            while v != source:
+                u = parent[v]
+                self.flow[u][v] += path_flow
+                self.flow[v][u] -= path_flow  # Residual capacity
+                v = u
+
+            max_flow += path_flow
+
+        return max_flow
 ```
 
 Max flow is more useful than it looks: by the max-flow/min-cut theorem the maximum flow equals the *minimum cut* — the cheapest set of edges whose removal severs source from sink — so the same code solves bipartite matching, network reliability, and resource-allocation problems that don't look like flow at all. Faster variants trade complexity for speed: Edmonds-Karp is `O(V·E²)`, Dinic's `O(V²·E)`.
@@ -2169,6 +3234,67 @@ public:
 };
 ```
 
+```python
+from collections import deque
+
+class GraphColoring:
+    def __init__(self, graph):
+        self.graph = graph
+        self.n = len(graph)
+
+    # Greedy coloring - O(V + E)
+    def greedy_coloring(self):
+        color = [-1] * self.n
+        color[0] = 0  # First vertex gets color 0
+        available = [True] * self.n
+
+        for u in range(1, self.n):
+            # Mark colors of adjacent vertices as unavailable
+            for v in self.graph[u]:
+                if color[v] != -1:
+                    available[color[v]] = False
+
+            # Find first available color
+            cr = 0
+            while cr < self.n:
+                if available[cr]:
+                    break
+                cr += 1
+
+            color[u] = cr
+
+            # Reset available colors for next vertex
+            available = [True] * self.n
+
+        return color
+
+    # Check if graph is bipartite (2-colorable)
+    def is_bipartite(self):
+        color = [-1] * self.n
+
+        for i in range(self.n):
+            if color[i] == -1:
+                color[i] = 0
+                q = deque([i])
+
+                while q:
+                    u = q.popleft()
+                    for v in self.graph[u]:
+                        if color[v] == -1:
+                            color[v] = 1 - color[u]
+                            q.append(v)
+                        elif color[v] == color[u]:
+                            return False  # Not bipartite
+
+        return True
+
+    # Find chromatic number (minimum colors needed)
+    def chromatic_number(self):
+        # This is NP-hard, so we use greedy as approximation
+        colors = self.greedy_coloring()
+        return max(colors) + 1
+```
+
 Backtracking gives the exact answer for small graphs by trying colors and undoing choices that lead to a dead end — optimal, but exponential, so reserve it for when the exact chromatic number genuinely matters and the graph is small:
 
 ```cpp
@@ -2213,6 +3339,40 @@ vector<int> graphColoringBacktracking(vector<vector<int>>& graph, int maxColors)
     
     return {};  // No valid coloring with maxColors
 }
+```
+
+```python
+# Backtracking to find minimum colors (optimal but slow)
+def is_safe(graph, color, v, c):
+    for u in graph[v]:
+        if color[u] == c:
+            return False
+    return True
+
+def graph_coloring_util(graph, m, color, v):
+    n = len(graph)
+    if v == n:
+        return True  # All vertices colored
+
+    for c in range(m):
+        if is_safe(graph, color, v, c):
+            color[v] = c
+
+            if graph_coloring_util(graph, m, color, v + 1):
+                return True
+
+            color[v] = -1  # Backtrack
+
+    return False
+
+def graph_coloring_backtracking(graph, max_colors):
+    n = len(graph)
+    color = [-1] * n
+
+    if graph_coloring_util(graph, max_colors, color, 0):
+        return color
+
+    return []  # No valid coloring with max_colors
 ```
 
 Greedy coloring is the default; reach for backtracking only when you need the true minimum on a small graph.

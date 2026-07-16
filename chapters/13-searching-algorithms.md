@@ -16,6 +16,14 @@ int linearSearch(const std::vector<int>& a, int target) {
 }
 ```
 
+```python
+def linear_search(a, target):
+    for i in range(len(a)):
+        if a[i] == target:
+            return i
+    return -1   # not found
+```
+
 `O(n)`, `O(1)` space, nothing clever. The instinct is to treat it as the algorithm you use when you don't know better. That instinct is wrong often enough to be dangerous.
 
 Look at what this loop does to the machine. It walks memory in a straight line, one element after the next. The hardware prefetcher sees that pattern instantly and streams the next cache lines in before you ask for them. Every comparison is against data that is already in L1. The branch — "did we find it?" — is taken almost never until the very end, so the branch predictor is right almost every time. This loop runs at close to the memory bandwidth of the machine, and on a contiguous `std::vector` that is *fast*. Hold onto that; it is the whole argument of the next two sections.
@@ -39,6 +47,22 @@ int binarySearch(const std::vector<int>& a, int target, int lo, int hi) {
 int binarySearch(const std::vector<int>& a, int target) {
     return binarySearch(a, target, 0, static_cast<int>(a.size()) - 1);
 }
+```
+
+```python
+# Search the inclusive range [lo, hi]; lo/hi default to the whole array.
+def binary_search(a, target, lo=None, hi=None):
+    if lo is None:
+        lo, hi = 0, len(a) - 1
+    while lo <= hi:
+        mid = lo + (hi - lo) // 2          # NOT (lo + hi) // 2 — see below
+        if a[mid] == target:
+            return mid
+        if a[mid] < target:
+            lo = mid + 1
+        else:
+            hi = mid - 1
+    return -1   # not found
 ```
 
 Two details in that loop are where nearly every buggy binary search goes wrong.
@@ -85,6 +109,31 @@ int upperBound(const std::vector<int>& a, int target) {
 }
 ```
 
+```python
+# First index i with a[i] >= target.  (This is bisect.bisect_left.)
+def lower_bound(a, target):
+    lo, hi = 0, len(a)                    # half-open [lo, hi)
+    while lo < hi:
+        mid = lo + (hi - lo) // 2
+        if a[mid] < target:
+            lo = mid + 1
+        else:
+            hi = mid
+    return lo
+
+
+# First index i with a[i] > target.  (This is bisect.bisect_right.)
+def upper_bound(a, target):
+    lo, hi = 0, len(a)
+    while lo < hi:
+        mid = lo + (hi - lo) // 2
+        if a[mid] <= target:              # the only change: <= instead of <
+            lo = mid + 1
+        else:
+            hi = mid
+    return lo
+```
+
 The two functions differ by a single character — `<` versus `<=` — and that character is the whole idea. `lowerBound` stops at the first element *not less than* the target; `upperBound` stops at the first element *strictly greater*. From them everything else is arithmetic:
 
 - **First occurrence:** `int lb = lowerBound(a, t); return (lb < (int)a.size() && a[lb] == t) ? lb : -1;`
@@ -116,6 +165,26 @@ int searchRotated(const std::vector<int>& a, int target) {
 }
 ```
 
+```python
+def search_rotated(a, target):
+    lo, hi = 0, len(a) - 1
+    while lo <= hi:
+        mid = lo + (hi - lo) // 2
+        if a[mid] == target:
+            return mid
+        if a[lo] <= a[mid]:                             # left half is sorted
+            if a[lo] <= target < a[mid]:
+                hi = mid - 1
+            else:
+                lo = mid + 1
+        else:                                           # right half is sorted
+            if a[mid] < target <= a[hi]:
+                lo = mid + 1
+            else:
+                hi = mid - 1
+    return -1
+```
+
 Still `O(log n)`. This is the search inside a data structure that stores a sorted sequence with a movable start point, and a favorite interview question.
 
 ## Three specialized searches on sorted arrays
@@ -141,6 +210,24 @@ int jumpSearch(const std::vector<int>& a, int target) {
 }
 ```
 
+```python
+def jump_search(a, target):
+    n = len(a)
+    if n == 0:
+        return -1
+    step = max(1, math.isqrt(n))
+    prev = 0
+    while a[min(step, n) - 1] < target:    # find the block that may hold target
+        prev = step
+        step += math.isqrt(n)
+        if prev >= n:
+            return -1
+    for i in range(prev, min(step, n)):    # linear scan within the block
+        if a[i] == target:
+            return i
+    return -1
+```
+
 **Exponential search** — `O(log i)`, where `i` is the target's position. Double an index until you bracket the target, then binary-search that bracket. It shines on *unbounded* or effectively unknown-length sorted input (a stream, an API you can index but not measure), and when the target is likely near the front, because it never looks further than twice as far as it needs to.
 
 ```cpp
@@ -152,6 +239,19 @@ int exponentialSearch(const std::vector<int>& a, int target) {
     while (i < n && a[i] < target) i *= 2;         // bracket the target in [i/2, i]
     return binarySearch(a, target, i / 2, std::min(i, n - 1));
 }
+```
+
+```python
+def exponential_search(a, target):
+    n = len(a)
+    if n == 0:
+        return -1
+    if a[0] == target:
+        return 0
+    i = 1
+    while i < n and a[i] < target:         # bracket the target in [i//2, i]
+        i *= 2
+    return binary_search(a, target, i // 2, min(i, n - 1))
 ```
 
 **Interpolation search** — `O(log log n)` on *uniformly distributed* data, but `O(n)` when the distribution is skewed. Instead of always probing the middle, it guesses where the target should be by linear interpolation, the way you open a phone book near the back for "Wilson." The guess is only as good as the uniformity assumption, so this is a bet, not a default.
@@ -171,6 +271,22 @@ int interpolationSearch(const std::vector<int>& a, int target) {
     }
     return -1;
 }
+```
+
+```python
+def interpolation_search(a, target):
+    lo, hi = 0, len(a) - 1
+    while lo <= hi and a[lo] <= target <= a[hi]:
+        if a[lo] == a[hi]:                       # flat range: no interpolation
+            return lo if a[lo] == target else -1  # (also guards divide-by-zero)
+        pos = lo + (target - a[lo]) * (hi - lo) // (a[hi] - a[lo])
+        if a[pos] == target:
+            return pos
+        if a[pos] < target:
+            lo = pos + 1
+        else:
+            hi = pos - 1
+    return -1
 ```
 
 Two bugs that this version fixes and the naive version doesn't: dividing by `a[hi] - a[lo]` blows up when the range is flat (all equal), and the integer product `(target - a[lo]) * (hi - lo)` overflows on large arrays — hence the `a[lo] == a[hi]` guard and the `long long`.
@@ -194,6 +310,24 @@ int findPeak(const std::vector<int>& a) {
         if (a[i] > a[best]) best = i;
     return best;
 }
+```
+
+```python
+# a is unimodal (increases, then decreases). Returns the index of the maximum.
+def find_peak(a):
+    lo, hi = 0, len(a) - 1
+    while hi - lo > 2:
+        m1 = lo + (hi - lo) // 3
+        m2 = hi - (hi - lo) // 3
+        if a[m1] < a[m2]:
+            lo = m1   # peak is to the right of m1
+        else:
+            hi = m2   # peak is to the left of m2
+    best = lo
+    for i in range(lo + 1, hi + 1):
+        if a[i] > a[best]:
+            best = i
+    return best
 ```
 
 The same idea works on continuous functions and shows up in optimization ("search on the answer") more than in plain element lookup.

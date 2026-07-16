@@ -50,6 +50,22 @@ int maxArea(vector<int>& height) {
 }
 ```
 
+```python
+# Container With Most Water: widest × shortest wall wins.
+def max_area(height):
+    left, right = 0, len(height) - 1
+    best = 0
+    while left < right:
+        area = min(height[left], height[right]) * (right - left)
+        best = max(best, area)
+        # Move the shorter wall inward — it's the limiting factor.
+        if height[left] < height[right]:
+            left += 1
+        else:
+            right -= 1
+    return best
+```
+
 The same two-index idea drives 3Sum (fix one element, two-pointer the rest), palindrome checks (converge from both ends), and cycle detection in a linked list (slow and fast pointers). See [Chapter 3](03-basic-data-structures.md) for the array mechanics this rides on.
 
 ### Sliding window
@@ -76,6 +92,21 @@ int lengthOfLongestSubstring(string s) {
 }
 ```
 
+```python
+# Longest substring with no repeated character. Grow right; when a
+# duplicate enters, shrink left until it's gone.
+def length_of_longest_substring(s):
+    window = set()
+    left, best = 0, 0
+    for right in range(len(s)):
+        while s[right] in window:
+            window.remove(s[left])
+            left += 1
+        window.add(s[right])
+        best = max(best, right - left + 1)
+    return best
+```
+
 Each character enters and leaves the window at most once, so despite the inner `while`, the whole thing is O(n) — the classic amortized-analysis payoff. Maximum-sum-of-size-k, minimum window substring, and longest-repeating-character-replacement are all the same skeleton with a different "is the window valid?" test.
 
 ### Hashing for O(n)
@@ -94,6 +125,18 @@ vector<int> twoSum(vector<int>& nums, int target) {
     }
     return {};
 }
+```
+
+```python
+# Two Sum: for each number, ask the map if its complement came before.
+def two_sum(nums, target):
+    seen = {}   # value -> index
+    for i, num in enumerate(nums):
+        need = target - num
+        if need in seen:
+            return [seen[need], i]
+        seen[num] = i
+    return []
 ```
 
 The trick generalizes. Group anagrams by keying on the sorted string. Count subarrays summing to `k` by hashing prefix sums. Detect duplicates in one pass. Any time the brute force is "compare everything to everything," ask whether a map of what-you've-seen kills the inner loop. Just remember what [Chapter 10](10-hash-tables-and-hashing.md) drilled in: `unordered_map` is O(1) *average* but scatters memory, and it gives you no ordering — if you need sorted keys or range queries, that job belongs to a tree.
@@ -122,6 +165,27 @@ int shipWithinDays(vector<int>& weights, int days) {
     }
     return lo;
 }
+```
+
+```python
+# Ship packages within `days`: find the minimum daily capacity.
+# feasible(cap) is monotonic — more capacity never needs more days.
+def ship_within_days(weights, days):
+    lo = max(weights)                # must fit heaviest
+    hi = sum(weights)                # ship everything in one day
+    while lo < hi:
+        cap = lo + (hi - lo) // 2
+        needed, load = 1, 0
+        for w in weights:
+            if load + w > cap:
+                needed += 1
+                load = 0
+            load += w
+        if needed <= days:
+            hi = cap                 # feasible — try smaller
+        else:
+            lo = cap + 1             # infeasible — need more
+    return lo
 ```
 
 "Minimize the largest ...", "maximize the smallest ...", "smallest capacity/speed/time such that ..." — these phrasings are the tell. Plain binary search on a sorted array (Chapter [13](13-searching-algorithms.md)) is just the special case where the predicate is `nums[mid] >= target`.
@@ -154,6 +218,30 @@ vector<vector<int>> levelOrder(TreeNode* root) {
 }
 ```
 
+```python
+# Level-order traversal — the canonical BFS skeleton.
+from collections import deque
+
+
+def level_order(root):
+    levels = []
+    if not root:
+        return levels
+    q = deque([root])
+    while q:
+        n = len(q)                      # freeze this level's width
+        level = []
+        for _ in range(n):
+            node = q.popleft()
+            level.append(node.val)
+            if node.left:
+                q.append(node.left)
+            if node.right:
+                q.append(node.right)
+        levels.append(level)
+    return levels
+```
+
 **DFS** goes deep before wide, using recursion (an implicit stack) or an explicit one. It is the natural fit for path problems, connected components, cycle detection, and anything tree-shaped. "Number of islands" is a DFS flood-fill; validating a BST is a DFS with bounds. Both traversals are O(V + E). See [Chapter 11](11-graphs.md) for the full treatment, including when the graph is weighted and you need Dijkstra instead.
 
 ### Dynamic programming
@@ -175,6 +263,19 @@ int rob(vector<int>& nums) {
     }
     return max(skip, take);
 }
+```
+
+```python
+# House Robber: at each house, take it plus best-two-back, or skip it.
+# State collapses to two rolling values — O(n) time, O(1) space.
+def rob(nums):
+    skip = 0   # best if we skip current
+    take = 0   # best if we consider current
+    for x in nums:
+        new_take = skip + x         # rob this house
+        skip = max(skip, take)      # don't rob it
+        take = new_take
+    return max(skip, take)
 ```
 
 Climbing stairs, coin change, longest common subsequence, edit distance — same three moves every time: find the state, write the recurrence, decide top-down or bottom-up. [Chapter 12](12-dynamic-programming.md) is the deep dive.
@@ -201,6 +302,25 @@ vector<string> generateParenthesis(int n) {
     build("", 0, 0, n, out);
     return out;
 }
+```
+
+```python
+# Generate all valid parenthesis combinations. Helper declared first
+# so it's in scope where it's called.
+def build(cur, open_count, close, n, out):
+    if len(cur) == 2 * n:
+        out.append(cur)
+        return
+    if open_count < n:
+        build(cur + '(', open_count + 1, close, n, out)
+    if close < open_count:
+        build(cur + ')', open_count, close + 1, n, out)
+
+
+def generate_parenthesis(n):
+    out = []
+    build("", 0, 0, n, out)
+    return out
 ```
 
 The `n ≤ 20`-ish constraint is your cue: exponential search is on the table because the input is tiny.

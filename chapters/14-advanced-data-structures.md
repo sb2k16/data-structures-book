@@ -91,6 +91,68 @@ public:
 };
 ```
 
+```python
+class MaxHeap:
+    def __init__(self):
+        self.heap = []
+
+    def _heapify_up(self, index):
+        while index > 0:
+            parent = (index - 1) // 2
+            if self.heap[parent] >= self.heap[index]:
+                break
+            self.heap[parent], self.heap[index] = self.heap[index], self.heap[parent]
+            index = parent
+
+    def _heapify_down(self, index):
+        size = len(self.heap)
+        while True:
+            largest = index
+            left = 2 * index + 1
+            right = 2 * index + 2
+
+            if left < size and self.heap[left] > self.heap[largest]:
+                largest = left
+            if right < size and self.heap[right] > self.heap[largest]:
+                largest = right
+            if largest == index:
+                break
+
+            self.heap[index], self.heap[largest] = self.heap[largest], self.heap[index]
+            index = largest
+
+    def insert(self, value):
+        self.heap.append(value)
+        self._heapify_up(len(self.heap) - 1)
+
+    def extract_max(self):
+        if not self.heap:
+            raise RuntimeError("Heap is empty")
+        max_val = self.heap[0]
+        self.heap[0] = self.heap[-1]
+        self.heap.pop()
+        if self.heap:
+            self._heapify_down(0)
+        return max_val
+
+    def peek(self):
+        if not self.heap:
+            raise RuntimeError("Heap is empty")
+        return self.heap[0]
+
+    def empty(self):
+        return not self.heap
+
+    def size(self):
+        return len(self.heap)
+
+    # Bottom-up O(n) construction: heapify every internal node.
+    def build_heap(self, arr):
+        self.heap = list(arr)
+        for i in range(len(self.heap) // 2 - 1, -1, -1):
+            self._heapify_down(i)
+```
+
 A **min-heap** is identical with the comparisons reversed. Rather than duplicate the class, parameterize the comparison to get a reusable priority queue — `PriorityQueue<int, greater<int>>` is a min-heap:
 
 ```cpp
@@ -148,6 +210,62 @@ public:
 };
 ```
 
+```python
+# A min-heap is PriorityQueue(comp=lambda a, b: a > b).
+class PriorityQueue:
+    def __init__(self, comp=lambda a, b: a < b):
+        self.heap = []
+        self.comp = comp
+
+    def _heapify_up(self, index):
+        while index > 0:
+            parent = (index - 1) // 2
+            if not self.comp(self.heap[parent], self.heap[index]):
+                break
+            self.heap[parent], self.heap[index] = self.heap[index], self.heap[parent]
+            index = parent
+
+    def _heapify_down(self, index):
+        size = len(self.heap)
+        while True:
+            extreme = index
+            left = 2 * index + 1
+            right = 2 * index + 2
+
+            if left < size and self.comp(self.heap[extreme], self.heap[left]):
+                extreme = left
+            if right < size and self.comp(self.heap[extreme], self.heap[right]):
+                extreme = right
+            if extreme == index:
+                break
+
+            self.heap[index], self.heap[extreme] = self.heap[extreme], self.heap[index]
+            index = extreme
+
+    def push(self, value):
+        self.heap.append(value)
+        self._heapify_up(len(self.heap) - 1)
+
+    def pop(self):
+        if not self.heap:
+            raise RuntimeError("Priority queue is empty")
+        self.heap[0] = self.heap[-1]
+        self.heap.pop()
+        if self.heap:
+            self._heapify_down(0)
+
+    def top(self):
+        if not self.heap:
+            raise RuntimeError("Priority queue is empty")
+        return self.heap[0]
+
+    def empty(self):
+        return not self.heap
+
+    def size(self):
+        return len(self.heap)
+```
+
 **Heap sort** falls straight out: build a max-heap, then repeatedly extract the maximum into the back of the array. Extraction yields descending values, filling the array ascending.
 
 ```cpp
@@ -158,6 +276,14 @@ void heapSort(vector<int>& arr) {
         arr[i] = heap.extractMax();
     }
 }
+```
+
+```python
+def heap_sort(arr):
+    heap = MaxHeap()
+    heap.build_heap(arr)
+    for i in range(len(arr) - 1, -1, -1):
+        arr[i] = heap.extract_max()
 ```
 
 The array layout also gives the heap its cache edge. Every operation walks a single path of adjacent slots, so misses are few — a pointer-based tree of the same height would chase 2–5 cache lines per level.
@@ -252,6 +378,64 @@ public:
 };
 ```
 
+```python
+class TrieNode:
+    def __init__(self):
+        self.children = {}
+        self.is_end_of_word = False
+
+
+class Trie:
+    def __init__(self):
+        self.root = TrieNode()   # Python's GC reclaims nodes — no destructor needed
+
+    def insert(self, word):
+        current = self.root
+        for c in word:
+            if c not in current.children:
+                current.children[c] = TrieNode()
+            current = current.children[c]
+        current.is_end_of_word = True
+
+    def search(self, word):
+        current = self.root
+        for c in word:
+            if c not in current.children:
+                return False
+            current = current.children[c]
+        return current.is_end_of_word
+
+    def starts_with(self, prefix):
+        current = self.root
+        for c in prefix:
+            if c not in current.children:
+                return False
+            current = current.children[c]
+        return True   # reached the end of the prefix path
+
+    # Returns True if the child at `node` can be pruned after deletion.
+    def _delete_helper(self, node, word, index):
+        if node is None:
+            return False
+        if index == len(word):
+            if not node.is_end_of_word:
+                return False
+            node.is_end_of_word = False
+            return len(node.children) == 0
+        c = word[index]
+        if c not in node.children:
+            return False
+
+        should_delete = self._delete_helper(node.children[c], word, index + 1)
+        if should_delete:
+            del node.children[c]
+            return len(node.children) == 0 and not node.is_end_of_word
+        return False
+
+    def delete_word(self, word):
+        return self._delete_helper(self.root, word, 0)
+```
+
 `search` distinguishes a stored word from a mere prefix by checking `isEndOfWord`; `startsWith` doesn't care. The destructor deletes children recursively — omit that and every inserted word leaks its trailing nodes.
 
 When the alphabet is small and fixed (say `a`–`z`), replace the hash map with a fixed array of child pointers. This drops the per-lookup hashing and stores children contiguously, improving cache behavior — at the cost of `26 × sizeof(ptr)` per node even when sparse:
@@ -344,6 +528,49 @@ public:
 };
 ```
 
+```python
+class SegmentTree:
+    def __init__(self, arr):
+        self.n = len(arr)
+        self.tree = [0] * (4 * self.n)
+        self._build(arr, 1, 0, self.n - 1)
+
+    def _build(self, arr, node, start, end):
+        if start == end:
+            self.tree[node] = arr[start]
+        else:
+            mid = (start + end) // 2
+            self._build(arr, 2 * node, start, mid)
+            self._build(arr, 2 * node + 1, mid + 1, end)
+            self.tree[node] = self.tree[2 * node] + self.tree[2 * node + 1]
+
+    def _update(self, node, start, end, idx, val):
+        if start == end:
+            self.tree[node] = val
+        else:
+            mid = (start + end) // 2
+            if idx <= mid:
+                self._update(2 * node, start, mid, idx, val)
+            else:
+                self._update(2 * node + 1, mid + 1, end, idx, val)
+            self.tree[node] = self.tree[2 * node] + self.tree[2 * node + 1]
+
+    def _query(self, node, start, end, l, r):
+        if r < start or end < l:
+            return 0                          # identity for sum
+        if l <= start and end <= r:
+            return self.tree[node]            # fully inside
+        mid = (start + end) // 2
+        return (self._query(2 * node, start, mid, l, r) +
+                self._query(2 * node + 1, mid + 1, end, l, r))
+
+    def update(self, idx, val):
+        self._update(1, 0, self.n - 1, idx, val)
+
+    def query(self, l, r):
+        return self._query(1, 0, self.n - 1, l, r)
+```
+
 To answer a different aggregate, change only the combine step and the out-of-range identity: for range-minimum, replace `+` with `min(...)` and return `numeric_limits<int>::max()` instead of `0`. Build is O(n); query and update O(log n); space O(n). The one recurring bug is the range split — the right child must start at `mid + 1`, not `mid`, or overlapping ranges double-count and can recurse forever.
 
 ## 14.4 Fenwick Trees (Binary Indexed Trees)
@@ -390,6 +617,39 @@ public:
 
     int prefixSum(int index) { return getSum(index); }
 };
+```
+
+```python
+class FenwickTree:
+    def __init__(self, arr):
+        self.n = len(arr)
+        self.tree = [0] * (self.n + 1)
+        for i in range(self.n):
+            self._update(i, arr[i])
+
+    def _get_sum(self, index):        # prefix sum of arr[0..index]
+        total = 0
+        index += 1                    # to 1-based
+        while index > 0:
+            total += self.tree[index]
+            index -= index & (-index)
+        return total
+
+    def _update(self, index, delta):
+        index += 1                    # to 1-based
+        while index <= self.n:
+            self.tree[index] += delta
+            index += index & (-index)
+
+    def range_sum(self, l, r):
+        return self._get_sum(r) - self._get_sum(l - 1)
+
+    def update_value(self, index, new_value):
+        delta = new_value - self.range_sum(index, index)
+        self._update(index, delta)
+
+    def prefix_sum(self, index):
+        return self._get_sum(index)
 ```
 
 Build is O(n log n), query and update O(log n), space O(n). Less memory, less code, and faster in practice than a segment tree — the price is that it handles only invertible aggregates without extra machinery.
@@ -442,6 +702,44 @@ public:
 // Usage: range-minimum
 //   SparseTable rmq(arr, [](int a, int b) { return min(a, b); });
 //   rmq.query(l, r);
+```
+
+```python
+from math import log2
+
+
+class SparseTable:
+    def __init__(self, arr, operation):
+        self.n = len(arr)
+        self.op = operation           # min, max, gcd, ...
+        self._build_table(arr)
+
+    def _build_table(self, arr):
+        max_log = int(log2(self.n)) + 1
+        self.table = [[0] * max_log for _ in range(self.n)]
+        self.log_table = [0] * (self.n + 1)
+        self.log_table[1] = 0
+        for i in range(2, self.n + 1):
+            self.log_table[i] = self.log_table[i // 2] + 1
+
+        for i in range(self.n):
+            self.table[i][0] = arr[i]     # length 1
+
+        for j in range(1, max_log):
+            i = 0
+            while i + (1 << j) <= self.n:
+                self.table[i][j] = self.op(self.table[i][j - 1],
+                                           self.table[i + (1 << (j - 1))][j - 1])
+                i += 1
+
+    def query(self, l, r):   # inclusive [l, r]
+        j = self.log_table[r - l + 1]
+        return self.op(self.table[l][j], self.table[r - (1 << j) + 1][j])
+
+
+# Usage: range-minimum
+#   rmq = SparseTable(arr, min)
+#   rmq.query(l, r)
 ```
 
 The catch is right there in the premise: no updates, and O(n log n) space. When the data is static and read-heavy, it's unbeatable; the moment an element can change, you're back to a segment tree.
@@ -498,6 +796,53 @@ public:
 };
 ```
 
+```python
+from math import isqrt
+
+
+class SqrtDecomposition:
+    def __init__(self, input_arr):
+        self.arr = list(input_arr)
+        self.n = len(input_arr)
+        self.block_size = isqrt(self.n)
+        num_blocks = (self.n + self.block_size - 1) // self.block_size
+        self.blocks = [float('inf')] * num_blocks   # minimum of each block
+        for i in range(self.n):
+            b = self._block_index(i)
+            self.blocks[b] = min(self.blocks[b], self.arr[i])
+
+    def _block_index(self, i):
+        return i // self.block_size
+
+    def _block_start(self, b):
+        return b * self.block_size
+
+    def _block_end(self, b):
+        return min((b + 1) * self.block_size - 1, self.n - 1)
+
+    def range_min(self, l, r):
+        min_val = float('inf')
+        lb, rb = self._block_index(l), self._block_index(r)
+        if lb == rb:
+            for i in range(l, r + 1):
+                min_val = min(min_val, self.arr[i])
+        else:
+            for i in range(l, self._block_end(lb) + 1):
+                min_val = min(min_val, self.arr[i])
+            for b in range(lb + 1, rb):
+                min_val = min(min_val, self.blocks[b])
+            for i in range(self._block_start(rb), r + 1):
+                min_val = min(min_val, self.arr[i])
+        return min_val
+
+    def update(self, index, value):
+        self.arr[index] = value
+        b = self._block_index(index)
+        self.blocks[b] = float('inf')          # recompute this block's minimum
+        for i in range(self._block_start(b), self._block_end(b) + 1):
+            self.blocks[b] = min(self.blocks[b], self.arr[i])
+```
+
 For an invertible aggregate like sum, store a running block total so updates drop to O(1) while queries stay O(√n):
 
 ```cpp
@@ -535,6 +880,49 @@ public:
         arr[index] = value;
     }
 };
+```
+
+```python
+from math import isqrt
+
+
+class SqrtDecompositionSum:
+    def __init__(self, input_arr):
+        self.arr = list(input_arr)
+        self.n = len(input_arr)
+        self.block_size = isqrt(self.n)
+        num_blocks = (self.n + self.block_size - 1) // self.block_size
+        self.block_sums = [0] * num_blocks
+        for i in range(self.n):
+            self.block_sums[self._block_index(i)] += self.arr[i]
+
+    def _block_index(self, i):
+        return i // self.block_size
+
+    def _block_start(self, b):
+        return b * self.block_size
+
+    def _block_end(self, b):
+        return min((b + 1) * self.block_size - 1, self.n - 1)
+
+    def range_sum(self, l, r):
+        total = 0
+        lb, rb = self._block_index(l), self._block_index(r)
+        if lb == rb:
+            for i in range(l, r + 1):
+                total += self.arr[i]
+        else:
+            for i in range(l, self._block_end(lb) + 1):
+                total += self.arr[i]
+            for b in range(lb + 1, rb):
+                total += self.block_sums[b]
+            for i in range(self._block_start(rb), r + 1):
+                total += self.arr[i]
+        return total
+
+    def update(self, index, value):
+        self.block_sums[self._block_index(index)] += (value - self.arr[index])
+        self.arr[index] = value
 ```
 
 That rounds out the range-query family. Pick by what constrains you:
@@ -645,6 +1033,76 @@ public:
 };
 ```
 
+```python
+import random
+
+
+class SkipListNode:
+    def __init__(self, val, lvl):
+        self.value = val
+        self.forward = [None] * (lvl + 1)
+
+
+class SkipList:
+    def __init__(self, max_lvl=16):
+        self.max_level = max_lvl
+        self.current_level = 0
+        self.header = SkipListNode(float('-inf'), self.max_level)
+
+    def _random_level(self):
+        level = 0
+        while random.random() < 0.5 and level < self.max_level:
+            level += 1
+        return level
+
+    def search(self, target):
+        current = self.header
+        for i in range(self.current_level, -1, -1):
+            while current.forward[i] and current.forward[i].value < target:
+                current = current.forward[i]
+        current = current.forward[0]
+        return current is not None and current.value == target
+
+    def insert(self, value):
+        update = [None] * (self.max_level + 1)
+        current = self.header
+        for i in range(self.current_level, -1, -1):
+            while current.forward[i] and current.forward[i].value < value:
+                current = current.forward[i]
+            update[i] = current
+        current = current.forward[0]
+        if current and current.value == value:
+            return   # no duplicates
+
+        new_level = self._random_level()
+        if new_level > self.current_level:
+            for i in range(self.current_level + 1, new_level + 1):
+                update[i] = self.header
+            self.current_level = new_level
+        new_node = SkipListNode(value, new_level)
+        for i in range(new_level + 1):
+            new_node.forward[i] = update[i].forward[i]
+            update[i].forward[i] = new_node
+
+    def remove(self, value):
+        update = [None] * (self.max_level + 1)
+        current = self.header
+        for i in range(self.current_level, -1, -1):
+            while current.forward[i] and current.forward[i].value < value:
+                current = current.forward[i]
+            update[i] = current
+        current = current.forward[0]
+        if not current or current.value != value:
+            return
+
+        for i in range(self.current_level + 1):
+            if update[i].forward[i] is not current:
+                break
+            update[i].forward[i] = current.forward[i]
+        while self.current_level > 0 and self.header.forward[self.current_level] is None:
+            self.current_level -= 1
+```
+
 Search, insert, and delete are O(log n) expected, O(n) worst case; space is O(n), since each element appears in ~2 levels on average. You trade a balanced tree's deterministic guarantees for a much simpler implementation.
 
 ## 14.8 Bloom Filters
@@ -700,6 +1158,48 @@ public:
 };
 ```
 
+```python
+from math import log, exp
+
+
+class BloomFilter:
+    def __init__(self, expected_elements, false_positive_rate):
+        # Optimal size m = -n·ln(p)/(ln 2)^2, hash count k = (m/n)·ln 2.
+        self.size = int(-expected_elements * log(false_positive_rate) / (log(2) * log(2)))
+        self.num_hash_functions = int((self.size / expected_elements) * log(2))
+        self.bits = [False] * self.size
+
+    def _hash1(self, k):
+        return hash(k) % self.size
+
+    def _hash2(self, k):
+        return (hash(k) * 31) % self.size
+
+    def _hash3(self, k):
+        return (hash(k) * 17 + 7) % self.size
+
+    def insert(self, key):
+        self.bits[self._hash1(key)] = True
+        self.bits[self._hash2(key)] = True
+        self.bits[self._hash3(key)] = True
+        for i in range(3, self.num_hash_functions):
+            self.bits[(self._hash1(key) + i * self._hash2(key)) % self.size] = True
+
+    def contains(self, key):
+        if (not self.bits[self._hash1(key)] or not self.bits[self._hash2(key)]
+                or not self.bits[self._hash3(key)]):
+            return False
+        for i in range(3, self.num_hash_functions):
+            if not self.bits[(self._hash1(key) + i * self._hash2(key)) % self.size]:
+                return False
+        return True   # may be a false positive
+
+    # False-positive rate ≈ (1 - e^(-kn/m))^k for n inserted elements.
+    def get_false_positive_rate(self, num_elements):
+        exponent = -self.num_hash_functions * num_elements / self.size
+        return (1 - exp(exponent)) ** self.num_hash_functions
+```
+
 Insert and lookup are O(k); space is O(m) bits, independent of element size. To support deletion, a **counting Bloom filter** replaces each bit with a small counter, incremented on insert and decremented on remove:
 
 ```cpp
@@ -730,6 +1230,40 @@ public:
             && counters[hash3(key)] > 0;
     }
 };
+```
+
+```python
+from math import log
+
+
+class CountingBloomFilter:
+    def __init__(self, expected_elements, false_positive_rate):
+        self.size = int(-expected_elements * log(false_positive_rate) / (log(2) * log(2)))
+        self.num_hash_functions = int((self.size / expected_elements) * log(2))
+        self.counters = [0] * self.size
+
+    def _hash1(self, k):
+        return hash(k) % self.size
+
+    def _hash2(self, k):
+        return (hash(k) * 31) % self.size
+
+    def _hash3(self, k):
+        return (hash(k) * 17 + 7) % self.size
+
+    def insert(self, key):
+        self.counters[self._hash1(key)] += 1
+        self.counters[self._hash2(key)] += 1
+        self.counters[self._hash3(key)] += 1
+
+    def remove(self, key):
+        self.counters[self._hash1(key)] -= 1
+        self.counters[self._hash2(key)] -= 1
+        self.counters[self._hash3(key)] -= 1
+
+    def contains(self, key):
+        return (self.counters[self._hash1(key)] > 0 and self.counters[self._hash2(key)] > 0
+                and self.counters[self._hash3(key)] > 0)
 ```
 
 ## 14.9 Count-Min Sketch
@@ -782,6 +1316,31 @@ public:
 };
 ```
 
+```python
+class CountMinSketch:
+    def __init__(self, d, w):
+        self.depth = d
+        self.width = w
+        self.sketch = [[0] * w for _ in range(d)]
+        # Build `depth` independent hashes from one base hash + per-row seed.
+        self.hash_functions = []
+        for i in range(d):
+            seed = i
+            self.hash_functions.append(
+                lambda k, seed=seed: (hash(k) * (2 * seed + 1) + seed * 7) % self.width
+            )
+
+    def increment(self, key):
+        for i in range(self.depth):
+            self.sketch[i][self.hash_functions[i](key)] += 1
+
+    def query(self, key):
+        min_count = float('inf')
+        for i in range(self.depth):
+            min_count = min(min_count, self.sketch[i][self.hash_functions[i](key)])
+        return min_count
+```
+
 Increment and query are O(d); space is O(d × w). With width `w = ⌈e/ε⌉` and depth `d = ⌈ln(1/δ)⌉`, the error is at most `ε·N` (N = total increments) with probability at least `1 − δ`. For ε = δ = 0.01 that's w = 272, d = 5 — about 1,360 counters regardless of stream size. More depth raises confidence; more width lowers collisions.
 
 A common use is **heavy hitters** — elements exceeding a frequency threshold, as in network monitoring or trending-item detection:
@@ -798,6 +1357,19 @@ vector<string> findHeavyHitters(const vector<string>& stream,
             heavyHitters.push_back(e);
     return heavyHitters;
 }
+```
+
+```python
+def find_heavy_hitters(stream, threshold, total_elements):
+    cms = CountMinSketch(5, 272)                 # ε≈0.01, δ≈0.01
+    for e in stream:
+        cms.increment(e)
+
+    heavy_hitters = []
+    for e in stream:
+        if cms.query(e) >= threshold * total_elements:
+            heavy_hitters.append(e)
+    return heavy_hitters
 ```
 
 Reach for a Count-Min sketch when the stream is large, approximate counts suffice, and space is tight; skip it when you need exact counts or the data fits a plain hash table. Variants include Count sketch (±1 signs, lower average error but can underestimate) and conservative-update (increments only the minimum cells to curb overestimation).
@@ -929,6 +1501,110 @@ public:
 };
 ```
 
+```python
+class FibonacciHeap:
+    class _Node:
+        def __init__(self, k):
+            self.key = k
+            self.degree = 0
+            self.marked = False
+            self.parent = None
+            self.child = None
+            self.left = self
+            self.right = self
+
+    def __init__(self):
+        self.min_node = None
+        self.num_nodes = 0
+
+    # Make `node` a child of `parent` (both currently roots).
+    def _link(self, node, parent):
+        node.left.right = node.right          # unlink from root list
+        node.right.left = node.left
+        if parent.child is None:
+            parent.child = node
+            node.left = node.right = node
+        else:
+            node.right = parent.child
+            node.left = parent.child.left
+            parent.child.left.right = node
+            parent.child.left = node
+        node.parent = parent
+        parent.degree += 1
+        node.marked = False
+
+    def _consolidate(self):
+        degree_table = [None] * 64            # 64 covers any practical n
+        roots = []
+        current = self.min_node
+        while True:
+            roots.append(current)
+            current = current.right
+            if current == self.min_node:
+                break
+
+        for root in roots:
+            degree = root.degree
+            while degree_table[degree] is not None:
+                other = degree_table[degree]
+                if root.key > other.key:
+                    root, other = other, root
+                self._link(other, root)       # smaller key becomes parent
+                degree_table[degree] = None
+                degree += 1
+            degree_table[degree] = root
+
+        self.min_node = None
+        for node in degree_table:
+            if node and (self.min_node is None or node.key < self.min_node.key):
+                self.min_node = node
+
+    def insert(self, key):
+        node = self._Node(key)
+        if self.min_node is None:
+            self.min_node = node
+        else:
+            node.right = self.min_node
+            node.left = self.min_node.left
+            self.min_node.left.right = node
+            self.min_node.left = node
+            if key < self.min_node.key:
+                self.min_node = node
+        self.num_nodes += 1
+
+    def extract_min(self):
+        if self.min_node is None:
+            raise RuntimeError("Heap is empty")
+        min_node = self.min_node
+        min_key = min_node.key
+
+        if min_node.child is not None:            # move children to root list
+            child = min_node.child
+            while True:
+                next_child = child.right
+                child.parent = None
+                child.right = self.min_node
+                child.left = self.min_node.left
+                self.min_node.left.right = child
+                self.min_node.left = child
+                child = next_child
+                if child == min_node.child:
+                    break
+
+        min_node.left.right = min_node.right      # unlink min
+        min_node.right.left = min_node.left
+        if min_node == min_node.right:
+            self.min_node = None
+        else:
+            self.min_node = min_node.right
+            self._consolidate()
+        self.num_nodes -= 1
+        return min_key
+
+    def empty(self):
+        return self.min_node is None
+```
+
 In practice Fibonacci heaps carry large constant factors and poor cache behavior — pointer-heavy nodes, exactly the layout the intro warned against — so a plain binary heap, or a pairing heap, usually wins outside of graph algorithms dominated by decrease-key. Reach for one only when decrease-key or merge is genuinely the bottleneck.
 
 ## 14.11 Suffix Array and Suffix Tree
@@ -1014,6 +1690,79 @@ public:
 };
 ```
 
+```python
+class SuffixArray:
+    def __init__(self, s):
+        self.text = s + '$'         # sentinel smaller than any real char
+        self._build_suffix_array()
+        self._build_lcp()
+
+    def _build_suffix_array(self):
+        n = len(self.text)
+        self.suffix_array = list(range(n))
+        self.suffix_array.sort(key=lambda a: self.text[a:])
+
+    def _build_lcp(self):
+        n = len(self.text)
+        self.lcp = [0] * n
+        for i in range(1, n):
+            length = 0
+            a, b = self.suffix_array[i - 1], self.suffix_array[i]
+            while a + length < n and b + length < n and self.text[a + length] == self.text[b + length]:
+                length += 1
+            self.lcp[i] = length
+
+    # O(m log n): binary-search for any suffix beginning with `pattern`.
+    def search(self, pattern):
+        left, right = 0, len(self.suffix_array) - 1
+        while left <= right:
+            mid = left + (right - left) // 2
+            suffix = self.text[self.suffix_array[mid]:]
+            if suffix[:len(pattern)] == pattern:
+                return True
+            if suffix < pattern:
+                left = mid + 1
+            else:
+                right = mid - 1
+        return False
+
+    def find_all_occurrences(self, pattern):
+        occ = []
+        lo, hi, first = 0, len(self.suffix_array) - 1, -1
+        while lo <= hi:                         # first matching suffix
+            mid = lo + (hi - lo) // 2
+            suffix = self.text[self.suffix_array[mid]:]
+            if suffix[:len(pattern)] == pattern:
+                first = mid
+                hi = mid - 1
+            elif suffix < pattern:
+                lo = mid + 1
+            else:
+                hi = mid - 1
+        if first == -1:
+            return occ
+
+        lo, hi = first, len(self.suffix_array) - 1
+        last = first
+        while lo <= hi:                         # last matching suffix
+            mid = lo + (hi - lo) // 2
+            suffix = self.text[self.suffix_array[mid]:]
+            if suffix[:len(pattern)] == pattern:
+                last = mid
+                lo = mid + 1
+            else:
+                hi = mid - 1
+        for i in range(first, last + 1):
+            occ.append(self.suffix_array[i])
+        return occ
+
+    def get_suffix_array(self):
+        return self.suffix_array
+
+    def get_lcp(self):
+        return self.lcp
+```
+
 A **suffix tree** is a compressed trie of all suffixes; Ukkonen's algorithm builds it in O(n) and searches a pattern in O(m), and it directly solves longest-common-substring, longest-repeated-substring, and drives applications from LZ77 compression to DNA analysis. But it is notoriously intricate to implement correctly, so a suffix array plus LCP is usually preferred in practice — comparable performance, far less code. Reach for either only when the same text is searched for many patterns; for a single search over small text, a direct string search ([Chapter 7](07-string-search-algorithms.md)) is simpler.
 
 ## 14.12 Persistent Data Structures
@@ -1079,6 +1828,71 @@ public:
 
     int getLatestVersion() { return roots.size() - 1; }
 };
+```
+
+```python
+class PersistentSegmentTree:
+    class _Node:
+        __slots__ = ('value', 'left', 'right')
+
+        def __init__(self, value, left, right):
+            self.value = value
+            self.left = left
+            self.right = right
+
+    @classmethod
+    def _leaf(cls, v):
+        return cls._Node(v, None, None)
+
+    @classmethod
+    def _internal(cls, left, right):
+        value = 0
+        if left:
+            value += left.value
+        if right:
+            value += right.value
+        return cls._Node(value, left, right)
+
+    def __init__(self, arr):
+        self.n = len(arr)
+        self.roots = [self._build(arr, 0, self.n - 1)]   # one root per version
+
+    def _build(self, arr, left, right):
+        if left == right:
+            return self._leaf(arr[left])
+        mid = left + (right - left) // 2
+        return self._internal(self._build(arr, left, mid),
+                              self._build(arr, mid + 1, right))
+
+    def _update(self, node, left, right, index, value):
+        if left == right:
+            return self._leaf(value)
+        mid = left + (right - left) // 2
+        if index <= mid:
+            return self._internal(self._update(node.left, left, mid, index, value),
+                                  node.right)
+        else:
+            return self._internal(node.left,
+                                  self._update(node.right, mid + 1, right, index, value))
+
+    def _query(self, node, left, right, q_l, q_r):
+        if q_r < left or q_l > right:
+            return 0
+        if q_l <= left and right <= q_r:
+            return node.value
+        mid = left + (right - left) // 2
+        return (self._query(node.left, left, mid, q_l, q_r)
+                + self._query(node.right, mid + 1, right, q_l, q_r))
+
+    # Create a new version from an existing one.
+    def update(self, version, index, value):
+        self.roots.append(self._update(self.roots[version], 0, self.n - 1, index, value))
+
+    def query(self, version, left, right):
+        return self._query(self.roots[version], 0, self.n - 1, left, right)
+
+    def get_latest_version(self):
+        return len(self.roots) - 1
 ```
 
 Persistence powers time-travel queries ("what was the sum at version t?"), immutable/functional data, and rollback. Use it when history matters; a regular structure is smaller and simpler when only the current state does.
@@ -1161,6 +1975,18 @@ The next chapter turns to **greedy algorithms**, many of which — Huffman codin
     }
     ```
 
+    ```python
+    def find_duplicates(nums):
+        result = []
+        for i in range(len(nums)):
+            idx = abs(nums[i]) - 1
+            if nums[idx] < 0:
+                result.append(abs(nums[i]))
+            else:
+                nums[idx] = -nums[idx]
+        return result
+    ```
+
     Because values lie in `[1, n]`, value `x` maps to index `x-1`, and the array doubles as its own hash table. The *sign* at index `x-1` records whether `x` has been seen: positive means unseen (flip it negative); already negative means `x` is a duplicate. Since each value appears at most twice, one bit of state (the sign) suffices, so no extra space is needed. Time O(n), auxiliary space O(1).
 
 16. **Split Array Largest Sum**: split `nums` into `k` contiguous non-empty subarrays minimizing the largest subarray sum.
@@ -1185,6 +2011,32 @@ The next chapter turns to **greedy algorithms**, many of which — Huffman codin
         }
         return low;
     }
+    ```
+
+    ```python
+    def can_split(nums, target, k):
+        curr_sum, count = 0, 1
+        for x in nums:
+            if curr_sum + x > target:
+                curr_sum = x
+                count += 1
+            else:
+                curr_sum += x
+        return count <= k
+
+
+    def split_array(nums, k):
+        low, high = 0, 0
+        for x in nums:
+            low = max(low, x)
+            high += x
+        while low < high:
+            mid = low + (high - low) // 2
+            if can_split(nums, mid, k):
+                high = mid
+            else:
+                low = mid + 1
+        return low
     ```
 
     This is *binary search on the answer*. The result lies in `[max(nums), sum(nums)]`: the lower bound must hold the largest single element, the upper bound puts everything in one subarray. For a candidate `mid`, a greedy pass (`canSplit`) counts how many subarrays are needed if each is capped at `mid`; feasibility is monotone in `mid`, so binary search converges on the smallest feasible cap. Time O(n·log(sum)), space O(1).

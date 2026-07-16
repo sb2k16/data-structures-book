@@ -31,6 +31,13 @@ long long factorial(int n) {
 }
 ```
 
+```python
+def factorial(n):
+    if n <= 1:                        # base case
+        return 1
+    return n * factorial(n - 1)       # recursive case: n shrinks toward 1
+```
+
 Watch `factorial(5)` run and you can see the stack grow on the way down and unwind on the way back up — the return values are computed only as the frames pop:
 
 ```
@@ -95,6 +102,14 @@ long long factorialIterative(int n) {
 }
 ```
 
+```python
+def factorial_iterative(n):
+    result = 1
+    for i in range(2, n + 1):
+        result *= i
+    return result
+```
+
 For a tree or graph walk, the honest conversion keeps the recursion's shape but moves the stack to the heap:
 
 ```cpp
@@ -111,6 +126,18 @@ void dfs(Node* root) {
 }
 ```
 
+```python
+# Iterative DFS: the explicit stack replaces the call stack,
+# lives on the heap, and can grow far past any recursion limit.
+def dfs(root):
+    stack = [root] if root else []
+    while stack:
+        node = stack.pop()
+        process(node)
+        for child in node.children:
+            stack.append(child)
+```
+
 This is the standard defense when a recursive tree walk might see pathological depth: same traversal, no call-stack ceiling.
 
 ## Tail recursion
@@ -122,6 +149,13 @@ long long factorialTail(int n, long long acc = 1) {
     if (n <= 1) return acc;
     return factorialTail(n - 1, n * acc);   // nothing happens after this call
 }
+```
+
+```python
+def factorial_tail(n, acc=1):
+    if n <= 1:
+        return acc
+    return factorial_tail(n - 1, n * acc)   # nothing happens after this call
 ```
 
 One caveat aimed squarely at systems code: **C++ does not guarantee tail-call optimization.** GCC and Clang usually do it at `-O2`, but the standard permits them not to, and a debug build (`-O0`) generally won't — so a "tail-recursive" C++ function can still blow the stack. Languages that guarantee TCO (Scheme, and Scala via `@tailrec`) let you lean on it. In C++, if you need the depth guarantee, write the loop.
@@ -145,6 +179,17 @@ int binarySearch(const std::vector<int>& a, int lo, int hi, int target) {
 }
 ```
 
+```python
+def binary_search(a, lo, hi, target):
+    if lo > hi:                            # base case: not found
+        return -1
+    mid = lo + (hi - lo) // 2              # avoids lo+hi overflow (moot in Python)
+    if a[mid] == target:
+        return mid
+    return (binary_search(a, lo, mid - 1, target) if a[mid] > target
+            else binary_search(a, mid + 1, hi, target))
+```
+
 **Multiple / exponential recursion** — two or more calls on *overlapping* subproblems, and the tree explodes. Naive Fibonacci is the cautionary tale; we fix it in the next section.
 
 Three more classics, each a clean recursive shape:
@@ -160,6 +205,16 @@ void hanoi(int n, char from, char to, char via) {
 }
 ```
 
+```python
+def hanoi(n, from_peg, to_peg, via_peg):
+    if n == 1:
+        print(f"Move disk 1: {from_peg} -> {to_peg}")
+        return
+    hanoi(n - 1, from_peg, via_peg, to_peg)
+    print(f"Move disk {n}: {from_peg} -> {to_peg}")
+    hanoi(n - 1, via_peg, to_peg, from_peg)
+```
+
 **Fast exponentiation** — halving the exponent turns O(n) multiplications into O(log n), which is also O(log n) depth:
 
 ```cpp
@@ -170,6 +225,14 @@ double power(double x, int n) {          // assumes n >= 0
 }
 ```
 
+```python
+def power(x, n):                     # assumes n >= 0
+    if n == 0:
+        return 1.0
+    half = power(x, n // 2)
+    return half * half if n % 2 == 0 else x * half * half
+```
+
 **Reverse a string in place** — swap the ends, recurse inward, stop when the pointers meet:
 
 ```cpp
@@ -178,6 +241,14 @@ void reverse(std::string& s, int lo, int hi) {
     std::swap(s[lo], s[hi]);
     reverse(s, lo + 1, hi - 1);
 }
+```
+
+```python
+def reverse(s, lo, hi):              # s is a list of characters (strings are immutable)
+    if lo >= hi:                     # base case: pointers crossed
+        return
+    s[lo], s[hi] = s[hi], s[lo]
+    reverse(s, lo + 1, hi - 1)
 ```
 
 ## Memoization: the bridge to dynamic programming
@@ -215,6 +286,18 @@ long long fib(int n) {
 }
 ```
 
+```python
+def fib(n, memo=None):
+    if memo is None:
+        memo = [-1] * (n + 1)
+    if n <= 1:
+        return n
+    if memo[n] != -1:                       # already solved
+        return memo[n]
+    memo[n] = fib(n - 1, memo) + fib(n - 2, memo)
+    return memo[n]
+```
+
 This is **top-down dynamic programming**, full stop. The moment a recursion has overlapping subproblems, memoization converts it to DP; flip the direction and fill the table bottom-up and you have removed the recursion (and its stack) entirely. Chapter 12 develops this into a discipline — for now, the reflex to build is: *overlapping subproblems ⇒ cache them.*
 
 ## Backtracking: recursion that undoes its choices
@@ -250,6 +333,17 @@ void subsets(const std::vector<int>& nums, int i,
 }
 ```
 
+```python
+def subsets(nums, i, cur, out):
+    if i == len(nums):
+        out.append(cur.copy())
+        return
+    cur.append(nums[i])                     # choose to include nums[i]
+    subsets(nums, i + 1, cur, out)
+    cur.pop()                               # undo, then explore excluding it
+    subsets(nums, i + 1, cur, out)
+```
+
 Permutations use the same shape with a swap as the reversible move — swap an element into place, recurse, swap it back:
 
 ```cpp
@@ -262,6 +356,17 @@ void permute(std::vector<int>& nums, int start,
         std::swap(nums[start], nums[i]);    // undo the swap
     }
 }
+```
+
+```python
+def permute(nums, start, out):
+    if start == len(nums):
+        out.append(nums.copy())
+        return
+    for i in range(start, len(nums)):
+        nums[start], nums[i] = nums[i], nums[start]   # choose nums[i] for this position
+        permute(nums, start + 1, out)
+        nums[start], nums[i] = nums[i], nums[start]   # undo the swap
 ```
 
 ## Pruning: where backtracking earns its keep
@@ -297,6 +402,32 @@ int countNQueens(int n) {
 }
 ```
 
+```python
+def count_n_queens(n):
+    col = [0] * n
+    solutions = 0
+
+    # Try every column for `row`, recursing only on placements that survive pruning.
+    def place(row):
+        nonlocal solutions
+        if row == n:                       # all rows filled: a full solution
+            solutions += 1
+            return
+        for c in range(n):
+            safe = True
+            for r in range(row):           # check against queens above
+                if col[r] == c or abs(col[r] - c) == row - r:
+                    safe = False
+                    break
+            if safe:                       # prune: only descend into valid boards
+                col[row] = c
+                place(row + 1)             # col[row] is overwritten next iteration,
+                                           # so no explicit undo is needed
+
+    place(0)
+    return solutions
+```
+
 Two rows can share a diagonal exactly when their column gap equals their row gap — that's the `abs(col[r] - c) == row - r` test. Without this check the search visits nⁿ placements; with it, whole branches vanish the instant a conflict appears, and 8-Queens finishes instantly. To find just *one* solution instead of counting all, have `place` return `bool` and propagate `true` up the moment a full board is reached — the recursion then unwinds without exploring the rest of the tree.
 
 **Sudoku** escalates the same idea. Scan for an empty cell, try each digit that doesn't already conflict, recurse, and undo on failure — the conflict check prunes the vast majority of the 9⁸¹ raw possibilities:
@@ -325,6 +456,30 @@ bool solveSudoku(std::vector<std::vector<char>>& b) {
             }
     return true;                                        // no empty cells: solved
 }
+```
+
+```python
+def is_valid(b, row, col, num):
+    for k in range(9):
+        if b[row][k] == num or b[k][col] == num:              # row, column
+            return False
+        br, bc = 3 * (row // 3) + k // 3, 3 * (col // 3) + k % 3
+        if b[br][bc] == num:                                  # 3x3 box
+            return False
+    return True
+
+def solve_sudoku(b):
+    for r in range(9):
+        for c in range(9):
+            if b[r][c] == '.':
+                for num in "123456789":
+                    if is_valid(b, r, c, num):
+                        b[r][c] = num                         # choose
+                        if solve_sudoku(b):
+                            return True
+                        b[r][c] = '.'                         # undo
+                return False                                  # no digit fits: dead end
+    return True                                               # no empty cells: solved
 ```
 
 You can prune harder still with **constraint propagation**: instead of filling cells left-to-right, always expand the cell with the *fewest* legal digits (the minimum-remaining-values heuristic). Fewer branches at the top of the tree means a smaller tree overall — the same lever, pulled earlier. This is the entry point to the whole field of constraint solvers.

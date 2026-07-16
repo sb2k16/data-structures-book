@@ -30,6 +30,14 @@ long long fibonacciNaive(int n) {
 }
 ```
 
+```python
+# Naive recursive Fibonacci - O(2^n) time
+def fibonacci_naive(n):
+    if n <= 1:
+        return n
+    return fibonacci_naive(n - 1) + fibonacci_naive(n - 2)
+```
+
 Draw its call tree and the waste is obvious:
 
 ```
@@ -63,6 +71,19 @@ long long fibonacciMemo(int n) {
 }
 ```
 
+```python
+# Memoized Fibonacci - O(n) time
+def fibonacci_memo(n, memo=None):
+    if memo is None:
+        memo = {}
+    if n <= 1:
+        return n
+    if n in memo:
+        return memo[n]
+    memo[n] = fibonacci_memo(n - 1, memo) + fibonacci_memo(n - 2, memo)
+    return memo[n]
+```
+
 **Tabulation** builds the same answers iteratively from the base cases, with no recursion (and no stack-overflow risk) and a predictable, sequential access pattern:
 
 ```cpp
@@ -87,6 +108,30 @@ long long fibonacciOptimized(int n) {
     }
     return current;
 }
+```
+
+```python
+# Tabulated Fibonacci - O(n) time, O(n) space
+def fibonacci_tab(n):
+    if n <= 1:
+        return n
+    dp = [0] * (n + 1)
+    dp[0] = 0
+    dp[1] = 1
+    for i in range(2, n + 1):
+        dp[i] = dp[i - 1] + dp[i - 2]
+    return dp[n]
+
+# Space-optimized - O(n) time, O(1) space
+def fibonacci_optimized(n):
+    if n <= 1:
+        return n
+    prev2, prev1, current = 0, 1, 0
+    for i in range(2, n + 1):
+        current = prev1 + prev2
+        prev2 = prev1
+        prev1 = current
+    return current
 ```
 
 That last version is the endgame of most 1D DP: once `dp[i]` depends only on the two values before it, the table collapses to two scalars. *Keep only the state the recurrence actually reads* — a move that recurs throughout the chapter.
@@ -170,6 +215,20 @@ int climbStairsOptimized(int n) {
 }
 ```
 
+```python
+def climb_stairs_optimized(n):
+    if n <= 2:
+        return n
+    prev2 = 1  # ways to reach step 1
+    prev1 = 2  # ways to reach step 2
+    current = 0
+    for i in range(3, n + 1):
+        current = prev1 + prev2
+        prev2 = prev1
+        prev1 = current
+    return current
+```
+
 ### House Robber
 
 Maximize the loot without robbing two adjacent houses: at each house, either skip it (`dp[i-1]`) or rob it (`dp[i-2] + nums[i]`).
@@ -200,6 +259,32 @@ int robOptimized(vector<int>& nums) {
 }
 ```
 
+```python
+# Tabulation
+def rob(nums):
+    if not nums:
+        return 0
+    if len(nums) == 1:
+        return nums[0]
+    dp = [0] * len(nums)
+    dp[0] = nums[0]
+    dp[1] = max(nums[0], nums[1])
+    for i in range(2, len(nums)):
+        dp[i] = max(dp[i - 1], dp[i - 2] + nums[i])
+    return dp[len(nums) - 1]
+
+# Space-optimized O(1)
+def rob_optimized(nums):
+    if not nums:
+        return 0
+    prev2, prev1 = 0, nums[0]
+    for i in range(1, len(nums)):
+        current = max(prev1, prev2 + nums[i])
+        prev2 = prev1
+        prev1 = current
+    return prev1
+```
+
 ### Longest Common Subsequence (LCS)
 
 Length of the longest subsequence common to two strings. If the current characters match, extend the diagonal; otherwise take the better of dropping one character from either string.
@@ -216,6 +301,19 @@ int longestCommonSubsequence(string text1, string text2) {
                 dp[i][j] = max(dp[i - 1][j], dp[i][j - 1]);
     return dp[m][n];
 }
+```
+
+```python
+def longest_common_subsequence(text1, text2):
+    m, n = len(text1), len(text2)
+    dp = [[0] * (n + 1) for _ in range(m + 1)]
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
+            if text1[i - 1] == text2[j - 1]:
+                dp[i][j] = 1 + dp[i - 1][j - 1]
+            else:
+                dp[i][j] = max(dp[i - 1][j], dp[i][j - 1])
+    return dp[m][n]
 ```
 
 To recover the subsequence itself, keep the full table and backtrack from `(m, n)`:
@@ -241,6 +339,30 @@ string getLCS(string text1, string text2) {
 }
 ```
 
+```python
+def get_lcs(text1, text2):
+    m, n = len(text1), len(text2)
+    dp = [[0] * (n + 1) for _ in range(m + 1)]
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
+            dp[i][j] = (1 + dp[i - 1][j - 1]
+                        if text1[i - 1] == text2[j - 1]
+                        else max(dp[i - 1][j], dp[i][j - 1]))
+
+    lcs = ""
+    i, j = m, n
+    while i > 0 and j > 0:
+        if text1[i - 1] == text2[j - 1]:
+            lcs = text1[i - 1] + lcs
+            i -= 1
+            j -= 1
+        elif dp[i - 1][j] > dp[i][j - 1]:
+            i -= 1
+        else:
+            j -= 1
+    return lcs
+```
+
 ### Edit Distance (Levenshtein)
 
 Minimum insert/delete/replace operations to turn `word1` into `word2`. Converting to or from the empty string costs the string's length; on a mismatch, take the cheapest of delete, insert, or replace.
@@ -263,6 +385,25 @@ int minDistance(string word1, string word2) {
 }
 ```
 
+```python
+def min_distance(word1, word2):
+    m, n = len(word1), len(word2)
+    dp = [[0] * (n + 1) for _ in range(m + 1)]
+    for i in range(m + 1):
+        dp[i][0] = i  # i deletions
+    for j in range(n + 1):
+        dp[0][j] = j  # j insertions
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
+            if word1[i - 1] == word2[j - 1]:
+                dp[i][j] = dp[i - 1][j - 1]
+            else:
+                dp[i][j] = 1 + min(dp[i - 1][j],       # delete
+                                   dp[i][j - 1],        # insert
+                                   dp[i - 1][j - 1])    # replace
+    return dp[m][n]
+```
+
 Each row depends only on the previous one, so a rolling array cuts space to O(min(m,n)):
 
 ```cpp
@@ -281,6 +422,23 @@ int minDistanceOptimized(string word1, string word2) {
     }
     return prev[n];
 }
+```
+
+```python
+def min_distance_optimized(word1, word2):
+    if len(word1) < len(word2):
+        word1, word2 = word2, word1
+    m, n = len(word1), len(word2)
+    prev = list(range(n + 1))
+    curr = [0] * (n + 1)
+    for i in range(1, m + 1):
+        curr[0] = i
+        for j in range(1, n + 1):
+            curr[j] = (prev[j - 1]
+                       if word1[i - 1] == word2[j - 1]
+                       else 1 + min(prev[j], curr[j - 1], prev[j - 1]))
+        prev = curr[:]
+    return prev[n]
 ```
 
 ### Coin Change
@@ -308,6 +466,27 @@ int coinChangeWays(vector<int>& coins, int amount) {
             dp[i] += dp[i - coin];
     return dp[amount];
 }
+```
+
+```python
+# Minimum coins
+def coin_change(coins, amount):
+    dp = [amount + 1] * (amount + 1)  # sentinel > any real answer
+    dp[0] = 0
+    for i in range(1, amount + 1):
+        for coin in coins:
+            if coin <= i:
+                dp[i] = min(dp[i], dp[i - coin] + 1)
+    return -1 if dp[amount] > amount else dp[amount]
+
+# Count the number of ways to make change
+def coin_change_ways(coins, amount):
+    dp = [0] * (amount + 1)
+    dp[0] = 1
+    for coin in coins:          # coins outer loop -> combinations, not permutations
+        for i in range(coin, amount + 1):
+            dp[i] += dp[i - coin]
+    return dp[amount]
 ```
 
 ### Longest Increasing Subsequence (LIS)
@@ -338,6 +517,30 @@ int lengthOfLISOptimized(vector<int>& nums) {
 }
 ```
 
+```python
+# O(n^2)
+def length_of_lis(nums):
+    n = len(nums)
+    dp = [1] * n
+    for i in range(1, n):
+        for j in range(i):
+            if nums[j] < nums[i]:
+                dp[i] = max(dp[i], dp[j] + 1)
+    return max(dp)
+
+# O(n log n): tails[k] = smallest possible tail of an increasing subsequence of length k+1
+def length_of_lis_optimized(nums):
+    import bisect
+    tails = []
+    for num in nums:
+        i = bisect.bisect_left(tails, num)
+        if i == len(tails):
+            tails.append(num)
+        else:
+            tails[i] = num
+    return len(tails)
+```
+
 To reconstruct the subsequence, record a parent index whenever `dp[i]` is extended, then follow parents back from the best endpoint:
 
 ```cpp
@@ -359,6 +562,26 @@ vector<int> getLIS(vector<int>& nums) {
 }
 ```
 
+```python
+def get_lis(nums):
+    n = len(nums)
+    dp = [1] * n
+    parent = [-1] * n
+    for i in range(1, n):
+        for j in range(i):
+            if nums[j] < nums[i] and dp[j] + 1 > dp[i]:
+                dp[i] = dp[j] + 1
+                parent[i] = j
+    max_index = max(range(n), key=lambda k: dp[k])
+    lis = []
+    cur = max_index
+    while cur != -1:
+        lis.append(nums[cur])
+        cur = parent[cur]
+    lis.reverse()
+    return lis
+```
+
 ## 12.5 Two-dimensional DP
 
 ### Unique Paths
@@ -373,6 +596,15 @@ int uniquePathsOptimized(int m, int n) {
             prev[j] += prev[j - 1];   // prev[j] (above) + prev[j-1] (left, already updated)
     return prev[n - 1];
 }
+```
+
+```python
+def unique_paths_optimized(m, n):
+    prev = [1] * n
+    for i in range(1, m):
+        for j in range(1, n):
+            prev[j] += prev[j - 1]   # prev[j] (above) + prev[j-1] (left, already updated)
+    return prev[n - 1]
 ```
 
 With obstacles, a blocked cell contributes zero paths:
@@ -394,6 +626,22 @@ int uniquePathsWithObstacles(vector<vector<int>>& obstacleGrid) {
 }
 ```
 
+```python
+def unique_paths_with_obstacles(obstacle_grid):
+    m, n = len(obstacle_grid), len(obstacle_grid[0])
+    dp = [[0] * n for _ in range(m)]
+    dp[0][0] = 1 if obstacle_grid[0][0] == 0 else 0
+    for i in range(1, m):
+        dp[i][0] = 1 if (obstacle_grid[i][0] == 0 and dp[i - 1][0] == 1) else 0
+    for j in range(1, n):
+        dp[0][j] = 1 if (obstacle_grid[0][j] == 0 and dp[0][j - 1] == 1) else 0
+    for i in range(1, m):
+        for j in range(1, n):
+            if obstacle_grid[i][j] == 0:
+                dp[i][j] = dp[i - 1][j] + dp[i][j - 1]
+    return dp[m - 1][n - 1]
+```
+
 ### Minimum Path Sum in a Triangle
 
 Minimum root-to-bottom path sum, filled from the bottom row up. The rolling-array version reuses the last row in place:
@@ -407,6 +655,16 @@ int minimumTotalOptimized(vector<vector<int>>& triangle) {
             dp[j] = triangle[i][j] + min(dp[j], dp[j + 1]);
     return dp[0];
 }
+```
+
+```python
+def minimum_total_optimized(triangle):
+    n = len(triangle)
+    dp = list(triangle[n - 1])           # start from the bottom row
+    for i in range(n - 2, -1, -1):
+        for j in range(i + 1):
+            dp[j] = triangle[i][j] + min(dp[j], dp[j + 1])
+    return dp[0]
 ```
 
 ## 12.6 Two more classics: palindromes and word break
@@ -428,6 +686,20 @@ int longestPalindromeSubseqOptimized(string s) {
 }
 ```
 
+```python
+def longest_palindrome_subseq_optimized(s):
+    n = len(s)
+    prev = [0] * n
+    curr = [0] * n
+    for i in range(n - 1, -1, -1):
+        curr[i] = 1                                 # single character
+        for j in range(i + 1, n):
+            curr[j] = (2 + prev[j - 1] if s[i] == s[j]
+                       else max(prev[j], curr[j - 1]))
+        prev = curr[:]
+    return curr[n - 1]
+```
+
 **Word Break.** Can `s` be segmented into dictionary words? `dp[i]` is true if `s[0..i-1]` is segmentable:
 
 ```cpp
@@ -441,6 +713,20 @@ bool wordBreak(string s, vector<string>& wordDict) {
             if (dp[j] && words.count(s.substr(j, i - j))) { dp[i] = true; break; }
     return dp[n];
 }
+```
+
+```python
+def word_break(s, word_dict):
+    n = len(s)
+    words = set(word_dict)
+    dp = [False] * (n + 1)
+    dp[0] = True
+    for i in range(1, n + 1):
+        for j in range(i):
+            if dp[j] and s[j:i] in words:
+                dp[i] = True
+                break
+    return dp[n]
 ```
 
 ## 12.7 Knapsack variants
@@ -458,6 +744,16 @@ int knapsackOptimized(vector<int>& weights, vector<int>& values, int capacity) {
 }
 ```
 
+```python
+# 0/1 Knapsack, O(capacity) space
+def knapsack_optimized(weights, values, capacity):
+    dp = [0] * (capacity + 1)
+    for i in range(len(weights)):
+        for w in range(capacity, weights[i] - 1, -1):   # backwards -> 0/1 semantics
+            dp[w] = max(dp[w], dp[w - weights[i]] + values[i])
+    return dp[capacity]
+```
+
 **Unbounded knapsack** allows unlimited copies; the capacity loop runs **forward**, so an item's own updated value can be reused:
 
 ```cpp
@@ -471,6 +767,16 @@ int unboundedKnapsack(vector<int>& weights, vector<int>& values, int capacity) {
 }
 ```
 
+```python
+def unbounded_knapsack(weights, values, capacity):
+    dp = [0] * (capacity + 1)
+    for w in range(1, capacity + 1):
+        for i in range(len(weights)):
+            if weights[i] <= w:
+                dp[w] = max(dp[w], dp[w - weights[i]] + values[i])
+    return dp[capacity]
+```
+
 **Subset Sum** — is there a subset summing to `target`? — is the boolean specialization of 0/1 knapsack:
 
 ```cpp
@@ -482,6 +788,16 @@ bool subsetSum(vector<int>& nums, int target) {
             dp[j] = dp[j] || dp[j - num];
     return dp[target];
 }
+```
+
+```python
+def subset_sum(nums, target):
+    dp = [False] * (target + 1)
+    dp[0] = True
+    for num in nums:
+        for j in range(target, num - 1, -1):   # backwards -> each item once
+            dp[j] = dp[j] or dp[j - num]
+    return dp[target]
 ```
 
 That single forward-vs-backward line is the entire difference between unbounded and 0/1 semantics. (Fractional knapsack, by contrast, is solved greedily, not by DP — [Chapter 16](16-greedy-algorithms.md).)
@@ -514,6 +830,31 @@ public:
 };
 ```
 
+```python
+class SubsetSumSolver:
+    def __init__(self, nums):
+        self.numbers = nums
+        self.memo = {}                       # key = (index, target)
+
+    def _can_make_sum_memo(self, index, target):
+        if target == 0:
+            return True
+        if index >= len(self.numbers) or target < 0:
+            return False
+
+        key = (index, target)
+        if key in self.memo:
+            return self.memo[key]
+
+        result = (self._can_make_sum_memo(index + 1, target - self.numbers[index])  # include
+                  or self._can_make_sum_memo(index + 1, target))                    # exclude
+        self.memo[key] = result
+        return result
+
+    def can_make_sum(self, target):
+        return self._can_make_sum_memo(0, target)
+```
+
 The same shape extends to multiple constraints — a 3D knapsack keys its memo on `(index, remainingWeight, remainingVolume)`:
 
 ```cpp
@@ -541,6 +882,31 @@ public:
         return solve(0, maxW, maxV, wt, val, vol);
     }
 };
+```
+
+```python
+class Knapsack3D:
+    def __init__(self):
+        self.memo = {}
+
+    def _solve(self, index, w, v, wt, val, vol):
+        if index >= len(wt) or w < 0 or v < 0:
+            return 0
+        key = (index, w, v)
+        if key in self.memo:
+            return self.memo[key]
+
+        not_take = self._solve(index + 1, w, v, wt, val, vol)
+        take = 0
+        if wt[index] <= w and vol[index] <= v:
+            take = val[index] + self._solve(index + 1, w - wt[index], v - vol[index],
+                                            wt, val, vol)
+
+        self.memo[key] = max(not_take, take)
+        return self.memo[key]
+
+    def knapsack(self, wt, val, vol, max_w, max_v):
+        return self._solve(0, max_w, max_v, wt, val, vol)
 ```
 
 The lesson is state design, not backtracking mechanics: a good key collapses the search space, while a key that encodes an entire path (a full board layout, say) never repeats and so memoizes nothing.
@@ -572,6 +938,22 @@ int minPathSum(vector<vector<int>>& grid) {
 }
 ```
 
+```python
+# LeetCode 64: Minimum Path Sum
+def min_path_sum(grid):
+    m, n = len(grid), len(grid[0])
+    dp = [[0] * n for _ in range(m)]
+    dp[0][0] = grid[0][0]
+    for j in range(1, n):
+        dp[0][j] = dp[0][j - 1] + grid[0][j]
+    for i in range(1, m):
+        dp[i][0] = dp[i - 1][0] + grid[i][0]
+    for i in range(1, m):
+        for j in range(1, n):
+            dp[i][j] = grid[i][j] + min(dp[i - 1][j], dp[i][j - 1])
+    return dp[m - 1][n - 1]
+```
+
 ### Pattern 3: Knapsack (Pick or Skip)
 
 At each item, decide take or skip. Signal words: "subset", "partition", "can you make sum X". The 1D optimization iterates capacity **backwards** for 0/1 semantics (§12.7).
@@ -589,6 +971,21 @@ bool canPartition(vector<int>& nums) {
             dp[sum] = dp[sum] || dp[sum - num];
     return dp[target];
 }
+```
+
+```python
+# LeetCode 416: Partition Equal Subset Sum (subset sum to total_sum/2)
+def can_partition(nums):
+    total_sum = sum(nums)
+    if total_sum % 2 != 0:
+        return False
+    target = total_sum // 2
+    dp = [False] * (target + 1)
+    dp[0] = True
+    for num in nums:
+        for s in range(target, num - 1, -1):
+            dp[s] = dp[s] or dp[s - num]
+    return dp[target]
 ```
 
 ### Pattern 4: Longest Subsequence / Subarray
@@ -619,6 +1016,24 @@ int maxCoins(vector<int>& nums) {
 }
 ```
 
+```python
+# LeetCode 312: Burst Balloons -- dp[i][j] over balloon k burst LAST in [i,j]
+def max_coins(nums):
+    n = len(nums)
+    balloons = [1] * (n + 2)
+    for i in range(n):
+        balloons[i + 1] = nums[i]
+    dp = [[0] * (n + 2) for _ in range(n + 2)]
+    for length in range(1, n + 1):
+        for i in range(1, n - length + 2):
+            j = i + length - 1
+            for k in range(i, j + 1):
+                coins = (balloons[i - 1] * balloons[k] * balloons[j + 1]
+                         + dp[i][k - 1] + dp[k + 1][j])
+                dp[i][j] = max(dp[i][j], coins)
+    return dp[1][n]
+```
+
 Matrix Chain Multiplication shares the structure — `dp[i][j]` is the minimum scalar multiplications to multiply matrices `i..j`:
 
 ```cpp
@@ -635,6 +1050,20 @@ int matrixChainOrder(vector<int>& p) {   // p.size() == numMatrices + 1
         }
     return dp[0][n - 1];
 }
+```
+
+```python
+def matrix_chain_order(p):   # len(p) == num_matrices + 1
+    n = len(p) - 1
+    dp = [[0] * n for _ in range(n)]
+    for length in range(2, n + 1):
+        for i in range(n - length + 1):
+            j = i + length - 1
+            dp[i][j] = float('inf')
+            for k in range(i, j):
+                dp[i][j] = min(dp[i][j],
+                               dp[i][k] + dp[k + 1][j] + p[i] * p[k + 1] * p[j + 1])
+    return dp[0][n - 1]
 ```
 
 ### Pattern 6: DP on Strings
@@ -663,6 +1092,26 @@ bool isMatch(string s, string p) {
 }
 ```
 
+```python
+# LeetCode 10: Regular Expression Matching
+def is_match(s, p):
+    m, n = len(s), len(p)
+    dp = [[False] * (n + 1) for _ in range(m + 1)]
+    dp[0][0] = True
+    for j in range(2, n + 1):                 # patterns like a*, a*b* matching ""
+        if p[j - 1] == '*':
+            dp[0][j] = dp[0][j - 2]
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
+            if p[j - 1] == '*':
+                dp[i][j] = dp[i][j - 2]        # '*' matches zero of preceding
+                if p[j - 2] == '.' or p[j - 2] == s[i - 1]:
+                    dp[i][j] = dp[i][j] or dp[i - 1][j]  # or one/more
+            elif p[j - 1] == '.' or p[j - 1] == s[i - 1]:
+                dp[i][j] = dp[i - 1][j - 1]
+    return dp[m][n]
+```
+
 ### Pattern 7: DP on Trees
 
 Post-order DFS returns DP values from children that the parent combines. Signal words: "tree", "subtree". Time O(n), space O(h). House Robber III returns `{rob, notRob}` per node:
@@ -682,6 +1131,27 @@ int rob(TreeNode* root) {
     auto res = robHelper(root);
     return max(res.first, res.second);
 }
+```
+
+```python
+class TreeNode:
+    def __init__(self, x):
+        self.val = x
+        self.left = None
+        self.right = None
+
+def rob_helper(root):                              # (rob this node, don't rob this node)
+    if not root:
+        return (0, 0)
+    l = rob_helper(root.left)
+    r = rob_helper(root.right)
+    rob = root.val + l[1] + r[1]                   # rob node -> children must be skipped
+    not_rob = max(l[0], l[1]) + max(r[0], r[1])
+    return (rob, not_rob)
+
+def rob(root):
+    res = rob_helper(root)
+    return max(res[0], res[1])
 ```
 
 ### Pattern 8: DP on Graphs (DAG)
@@ -711,6 +1181,33 @@ vector<int> longestPathDAG(int n, vector<vector<pair<int,int>>>& graph, int sour
 }
 ```
 
+```python
+# Longest path from a source in a weighted DAG
+from collections import deque
+
+def longest_path_dag(n, graph, source):
+    in_deg = [0] * n
+    for u in range(n):
+        for v, w in graph[u]:
+            in_deg[v] += 1
+    q = deque(i for i in range(n) if in_deg[i] == 0)
+    topo = []
+    while q:
+        u = q.popleft()
+        topo.append(u)
+        for v, w in graph[u]:
+            in_deg[v] -= 1
+            if in_deg[v] == 0:
+                q.append(v)
+    dp = [float('-inf')] * n
+    dp[source] = 0
+    for u in topo:
+        if dp[u] != float('-inf'):
+            for v, w in graph[u]:
+                dp[v] = max(dp[v], dp[u] + w)
+    return dp
+```
+
 ### Pattern 9: Bitmask DP
 
 Encode a set of elements as the bits of an integer. Signal words: "subset", "visited", "all cities". Time typically O(2ⁿ·n), space O(2ⁿ). The Traveling Salesman Problem keys on `dp[mask][last]` = min cost to have visited `mask`, ending at `last`:
@@ -737,6 +1234,30 @@ int tsp(vector<vector<int>>& dist) {
 }
 ```
 
+```python
+def tsp(dist):
+    n = len(dist)
+    mask_limit = 1 << n
+    INF = float('inf')
+    dp = [[INF] * n for _ in range(mask_limit)]
+    dp[1][0] = 0                                    # start at city 0
+    for mask in range(1, mask_limit):
+        for last in range(n):
+            if not (mask & (1 << last)) or dp[mask][last] == INF:
+                continue
+            for nxt in range(n):
+                if mask & (1 << nxt):
+                    continue
+                nm = mask | (1 << nxt)
+                dp[nm][nxt] = min(dp[nm][nxt], dp[mask][last] + dist[last][nxt])
+    result = INF
+    full = mask_limit - 1
+    for last in range(1, n):
+        if dp[full][last] != INF:
+            result = min(result, dp[full][last] + dist[last][0])
+    return result
+```
+
 ### Pattern 10: State Machine DP
 
 Track discrete states (holding/not holding, transactions used) and their transitions. Signal words: "buy/sell", "hold", "cooldown". The stock-with-cooldown problem cycles through hold → sold → rest:
@@ -753,6 +1274,18 @@ int maxProfit(vector<int>& prices) {
     }
     return max(sold, rest);
 }
+```
+
+```python
+# LeetCode 309: Buy/Sell with Cooldown, O(1) space
+def max_profit(prices):
+    hold, sold, rest = float('-inf'), 0, 0
+    for price in prices:
+        prev_hold, prev_sold, prev_rest = hold, sold, rest
+        hold = max(prev_hold, prev_rest - price)   # keep holding, or buy from rest
+        sold = prev_hold + price                   # sell today
+        rest = max(prev_rest, prev_sold)           # stay resting, or exit cooldown
+    return max(sold, rest)
 ```
 
 At-most-k transactions generalizes this by tracking a buy/sell pair per transaction (for k=2: `buy1, sell1, buy2, sell2`). *Digit DP* — processing a number digit by digit to count values with a property — and *interval DP* (Pattern 5) round out the family.

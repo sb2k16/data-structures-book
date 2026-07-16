@@ -45,6 +45,22 @@ vector<int> naiveSearch(const string& text, const string& pattern) {
 }
 ```
 
+```python
+# O(n*m) worst case, O(1) extra space.
+def naive_search(text, pattern):
+    matches = []
+    n, m = len(text), len(pattern)
+    for i in range(n - m + 1):        # empty range if n - m < 0
+        j = 0
+        while j < m:
+            if text[i + j] != pattern[j]:
+                break
+            j += 1
+        if j == m:                    # full pattern matched
+            matches.append(i)
+    return matches
+```
+
 The waste is easiest to see on a pathological input. Searching `"ABABCABAB"` in `"ABABCABABDABABCABAB"`, position 0 matches all nine characters, position 1 fails on the first, position 2 matches four before failing on the `C` — and every one of those partial matches is thrown away. When the next position is checked, the algorithm has already compared some of those same characters and simply forgets. That amnesia is what KMP fixes.
 
 ```
@@ -113,6 +129,45 @@ public:
         return matches;
     }
 };
+```
+
+```python
+class RabinKarp:
+    BASE = 256          # treat text as base-256 digits
+    MOD = 1000000007    # a large prime keeps collisions rare
+
+    def _calculate_hash(self, s, length):
+        h = 0
+        for i in range(length):
+            h = (h * self.BASE + ord(s[i])) % self.MOD
+        return h
+
+    # Drop old_char's contribution, fold in new_char. O(1).
+    def _recalculate_hash(self, old_hash, old_char, new_char):
+        new_hash = (old_hash - ord(old_char) * self.power % self.MOD + self.MOD) % self.MOD
+        return (new_hash * self.BASE + ord(new_char)) % self.MOD
+
+    def search(self, text, pattern):
+        matches = []
+        n, m = len(text), len(pattern)
+        if m == 0 or m > n:
+            return matches
+
+        # Precompute BASE^(m-1) mod MOD modularly — never floating-point pow().
+        self.power = 1
+        for _ in range(m - 1):
+            self.power = (self.power * self.BASE) % self.MOD
+
+        pattern_hash = self._calculate_hash(pattern, m)
+        text_hash = self._calculate_hash(text, m)
+
+        for i in range(n - m + 1):
+            # Verify on every hash hit — a hash match is necessary, not sufficient.
+            if pattern_hash == text_hash and text[i:i + m] == pattern:
+                matches.append(i)
+            if i < n - m:
+                text_hash = self._recalculate_hash(text_hash, text[i], text[i + m])
+        return matches
 ```
 
 Two details are load-bearing. The modulus is applied at every step so the hash never overflows, and `power` is built by repeated modular multiplication rather than `pow()` — floating-point would lose the low bits that make the hash meaningful. And the verification step is not optional: distinct strings *can* share a hash, so a hash hit only tells you where to look, never that you've found a match. Skip the verify and you get false positives; that verify is also why a flood of collisions degrades the worst case to `O(n·m)`. Rabin-Karp shines when the same rolling-hash machinery serves many patterns at once (hash them all, look each window up in a set) or streams over unbounded input.
@@ -192,6 +247,51 @@ public:
 };
 ```
 
+```python
+class KMP:
+    def _build_lps(self, pattern):
+        m = len(pattern)
+        lps = [0] * m
+        length = 0    # length of the current longest prefix-suffix
+        i = 1
+        while i < m:
+            if pattern[i] == pattern[length]:
+                length += 1
+                lps[i] = length
+                i += 1
+            elif length != 0:
+                length = lps[length - 1]    # fall back, don't advance i
+            else:
+                lps[i] = 0
+                i += 1
+        return lps
+
+    def search(self, text, pattern):
+        matches = []
+        n, m = len(text), len(pattern)
+        if m == 0:
+            return matches
+
+        lps = self._build_lps(pattern)
+        i = 0    # text index — never decreases
+        j = 0    # pattern index
+
+        while i < n:
+            if pattern[j] == text[i]:
+                i += 1
+                j += 1
+
+            if j == m:
+                matches.append(i - j)
+                j = lps[j - 1]                       # keep scanning for overlaps
+            elif i < n and pattern[j] != text[i]:
+                if j != 0:
+                    j = lps[j - 1]
+                else:
+                    i += 1
+        return matches
+```
+
 Guaranteed `O(n+m)` with no worst case to fear and only `O(m)` space, KMP is the reliable general-purpose choice: text-editor find, log scanning, DNA matching — anywhere a single pattern is searched under a bound you can promise.
 
 ## Boyer-Moore: match right-to-left and leap
@@ -251,6 +351,39 @@ public:
 };
 ```
 
+```python
+class BoyerMoore:
+    # Last index at which each byte occurs in the pattern (-1 if absent).
+    def _build_bad_char_table(self, pattern):
+        bad_char = [-1] * 256
+        for i, c in enumerate(pattern):
+            bad_char[ord(c)] = i
+        return bad_char
+
+    # Bad-character heuristic only. The good-suffix rule can be layered on for a
+    # guaranteed better worst case; it is omitted here for clarity.
+    def search(self, text, pattern):
+        matches = []
+        n, m = len(text), len(pattern)
+        if m == 0 or m > n:
+            return matches
+
+        bad_char = self._build_bad_char_table(pattern)
+        s = 0    # current alignment of pattern against text
+
+        while s <= n - m:
+            j = m - 1
+            while j >= 0 and pattern[j] == text[s + j]:   # right to left
+                j -= 1
+
+            if j < 0:
+                matches.append(s)
+                s += (m - bad_char[ord(text[s + m])]) if s + m < n else 1
+            else:
+                s += max(1, j - bad_char[ord(text[s + j])])
+        return matches
+```
+
 The `max(1, ...)` matters: the bad-character rule can compute a non-positive shift (when the matching character sits to the *right* of the mismatch in the pattern), and forcing at least one step forward is what keeps the loop from stalling. Full Boyer-Moore adds a second heuristic, the **good-suffix rule** — when a suffix of the pattern matched before the mismatch, shift to realign that suffix elsewhere in the pattern — which bounds the worst case below the bad-character rule's `O(n·m)`. The bad-character rule alone is what production tools lean on, and it weakens on small alphabets (DNA's four letters mean the mismatched character usually appears nearby, so shifts stay small) while excelling on large ones. This is the algorithm behind `grep`, `ripgrep`, and `ag`.
 
 ## The Z-algorithm: one array, many uses
@@ -291,6 +424,36 @@ public:
         return matches;
     }
 };
+```
+
+```python
+class ZAlgorithm:
+    def _build_z_array(self, s):
+        n = len(s)
+        z = [0] * n
+        l = r = 0                             # current rightmost Z-box [l, r]
+        for i in range(1, n):
+            if i <= r:
+                z[i] = min(r - i + 1, z[i - l])   # reuse prior work
+            while i + z[i] < n and s[z[i]] == s[i + z[i]]:
+                z[i] += 1
+            if i + z[i] - 1 > r:
+                l, r = i, i + z[i] - 1
+        return z
+
+    def search(self, text, pattern):
+        matches = []
+        m = len(pattern)
+        if m == 0:
+            return matches
+
+        combined = pattern + '$' + text    # '$' must be outside the alphabet
+        z = self._build_z_array(combined)
+
+        for i in range(m + 1, len(combined)):
+            if z[i] == m:
+                matches.append(i - m - 1)   # map back to text index
+        return matches
 ```
 
 It matches KMP's `O(n+m)` guarantee, but costs `O(n+m)` space for the array over the combined string. Reach for it when you want the Z-array itself — for string periodicity, longest-common-prefix queries, or the kind of derived quantities that show up in competitive programming — rather than for plain search, where KMP's smaller footprint usually wins.
@@ -426,6 +589,65 @@ public:
         return results;
     }
 };
+```
+
+```python
+from collections import deque
+
+
+class AhoCorasick:
+    class _TrieNode:
+        def __init__(self):
+            self.children = {}
+            self.failure = None
+            self.output = []   # indices of patterns ending here
+
+    def __init__(self, patterns):
+        self.patterns = patterns
+        self._build_trie()
+        self._build_failure_links()
+
+    def _build_trie(self):
+        self.root = self._TrieNode()
+        for i, pattern in enumerate(self.patterns):
+            cur = self.root
+            for c in pattern:
+                if c not in cur.children:
+                    cur.children[c] = self._TrieNode()
+                cur = cur.children[c]
+            cur.output.append(i)
+
+    def _build_failure_links(self):
+        q = deque()
+        for child in self.root.children.values():
+            child.failure = self.root
+            q.append(child)
+
+        while q:
+            cur = q.popleft()
+            for c, child in cur.children.items():
+                q.append(child)
+                f = cur.failure
+                while f is not None and c not in f.children:
+                    f = f.failure
+                child.failure = f.children[c] if f is not None else self.root
+                # inherit the failure target's matches
+                child.output.extend(child.failure.output)
+
+    # Maps each pattern to the start positions where it occurs.
+    def search(self, text):
+        results = {}
+        cur = self.root
+
+        for i, c in enumerate(text):
+            while cur is not None and c not in cur.children:
+                cur = cur.failure
+            cur = cur.children[c] if cur is not None else self.root
+
+            for idx in cur.output:
+                start = i - len(self.patterns[idx]) + 1
+                results.setdefault(self.patterns[idx], []).append(start)
+        return results
 ```
 
 Tracing `"shers"`: `s`→`sh`→`she` (report `she` at 0, and via its inherited output, `he`), then `r` has no edge so failure links walk `she`→`he`→root, and `s` restarts. Preprocessing is `O(m)` in the total pattern length; the search is `O(n + z)` regardless of how many patterns there are — which is exactly why intrusion detectors (Snort, Suricata), virus scanners, and content filters are built on it. (This follows the construction at [cp-algorithms.com](https://cp-algorithms.com/string/aho_corasick.html).) Note the trie nodes are heap-allocated; production code would own them with an arena or `unique_ptr` and free them on destruction.

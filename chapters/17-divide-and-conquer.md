@@ -130,6 +130,36 @@ void mergeSort(vector<int>& a) {
 }
 ```
 
+```python
+def merge(a, lo, mid, hi):
+    buf = []
+    i, j = lo, mid + 1
+    while i <= mid and j <= hi:                # two fingers, emit the smaller
+        if a[i] <= a[j]:
+            buf.append(a[i]); i += 1
+        else:
+            buf.append(a[j]); j += 1
+    while i <= mid:                            # drain the leftovers
+        buf.append(a[i]); i += 1
+    while j <= hi:
+        buf.append(a[j]); j += 1
+    for k in range(len(buf)):
+        a[lo + k] = buf[k]
+
+
+def merge_sort(a, lo=None, hi=None):
+    if lo is None:                            # top-level call over the whole array
+        if a:
+            merge_sort(a, 0, len(a) - 1)
+        return
+    if lo >= hi:                              # base case: 0 or 1 element
+        return
+    mid = lo + (hi - lo) // 2                 # not (lo+hi)//2 — matches the C++ convention
+    merge_sort(a, lo, mid)
+    merge_sort(a, mid + 1, hi)
+    merge(a, lo, mid, hi)
+```
+
 Two details here are the most common bugs in the whole chapter. The midpoint is
 `lo + (hi - lo) / 2`, never `(lo + hi) / 2`: the latter overflows a 32-bit `int` once the indices
 grow large — a bug that sat undetected in the JDK's binary search for nine years. And the wrapper
@@ -171,6 +201,29 @@ void quickSort(vector<int>& a, int lo, int hi) {
 }
 ```
 
+```python
+import random
+
+def partition(a, lo, hi):
+    r = random.randint(lo, hi)          # random pivot → expected n log n
+    a[r], a[hi] = a[hi], a[r]
+    pivot, i = a[hi], lo - 1
+    for j in range(lo, hi):
+        if a[j] < pivot:
+            i += 1
+            a[i], a[j] = a[j], a[i]
+    a[i + 1], a[hi] = a[hi], a[i + 1]
+    return i + 1                        # pivot's final index
+
+
+def quick_sort(a, lo, hi):
+    if lo >= hi:
+        return
+    p = partition(a, lo, hi)
+    quick_sort(a, lo, p - 1)
+    quick_sort(a, p + 1, hi)
+```
+
 The randomization is not decoration. With a fixed pivot (say, always the last element), an already
 sorted array drives partition into its `O(n²)` worst case — the single most common way quicksort
 blows up in production. A uniformly random pivot makes that worst case astronomically unlikely
@@ -193,6 +246,17 @@ int quickselect(vector<int>& a, int lo, int hi, int k) {
 }
 ```
 
+```python
+# k is 0-indexed: k == 0 is the minimum. Expected O(n).
+def quickselect(a, lo, hi, k):
+    if lo == hi:
+        return a[lo]
+    p = partition(a, lo, hi)
+    if k == p:
+        return a[p]
+    return quickselect(a, lo, p - 1, k) if k < p else quickselect(a, p + 1, hi, k)
+```
+
 Recursing into one half instead of two changes the recurrence from `2T(n/2)` to `T(n/2)`, and the
 Master Theorem's Case 3 collapses it from `O(n log n)` to `O(n)` expected. This is `std::nth_element`,
 and it is how you find a median, or the top-k, without paying to sort everything you don't care
@@ -213,6 +277,16 @@ double power(double x, long long n) {
     double half = power(x, n / 2);
     return (n % 2 == 0) ? half * half : half * half * x;
 }
+```
+
+```python
+def power(x, n):
+    if n == 0:
+        return 1.0
+    if n < 0:
+        return 1.0 / power(x, -n)
+    half = power(x, n // 2)
+    return half * half if n % 2 == 0 else half * half * x
 ```
 
 Taking `n` as `long long` matters: negating the most negative 32-bit `int` overflows, so a naive
@@ -248,6 +322,26 @@ int maxSubarray(const vector<int>& a, int lo, int hi) {
                  maxSubarray(a, mid + 1, hi),
                  maxCrossing(a, lo, mid, hi) });
 }
+```
+
+```python
+def max_crossing(a, lo, mid, hi):
+    s, left = 0, float("-inf")
+    for i in range(mid, lo - 1, -1):
+        s += a[i]; left = max(left, s)
+    s, right = 0, float("-inf")
+    for i in range(mid + 1, hi + 1):
+        s += a[i]; right = max(right, s)
+    return left + right                        # must use at least one element each side
+
+
+def max_subarray(a, lo, hi):
+    if lo == hi:
+        return a[lo]
+    mid = lo + (hi - lo) // 2
+    return max(max_subarray(a, lo, mid),
+               max_subarray(a, mid + 1, hi),
+               max_crossing(a, lo, mid, hi))
 ```
 
 The linear crossing scan makes `f(n) = O(n)`, so `T(n) = 2T(n/2) + O(n) = O(n log n)`. In practice
@@ -286,6 +380,35 @@ long long countInversions(vector<int>& a, int lo, int hi) {
          + countInversions(a, mid + 1, hi)
          + mergeCount(a, lo, mid, hi);
 }
+```
+
+```python
+def merge_count(a, lo, mid, hi):
+    buf = []
+    i, j = lo, mid + 1
+    inv = 0
+    while i <= mid and j <= hi:
+        if a[i] <= a[j]:
+            buf.append(a[i]); i += 1
+        else:
+            buf.append(a[j]); j += 1
+            inv += mid - i + 1                # left[i..mid] all beat a[j]
+    while i <= mid:
+        buf.append(a[i]); i += 1
+    while j <= hi:
+        buf.append(a[j]); j += 1
+    for k in range(len(buf)):
+        a[lo + k] = buf[k]
+    return inv
+
+
+def count_inversions(a, lo, hi):
+    if lo >= hi:
+        return 0
+    mid = lo + (hi - lo) // 2
+    return (count_inversions(a, lo, mid)
+            + count_inversions(a, mid + 1, hi)
+            + merge_count(a, lo, mid, hi))
 ```
 
 The count is `long long` on purpose: a reversed array of `n` elements has `n(n−1)/2` inversions,
@@ -345,6 +468,48 @@ double closestPair(vector<Point>& pts) {
          [](const Point& a, const Point& b) { return a.x < b.x; });
     return closest(pts, 0, (int)pts.size() - 1);
 }
+```
+
+```python
+import math
+
+class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+
+def dist(p, q):
+    dx, dy = p.x - q.x, p.y - q.y
+    return math.sqrt(dx * dx + dy * dy)
+
+
+def closest(pts, lo, hi):
+    if hi - lo <= 3:                          # small: brute force
+        d = float("inf")
+        for i in range(lo, hi + 1):
+            for j in range(i + 1, hi + 1):
+                d = min(d, dist(pts[i], pts[j]))
+        return d
+    mid = lo + (hi - lo) // 2
+    mid_x = pts[mid].x
+    d = min(closest(pts, lo, mid), closest(pts, mid + 1, hi))
+
+    strip = [pts[i] for i in range(lo, hi + 1)    # points within d of the divider
+             if abs(pts[i].x - mid_x) < d]
+    strip.sort(key=lambda p: p.y)
+
+    for i in range(len(strip)):
+        j = i + 1
+        while j < len(strip) and strip[j].y - strip[i].y < d:
+            d = min(d, dist(strip[i], strip[j]))
+            j += 1
+    return d
+
+
+def closest_pair(pts):
+    pts.sort(key=lambda p: p.x)
+    return closest(pts, 0, len(pts) - 1)
 ```
 
 Re-sorting the strip by y at every level makes `f(n) = O(n log n)` and the whole thing
@@ -482,6 +647,38 @@ long long karatsuba(long long x, long long y) {
     long long mid = karatsuba(a + b, c + d) - ac - bd;  // = ad + bc, one multiply
     return ac * p * p + mid * p + bd;
 }
+```
+
+```python
+def digits(v):
+    d = 0
+    while True:
+        d += 1
+        v //= 10
+        if v == 0:
+            break
+    return d
+
+
+def pow10(e):
+    p = 1
+    for _ in range(e):
+        p *= 10
+    return p
+
+
+# Illustrative: the identical split applies to arrays of limbs in real libraries.
+def karatsuba(x, y):
+    if x < 10 or y < 10:                             # base case: one digit
+        return x * y
+    m = max(digits(x), digits(y)) // 2
+    p = pow10(m)
+    a, b = x // p, x % p                             # x = a·10^m + b
+    c, d = y // p, y % p                             # y = c·10^m + d
+    ac = karatsuba(a, c)
+    bd = karatsuba(b, d)
+    mid = karatsuba(a + b, c + d) - ac - bd          # = ad + bc, one multiply
+    return ac * p * p + mid * p + bd
 ```
 
 Three sub-multiplies give `T(n) = 3T(n/2) + O(n) = O(n^1.585)` — Master Theorem Case 1, leaves
