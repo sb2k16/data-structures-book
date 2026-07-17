@@ -153,6 +153,146 @@ class MaxHeap:
             self._heapify_down(i)
 ```
 
+```java
+import java.util.ArrayList;
+import java.util.List;
+
+class MaxHeap {
+    private final List<Integer> heap = new ArrayList<>();
+
+    private void heapifyUp(int index) {
+        while (index > 0) {
+            int parent = (index - 1) / 2;
+            if (heap.get(parent) >= heap.get(index)) break;
+            swap(parent, index);
+            index = parent;
+        }
+    }
+
+    private void heapifyDown(int index) {
+        int size = heap.size();
+        while (true) {
+            int largest = index;
+            int left = 2 * index + 1;
+            int right = 2 * index + 2;
+            if (left < size && heap.get(left) > heap.get(largest))   largest = left;
+            if (right < size && heap.get(right) > heap.get(largest)) largest = right;
+            if (largest == index) break;
+            swap(index, largest);
+            index = largest;
+        }
+    }
+
+    private void swap(int i, int j) {
+        int tmp = heap.get(i);
+        heap.set(i, heap.get(j));
+        heap.set(j, tmp);
+    }
+
+    public void insert(int value) {
+        heap.add(value);
+        heapifyUp(heap.size() - 1);
+    }
+
+    public int extractMax() {
+        if (heap.isEmpty()) throw new RuntimeException("Heap is empty");
+        int max = heap.get(0);
+        heap.set(0, heap.get(heap.size() - 1));
+        heap.remove(heap.size() - 1);
+        if (!heap.isEmpty()) heapifyDown(0);
+        return max;
+    }
+
+    public int peek() {
+        if (heap.isEmpty()) throw new RuntimeException("Heap is empty");
+        return heap.get(0);
+    }
+
+    public boolean isEmpty() { return heap.isEmpty(); }
+    public int size()        { return heap.size(); }
+
+    // Bottom-up O(n) construction: heapify every internal node.
+    public void buildHeap(int[] arr) {
+        heap.clear();
+        for (int v : arr) heap.add(v);
+        for (int i = heap.size() / 2 - 1; i >= 0; i--) heapifyDown(i);
+    }
+}
+```
+
+```go
+type MaxHeap struct {
+    heap []int
+}
+
+func (h *MaxHeap) heapifyUp(index int) {
+    for index > 0 {
+        parent := (index - 1) / 2
+        if h.heap[parent] >= h.heap[index] {
+            break
+        }
+        h.heap[parent], h.heap[index] = h.heap[index], h.heap[parent]
+        index = parent
+    }
+}
+
+func (h *MaxHeap) heapifyDown(index int) {
+    size := len(h.heap)
+    for {
+        largest := index
+        left := 2*index + 1
+        right := 2*index + 2
+        if left < size && h.heap[left] > h.heap[largest] {
+            largest = left
+        }
+        if right < size && h.heap[right] > h.heap[largest] {
+            largest = right
+        }
+        if largest == index {
+            break
+        }
+        h.heap[index], h.heap[largest] = h.heap[largest], h.heap[index]
+        index = largest
+    }
+}
+
+func (h *MaxHeap) Insert(value int) {
+    h.heap = append(h.heap, value)
+    h.heapifyUp(len(h.heap) - 1)
+}
+
+func (h *MaxHeap) ExtractMax() int {
+    if len(h.heap) == 0 {
+        panic("heap is empty")
+    }
+    max := h.heap[0]
+    h.heap[0] = h.heap[len(h.heap)-1]
+    h.heap = h.heap[:len(h.heap)-1]
+    if len(h.heap) > 0 {
+        h.heapifyDown(0)
+    }
+    return max
+}
+
+func (h *MaxHeap) Peek() int {
+    if len(h.heap) == 0 {
+        panic("heap is empty")
+    }
+    return h.heap[0]
+}
+
+func (h *MaxHeap) Empty() bool { return len(h.heap) == 0 }
+func (h *MaxHeap) Size() int   { return len(h.heap) }
+
+// Bottom-up O(n) construction: heapify every internal node.
+func (h *MaxHeap) BuildHeap(arr []int) {
+    h.heap = append([]int(nil), arr...)
+    for i := len(h.heap)/2 - 1; i >= 0; i-- {
+        h.heapifyDown(i)
+    }
+}
+```
+
 A **min-heap** is identical with the comparisons reversed. Rather than duplicate the class, parameterize the comparison to get a reusable priority queue — `PriorityQueue<int, greater<int>>` is a min-heap:
 
 ```cpp
@@ -266,6 +406,138 @@ class PriorityQueue:
         return len(self.heap)
 ```
 
+```java
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.BiPredicate;
+
+// A min-heap is new PriorityQueue<>((a, b) -> a > b) for Comparables.
+class PriorityQueue<T> {
+    private final List<T> heap = new ArrayList<>();
+    private final BiPredicate<T, T> comp;
+
+    public PriorityQueue(BiPredicate<T, T> comp) { this.comp = comp; }
+
+    private void heapifyUp(int index) {
+        while (index > 0) {
+            int parent = (index - 1) / 2;
+            if (!comp.test(heap.get(parent), heap.get(index))) break;
+            swap(parent, index);
+            index = parent;
+        }
+    }
+
+    private void heapifyDown(int index) {
+        int size = heap.size();
+        while (true) {
+            int extreme = index;
+            int left = 2 * index + 1;
+            int right = 2 * index + 2;
+            if (left < size && comp.test(heap.get(extreme), heap.get(left)))   extreme = left;
+            if (right < size && comp.test(heap.get(extreme), heap.get(right))) extreme = right;
+            if (extreme == index) break;
+            swap(index, extreme);
+            index = extreme;
+        }
+    }
+
+    private void swap(int i, int j) {
+        T tmp = heap.get(i);
+        heap.set(i, heap.get(j));
+        heap.set(j, tmp);
+    }
+
+    public void push(T value) {
+        heap.add(value);
+        heapifyUp(heap.size() - 1);
+    }
+
+    public void pop() {
+        if (heap.isEmpty()) throw new RuntimeException("Priority queue is empty");
+        heap.set(0, heap.get(heap.size() - 1));
+        heap.remove(heap.size() - 1);
+        if (!heap.isEmpty()) heapifyDown(0);
+    }
+
+    public T top() {
+        if (heap.isEmpty()) throw new RuntimeException("Priority queue is empty");
+        return heap.get(0);
+    }
+
+    public boolean isEmpty() { return heap.isEmpty(); }
+    public int size()        { return heap.size(); }
+}
+```
+
+```go
+// A min-heap is NewPriorityQueue(func(a, b int) bool { return a > b }).
+type PriorityQueue[T any] struct {
+    heap []T
+    comp func(a, b T) bool
+}
+
+func NewPriorityQueue[T any](comp func(a, b T) bool) *PriorityQueue[T] {
+    return &PriorityQueue[T]{comp: comp}
+}
+
+func (pq *PriorityQueue[T]) heapifyUp(index int) {
+    for index > 0 {
+        parent := (index - 1) / 2
+        if !pq.comp(pq.heap[parent], pq.heap[index]) {
+            break
+        }
+        pq.heap[parent], pq.heap[index] = pq.heap[index], pq.heap[parent]
+        index = parent
+    }
+}
+
+func (pq *PriorityQueue[T]) heapifyDown(index int) {
+    size := len(pq.heap)
+    for {
+        extreme := index
+        left := 2*index + 1
+        right := 2*index + 2
+        if left < size && pq.comp(pq.heap[extreme], pq.heap[left]) {
+            extreme = left
+        }
+        if right < size && pq.comp(pq.heap[extreme], pq.heap[right]) {
+            extreme = right
+        }
+        if extreme == index {
+            break
+        }
+        pq.heap[index], pq.heap[extreme] = pq.heap[extreme], pq.heap[index]
+        index = extreme
+    }
+}
+
+func (pq *PriorityQueue[T]) Push(value T) {
+    pq.heap = append(pq.heap, value)
+    pq.heapifyUp(len(pq.heap) - 1)
+}
+
+func (pq *PriorityQueue[T]) Pop() {
+    if len(pq.heap) == 0 {
+        panic("priority queue is empty")
+    }
+    pq.heap[0] = pq.heap[len(pq.heap)-1]
+    pq.heap = pq.heap[:len(pq.heap)-1]
+    if len(pq.heap) > 0 {
+        pq.heapifyDown(0)
+    }
+}
+
+func (pq *PriorityQueue[T]) Top() T {
+    if len(pq.heap) == 0 {
+        panic("priority queue is empty")
+    }
+    return pq.heap[0]
+}
+
+func (pq *PriorityQueue[T]) Empty() bool { return len(pq.heap) == 0 }
+func (pq *PriorityQueue[T]) Size() int   { return len(pq.heap) }
+```
+
 **Heap sort** falls straight out: build a max-heap, then repeatedly extract the maximum into the back of the array. Extraction yields descending values, filling the array ascending.
 
 ```cpp
@@ -284,6 +556,26 @@ def heap_sort(arr):
     heap.build_heap(arr)
     for i in range(len(arr) - 1, -1, -1):
         arr[i] = heap.extract_max()
+```
+
+```java
+static void heapSort(int[] arr) {
+    MaxHeap heap = new MaxHeap();
+    heap.buildHeap(arr);
+    for (int i = arr.length - 1; i >= 0; i--) {
+        arr[i] = heap.extractMax();
+    }
+}
+```
+
+```go
+func heapSort(arr []int) {
+    heap := &MaxHeap{}
+    heap.BuildHeap(arr)
+    for i := len(arr) - 1; i >= 0; i-- {
+        arr[i] = heap.ExtractMax()
+    }
+}
 ```
 
 The array layout also gives the heap its cache edge. Every operation walks a single path of adjacent slots, so misses are few — a pointer-based tree of the same height would chase 2–5 cache lines per level.
@@ -436,6 +728,149 @@ class Trie:
         return self._delete_helper(self.root, word, 0)
 ```
 
+```java
+import java.util.HashMap;
+import java.util.Map;
+
+class TrieNode {
+    Map<Character, TrieNode> children = new HashMap<>();
+    boolean isEndOfWord = false;
+}
+
+class Trie {
+    private final TrieNode root = new TrieNode();   // Java's GC reclaims nodes — no destructor needed
+
+    public void insert(String word) {
+        TrieNode current = root;
+        for (char c : word.toCharArray())
+            current = current.children.computeIfAbsent(c, k -> new TrieNode());
+        current.isEndOfWord = true;
+    }
+
+    public boolean search(String word) {
+        TrieNode current = root;
+        for (char c : word.toCharArray()) {
+            current = current.children.get(c);
+            if (current == null) return false;
+        }
+        return current.isEndOfWord;
+    }
+
+    public boolean startsWith(String prefix) {
+        TrieNode current = root;
+        for (char c : prefix.toCharArray()) {
+            current = current.children.get(c);
+            if (current == null) return false;
+        }
+        return true;   // reached the end of the prefix path
+    }
+
+    // Returns true if the child at `node` can be pruned after deletion.
+    private boolean deleteHelper(TrieNode node, String word, int index) {
+        if (node == null) return false;
+        if (index == word.length()) {
+            if (!node.isEndOfWord) return false;
+            node.isEndOfWord = false;
+            return node.children.isEmpty();
+        }
+        char c = word.charAt(index);
+        TrieNode child = node.children.get(c);
+        if (child == null) return false;
+
+        boolean shouldDelete = deleteHelper(child, word, index + 1);
+        if (shouldDelete) {
+            node.children.remove(c);
+            return node.children.isEmpty() && !node.isEndOfWord;
+        }
+        return false;
+    }
+
+    public boolean deleteWord(String word) { return deleteHelper(root, word, 0); }
+}
+```
+
+```go
+type TrieNode struct {
+    children    map[rune]*TrieNode
+    isEndOfWord bool
+}
+
+func newTrieNode() *TrieNode {
+    return &TrieNode{children: make(map[rune]*TrieNode)}
+}
+
+type Trie struct {
+    root *TrieNode
+}
+
+func NewTrie() *Trie {
+    return &Trie{root: newTrieNode()} // Go's GC reclaims nodes — no destructor needed
+}
+
+func (t *Trie) Insert(word string) {
+    current := t.root
+    for _, c := range word {
+        if _, ok := current.children[c]; !ok {
+            current.children[c] = newTrieNode()
+        }
+        current = current.children[c]
+    }
+    current.isEndOfWord = true
+}
+
+func (t *Trie) Search(word string) bool {
+    current := t.root
+    for _, c := range word {
+        next, ok := current.children[c]
+        if !ok {
+            return false
+        }
+        current = next
+    }
+    return current.isEndOfWord
+}
+
+func (t *Trie) StartsWith(prefix string) bool {
+    current := t.root
+    for _, c := range prefix {
+        next, ok := current.children[c]
+        if !ok {
+            return false
+        }
+        current = next
+    }
+    return true // reached the end of the prefix path
+}
+
+// Returns true if the child at `node` can be pruned after deletion.
+func (t *Trie) deleteHelper(node *TrieNode, word []rune, index int) bool {
+    if node == nil {
+        return false
+    }
+    if index == len(word) {
+        if !node.isEndOfWord {
+            return false
+        }
+        node.isEndOfWord = false
+        return len(node.children) == 0
+    }
+    c := word[index]
+    child, ok := node.children[c]
+    if !ok {
+        return false
+    }
+    if t.deleteHelper(child, word, index+1) {
+        delete(node.children, c)
+        return len(node.children) == 0 && !node.isEndOfWord
+    }
+    return false
+}
+
+func (t *Trie) DeleteWord(word string) bool {
+    return t.deleteHelper(t.root, []rune(word), 0)
+}
+```
+
 `search` distinguishes a stored word from a mere prefix by checking `isEndOfWord`; `startsWith` doesn't care. The destructor deletes children recursively — omit that and every inserted word leaks its trailing nodes.
 
 When the alphabet is small and fixed (say `a`–`z`), replace the hash map with a fixed array of child pointers. This drops the per-lookup hashing and stores children contiguously, improving cache behavior — at the cost of `26 × sizeof(ptr)` per node even when sparse:
@@ -571,6 +1006,106 @@ class SegmentTree:
         return self._query(1, 0, self.n - 1, l, r)
 ```
 
+```java
+class SegmentTree {
+    private final int[] tree;
+    private final int n;
+
+    public SegmentTree(int[] arr) {
+        n = arr.length;
+        tree = new int[4 * n];
+        build(arr, 1, 0, n - 1);
+    }
+
+    private void build(int[] arr, int node, int start, int end) {
+        if (start == end) {
+            tree[node] = arr[start];
+        } else {
+            int mid = (start + end) / 2;
+            build(arr, 2 * node, start, mid);
+            build(arr, 2 * node + 1, mid + 1, end);
+            tree[node] = tree[2 * node] + tree[2 * node + 1];
+        }
+    }
+
+    private void update(int node, int start, int end, int idx, int val) {
+        if (start == end) {
+            tree[node] = val;
+        } else {
+            int mid = (start + end) / 2;
+            if (idx <= mid) update(2 * node, start, mid, idx, val);
+            else            update(2 * node + 1, mid + 1, end, idx, val);
+            tree[node] = tree[2 * node] + tree[2 * node + 1];
+        }
+    }
+
+    private int query(int node, int start, int end, int l, int r) {
+        if (r < start || end < l) return 0;               // identity for sum
+        if (l <= start && end <= r) return tree[node];     // fully inside
+        int mid = (start + end) / 2;
+        return query(2 * node, start, mid, l, r) +
+               query(2 * node + 1, mid + 1, end, l, r);
+    }
+
+    public void update(int idx, int val) { update(1, 0, n - 1, idx, val); }
+    public int query(int l, int r)       { return query(1, 0, n - 1, l, r); }
+}
+```
+
+```go
+type SegmentTree struct {
+    tree []int
+    n    int
+}
+
+func NewSegmentTree(arr []int) *SegmentTree {
+    st := &SegmentTree{n: len(arr)}
+    st.tree = make([]int, 4*st.n)
+    st.build(arr, 1, 0, st.n-1)
+    return st
+}
+
+func (st *SegmentTree) build(arr []int, node, start, end int) {
+    if start == end {
+        st.tree[node] = arr[start]
+    } else {
+        mid := (start + end) / 2
+        st.build(arr, 2*node, start, mid)
+        st.build(arr, 2*node+1, mid+1, end)
+        st.tree[node] = st.tree[2*node] + st.tree[2*node+1]
+    }
+}
+
+func (st *SegmentTree) update(node, start, end, idx, val int) {
+    if start == end {
+        st.tree[node] = val
+    } else {
+        mid := (start + end) / 2
+        if idx <= mid {
+            st.update(2*node, start, mid, idx, val)
+        } else {
+            st.update(2*node+1, mid+1, end, idx, val)
+        }
+        st.tree[node] = st.tree[2*node] + st.tree[2*node+1]
+    }
+}
+
+func (st *SegmentTree) query(node, start, end, l, r int) int {
+    if r < start || end < l {
+        return 0 // identity for sum
+    }
+    if l <= start && end <= r {
+        return st.tree[node] // fully inside
+    }
+    mid := (start + end) / 2
+    return st.query(2*node, start, mid, l, r) +
+        st.query(2*node+1, mid+1, end, l, r)
+}
+
+func (st *SegmentTree) Update(idx, val int) { st.update(1, 0, st.n-1, idx, val) }
+func (st *SegmentTree) Query(l, r int) int  { return st.query(1, 0, st.n-1, l, r) }
+```
+
 To answer a different aggregate, change only the combine step and the out-of-range identity: for range-minimum, replace `+` with `min(...)` and return `numeric_limits<int>::max()` instead of `0`. Build is O(n); query and update O(log n); space O(n). The one recurring bug is the range split — the right child must start at `mid + 1`, not `mid`, or overlapping ranges double-count and can recurse forever.
 
 ## 14.4 Fenwick Trees (Binary Indexed Trees)
@@ -650,6 +1185,89 @@ class FenwickTree:
 
     def prefix_sum(self, index):
         return self._get_sum(index)
+```
+
+```java
+class FenwickTree {
+    private final int[] tree;
+    private final int n;
+
+    public FenwickTree(int[] arr) {
+        n = arr.length;
+        tree = new int[n + 1];
+        for (int i = 0; i < n; i++) update(i, arr[i]);
+    }
+
+    private int getSum(int index) {         // prefix sum of arr[0..index]
+        int sum = 0;
+        index += 1;                         // to 1-based
+        while (index > 0) {
+            sum += tree[index];
+            index -= index & (-index);
+        }
+        return sum;
+    }
+
+    private void update(int index, int delta) {
+        index += 1;                         // to 1-based
+        while (index <= n) {
+            tree[index] += delta;
+            index += index & (-index);
+        }
+    }
+
+    public int rangeSum(int l, int r) { return getSum(r) - getSum(l - 1); }
+
+    public void updateValue(int index, int newValue) {
+        int delta = newValue - rangeSum(index, index);
+        update(index, delta);
+    }
+
+    public int prefixSum(int index) { return getSum(index); }
+}
+```
+
+```go
+type FenwickTree struct {
+    tree []int
+    n    int
+}
+
+func NewFenwickTree(arr []int) *FenwickTree {
+    ft := &FenwickTree{n: len(arr)}
+    ft.tree = make([]int, ft.n+1)
+    for i := 0; i < ft.n; i++ {
+        ft.update(i, arr[i])
+    }
+    return ft
+}
+
+func (ft *FenwickTree) getSum(index int) int { // prefix sum of arr[0..index]
+    sum := 0
+    index++ // to 1-based
+    for index > 0 {
+        sum += ft.tree[index]
+        index -= index & (-index)
+    }
+    return sum
+}
+
+func (ft *FenwickTree) update(index, delta int) {
+    index++ // to 1-based
+    for index <= ft.n {
+        ft.tree[index] += delta
+        index += index & (-index)
+    }
+}
+
+func (ft *FenwickTree) RangeSum(l, r int) int { return ft.getSum(r) - ft.getSum(l-1) }
+
+func (ft *FenwickTree) UpdateValue(index, newValue int) {
+    delta := newValue - ft.RangeSum(index, index)
+    ft.update(index, delta)
+}
+
+func (ft *FenwickTree) PrefixSum(index int) int { return ft.getSum(index) }
 ```
 
 Build is O(n log n), query and update O(log n), space O(n). Less memory, less code, and faster in practice than a segment tree — the price is that it handles only invertible aggregates without extra machinery.
@@ -740,6 +1358,95 @@ class SparseTable:
 # Usage: range-minimum
 #   rmq = SparseTable(arr, min)
 #   rmq.query(l, r)
+```
+
+```java
+import java.util.function.IntBinaryOperator;
+
+class SparseTable {
+    private int[][] table;
+    private int[] logTable;
+    private final int n;
+    private final IntBinaryOperator op;   // min, max, gcd, ...
+
+    public SparseTable(int[] arr, IntBinaryOperator operation) {
+        n = arr.length;
+        op = operation;
+        buildTable(arr);
+    }
+
+    private void buildTable(int[] arr) {
+        int maxLog = (int) (Math.log(n) / Math.log(2)) + 1;
+        table = new int[n][maxLog];
+        logTable = new int[n + 1];
+        logTable[1] = 0;
+        for (int i = 2; i <= n; i++) logTable[i] = logTable[i / 2] + 1;
+
+        for (int i = 0; i < n; i++) table[i][0] = arr[i];   // length 1
+
+        for (int j = 1; j < maxLog; j++)
+            for (int i = 0; i + (1 << j) <= n; i++)
+                table[i][j] = op.applyAsInt(table[i][j - 1],
+                                            table[i + (1 << (j - 1))][j - 1]);
+    }
+
+    public int query(int l, int r) {   // inclusive [l, r]
+        int j = logTable[r - l + 1];
+        return op.applyAsInt(table[l][j], table[r - (1 << j) + 1][j]);
+    }
+}
+
+// Usage: range-minimum
+//   SparseTable rmq = new SparseTable(arr, Math::min);
+//   rmq.query(l, r);
+```
+
+```go
+type SparseTable struct {
+    table    [][]int
+    logTable []int
+    n        int
+    op       func(a, b int) int // min, max, gcd, ...
+}
+
+func NewSparseTable(arr []int, operation func(a, b int) int) *SparseTable {
+    st := &SparseTable{n: len(arr), op: operation}
+    st.buildTable(arr)
+    return st
+}
+
+func (st *SparseTable) buildTable(arr []int) {
+    maxLog := int(math.Log2(float64(st.n))) + 1
+    st.table = make([][]int, st.n)
+    for i := range st.table {
+        st.table[i] = make([]int, maxLog)
+    }
+    st.logTable = make([]int, st.n+1)
+    st.logTable[1] = 0
+    for i := 2; i <= st.n; i++ {
+        st.logTable[i] = st.logTable[i/2] + 1
+    }
+
+    for i := 0; i < st.n; i++ {
+        st.table[i][0] = arr[i] // length 1
+    }
+
+    for j := 1; j < maxLog; j++ {
+        for i := 0; i+(1<<j) <= st.n; i++ {
+            st.table[i][j] = st.op(st.table[i][j-1],
+                st.table[i+(1<<(j-1))][j-1])
+        }
+    }
+}
+
+func (st *SparseTable) Query(l, r int) int { // inclusive [l, r]
+    j := st.logTable[r-l+1]
+    return st.op(st.table[l][j], st.table[r-(1<<j)+1][j])
+}
+
+// Usage: range-minimum
+//   rmq := NewSparseTable(arr, func(a, b int) int { if a < b { return a }; return b })
+//   rmq.Query(l, r)
 ```
 
 The catch is right there in the premise: no updates, and O(n log n) space. When the data is static and read-heavy, it's unbeatable; the moment an element can change, you're back to a segment tree.
@@ -843,6 +1550,128 @@ class SqrtDecomposition:
             self.blocks[b] = min(self.blocks[b], self.arr[i])
 ```
 
+```java
+import java.util.Arrays;
+
+class SqrtDecomposition {
+    private final int[] arr;
+    private final int[] blocks;   // minimum of each block
+    private final int blockSize, n;
+
+    public SqrtDecomposition(int[] input) {
+        n = input.length;
+        arr = input.clone();
+        blockSize = (int) Math.sqrt(n);
+        blocks = new int[(n + blockSize - 1) / blockSize];
+        Arrays.fill(blocks, Integer.MAX_VALUE);
+        for (int i = 0; i < n; i++)
+            blocks[blockIndex(i)] = Math.min(blocks[blockIndex(i)], arr[i]);
+    }
+
+    private int blockIndex(int i) { return i / blockSize; }
+    private int blockStart(int b) { return b * blockSize; }
+    private int blockEnd(int b)   { return Math.min((b + 1) * blockSize - 1, n - 1); }
+
+    public int rangeMin(int l, int r) {
+        int minVal = Integer.MAX_VALUE;
+        int lb = blockIndex(l), rb = blockIndex(r);
+        if (lb == rb) {
+            for (int i = l; i <= r; i++) minVal = Math.min(minVal, arr[i]);
+        } else {
+            for (int i = l; i <= blockEnd(lb); i++)   minVal = Math.min(minVal, arr[i]);
+            for (int b = lb + 1; b < rb; b++)         minVal = Math.min(minVal, blocks[b]);
+            for (int i = blockStart(rb); i <= r; i++) minVal = Math.min(minVal, arr[i]);
+        }
+        return minVal;
+    }
+
+    public void update(int index, int value) {
+        arr[index] = value;
+        int b = blockIndex(index);
+        blocks[b] = Integer.MAX_VALUE;              // recompute this block's minimum
+        for (int i = blockStart(b); i <= blockEnd(b); i++)
+            blocks[b] = Math.min(blocks[b], arr[i]);
+    }
+}
+```
+
+```go
+type SqrtDecomposition struct {
+    arr       []int
+    blocks    []int // minimum of each block
+    blockSize int
+    n         int
+}
+
+func NewSqrtDecomposition(input []int) *SqrtDecomposition {
+    sd := &SqrtDecomposition{n: len(input)}
+    sd.arr = append([]int(nil), input...)
+    sd.blockSize = int(math.Sqrt(float64(sd.n)))
+    numBlocks := (sd.n + sd.blockSize - 1) / sd.blockSize
+    sd.blocks = make([]int, numBlocks)
+    for i := range sd.blocks {
+        sd.blocks[i] = math.MaxInt
+    }
+    for i := 0; i < sd.n; i++ {
+        b := sd.blockIndex(i)
+        if sd.arr[i] < sd.blocks[b] {
+            sd.blocks[b] = sd.arr[i]
+        }
+    }
+    return sd
+}
+
+func (sd *SqrtDecomposition) blockIndex(i int) int { return i / sd.blockSize }
+func (sd *SqrtDecomposition) blockStart(b int) int { return b * sd.blockSize }
+func (sd *SqrtDecomposition) blockEnd(b int) int {
+    end := (b+1)*sd.blockSize - 1
+    if sd.n-1 < end {
+        end = sd.n - 1
+    }
+    return end
+}
+
+func (sd *SqrtDecomposition) RangeMin(l, r int) int {
+    minVal := math.MaxInt
+    lb, rb := sd.blockIndex(l), sd.blockIndex(r)
+    if lb == rb {
+        for i := l; i <= r; i++ {
+            if sd.arr[i] < minVal {
+                minVal = sd.arr[i]
+            }
+        }
+    } else {
+        for i := l; i <= sd.blockEnd(lb); i++ {
+            if sd.arr[i] < minVal {
+                minVal = sd.arr[i]
+            }
+        }
+        for b := lb + 1; b < rb; b++ {
+            if sd.blocks[b] < minVal {
+                minVal = sd.blocks[b]
+            }
+        }
+        for i := sd.blockStart(rb); i <= r; i++ {
+            if sd.arr[i] < minVal {
+                minVal = sd.arr[i]
+            }
+        }
+    }
+    return minVal
+}
+
+func (sd *SqrtDecomposition) Update(index, value int) {
+    sd.arr[index] = value
+    b := sd.blockIndex(index)
+    sd.blocks[b] = math.MaxInt // recompute this block's minimum
+    for i := sd.blockStart(b); i <= sd.blockEnd(b); i++ {
+        if sd.arr[i] < sd.blocks[b] {
+            sd.blocks[b] = sd.arr[i]
+        }
+    }
+}
+```
+
 For an invertible aggregate like sum, store a running block total so updates drop to O(1) while queries stay O(√n):
 
 ```cpp
@@ -923,6 +1752,101 @@ class SqrtDecompositionSum:
     def update(self, index, value):
         self.block_sums[self._block_index(index)] += (value - self.arr[index])
         self.arr[index] = value
+```
+
+```java
+class SqrtDecompositionSum {
+    private final int[] arr;
+    private final long[] blockSums;
+    private final int blockSize, n;
+
+    public SqrtDecompositionSum(int[] input) {
+        n = input.length;
+        arr = input.clone();
+        blockSize = (int) Math.sqrt(n);
+        blockSums = new long[(n + blockSize - 1) / blockSize];
+        for (int i = 0; i < n; i++) blockSums[blockIndex(i)] += arr[i];
+    }
+
+    private int blockIndex(int i) { return i / blockSize; }
+    private int blockStart(int b) { return b * blockSize; }
+    private int blockEnd(int b)   { return Math.min((b + 1) * blockSize - 1, n - 1); }
+
+    public long rangeSum(int l, int r) {
+        long sum = 0;
+        int lb = blockIndex(l), rb = blockIndex(r);
+        if (lb == rb) {
+            for (int i = l; i <= r; i++) sum += arr[i];
+        } else {
+            for (int i = l; i <= blockEnd(lb); i++)   sum += arr[i];
+            for (int b = lb + 1; b < rb; b++)         sum += blockSums[b];
+            for (int i = blockStart(rb); i <= r; i++) sum += arr[i];
+        }
+        return sum;
+    }
+
+    public void update(int index, int value) {
+        blockSums[blockIndex(index)] += (value - arr[index]);
+        arr[index] = value;
+    }
+}
+```
+
+```go
+type SqrtDecompositionSum struct {
+    arr       []int
+    blockSums []int64
+    blockSize int
+    n         int
+}
+
+func NewSqrtDecompositionSum(input []int) *SqrtDecompositionSum {
+    sd := &SqrtDecompositionSum{n: len(input)}
+    sd.arr = append([]int(nil), input...)
+    sd.blockSize = int(math.Sqrt(float64(sd.n)))
+    numBlocks := (sd.n + sd.blockSize - 1) / sd.blockSize
+    sd.blockSums = make([]int64, numBlocks)
+    for i := 0; i < sd.n; i++ {
+        sd.blockSums[sd.blockIndex(i)] += int64(sd.arr[i])
+    }
+    return sd
+}
+
+func (sd *SqrtDecompositionSum) blockIndex(i int) int { return i / sd.blockSize }
+func (sd *SqrtDecompositionSum) blockStart(b int) int { return b * sd.blockSize }
+func (sd *SqrtDecompositionSum) blockEnd(b int) int {
+    end := (b+1)*sd.blockSize - 1
+    if sd.n-1 < end {
+        end = sd.n - 1
+    }
+    return end
+}
+
+func (sd *SqrtDecompositionSum) RangeSum(l, r int) int64 {
+    var sum int64
+    lb, rb := sd.blockIndex(l), sd.blockIndex(r)
+    if lb == rb {
+        for i := l; i <= r; i++ {
+            sum += int64(sd.arr[i])
+        }
+    } else {
+        for i := l; i <= sd.blockEnd(lb); i++ {
+            sum += int64(sd.arr[i])
+        }
+        for b := lb + 1; b < rb; b++ {
+            sum += sd.blockSums[b]
+        }
+        for i := sd.blockStart(rb); i <= r; i++ {
+            sum += int64(sd.arr[i])
+        }
+    }
+    return sum
+}
+
+func (sd *SqrtDecompositionSum) Update(index, value int) {
+    sd.blockSums[sd.blockIndex(index)] += int64(value - sd.arr[index])
+    sd.arr[index] = value
+}
 ```
 
 That rounds out the range-query family. Pick by what constrains you:
@@ -1103,6 +2027,188 @@ class SkipList:
             self.current_level -= 1
 ```
 
+```java
+import java.util.Random;
+
+class SkipListNode {
+    int value;
+    SkipListNode[] forward;
+    SkipListNode(int val, int lvl) {
+        this.value = val;
+        this.forward = new SkipListNode[lvl + 1];
+    }
+}
+
+class SkipList {
+    private final SkipListNode header;
+    private final int maxLevel;
+    private int currentLevel;
+    private final Random rng = new Random();
+
+    public SkipList() { this(16); }
+
+    public SkipList(int maxLvl) {
+        maxLevel = maxLvl;
+        currentLevel = 0;
+        header = new SkipListNode(Integer.MIN_VALUE, maxLevel);
+    }
+
+    private int randomLevel() {
+        int level = 0;
+        while (rng.nextDouble() < 0.5 && level < maxLevel) level++;
+        return level;
+    }
+
+    public boolean search(int target) {
+        SkipListNode current = header;
+        for (int i = currentLevel; i >= 0; i--)
+            while (current.forward[i] != null && current.forward[i].value < target)
+                current = current.forward[i];
+        current = current.forward[0];
+        return current != null && current.value == target;
+    }
+
+    public void insert(int value) {
+        SkipListNode[] update = new SkipListNode[maxLevel + 1];
+        SkipListNode current = header;
+        for (int i = currentLevel; i >= 0; i--) {
+            while (current.forward[i] != null && current.forward[i].value < value)
+                current = current.forward[i];
+            update[i] = current;
+        }
+        current = current.forward[0];
+        if (current != null && current.value == value) return;   // no duplicates
+
+        int newLevel = randomLevel();
+        if (newLevel > currentLevel) {
+            for (int i = currentLevel + 1; i <= newLevel; i++) update[i] = header;
+            currentLevel = newLevel;
+        }
+        SkipListNode newNode = new SkipListNode(value, newLevel);
+        for (int i = 0; i <= newLevel; i++) {
+            newNode.forward[i] = update[i].forward[i];
+            update[i].forward[i] = newNode;
+        }
+    }
+
+    public void remove(int value) {
+        SkipListNode[] update = new SkipListNode[maxLevel + 1];
+        SkipListNode current = header;
+        for (int i = currentLevel; i >= 0; i--) {
+            while (current.forward[i] != null && current.forward[i].value < value)
+                current = current.forward[i];
+            update[i] = current;
+        }
+        current = current.forward[0];
+        if (current == null || current.value != value) return;
+
+        for (int i = 0; i <= currentLevel; i++) {
+            if (update[i].forward[i] != current) break;
+            update[i].forward[i] = current.forward[i];
+        }
+        while (currentLevel > 0 && header.forward[currentLevel] == null)
+            currentLevel--;
+    }
+}
+```
+
+```go
+type SkipListNode struct {
+    value   int
+    forward []*SkipListNode
+}
+
+func newSkipListNode(val, lvl int) *SkipListNode {
+    return &SkipListNode{value: val, forward: make([]*SkipListNode, lvl+1)}
+}
+
+type SkipList struct {
+    header       *SkipListNode
+    maxLevel     int
+    currentLevel int
+}
+
+func NewSkipList(maxLvl int) *SkipList {
+    return &SkipList{
+        header:       newSkipListNode(math.MinInt, maxLvl),
+        maxLevel:     maxLvl,
+        currentLevel: 0,
+    }
+}
+
+func (sl *SkipList) randomLevel() int {
+    level := 0
+    for rand.Float64() < 0.5 && level < sl.maxLevel {
+        level++
+    }
+    return level
+}
+
+func (sl *SkipList) Search(target int) bool {
+    current := sl.header
+    for i := sl.currentLevel; i >= 0; i-- {
+        for current.forward[i] != nil && current.forward[i].value < target {
+            current = current.forward[i]
+        }
+    }
+    current = current.forward[0]
+    return current != nil && current.value == target
+}
+
+func (sl *SkipList) Insert(value int) {
+    update := make([]*SkipListNode, sl.maxLevel+1)
+    current := sl.header
+    for i := sl.currentLevel; i >= 0; i-- {
+        for current.forward[i] != nil && current.forward[i].value < value {
+            current = current.forward[i]
+        }
+        update[i] = current
+    }
+    current = current.forward[0]
+    if current != nil && current.value == value {
+        return // no duplicates
+    }
+
+    newLevel := sl.randomLevel()
+    if newLevel > sl.currentLevel {
+        for i := sl.currentLevel + 1; i <= newLevel; i++ {
+            update[i] = sl.header
+        }
+        sl.currentLevel = newLevel
+    }
+    newNode := newSkipListNode(value, newLevel)
+    for i := 0; i <= newLevel; i++ {
+        newNode.forward[i] = update[i].forward[i]
+        update[i].forward[i] = newNode
+    }
+}
+
+func (sl *SkipList) Remove(value int) {
+    update := make([]*SkipListNode, sl.maxLevel+1)
+    current := sl.header
+    for i := sl.currentLevel; i >= 0; i-- {
+        for current.forward[i] != nil && current.forward[i].value < value {
+            current = current.forward[i]
+        }
+        update[i] = current
+    }
+    current = current.forward[0]
+    if current == nil || current.value != value {
+        return
+    }
+
+    for i := 0; i <= sl.currentLevel; i++ {
+        if update[i].forward[i] != current {
+            break
+        }
+        update[i].forward[i] = current.forward[i]
+    }
+    for sl.currentLevel > 0 && sl.header.forward[sl.currentLevel] == nil {
+        sl.currentLevel--
+    }
+}
+```
+
 Search, insert, and delete are O(log n) expected, O(n) worst case; space is O(n), since each element appears in ~2 levels on average. You trade a balanced tree's deterministic guarantees for a much simpler implementation.
 
 ## 14.8 Bloom Filters
@@ -1200,6 +2306,98 @@ class BloomFilter:
         return (1 - exp(exponent)) ** self.num_hash_functions
 ```
 
+```java
+class BloomFilter {
+    private final boolean[] bits;
+    private final int size, numHashFunctions;
+
+    public BloomFilter(int expectedElements, double falsePositiveRate) {
+        // Optimal size m = -n·ln(p)/(ln 2)^2, hash count k = (m/n)·ln 2.
+        size = (int) (-expectedElements * Math.log(falsePositiveRate) / (Math.log(2) * Math.log(2)));
+        numHashFunctions = (int) ((size / (double) expectedElements) * Math.log(2));
+        bits = new boolean[size];
+    }
+
+    private int hash1(String k) { return (int) Math.floorMod((long) k.hashCode(), (long) size); }
+    private int hash2(String k) { return (int) Math.floorMod((long) k.hashCode() * 31, (long) size); }
+    private int hash3(String k) { return (int) Math.floorMod((long) k.hashCode() * 17 + 7, (long) size); }
+
+    public void insert(String key) {
+        bits[hash1(key)] = bits[hash2(key)] = bits[hash3(key)] = true;
+        for (int i = 3; i < numHashFunctions; i++)
+            bits[(int) Math.floorMod((long) hash1(key) + (long) i * hash2(key), (long) size)] = true;
+    }
+
+    public boolean contains(String key) {
+        if (!bits[hash1(key)] || !bits[hash2(key)] || !bits[hash3(key)]) return false;
+        for (int i = 3; i < numHashFunctions; i++)
+            if (!bits[(int) Math.floorMod((long) hash1(key) + (long) i * hash2(key), (long) size)]) return false;
+        return true;   // may be a false positive
+    }
+
+    // False-positive rate ≈ (1 - e^(-kn/m))^k for n inserted elements.
+    public double getFalsePositiveRate(int numElements) {
+        double exponent = -numHashFunctions * (double) numElements / size;
+        return Math.pow(1 - Math.exp(exponent), numHashFunctions);
+    }
+}
+```
+
+```go
+type BloomFilter struct {
+    bits             []bool
+    size             int
+    numHashFunctions int
+}
+
+func NewBloomFilter(expectedElements int, falsePositiveRate float64) *BloomFilter {
+    // Optimal size m = -n·ln(p)/(ln 2)^2, hash count k = (m/n)·ln 2.
+    size := int(-float64(expectedElements) * math.Log(falsePositiveRate) / (math.Log(2) * math.Log(2)))
+    k := int((float64(size) / float64(expectedElements)) * math.Log(2))
+    return &BloomFilter{bits: make([]bool, size), size: size, numHashFunctions: k}
+}
+
+// FNV-1a string hash, reduced modulo the bit-array size.
+func (bf *BloomFilter) hashBase(key string) uint64 {
+    var h uint64 = 14695981039346656037
+    for i := 0; i < len(key); i++ {
+        h = (h ^ uint64(key[i])) * 1099511628211
+    }
+    return h
+}
+
+func (bf *BloomFilter) hash1(k string) int { return int(bf.hashBase(k) % uint64(bf.size)) }
+func (bf *BloomFilter) hash2(k string) int { return int(bf.hashBase(k) * 31 % uint64(bf.size)) }
+func (bf *BloomFilter) hash3(k string) int { return int((bf.hashBase(k)*17 + 7) % uint64(bf.size)) }
+
+func (bf *BloomFilter) Insert(key string) {
+    bf.bits[bf.hash1(key)] = true
+    bf.bits[bf.hash2(key)] = true
+    bf.bits[bf.hash3(key)] = true
+    for i := 3; i < bf.numHashFunctions; i++ {
+        bf.bits[(bf.hash1(key)+i*bf.hash2(key))%bf.size] = true
+    }
+}
+
+func (bf *BloomFilter) Contains(key string) bool {
+    if !bf.bits[bf.hash1(key)] || !bf.bits[bf.hash2(key)] || !bf.bits[bf.hash3(key)] {
+        return false
+    }
+    for i := 3; i < bf.numHashFunctions; i++ {
+        if !bf.bits[(bf.hash1(key)+i*bf.hash2(key))%bf.size] {
+            return false
+        }
+    }
+    return true // may be a false positive
+}
+
+// False-positive rate ≈ (1 - e^(-kn/m))^k for n inserted elements.
+func (bf *BloomFilter) FalsePositiveRate(numElements int) float64 {
+    exponent := -float64(bf.numHashFunctions) * float64(numElements) / float64(bf.size)
+    return math.Pow(1-math.Exp(exponent), float64(bf.numHashFunctions))
+}
+```
+
 Insert and lookup are O(k); space is O(m) bits, independent of element size. To support deletion, a **counting Bloom filter** replaces each bit with a small counter, incremented on insert and decremented on remove:
 
 ```cpp
@@ -1264,6 +2462,80 @@ class CountingBloomFilter:
     def contains(self, key):
         return (self.counters[self._hash1(key)] > 0 and self.counters[self._hash2(key)] > 0
                 and self.counters[self._hash3(key)] > 0)
+```
+
+```java
+class CountingBloomFilter {
+    private final int[] counters;
+    private final int size, numHashFunctions;
+
+    public CountingBloomFilter(int expectedElements, double falsePositiveRate) {
+        size = (int) (-expectedElements * Math.log(falsePositiveRate) / (Math.log(2) * Math.log(2)));
+        numHashFunctions = (int) ((size / (double) expectedElements) * Math.log(2));
+        counters = new int[size];
+    }
+
+    private int hash1(String k) { return (int) Math.floorMod((long) k.hashCode(), (long) size); }
+    private int hash2(String k) { return (int) Math.floorMod((long) k.hashCode() * 31, (long) size); }
+    private int hash3(String k) { return (int) Math.floorMod((long) k.hashCode() * 17 + 7, (long) size); }
+
+    public void insert(String key) {
+        counters[hash1(key)]++; counters[hash2(key)]++; counters[hash3(key)]++;
+    }
+
+    public void remove(String key) {
+        counters[hash1(key)]--; counters[hash2(key)]--; counters[hash3(key)]--;
+    }
+
+    public boolean contains(String key) {
+        return counters[hash1(key)] > 0 && counters[hash2(key)] > 0
+            && counters[hash3(key)] > 0;
+    }
+}
+```
+
+```go
+type CountingBloomFilter struct {
+    counters         []int
+    size             int
+    numHashFunctions int
+}
+
+func NewCountingBloomFilter(expectedElements int, falsePositiveRate float64) *CountingBloomFilter {
+    size := int(-float64(expectedElements) * math.Log(falsePositiveRate) / (math.Log(2) * math.Log(2)))
+    k := int((float64(size) / float64(expectedElements)) * math.Log(2))
+    return &CountingBloomFilter{counters: make([]int, size), size: size, numHashFunctions: k}
+}
+
+// FNV-1a string hash, reduced modulo the counter-array size.
+func (cb *CountingBloomFilter) hashBase(key string) uint64 {
+    var h uint64 = 14695981039346656037
+    for i := 0; i < len(key); i++ {
+        h = (h ^ uint64(key[i])) * 1099511628211
+    }
+    return h
+}
+
+func (cb *CountingBloomFilter) hash1(k string) int { return int(cb.hashBase(k) % uint64(cb.size)) }
+func (cb *CountingBloomFilter) hash2(k string) int { return int(cb.hashBase(k) * 31 % uint64(cb.size)) }
+func (cb *CountingBloomFilter) hash3(k string) int { return int((cb.hashBase(k)*17 + 7) % uint64(cb.size)) }
+
+func (cb *CountingBloomFilter) Insert(key string) {
+    cb.counters[cb.hash1(key)]++
+    cb.counters[cb.hash2(key)]++
+    cb.counters[cb.hash3(key)]++
+}
+
+func (cb *CountingBloomFilter) Remove(key string) {
+    cb.counters[cb.hash1(key)]--
+    cb.counters[cb.hash2(key)]--
+    cb.counters[cb.hash3(key)]--
+}
+
+func (cb *CountingBloomFilter) Contains(key string) bool {
+    return cb.counters[cb.hash1(key)] > 0 && cb.counters[cb.hash2(key)] > 0 &&
+        cb.counters[cb.hash3(key)] > 0
+}
 ```
 
 ## 14.9 Count-Min Sketch
@@ -1341,6 +2613,86 @@ class CountMinSketch:
         return min_count
 ```
 
+```java
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.ToIntFunction;
+
+class CountMinSketch {
+    private final int[][] sketch;
+    private final int depth, width;
+    private final List<ToIntFunction<String>> hashFunctions = new ArrayList<>();
+
+    public CountMinSketch(int d, int w) {
+        depth = d;
+        width = w;
+        sketch = new int[depth][width];
+        // Build `depth` independent hashes from one base hash + per-row seed.
+        for (int i = 0; i < depth; i++) {
+            final long seed = i;
+            hashFunctions.add(k ->
+                (int) Math.floorMod((long) k.hashCode() * (2 * seed + 1) + seed * 7, (long) width));
+        }
+    }
+
+    public void increment(String key) {
+        for (int i = 0; i < depth; i++)
+            sketch[i][hashFunctions.get(i).applyAsInt(key)]++;
+    }
+
+    public int query(String key) {
+        int minCount = Integer.MAX_VALUE;
+        for (int i = 0; i < depth; i++)
+            minCount = Math.min(minCount, sketch[i][hashFunctions.get(i).applyAsInt(key)]);
+        return minCount;
+    }
+}
+```
+
+```go
+type CountMinSketch struct {
+    sketch        [][]int
+    depth, width  int
+    hashFunctions []func(string) int
+}
+
+func NewCountMinSketch(d, w int) *CountMinSketch {
+    cms := &CountMinSketch{depth: d, width: w}
+    cms.sketch = make([][]int, d)
+    for i := range cms.sketch {
+        cms.sketch[i] = make([]int, w)
+    }
+    // Build `depth` independent hashes from one base hash + per-row seed.
+    for i := 0; i < d; i++ {
+        seed := uint64(i)
+        cms.hashFunctions = append(cms.hashFunctions, func(k string) int {
+            var h uint64 = 14695981039346656037
+            for j := 0; j < len(k); j++ {
+                h = (h ^ uint64(k[j])) * 1099511628211
+            }
+            return int((h*(2*seed+1) + seed*7) % uint64(w))
+        })
+    }
+    return cms
+}
+
+func (cms *CountMinSketch) Increment(key string) {
+    for i := 0; i < cms.depth; i++ {
+        cms.sketch[i][cms.hashFunctions[i](key)]++
+    }
+}
+
+func (cms *CountMinSketch) Query(key string) int {
+    minCount := math.MaxInt
+    for i := 0; i < cms.depth; i++ {
+        if c := cms.sketch[i][cms.hashFunctions[i](key)]; c < minCount {
+            minCount = c
+        }
+    }
+    return minCount
+}
+```
+
 Increment and query are O(d); space is O(d × w). With width `w = ⌈e/ε⌉` and depth `d = ⌈ln(1/δ)⌉`, the error is at most `ε·N` (N = total increments) with probability at least `1 − δ`. For ε = δ = 0.01 that's w = 272, d = 5 — about 1,360 counters regardless of stream size. More depth raises confidence; more width lowers collisions.
 
 A common use is **heavy hitters** — elements exceeding a frequency threshold, as in network monitoring or trending-item detection:
@@ -1370,6 +2722,39 @@ def find_heavy_hitters(stream, threshold, total_elements):
         if cms.query(e) >= threshold * total_elements:
             heavy_hitters.append(e)
     return heavy_hitters
+```
+
+```java
+import java.util.ArrayList;
+import java.util.List;
+
+static List<String> findHeavyHitters(List<String> stream, double threshold, int totalElements) {
+    CountMinSketch cms = new CountMinSketch(5, 272);   // ε≈0.01, δ≈0.01
+    for (String e : stream) cms.increment(e);
+
+    List<String> heavyHitters = new ArrayList<>();
+    for (String e : stream)
+        if (cms.query(e) >= threshold * totalElements)
+            heavyHitters.add(e);
+    return heavyHitters;
+}
+```
+
+```go
+func findHeavyHitters(stream []string, threshold float64, totalElements int) []string {
+    cms := NewCountMinSketch(5, 272) // ε≈0.01, δ≈0.01
+    for _, e := range stream {
+        cms.Increment(e)
+    }
+
+    var heavyHitters []string
+    for _, e := range stream {
+        if float64(cms.Query(e)) >= threshold*float64(totalElements) {
+            heavyHitters = append(heavyHitters, e)
+        }
+    }
+    return heavyHitters
+}
 ```
 
 Reach for a Count-Min sketch when the stream is large, approximate counts suffice, and space is tight; skip it when you need exact counts or the data fits a plain hash table. Variants include Count sketch (±1 signs, lower average error but can underestimate) and conservative-update (increments only the minimum cells to curb overestimation).
@@ -1605,6 +2990,239 @@ class FibonacciHeap:
         return self.min_node is None
 ```
 
+```java
+import java.util.ArrayList;
+import java.util.List;
+
+class FibonacciHeap {
+    private static class Node {
+        int key, degree;
+        boolean marked;
+        Node parent, child, left, right;
+        Node(int k) {
+            key = k; degree = 0; marked = false;
+            parent = child = null;
+            left = right = this;
+        }
+    }
+
+    private Node minNode = null;
+    private int numNodes = 0;
+
+    // Make `node` a child of `parent` (both currently roots).
+    private void link(Node node, Node parent) {
+        node.left.right = node.right;      // unlink from root list
+        node.right.left = node.left;
+        if (parent.child == null) {
+            parent.child = node;
+            node.left = node.right = node;
+        } else {
+            node.right = parent.child;
+            node.left = parent.child.left;
+            parent.child.left.right = node;
+            parent.child.left = node;
+        }
+        node.parent = parent;
+        parent.degree++;
+        node.marked = false;
+    }
+
+    private void consolidate() {
+        Node[] degreeTable = new Node[64];   // 64 covers any practical n
+        List<Node> roots = new ArrayList<>();
+        Node current = minNode;
+        do { roots.add(current); current = current.right; } while (current != minNode);
+
+        for (Node root : roots) {
+            int degree = root.degree;
+            while (degreeTable[degree] != null) {
+                Node other = degreeTable[degree];
+                if (root.key > other.key) { Node t = root; root = other; other = t; }
+                link(other, root);                 // smaller key becomes parent
+                degreeTable[degree] = null;
+                degree++;
+            }
+            degreeTable[degree] = root;
+        }
+
+        minNode = null;
+        for (Node node : degreeTable)
+            if (node != null && (minNode == null || node.key < minNode.key))
+                minNode = node;
+    }
+
+    public void insert(int key) {
+        Node node = new Node(key);
+        if (minNode == null) {
+            minNode = node;
+        } else {
+            node.right = minNode;
+            node.left = minNode.left;
+            minNode.left.right = node;
+            minNode.left = node;
+            if (key < minNode.key) minNode = node;
+        }
+        numNodes++;
+    }
+
+    public int extractMin() {
+        if (minNode == null) throw new RuntimeException("Heap is empty");
+        Node min = minNode;
+        int minKey = min.key;
+
+        if (min.child != null) {               // move children to root list
+            Node child = min.child;
+            do {
+                Node next = child.right;
+                child.parent = null;
+                child.right = minNode;
+                child.left = minNode.left;
+                minNode.left.right = child;
+                minNode.left = child;
+                child = next;
+            } while (child != min.child);
+        }
+
+        min.left.right = min.right;             // unlink min
+        min.right.left = min.left;
+        if (min == min.right) {
+            minNode = null;
+        } else {
+            minNode = min.right;
+            consolidate();
+        }
+        numNodes--;
+        return minKey;
+    }
+
+    public boolean isEmpty() { return minNode == null; }
+}
+```
+
+```go
+type fibNode struct {
+    key, degree                int
+    marked                     bool
+    parent, child, left, right *fibNode
+}
+
+func newFibNode(k int) *fibNode {
+    n := &fibNode{key: k}
+    n.left, n.right = n, n
+    return n
+}
+
+type FibonacciHeap struct {
+    minNode  *fibNode
+    numNodes int
+}
+
+// Make `node` a child of `parent` (both currently roots).
+func (h *FibonacciHeap) link(node, parent *fibNode) {
+    node.left.right = node.right // unlink from root list
+    node.right.left = node.left
+    if parent.child == nil {
+        parent.child = node
+        node.left, node.right = node, node
+    } else {
+        node.right = parent.child
+        node.left = parent.child.left
+        parent.child.left.right = node
+        parent.child.left = node
+    }
+    node.parent = parent
+    parent.degree++
+    node.marked = false
+}
+
+func (h *FibonacciHeap) consolidate() {
+    degreeTable := make([]*fibNode, 64) // 64 covers any practical n
+    var roots []*fibNode
+    current := h.minNode
+    for {
+        roots = append(roots, current)
+        current = current.right
+        if current == h.minNode {
+            break
+        }
+    }
+
+    for _, root := range roots {
+        degree := root.degree
+        for degreeTable[degree] != nil {
+            other := degreeTable[degree]
+            if root.key > other.key {
+                root, other = other, root
+            }
+            h.link(other, root) // smaller key becomes parent
+            degreeTable[degree] = nil
+            degree++
+        }
+        degreeTable[degree] = root
+    }
+
+    h.minNode = nil
+    for _, node := range degreeTable {
+        if node != nil && (h.minNode == nil || node.key < h.minNode.key) {
+            h.minNode = node
+        }
+    }
+}
+
+func (h *FibonacciHeap) Insert(key int) {
+    node := newFibNode(key)
+    if h.minNode == nil {
+        h.minNode = node
+    } else {
+        node.right = h.minNode
+        node.left = h.minNode.left
+        h.minNode.left.right = node
+        h.minNode.left = node
+        if key < h.minNode.key {
+            h.minNode = node
+        }
+    }
+    h.numNodes++
+}
+
+func (h *FibonacciHeap) ExtractMin() int {
+    if h.minNode == nil {
+        panic("heap is empty")
+    }
+    min := h.minNode
+    minKey := min.key
+
+    if min.child != nil { // move children to root list
+        child := min.child
+        for {
+            next := child.right
+            child.parent = nil
+            child.right = h.minNode
+            child.left = h.minNode.left
+            h.minNode.left.right = child
+            h.minNode.left = child
+            child = next
+            if child == min.child {
+                break
+            }
+        }
+    }
+
+    min.left.right = min.right // unlink min
+    min.right.left = min.left
+    if min == min.right {
+        h.minNode = nil
+    } else {
+        h.minNode = min.right
+        h.consolidate()
+    }
+    h.numNodes--
+    return minKey
+}
+
+func (h *FibonacciHeap) Empty() bool { return h.minNode == nil }
+```
+
 In practice Fibonacci heaps carry large constant factors and poor cache behavior — pointer-heavy nodes, exactly the layout the intro warned against — so a plain binary heap, or a pairing heap, usually wins outside of graph algorithms dominated by decrease-key. Reach for one only when decrease-key or merge is genuinely the bottleneck.
 
 ## 14.11 Suffix Array and Suffix Tree
@@ -1763,6 +3381,179 @@ class SuffixArray:
         return self.lcp
 ```
 
+```java
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+class SuffixArray {
+    private final String text;
+    private int[] suffixArray;
+    private int[] lcp;
+
+    public SuffixArray(String s) {
+        text = s + '$';               // sentinel smaller than any real char
+        buildSuffixArray();
+        buildLCP();
+    }
+
+    private void buildSuffixArray() {
+        int n = text.length();
+        Integer[] sa = new Integer[n];
+        for (int i = 0; i < n; i++) sa[i] = i;
+        Arrays.sort(sa, (a, b) -> text.substring(a).compareTo(text.substring(b)));
+        suffixArray = new int[n];
+        for (int i = 0; i < n; i++) suffixArray[i] = sa[i];
+    }
+
+    private void buildLCP() {
+        int n = text.length();
+        lcp = new int[n];
+        for (int i = 1; i < n; i++) {
+            int len = 0, a = suffixArray[i - 1], b = suffixArray[i];
+            while (a + len < n && b + len < n && text.charAt(a + len) == text.charAt(b + len)) len++;
+            lcp[i] = len;
+        }
+    }
+
+    // O(m log n): binary-search for any suffix beginning with `pattern`.
+    public boolean search(String pattern) {
+        int left = 0, right = suffixArray.length - 1;
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+            String suffix = text.substring(suffixArray[mid]);
+            if (suffix.startsWith(pattern)) return true;
+            if (suffix.compareTo(pattern) < 0) left = mid + 1;
+            else                               right = mid - 1;
+        }
+        return false;
+    }
+
+    public List<Integer> findAllOccurrences(String pattern) {
+        List<Integer> occ = new ArrayList<>();
+        int lo = 0, hi = suffixArray.length - 1, first = -1;
+        while (lo <= hi) {                         // first matching suffix
+            int mid = lo + (hi - lo) / 2;
+            String suffix = text.substring(suffixArray[mid]);
+            if (suffix.startsWith(pattern)) { first = mid; hi = mid - 1; }
+            else if (suffix.compareTo(pattern) < 0) lo = mid + 1;
+            else                                    hi = mid - 1;
+        }
+        if (first == -1) return occ;
+
+        lo = first; hi = suffixArray.length - 1;
+        int last = first;
+        while (lo <= hi) {                         // last matching suffix
+            int mid = lo + (hi - lo) / 2;
+            String suffix = text.substring(suffixArray[mid]);
+            if (suffix.startsWith(pattern)) { last = mid; lo = mid + 1; }
+            else hi = mid - 1;
+        }
+        for (int i = first; i <= last; i++) occ.add(suffixArray[i]);
+        return occ;
+    }
+
+    public int[] getSuffixArray() { return suffixArray; }
+    public int[] getLCP()         { return lcp; }
+}
+```
+
+```go
+type SuffixArray struct {
+    text        string
+    suffixArray []int
+    lcp         []int
+}
+
+func NewSuffixArray(s string) *SuffixArray {
+    sa := &SuffixArray{text: s + "$"} // sentinel smaller than any real char
+    sa.buildSuffixArray()
+    sa.buildLCP()
+    return sa
+}
+
+func (sa *SuffixArray) buildSuffixArray() {
+    n := len(sa.text)
+    sa.suffixArray = make([]int, n)
+    for i := 0; i < n; i++ {
+        sa.suffixArray[i] = i
+    }
+    sort.Slice(sa.suffixArray, func(i, j int) bool {
+        return sa.text[sa.suffixArray[i]:] < sa.text[sa.suffixArray[j]:]
+    })
+}
+
+func (sa *SuffixArray) buildLCP() {
+    n := len(sa.text)
+    sa.lcp = make([]int, n)
+    for i := 1; i < n; i++ {
+        length, a, b := 0, sa.suffixArray[i-1], sa.suffixArray[i]
+        for a+length < n && b+length < n && sa.text[a+length] == sa.text[b+length] {
+            length++
+        }
+        sa.lcp[i] = length
+    }
+}
+
+// O(m log n): binary-search for any suffix beginning with `pattern`.
+func (sa *SuffixArray) Search(pattern string) bool {
+    left, right := 0, len(sa.suffixArray)-1
+    for left <= right {
+        mid := left + (right-left)/2
+        suffix := sa.text[sa.suffixArray[mid]:]
+        if strings.HasPrefix(suffix, pattern) {
+            return true
+        }
+        if suffix < pattern {
+            left = mid + 1
+        } else {
+            right = mid - 1
+        }
+    }
+    return false
+}
+
+func (sa *SuffixArray) FindAllOccurrences(pattern string) []int {
+    var occ []int
+    lo, hi, first := 0, len(sa.suffixArray)-1, -1
+    for lo <= hi { // first matching suffix
+        mid := lo + (hi-lo)/2
+        suffix := sa.text[sa.suffixArray[mid]:]
+        if strings.HasPrefix(suffix, pattern) {
+            first = mid
+            hi = mid - 1
+        } else if suffix < pattern {
+            lo = mid + 1
+        } else {
+            hi = mid - 1
+        }
+    }
+    if first == -1 {
+        return occ
+    }
+
+    lo, hi = first, len(sa.suffixArray)-1
+    last := first
+    for lo <= hi { // last matching suffix
+        mid := lo + (hi-lo)/2
+        suffix := sa.text[sa.suffixArray[mid]:]
+        if strings.HasPrefix(suffix, pattern) {
+            last = mid
+            lo = mid + 1
+        } else {
+            hi = mid - 1
+        }
+    }
+    for i := first; i <= last; i++ {
+        occ = append(occ, sa.suffixArray[i])
+    }
+    return occ
+}
+
+func (sa *SuffixArray) GetSuffixArray() []int { return sa.suffixArray }
+func (sa *SuffixArray) GetLCP() []int         { return sa.lcp }
+```
+
 A **suffix tree** is a compressed trie of all suffixes; Ukkonen's algorithm builds it in O(n) and searches a pattern in O(m), and it directly solves longest-common-substring, longest-repeated-substring, and drives applications from LZ77 compression to DNA analysis. But it is notoriously intricate to implement correctly, so a suffix array plus LCP is usually preferred in practice — comparable performance, far less code. Reach for either only when the same text is searched for many patterns; for a single search over small text, a direct string search ([Chapter 7](07-string-search-algorithms.md)) is simpler.
 
 ## 14.12 Persistent Data Structures
@@ -1895,6 +3686,138 @@ class PersistentSegmentTree:
         return len(self.roots) - 1
 ```
 
+```java
+import java.util.ArrayList;
+import java.util.List;
+
+class PersistentSegmentTree {
+    private static class Node {
+        int value;
+        Node left, right;
+        Node(int v) { value = v; }
+        Node(Node l, Node r) {
+            left = l; right = r;
+            value = (l != null ? l.value : 0) + (r != null ? r.value : 0);
+        }
+    }
+
+    private final List<Node> roots = new ArrayList<>();   // one root per version
+    private final int n;
+
+    public PersistentSegmentTree(int[] arr) {
+        n = arr.length;
+        roots.add(build(arr, 0, n - 1));
+    }
+
+    private Node build(int[] arr, int left, int right) {
+        if (left == right) return new Node(arr[left]);
+        int mid = left + (right - left) / 2;
+        return new Node(build(arr, left, mid), build(arr, mid + 1, right));
+    }
+
+    private Node update(Node node, int left, int right, int index, int value) {
+        if (left == right) return new Node(value);
+        int mid = left + (right - left) / 2;
+        if (index <= mid)
+            return new Node(update(node.left, left, mid, index, value), node.right);
+        else
+            return new Node(node.left, update(node.right, mid + 1, right, index, value));
+    }
+
+    private int query(Node node, int left, int right, int qL, int qR) {
+        if (qR < left || qL > right) return 0;
+        if (qL <= left && right <= qR) return node.value;
+        int mid = left + (right - left) / 2;
+        return query(node.left, left, mid, qL, qR)
+             + query(node.right, mid + 1, right, qL, qR);
+    }
+
+    // Create a new version from an existing one.
+    public void update(int version, int index, int value) {
+        roots.add(update(roots.get(version), 0, n - 1, index, value));
+    }
+
+    public int query(int version, int left, int right) {
+        return query(roots.get(version), 0, n - 1, left, right);
+    }
+
+    public int getLatestVersion() { return roots.size() - 1; }
+}
+```
+
+```go
+type psNode struct {
+    value       int
+    left, right *psNode
+}
+
+func newLeaf(v int) *psNode { return &psNode{value: v} }
+
+func newInternal(l, r *psNode) *psNode {
+    n := &psNode{left: l, right: r}
+    if l != nil {
+        n.value += l.value
+    }
+    if r != nil {
+        n.value += r.value
+    }
+    return n
+}
+
+type PersistentSegmentTree struct {
+    roots []*psNode // one root per version
+    n     int
+}
+
+func NewPersistentSegmentTree(arr []int) *PersistentSegmentTree {
+    pst := &PersistentSegmentTree{n: len(arr)}
+    pst.roots = append(pst.roots, pst.build(arr, 0, pst.n-1))
+    return pst
+}
+
+func (pst *PersistentSegmentTree) build(arr []int, left, right int) *psNode {
+    if left == right {
+        return newLeaf(arr[left])
+    }
+    mid := left + (right-left)/2
+    return newInternal(pst.build(arr, left, mid), pst.build(arr, mid+1, right))
+}
+
+func (pst *PersistentSegmentTree) updateNode(node *psNode, left, right, index, value int) *psNode {
+    if left == right {
+        return newLeaf(value)
+    }
+    mid := left + (right-left)/2
+    if index <= mid {
+        return newInternal(pst.updateNode(node.left, left, mid, index, value), node.right)
+    }
+    return newInternal(node.left, pst.updateNode(node.right, mid+1, right, index, value))
+}
+
+func (pst *PersistentSegmentTree) queryNode(node *psNode, left, right, qL, qR int) int {
+    if qR < left || qL > right {
+        return 0
+    }
+    if qL <= left && right <= qR {
+        return node.value
+    }
+    mid := left + (right-left)/2
+    return pst.queryNode(node.left, left, mid, qL, qR) +
+        pst.queryNode(node.right, mid+1, right, qL, qR)
+}
+
+// Create a new version from an existing one.
+func (pst *PersistentSegmentTree) Update(version, index, value int) {
+    pst.roots = append(pst.roots, pst.updateNode(pst.roots[version], 0, pst.n-1, index, value))
+}
+
+func (pst *PersistentSegmentTree) Query(version, left, right int) int {
+    return pst.queryNode(pst.roots[version], 0, pst.n-1, left, right)
+}
+
+func (pst *PersistentSegmentTree) GetLatestVersion() int { return len(pst.roots) - 1 }
+```
+
 Persistence powers time-travel queries ("what was the sum at version t?"), immutable/functional data, and rollback. Use it when history matters; a regular structure is smaller and simpler when only the current state does.
 
 ## 14.13 Failure Modes and Common Pitfalls
@@ -1987,6 +3910,40 @@ The next chapter turns to **greedy algorithms**, many of which — Huffman codin
         return result
     ```
 
+    ```java
+    static List<Integer> findDuplicates(int[] nums) {
+        List<Integer> result = new ArrayList<>();
+        for (int i = 0; i < nums.length; i++) {
+            int idx = Math.abs(nums[i]) - 1;
+            if (nums[idx] < 0) result.add(Math.abs(nums[i]));
+            else               nums[idx] = -nums[idx];
+        }
+        return result;
+    }
+    ```
+
+    ```go
+    func abs(x int) int {
+        if x < 0 {
+            return -x
+        }
+        return x
+    }
+
+    func findDuplicates(nums []int) []int {
+        var result []int
+        for i := 0; i < len(nums); i++ {
+            idx := abs(nums[i]) - 1
+            if nums[idx] < 0 {
+                result = append(result, abs(nums[i]))
+            } else {
+                nums[idx] = -nums[idx]
+            }
+        }
+        return result
+    }
+    ```
+
     Because values lie in `[1, n]`, value `x` maps to index `x-1`, and the array doubles as its own hash table. The *sign* at index `x-1` records whether `x` has been seen: positive means unseen (flip it negative); already negative means `x` is a duplicate. Since each value appears at most twice, one bit of state (the sign) suffices, so no extra space is needed. Time O(n), auxiliary space O(1).
 
 16. **Split Array Largest Sum**: split `nums` into `k` contiguous non-empty subarrays minimizing the largest subarray sum.
@@ -2037,6 +3994,62 @@ The next chapter turns to **greedy algorithms**, many of which — Huffman codin
             else:
                 low = mid + 1
         return low
+    ```
+
+    ```java
+    static boolean canSplit(int[] nums, int target, int k) {
+        int currSum = 0, count = 1;
+        for (int x : nums) {
+            if (currSum + x > target) { currSum = x; count++; }
+            else                        currSum += x;
+        }
+        return count <= k;
+    }
+
+    static int splitArray(int[] nums, int k) {
+        int low = 0, high = 0;
+        for (int x : nums) { low = Math.max(low, x); high += x; }
+        while (low < high) {
+            int mid = low + (high - low) / 2;
+            if (canSplit(nums, mid, k)) high = mid;
+            else                        low = mid + 1;
+        }
+        return low;
+    }
+    ```
+
+    ```go
+    func canSplit(nums []int, target, k int) bool {
+        currSum, count := 0, 1
+        for _, x := range nums {
+            if currSum+x > target {
+                currSum = x
+                count++
+            } else {
+                currSum += x
+            }
+        }
+        return count <= k
+    }
+
+    func splitArray(nums []int, k int) int {
+        low, high := 0, 0
+        for _, x := range nums {
+            if x > low {
+                low = x
+            }
+            high += x
+        }
+        for low < high {
+            mid := low + (high-low)/2
+            if canSplit(nums, mid, k) {
+                high = mid
+            } else {
+                low = mid + 1
+            }
+        }
+        return low
+    }
     ```
 
     This is *binary search on the answer*. The result lies in `[max(nums), sum(nums)]`: the lower bound must hold the largest single element, the upper bound puts everything in one subarray. For a candidate `mid`, a greedy pass (`canSplit`) counts how many subarrays are needed if each is capped at `mid`; feasibility is monotone in `mid`, so binary search converges on the smallest feasible cap. Time O(n·log(sum)), space O(1).
