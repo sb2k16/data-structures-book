@@ -259,8 +259,18 @@ function BSTStage({ st }: { st: any }) {
           )))}
           {tree.map((n) => (
             <g key={n.id}>
-              <circle cx={cx(n.id)} cy={cy(n.id)} r={18} fill={fill(n.id)} stroke={stroke(n.id)} strokeWidth={2} />
-              <text x={cx(n.id)} y={cy(n.id)} textAnchor="middle" dominantBaseline="central" fontSize={14} fontWeight={600} fill={textColor(n.id)} style={{ fontFamily: 'var(--font-mono, monospace)' }}>{n.val}</text>
+              <motion.circle
+                cx={cx(n.id)}
+                cy={cy(n.id)}
+                fill={fill(n.id)}
+                stroke={stroke(n.id)}
+                strokeWidth={2}
+                initial={false}
+                animate={{ r: n.id === st.current_id ? 22 : 18 }}
+                transition={{ type: 'spring', stiffness: 320, damping: 18 }}
+                style={{ transition: 'fill .25s ease, stroke .25s ease' }}
+              />
+              <text x={cx(n.id)} y={cy(n.id)} textAnchor="middle" dominantBaseline="central" fontSize={14} fontWeight={600} fill={textColor(n.id)} style={{ fontFamily: 'var(--font-mono, monospace)', transition: 'fill .25s ease' }}>{n.val}</text>
             </g>
           ))}
         </svg>
@@ -317,9 +327,17 @@ function Run({ keys, tone }: { keys: number[]; tone: 'l0' | 'l1' }) {
   const border = tone === 'l1' ? 'var(--series-2)' : 'var(--accent)';
   const bg = tone === 'l1' ? 'color-mix(in srgb, var(--series-2) 12%, var(--surface-1))' : 'color-mix(in srgb, var(--accent) 10%, var(--surface-1))';
   return (
-    <div className="flex items-center gap-1 rounded-lg border-2 px-1.5 py-1" style={{ borderColor: border, background: bg }}>
+    <motion.div
+      layout
+      initial={{ opacity: 0, scale: 0.85, y: -10 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.85, y: 10 }}
+      transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+      className="flex items-center gap-1 rounded-lg border-2 px-1.5 py-1"
+      style={{ borderColor: border, background: bg }}
+    >
       {keys.map((k, i) => <span key={i} className="font-mono text-xs font-semibold tabular-nums" style={{ color: 'var(--text-primary)' }}>{k}{i < keys.length - 1 && <span style={{ color: 'var(--text-muted)' }}> · </span>}</span>)}
-    </div>
+    </motion.div>
   );
 }
 
@@ -339,12 +357,18 @@ function LsmStage({ st }: { st: any }) {
       </div>
       <div className="mt-5"><Label>L0 <span style={{ textTransform: 'none', letterSpacing: 0, color: 'var(--text-muted)' }}>· on-disk sorted runs (immutable){compacting ? ' — compacting ↓' : ''}</span></Label>
         <div className="flex min-h-[2.25rem] flex-wrap items-center gap-3" style={{ opacity: compacting ? 0.5 : 1 }}>
-          {l0.length === 0 ? <span className="text-sm" style={{ color: 'var(--text-muted)' }}>empty</span> : l0.map((run, i) => <Run key={i} keys={run} tone="l0" />)}
+          {l0.length === 0 && <span className="text-sm" style={{ color: 'var(--text-muted)' }}>empty</span>}
+          <AnimatePresence mode="popLayout" initial={false}>
+            {l0.map((run) => <Run key={`l0-${run.join(',')}`} keys={run} tone="l0" />)}
+          </AnimatePresence>
         </div>
       </div>
       <div className="mt-5"><Label>L1 <span style={{ textTransform: 'none', letterSpacing: 0, color: 'var(--text-muted)' }}>· larger merged run</span></Label>
         <div className="flex min-h-[2.25rem] flex-wrap items-center gap-3">
-          {l1.length === 0 ? <span className="text-sm" style={{ color: 'var(--text-muted)' }}>empty</span> : l1.map((run, i) => <Run key={i} keys={run} tone="l1" />)}
+          {l1.length === 0 && <span className="text-sm" style={{ color: 'var(--text-muted)' }}>empty</span>}
+          <AnimatePresence mode="popLayout" initial={false}>
+            {l1.map((run) => <Run key={`l1-${run.join(',')}`} keys={run} tone="l1" />)}
+          </AnimatePresence>
         </div>
       </div>
     </>
