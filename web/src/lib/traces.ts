@@ -1924,3 +1924,1840 @@ export const binarySearchTrace: Step[] = [
   "type": "found"
  }
 ];
+
+export const bfsTrace: Step[] = [
+ {
+  "highlight": {
+   "code_line": 0
+  },
+  "message": "Starting BFS from node 0. We explore neighbors level by level using a queue.",
+  "state": {
+   "distances": {
+    "0": -1,
+    "1": -1,
+    "2": -1,
+    "3": -1,
+    "4": -1,
+    "5": -1
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "parent": {
+    "0": -1,
+    "1": -1,
+    "2": -1,
+    "3": -1,
+    "4": -1,
+    "5": -1
+   },
+   "queue": [],
+   "source": 0,
+   "visited": []
+  },
+  "step": 1,
+  "type": "start"
+ },
+ {
+  "highlight": {
+   "code_line": 1,
+   "highlight_node": 0
+  },
+  "message": "Enqueue source node 0 with distance 0.",
+  "state": {
+   "distances": {
+    "0": 0,
+    "1": -1,
+    "2": -1,
+    "3": -1,
+    "4": -1,
+    "5": -1
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "node": 0,
+   "parent": {
+    "0": -1,
+    "1": -1,
+    "2": -1,
+    "3": -1,
+    "4": -1,
+    "5": -1
+   },
+   "queue": [
+    0
+   ],
+   "visited": [
+    0
+   ]
+  },
+  "step": 2,
+  "type": "enqueue"
+ },
+ {
+  "highlight": {
+   "code_line": 2,
+   "highlight_node": 0
+  },
+  "message": "Dequeue and visit node 0 (distance=0).",
+  "state": {
+   "current": 0,
+   "distances": {
+    "0": 0,
+    "1": -1,
+    "2": -1,
+    "3": -1,
+    "4": -1,
+    "5": -1
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "parent": {
+    "0": -1,
+    "1": -1,
+    "2": -1,
+    "3": -1,
+    "4": -1,
+    "5": -1
+   },
+   "queue": [],
+   "visited": [
+    0
+   ]
+  },
+  "step": 3,
+  "type": "visit"
+ },
+ {
+  "highlight": {
+   "code_line": 3,
+   "highlight_edge": [
+    0,
+    1
+   ],
+   "highlight_node": 1
+  },
+  "message": "Neighbor 1 is unvisited. Enqueue with distance 1.",
+  "state": {
+   "current": 0,
+   "distances": {
+    "0": 0,
+    "1": 1,
+    "2": -1,
+    "3": -1,
+    "4": -1,
+    "5": -1
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "node": 1,
+   "parent": {
+    "0": -1,
+    "1": 0,
+    "2": -1,
+    "3": -1,
+    "4": -1,
+    "5": -1
+   },
+   "queue": [
+    1
+   ],
+   "visited": [
+    0,
+    1
+   ]
+  },
+  "step": 4,
+  "type": "enqueue"
+ },
+ {
+  "highlight": {
+   "code_line": 3,
+   "highlight_edge": [
+    0,
+    2
+   ],
+   "highlight_node": 2
+  },
+  "message": "Neighbor 2 is unvisited. Enqueue with distance 1.",
+  "state": {
+   "current": 0,
+   "distances": {
+    "0": 0,
+    "1": 1,
+    "2": 1,
+    "3": -1,
+    "4": -1,
+    "5": -1
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "node": 2,
+   "parent": {
+    "0": -1,
+    "1": 0,
+    "2": 0,
+    "3": -1,
+    "4": -1,
+    "5": -1
+   },
+   "queue": [
+    1,
+    2
+   ],
+   "visited": [
+    0,
+    1,
+    2
+   ]
+  },
+  "step": 5,
+  "type": "enqueue"
+ },
+ {
+  "highlight": {
+   "code_line": 2,
+   "highlight_node": 1
+  },
+  "message": "Dequeue and visit node 1 (distance=1).",
+  "state": {
+   "current": 1,
+   "distances": {
+    "0": 0,
+    "1": 1,
+    "2": 1,
+    "3": -1,
+    "4": -1,
+    "5": -1
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "parent": {
+    "0": -1,
+    "1": 0,
+    "2": 0,
+    "3": -1,
+    "4": -1,
+    "5": -1
+   },
+   "queue": [
+    2
+   ],
+   "visited": [
+    0,
+    1,
+    2
+   ]
+  },
+  "step": 6,
+  "type": "visit"
+ },
+ {
+  "highlight": {
+   "code_line": 4,
+   "highlight_edge": [
+    1,
+    0
+   ],
+   "highlight_node": 0
+  },
+  "message": "Neighbor 0 already visited (distance=0). Skipping.",
+  "state": {
+   "current": 1,
+   "distances": {
+    "0": 0,
+    "1": 1,
+    "2": 1,
+    "3": -1,
+    "4": -1,
+    "5": -1
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "neighbor": 0,
+   "parent": {
+    "0": -1,
+    "1": 0,
+    "2": 0,
+    "3": -1,
+    "4": -1,
+    "5": -1
+   },
+   "queue": [
+    2
+   ],
+   "visited": [
+    0,
+    1,
+    2
+   ]
+  },
+  "step": 7,
+  "type": "skip_visited"
+ },
+ {
+  "highlight": {
+   "code_line": 3,
+   "highlight_edge": [
+    1,
+    3
+   ],
+   "highlight_node": 3
+  },
+  "message": "Neighbor 3 is unvisited. Enqueue with distance 2.",
+  "state": {
+   "current": 1,
+   "distances": {
+    "0": 0,
+    "1": 1,
+    "2": 1,
+    "3": 2,
+    "4": -1,
+    "5": -1
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "node": 3,
+   "parent": {
+    "0": -1,
+    "1": 0,
+    "2": 0,
+    "3": 1,
+    "4": -1,
+    "5": -1
+   },
+   "queue": [
+    2,
+    3
+   ],
+   "visited": [
+    0,
+    1,
+    2,
+    3
+   ]
+  },
+  "step": 8,
+  "type": "enqueue"
+ },
+ {
+  "highlight": {
+   "code_line": 2,
+   "highlight_node": 2
+  },
+  "message": "Dequeue and visit node 2 (distance=1).",
+  "state": {
+   "current": 2,
+   "distances": {
+    "0": 0,
+    "1": 1,
+    "2": 1,
+    "3": 2,
+    "4": -1,
+    "5": -1
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "parent": {
+    "0": -1,
+    "1": 0,
+    "2": 0,
+    "3": 1,
+    "4": -1,
+    "5": -1
+   },
+   "queue": [
+    3
+   ],
+   "visited": [
+    0,
+    1,
+    2,
+    3
+   ]
+  },
+  "step": 9,
+  "type": "visit"
+ },
+ {
+  "highlight": {
+   "code_line": 4,
+   "highlight_edge": [
+    2,
+    0
+   ],
+   "highlight_node": 0
+  },
+  "message": "Neighbor 0 already visited (distance=0). Skipping.",
+  "state": {
+   "current": 2,
+   "distances": {
+    "0": 0,
+    "1": 1,
+    "2": 1,
+    "3": 2,
+    "4": -1,
+    "5": -1
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "neighbor": 0,
+   "parent": {
+    "0": -1,
+    "1": 0,
+    "2": 0,
+    "3": 1,
+    "4": -1,
+    "5": -1
+   },
+   "queue": [
+    3
+   ],
+   "visited": [
+    0,
+    1,
+    2,
+    3
+   ]
+  },
+  "step": 10,
+  "type": "skip_visited"
+ },
+ {
+  "highlight": {
+   "code_line": 4,
+   "highlight_edge": [
+    2,
+    3
+   ],
+   "highlight_node": 3
+  },
+  "message": "Neighbor 3 already visited (distance=2). Skipping.",
+  "state": {
+   "current": 2,
+   "distances": {
+    "0": 0,
+    "1": 1,
+    "2": 1,
+    "3": 2,
+    "4": -1,
+    "5": -1
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "neighbor": 3,
+   "parent": {
+    "0": -1,
+    "1": 0,
+    "2": 0,
+    "3": 1,
+    "4": -1,
+    "5": -1
+   },
+   "queue": [
+    3
+   ],
+   "visited": [
+    0,
+    1,
+    2,
+    3
+   ]
+  },
+  "step": 11,
+  "type": "skip_visited"
+ },
+ {
+  "highlight": {
+   "code_line": 3,
+   "highlight_edge": [
+    2,
+    4
+   ],
+   "highlight_node": 4
+  },
+  "message": "Neighbor 4 is unvisited. Enqueue with distance 2.",
+  "state": {
+   "current": 2,
+   "distances": {
+    "0": 0,
+    "1": 1,
+    "2": 1,
+    "3": 2,
+    "4": 2,
+    "5": -1
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "node": 4,
+   "parent": {
+    "0": -1,
+    "1": 0,
+    "2": 0,
+    "3": 1,
+    "4": 2,
+    "5": -1
+   },
+   "queue": [
+    3,
+    4
+   ],
+   "visited": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ]
+  },
+  "step": 12,
+  "type": "enqueue"
+ },
+ {
+  "highlight": {
+   "code_line": 2,
+   "highlight_node": 3
+  },
+  "message": "Dequeue and visit node 3 (distance=2).",
+  "state": {
+   "current": 3,
+   "distances": {
+    "0": 0,
+    "1": 1,
+    "2": 1,
+    "3": 2,
+    "4": 2,
+    "5": -1
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "parent": {
+    "0": -1,
+    "1": 0,
+    "2": 0,
+    "3": 1,
+    "4": 2,
+    "5": -1
+   },
+   "queue": [
+    4
+   ],
+   "visited": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ]
+  },
+  "step": 13,
+  "type": "visit"
+ },
+ {
+  "highlight": {
+   "code_line": 4,
+   "highlight_edge": [
+    3,
+    1
+   ],
+   "highlight_node": 1
+  },
+  "message": "Neighbor 1 already visited (distance=1). Skipping.",
+  "state": {
+   "current": 3,
+   "distances": {
+    "0": 0,
+    "1": 1,
+    "2": 1,
+    "3": 2,
+    "4": 2,
+    "5": -1
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "neighbor": 1,
+   "parent": {
+    "0": -1,
+    "1": 0,
+    "2": 0,
+    "3": 1,
+    "4": 2,
+    "5": -1
+   },
+   "queue": [
+    4
+   ],
+   "visited": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ]
+  },
+  "step": 14,
+  "type": "skip_visited"
+ },
+ {
+  "highlight": {
+   "code_line": 4,
+   "highlight_edge": [
+    3,
+    2
+   ],
+   "highlight_node": 2
+  },
+  "message": "Neighbor 2 already visited (distance=1). Skipping.",
+  "state": {
+   "current": 3,
+   "distances": {
+    "0": 0,
+    "1": 1,
+    "2": 1,
+    "3": 2,
+    "4": 2,
+    "5": -1
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "neighbor": 2,
+   "parent": {
+    "0": -1,
+    "1": 0,
+    "2": 0,
+    "3": 1,
+    "4": 2,
+    "5": -1
+   },
+   "queue": [
+    4
+   ],
+   "visited": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ]
+  },
+  "step": 15,
+  "type": "skip_visited"
+ },
+ {
+  "highlight": {
+   "code_line": 3,
+   "highlight_edge": [
+    3,
+    5
+   ],
+   "highlight_node": 5
+  },
+  "message": "Neighbor 5 is unvisited. Enqueue with distance 3.",
+  "state": {
+   "current": 3,
+   "distances": {
+    "0": 0,
+    "1": 1,
+    "2": 1,
+    "3": 2,
+    "4": 2,
+    "5": 3
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "node": 5,
+   "parent": {
+    "0": -1,
+    "1": 0,
+    "2": 0,
+    "3": 1,
+    "4": 2,
+    "5": 3
+   },
+   "queue": [
+    4,
+    5
+   ],
+   "visited": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ]
+  },
+  "step": 16,
+  "type": "enqueue"
+ },
+ {
+  "highlight": {
+   "code_line": 2,
+   "highlight_node": 4
+  },
+  "message": "Dequeue and visit node 4 (distance=2).",
+  "state": {
+   "current": 4,
+   "distances": {
+    "0": 0,
+    "1": 1,
+    "2": 1,
+    "3": 2,
+    "4": 2,
+    "5": 3
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "parent": {
+    "0": -1,
+    "1": 0,
+    "2": 0,
+    "3": 1,
+    "4": 2,
+    "5": 3
+   },
+   "queue": [
+    5
+   ],
+   "visited": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ]
+  },
+  "step": 17,
+  "type": "visit"
+ },
+ {
+  "highlight": {
+   "code_line": 4,
+   "highlight_edge": [
+    4,
+    2
+   ],
+   "highlight_node": 2
+  },
+  "message": "Neighbor 2 already visited (distance=1). Skipping.",
+  "state": {
+   "current": 4,
+   "distances": {
+    "0": 0,
+    "1": 1,
+    "2": 1,
+    "3": 2,
+    "4": 2,
+    "5": 3
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "neighbor": 2,
+   "parent": {
+    "0": -1,
+    "1": 0,
+    "2": 0,
+    "3": 1,
+    "4": 2,
+    "5": 3
+   },
+   "queue": [
+    5
+   ],
+   "visited": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ]
+  },
+  "step": 18,
+  "type": "skip_visited"
+ },
+ {
+  "highlight": {
+   "code_line": 4,
+   "highlight_edge": [
+    4,
+    5
+   ],
+   "highlight_node": 5
+  },
+  "message": "Neighbor 5 already visited (distance=3). Skipping.",
+  "state": {
+   "current": 4,
+   "distances": {
+    "0": 0,
+    "1": 1,
+    "2": 1,
+    "3": 2,
+    "4": 2,
+    "5": 3
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "neighbor": 5,
+   "parent": {
+    "0": -1,
+    "1": 0,
+    "2": 0,
+    "3": 1,
+    "4": 2,
+    "5": 3
+   },
+   "queue": [
+    5
+   ],
+   "visited": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ]
+  },
+  "step": 19,
+  "type": "skip_visited"
+ },
+ {
+  "highlight": {
+   "code_line": 2,
+   "highlight_node": 5
+  },
+  "message": "Dequeue and visit node 5 (distance=3).",
+  "state": {
+   "current": 5,
+   "distances": {
+    "0": 0,
+    "1": 1,
+    "2": 1,
+    "3": 2,
+    "4": 2,
+    "5": 3
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "parent": {
+    "0": -1,
+    "1": 0,
+    "2": 0,
+    "3": 1,
+    "4": 2,
+    "5": 3
+   },
+   "queue": [],
+   "visited": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ]
+  },
+  "step": 20,
+  "type": "visit"
+ },
+ {
+  "highlight": {
+   "code_line": 4,
+   "highlight_edge": [
+    5,
+    3
+   ],
+   "highlight_node": 3
+  },
+  "message": "Neighbor 3 already visited (distance=2). Skipping.",
+  "state": {
+   "current": 5,
+   "distances": {
+    "0": 0,
+    "1": 1,
+    "2": 1,
+    "3": 2,
+    "4": 2,
+    "5": 3
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "neighbor": 3,
+   "parent": {
+    "0": -1,
+    "1": 0,
+    "2": 0,
+    "3": 1,
+    "4": 2,
+    "5": 3
+   },
+   "queue": [],
+   "visited": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ]
+  },
+  "step": 21,
+  "type": "skip_visited"
+ },
+ {
+  "highlight": {
+   "code_line": 4,
+   "highlight_edge": [
+    5,
+    4
+   ],
+   "highlight_node": 4
+  },
+  "message": "Neighbor 4 already visited (distance=2). Skipping.",
+  "state": {
+   "current": 5,
+   "distances": {
+    "0": 0,
+    "1": 1,
+    "2": 1,
+    "3": 2,
+    "4": 2,
+    "5": 3
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "neighbor": 4,
+   "parent": {
+    "0": -1,
+    "1": 0,
+    "2": 0,
+    "3": 1,
+    "4": 2,
+    "5": 3
+   },
+   "queue": [],
+   "visited": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ]
+  },
+  "step": 22,
+  "type": "skip_visited"
+ },
+ {
+  "highlight": {
+   "code_line": 5
+  },
+  "message": "BFS complete! Visited 6 nodes. All shortest distances from node 0 computed.",
+  "state": {
+   "distances": {
+    "0": 0,
+    "1": 1,
+    "2": 1,
+    "3": 2,
+    "4": 2,
+    "5": 3
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "parent": {
+    "0": -1,
+    "1": 0,
+    "2": 0,
+    "3": 1,
+    "4": 2,
+    "5": 3
+   },
+   "queue": [],
+   "visited": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ]
+  },
+  "step": 23,
+  "type": "complete"
+ }
+];

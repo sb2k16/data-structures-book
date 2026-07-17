@@ -135,6 +135,7 @@ export const CHAPTERS: ChapterMeta[] = [
     title: 'Graphs',
     part: 'Non-Linear Structures',
     blurb: 'Traversal, shortest paths, A*, flow, and the representation choices that dominate runtime.',
+    custom: true,
   },
   {
     id: 'dynamic-programming',
