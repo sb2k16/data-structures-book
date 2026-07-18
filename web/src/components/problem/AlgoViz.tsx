@@ -448,38 +448,56 @@ function GraphStage({ st }: { st: any }) {
   const nodes: number[] = st.graph?.nodes ?? [];
   const edges: number[][] = st.graph?.edges ?? [];
   const visited: number[] = st.visited ?? [];
-  const queue: number[] = st.queue ?? [];
-  const dist: Record<string, number> = st.distances ?? {};
+  const dist: Record<string, number> = st.distances ?? st.dist ?? {};
   const cur = st.current;
+  const re = st.relaxing_edge; // Dijkstra: {u, v, w}
+  const weighted = edges.some((e) => e.length >= 3);
+  // Frontier: BFS→queue, DFS→stack, Dijkstra→priority queue of {node,dist}.
+  const pq: { node: number; dist: number }[] | null = st.pq ?? null;
+  const frontier: number[] = pq ? pq.map((x) => x.node) : (st.stack ?? st.queue ?? []);
+  const frontierName = pq ? 'priority queue' : st.stack ? 'stack' : 'queue';
+  const frontierHint = pq ? 'min-distance out first' : st.stack ? 'top on the right (LIFO)' : 'FIFO, front on the left';
+  const examinedTarget = st.neighbor ?? re?.v; // the node on the far end of the examined edge
   const { pos, W, H } = graphLayout(nodes, edges, st.source ?? nodes[0]);
   const R = 20;
   const onEdge = (a: number, b: number) =>
-    (a === cur && b === st.neighbor) || (b === cur && a === st.neighbor);
+    (a === cur && b === examinedTarget) || (b === cur && a === examinedTarget) ||
+    (re && ((a === re.u && b === re.v) || (a === re.v && b === re.u)));
   const treeEdge = (a: number, b: number) => st.parent?.[String(b)] === a || st.parent?.[String(a)] === b;
   const fill = (id: number) =>
     id === cur ? 'var(--accent)'
       : visited.includes(id) ? 'color-mix(in srgb, var(--series-2) 24%, var(--surface-1))'
-        : queue.includes(id) ? 'color-mix(in srgb, var(--accent) 12%, var(--surface-1))'
+        : frontier.includes(id) ? 'color-mix(in srgb, var(--accent) 12%, var(--surface-1))'
           : 'var(--surface-1)';
   const stroke = (id: number) =>
     id === cur ? 'var(--accent)'
-      : id === st.neighbor ? '#e0803a'
+      : id === examinedTarget ? '#e0803a'
         : visited.includes(id) ? 'var(--series-2)'
-          : queue.includes(id) ? 'color-mix(in srgb, var(--accent) 55%, var(--border))'
+          : frontier.includes(id) ? 'color-mix(in srgb, var(--accent) 55%, var(--border))'
             : 'var(--border-strong)';
   return (
     <>
-      <Label>graph · <span style={{ color: 'var(--accent)' }}>current</span>, <span style={{ color: 'var(--series-2)' }}>visited</span>, queued shaded, <span style={{ color: '#e0803a' }}>examining →</span></Label>
+      <Label>graph · <span style={{ color: 'var(--accent)' }}>current</span>, <span style={{ color: 'var(--series-2)' }}>visited</span>, frontier shaded, <span style={{ color: '#e0803a' }}>examining →</span></Label>
       <div className="overflow-x-auto">
         <svg viewBox={`0 0 ${W} ${H}`} width={W} style={{ maxWidth: '100%', height: 'auto' }} role="img">
-          {edges.map(([a, b]) => {
+          {edges.map(([a, b, w]) => {
             const pa = pos.get(a), pb = pos.get(b); if (!pa || !pb) return null;
             const hot = onEdge(a, b), tree = treeEdge(a, b);
+            const mx = (pa.x + pb.x) / 2, my = (pa.y + pb.y) / 2;
             return (
-              <line key={`${a}-${b}`} x1={pa.x} y1={pa.y} x2={pb.x} y2={pb.y}
-                stroke={hot ? '#e0803a' : tree ? 'var(--series-2)' : 'var(--border-strong)'}
-                strokeWidth={hot ? 3 : tree ? 2.5 : 1.5}
-                style={{ transition: 'stroke .25s ease, stroke-width .25s ease' }} />
+              <g key={`${a}-${b}`}>
+                <line x1={pa.x} y1={pa.y} x2={pb.x} y2={pb.y}
+                  stroke={hot ? '#e0803a' : tree ? 'var(--series-2)' : 'var(--border-strong)'}
+                  strokeWidth={hot ? 3 : tree ? 2.5 : 1.5}
+                  style={{ transition: 'stroke .25s ease, stroke-width .25s ease' }} />
+                {weighted && w !== undefined && (
+                  <>
+                    <circle cx={mx} cy={my} r={9} fill="var(--surface-2)" />
+                    <text x={mx} y={my} textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={600}
+                      fill={hot ? '#e0803a' : 'var(--text-secondary)'} style={{ fontFamily: 'var(--font-mono, monospace)' }}>{w}</text>
+                  </>
+                )}
+              </g>
             );
           })}
           {nodes.map((n) => {
@@ -493,18 +511,22 @@ function GraphStage({ st }: { st: any }) {
                 <text x={p.x} y={p.y} textAnchor="middle" dominantBaseline="central" fontSize={14} fontWeight={600}
                   fill={n === cur ? '#fff' : 'var(--text-primary)'} style={{ fontFamily: 'var(--font-mono, monospace)' }}>{n}</text>
                 {d !== undefined && d >= 0 && (
-                  <text x={p.x + R - 2} y={p.y - R + 2} textAnchor="middle" fontSize={10} fontWeight={700} fill="var(--series-2)" style={{ fontFamily: 'var(--font-mono, monospace)' }}>{d}</text>
+                  <text x={p.x + R - 1} y={p.y - R + 3} textAnchor="middle" fontSize={10} fontWeight={700} fill="var(--series-2)" style={{ fontFamily: 'var(--font-mono, monospace)' }}>{d}</text>
                 )}
               </g>
             );
           })}
         </svg>
       </div>
-      <div className="mt-3"><Label>queue <span style={{ textTransform: 'none', letterSpacing: 0, color: 'var(--text-muted)' }}>· FIFO, front on the left</span></Label>
+      <div className="mt-3"><Label>{frontierName} <span style={{ textTransform: 'none', letterSpacing: 0, color: 'var(--text-muted)' }}>· {frontierHint}</span></Label>
         <div className="flex min-h-[2.75rem] flex-wrap items-center gap-2">
-          {queue.length === 0 && <span className="text-sm" style={{ color: 'var(--text-muted)' }}>empty</span>}
+          {frontier.length === 0 && <span className="text-sm" style={{ color: 'var(--text-muted)' }}>empty</span>}
           <AnimatePresence mode="popLayout" initial={false}>
-            {queue.map((n) => <StackItem key={n} s={ACCENT_SOFT}>{n}</StackItem>)}
+            {(pq ?? frontier.map((n) => ({ node: n, dist: undefined as number | undefined }))).map((item: any, i: number) => (
+              <StackItem key={`${item.node}-${i}`} s={ACCENT_SOFT}>
+                {item.dist === undefined ? item.node : `${item.node}·${item.dist}`}
+              </StackItem>
+            ))}
           </AnimatePresence>
         </div>
       </div>

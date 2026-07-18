@@ -4,7 +4,7 @@ slug: graphs
 description: Traversal, shortest paths, A*, flow, and the representation choices that dominate runtime.
 ---
 import AlgoViz from '../../components/problem/AlgoViz';
-import { bfsTrace } from '../../lib/traces';
+import { bfsTrace, dfsTrace, dijkstraTrace } from '../../lib/traces';
 
 
 ## When the Relationships Are the Data
@@ -927,6 +927,10 @@ func (g *GraphDFS) DFSIterative(start int) []int {
 
 DFS is the engine under a surprising number of later algorithms in this chapter: cycle detection, topological sort, bridges and articulation points, and strongly connected components are all DFS with extra bookkeeping. Anywhere you need to fully explore one region before moving on — maze solving, connected components, reachability — it is the natural traversal.
 
+Watch DFS dive as deep as it can down one branch and only backtrack at a dead end — the **stack** (not a queue) is exactly what makes it go deep before wide:
+
+<AlgoViz client:visible kind="graph" steps={dfsTrace} title="Watch it run: DFS goes deep, then backtracks" />
+
 ### Breadth-First Search (BFS)
 
 **Breadth-First Search** explores all neighbors at the current depth before moving to the next level. Think of it like ripples in water: it expands outward level by level, exploring all vertices at distance 1, then all at distance 2, and so on.
@@ -1647,6 +1651,10 @@ func (g *Dijkstra) ShortestPathTo(start, end int) []int {
 ```
 
 With a binary-heap priority queue this runs in `O((V + E) log V)` time and `O(V)` space. The non-negative-weight requirement isn't a limitation to route around — it is the exact condition under which "finalize a vertex the moment it's extracted" is correct. When weights can go negative, you need the next algorithm.
+
+Watch Dijkstra always pull the closest unfinalized node off the **priority queue**, relax its outgoing edges, and lower its neighbors' tentative distances. The greedy "closest first" order is what the priority queue buys you:
+
+<AlgoViz client:visible kind="graph" steps={dijkstraTrace} title="Watch it run: Dijkstra, closest node first" />
 
 ### Bellman-Ford Algorithm
 

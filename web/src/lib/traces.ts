@@ -3761,3 +3761,3711 @@ export const bfsTrace: Step[] = [
   "type": "complete"
  }
 ];
+
+export const dfsTrace: Step[] = [
+ {
+  "highlight": {
+   "code_line": 0
+  },
+  "message": "Starting DFS from node 0",
+  "state": {
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "source": 0
+  },
+  "step": 1,
+  "type": "init"
+ },
+ {
+  "highlight": {
+   "code_line": 1
+  },
+  "message": "Pushing node 0 onto stack",
+  "state": {
+   "current": 0,
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "stack": [
+    0
+   ],
+   "visited": []
+  },
+  "step": 2,
+  "type": "push"
+ },
+ {
+  "highlight": {
+   "code_line": 2
+  },
+  "message": "Visiting node 0",
+  "state": {
+   "current": 0,
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "stack": [],
+   "visited": [
+    0
+   ]
+  },
+  "step": 3,
+  "type": "visit"
+ },
+ {
+  "highlight": {
+   "code_line": 3
+  },
+  "message": "Exploring edge 0→1",
+  "state": {
+   "current": 0,
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "neighbor": 1,
+   "stack": [],
+   "visited": [
+    0
+   ]
+  },
+  "step": 4,
+  "type": "explore"
+ },
+ {
+  "highlight": {
+   "code_line": 1
+  },
+  "message": "Pushing node 1 onto stack",
+  "state": {
+   "current": 1,
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "stack": [
+    1
+   ],
+   "visited": [
+    0
+   ]
+  },
+  "step": 5,
+  "type": "push"
+ },
+ {
+  "highlight": {
+   "code_line": 3
+  },
+  "message": "Exploring edge 0→2",
+  "state": {
+   "current": 0,
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "neighbor": 2,
+   "stack": [
+    1
+   ],
+   "visited": [
+    0
+   ]
+  },
+  "step": 6,
+  "type": "explore"
+ },
+ {
+  "highlight": {
+   "code_line": 1
+  },
+  "message": "Pushing node 2 onto stack",
+  "state": {
+   "current": 2,
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "stack": [
+    2,
+    1
+   ],
+   "visited": [
+    0
+   ]
+  },
+  "step": 7,
+  "type": "push"
+ },
+ {
+  "highlight": {
+   "code_line": 2
+  },
+  "message": "Visiting node 2",
+  "state": {
+   "current": 2,
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "stack": [
+    1
+   ],
+   "visited": [
+    0,
+    2
+   ]
+  },
+  "step": 8,
+  "type": "visit"
+ },
+ {
+  "highlight": {
+   "code_line": 4
+  },
+  "message": "Node 0 already visited, skipping",
+  "state": {
+   "current": 2,
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "neighbor": 0,
+   "stack": [
+    1
+   ],
+   "visited": [
+    0,
+    2
+   ]
+  },
+  "step": 9,
+  "type": "already_visited"
+ },
+ {
+  "highlight": {
+   "code_line": 3
+  },
+  "message": "Exploring edge 2→3",
+  "state": {
+   "current": 2,
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "neighbor": 3,
+   "stack": [
+    1
+   ],
+   "visited": [
+    0,
+    2
+   ]
+  },
+  "step": 10,
+  "type": "explore"
+ },
+ {
+  "highlight": {
+   "code_line": 1
+  },
+  "message": "Pushing node 3 onto stack",
+  "state": {
+   "current": 3,
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "stack": [
+    3,
+    1
+   ],
+   "visited": [
+    0,
+    2
+   ]
+  },
+  "step": 11,
+  "type": "push"
+ },
+ {
+  "highlight": {
+   "code_line": 3
+  },
+  "message": "Exploring edge 2→4",
+  "state": {
+   "current": 2,
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "neighbor": 4,
+   "stack": [
+    3,
+    1
+   ],
+   "visited": [
+    0,
+    2
+   ]
+  },
+  "step": 12,
+  "type": "explore"
+ },
+ {
+  "highlight": {
+   "code_line": 1
+  },
+  "message": "Pushing node 4 onto stack",
+  "state": {
+   "current": 4,
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "stack": [
+    4,
+    3,
+    1
+   ],
+   "visited": [
+    0,
+    2
+   ]
+  },
+  "step": 13,
+  "type": "push"
+ },
+ {
+  "highlight": {
+   "code_line": 2
+  },
+  "message": "Visiting node 4",
+  "state": {
+   "current": 4,
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "stack": [
+    3,
+    1
+   ],
+   "visited": [
+    0,
+    2,
+    4
+   ]
+  },
+  "step": 14,
+  "type": "visit"
+ },
+ {
+  "highlight": {
+   "code_line": 4
+  },
+  "message": "Node 2 already visited, skipping",
+  "state": {
+   "current": 4,
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "neighbor": 2,
+   "stack": [
+    3,
+    1
+   ],
+   "visited": [
+    0,
+    2,
+    4
+   ]
+  },
+  "step": 15,
+  "type": "already_visited"
+ },
+ {
+  "highlight": {
+   "code_line": 3
+  },
+  "message": "Exploring edge 4→5",
+  "state": {
+   "current": 4,
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "neighbor": 5,
+   "stack": [
+    3,
+    1
+   ],
+   "visited": [
+    0,
+    2,
+    4
+   ]
+  },
+  "step": 16,
+  "type": "explore"
+ },
+ {
+  "highlight": {
+   "code_line": 1
+  },
+  "message": "Pushing node 5 onto stack",
+  "state": {
+   "current": 5,
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "stack": [
+    5,
+    3,
+    1
+   ],
+   "visited": [
+    0,
+    2,
+    4
+   ]
+  },
+  "step": 17,
+  "type": "push"
+ },
+ {
+  "highlight": {
+   "code_line": 2
+  },
+  "message": "Visiting node 5",
+  "state": {
+   "current": 5,
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "stack": [
+    3,
+    1
+   ],
+   "visited": [
+    0,
+    2,
+    4,
+    5
+   ]
+  },
+  "step": 18,
+  "type": "visit"
+ },
+ {
+  "highlight": {
+   "code_line": 3
+  },
+  "message": "Exploring edge 5→3",
+  "state": {
+   "current": 5,
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "neighbor": 3,
+   "stack": [
+    3,
+    1
+   ],
+   "visited": [
+    0,
+    2,
+    4,
+    5
+   ]
+  },
+  "step": 19,
+  "type": "explore"
+ },
+ {
+  "highlight": {
+   "code_line": 1
+  },
+  "message": "Pushing node 3 onto stack",
+  "state": {
+   "current": 3,
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "stack": [
+    3,
+    3,
+    1
+   ],
+   "visited": [
+    0,
+    2,
+    4,
+    5
+   ]
+  },
+  "step": 20,
+  "type": "push"
+ },
+ {
+  "highlight": {
+   "code_line": 4
+  },
+  "message": "Node 4 already visited, skipping",
+  "state": {
+   "current": 5,
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "neighbor": 4,
+   "stack": [
+    3,
+    3,
+    1
+   ],
+   "visited": [
+    0,
+    2,
+    4,
+    5
+   ]
+  },
+  "step": 21,
+  "type": "already_visited"
+ },
+ {
+  "highlight": {
+   "code_line": 2
+  },
+  "message": "Visiting node 3",
+  "state": {
+   "current": 3,
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "stack": [
+    3,
+    1
+   ],
+   "visited": [
+    0,
+    2,
+    4,
+    5,
+    3
+   ]
+  },
+  "step": 22,
+  "type": "visit"
+ },
+ {
+  "highlight": {
+   "code_line": 3
+  },
+  "message": "Exploring edge 3→1",
+  "state": {
+   "current": 3,
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "neighbor": 1,
+   "stack": [
+    3,
+    1
+   ],
+   "visited": [
+    0,
+    2,
+    4,
+    5,
+    3
+   ]
+  },
+  "step": 23,
+  "type": "explore"
+ },
+ {
+  "highlight": {
+   "code_line": 1
+  },
+  "message": "Pushing node 1 onto stack",
+  "state": {
+   "current": 1,
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "stack": [
+    1,
+    3,
+    1
+   ],
+   "visited": [
+    0,
+    2,
+    4,
+    5,
+    3
+   ]
+  },
+  "step": 24,
+  "type": "push"
+ },
+ {
+  "highlight": {
+   "code_line": 4
+  },
+  "message": "Node 2 already visited, skipping",
+  "state": {
+   "current": 3,
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "neighbor": 2,
+   "stack": [
+    1,
+    3,
+    1
+   ],
+   "visited": [
+    0,
+    2,
+    4,
+    5,
+    3
+   ]
+  },
+  "step": 25,
+  "type": "already_visited"
+ },
+ {
+  "highlight": {
+   "code_line": 4
+  },
+  "message": "Node 5 already visited, skipping",
+  "state": {
+   "current": 3,
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "neighbor": 5,
+   "stack": [
+    1,
+    3,
+    1
+   ],
+   "visited": [
+    0,
+    2,
+    4,
+    5,
+    3
+   ]
+  },
+  "step": 26,
+  "type": "already_visited"
+ },
+ {
+  "highlight": {
+   "code_line": 2
+  },
+  "message": "Visiting node 1",
+  "state": {
+   "current": 1,
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "stack": [
+    3,
+    1
+   ],
+   "visited": [
+    0,
+    2,
+    4,
+    5,
+    3,
+    1
+   ]
+  },
+  "step": 27,
+  "type": "visit"
+ },
+ {
+  "highlight": {
+   "code_line": 4
+  },
+  "message": "Node 0 already visited, skipping",
+  "state": {
+   "current": 1,
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "neighbor": 0,
+   "stack": [
+    3,
+    1
+   ],
+   "visited": [
+    0,
+    2,
+    4,
+    5,
+    3,
+    1
+   ]
+  },
+  "step": 28,
+  "type": "already_visited"
+ },
+ {
+  "highlight": {
+   "code_line": 4
+  },
+  "message": "Node 3 already visited, skipping",
+  "state": {
+   "current": 1,
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "neighbor": 3,
+   "stack": [
+    3,
+    1
+   ],
+   "visited": [
+    0,
+    2,
+    4,
+    5,
+    3,
+    1
+   ]
+  },
+  "step": 29,
+  "type": "already_visited"
+ },
+ {
+  "highlight": {
+   "code_line": 5
+  },
+  "message": "Backtracking from node 3 (already visited)",
+  "state": {
+   "current": 3,
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "stack": [
+    1
+   ],
+   "visited": [
+    0,
+    2,
+    4,
+    5,
+    3,
+    1
+   ]
+  },
+  "step": 30,
+  "type": "backtrack"
+ },
+ {
+  "highlight": {
+   "code_line": 5
+  },
+  "message": "Backtracking from node 1 (already visited)",
+  "state": {
+   "current": 1,
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "stack": [],
+   "visited": [
+    0,
+    2,
+    4,
+    5,
+    3,
+    1
+   ]
+  },
+  "step": 31,
+  "type": "backtrack"
+ },
+ {
+  "highlight": {
+   "code_line": 6
+  },
+  "message": "DFS complete. Visited order: [0,2,4,5,3,1]",
+  "state": {
+   "graph": {
+    "edges": [
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      2,
+      4
+     ],
+     [
+      3,
+      5
+     ],
+     [
+      4,
+      5
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "visited": [
+    0,
+    2,
+    4,
+    5,
+    3,
+    1
+   ]
+  },
+  "step": 32,
+  "type": "complete"
+ }
+];
+
+export const dijkstraTrace: Step[] = [
+ {
+  "highlight": {
+   "code_line": 0
+  },
+  "message": "Dijkstra's algorithm from source=0. All distances initialized to infinity (-1).",
+  "state": {
+   "current": -1,
+   "dist": {
+    "0": 0,
+    "1": -1,
+    "2": -1,
+    "3": -1,
+    "4": -1
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1,
+      4
+     ],
+     [
+      0,
+      2,
+      1
+     ],
+     [
+      2,
+      1,
+      2
+     ],
+     [
+      1,
+      3,
+      1
+     ],
+     [
+      2,
+      3,
+      5
+     ],
+     [
+      3,
+      4,
+      3
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ]
+   },
+   "pq": [],
+   "relaxing_edge": null,
+   "source": 0,
+   "visited": []
+  },
+  "step": 1,
+  "type": "init"
+ },
+ {
+  "highlight": {
+   "code_line": 1
+  },
+  "message": "Push source node 0 with dist=0 onto priority queue.",
+  "state": {
+   "current": 0,
+   "dist": {
+    "0": 0,
+    "1": -1,
+    "2": -1,
+    "3": -1,
+    "4": -1
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1,
+      4
+     ],
+     [
+      0,
+      2,
+      1
+     ],
+     [
+      2,
+      1,
+      2
+     ],
+     [
+      1,
+      3,
+      1
+     ],
+     [
+      2,
+      3,
+      5
+     ],
+     [
+      3,
+      4,
+      3
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ]
+   },
+   "pq": [
+    {
+     "dist": 0,
+     "node": 0
+    }
+   ],
+   "relaxing_edge": null,
+   "source": 0,
+   "visited": []
+  },
+  "step": 2,
+  "type": "push_pq"
+ },
+ {
+  "highlight": {
+   "code_line": 2
+  },
+  "message": "Pop node 0 (dist=0) from priority queue.",
+  "state": {
+   "current": 0,
+   "dist": {
+    "0": 0,
+    "1": -1,
+    "2": -1,
+    "3": -1,
+    "4": -1
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1,
+      4
+     ],
+     [
+      0,
+      2,
+      1
+     ],
+     [
+      2,
+      1,
+      2
+     ],
+     [
+      1,
+      3,
+      1
+     ],
+     [
+      2,
+      3,
+      5
+     ],
+     [
+      3,
+      4,
+      3
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ]
+   },
+   "pq": [],
+   "relaxing_edge": null,
+   "source": 0,
+   "visited": []
+  },
+  "step": 3,
+  "type": "pop_pq"
+ },
+ {
+  "highlight": {
+   "code_line": 3
+  },
+  "message": "Relax edge 0→1 (weight=4). New dist[1]=4.",
+  "state": {
+   "current": 0,
+   "dist": {
+    "0": 0,
+    "1": 4,
+    "2": -1,
+    "3": -1,
+    "4": -1
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1,
+      4
+     ],
+     [
+      0,
+      2,
+      1
+     ],
+     [
+      2,
+      1,
+      2
+     ],
+     [
+      1,
+      3,
+      1
+     ],
+     [
+      2,
+      3,
+      5
+     ],
+     [
+      3,
+      4,
+      3
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ]
+   },
+   "pq": [],
+   "relaxing_edge": {
+    "u": 0,
+    "v": 1,
+    "w": 4
+   },
+   "source": 0,
+   "visited": [
+    0
+   ]
+  },
+  "step": 4,
+  "type": "relax"
+ },
+ {
+  "highlight": {
+   "code_line": 1
+  },
+  "message": "Push node 1 with dist=4 onto priority queue.",
+  "state": {
+   "current": 0,
+   "dist": {
+    "0": 0,
+    "1": 4,
+    "2": -1,
+    "3": -1,
+    "4": -1
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1,
+      4
+     ],
+     [
+      0,
+      2,
+      1
+     ],
+     [
+      2,
+      1,
+      2
+     ],
+     [
+      1,
+      3,
+      1
+     ],
+     [
+      2,
+      3,
+      5
+     ],
+     [
+      3,
+      4,
+      3
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ]
+   },
+   "pq": [
+    {
+     "dist": 4,
+     "node": 1
+    }
+   ],
+   "relaxing_edge": {
+    "u": 0,
+    "v": 1,
+    "w": 4
+   },
+   "source": 0,
+   "visited": [
+    0
+   ]
+  },
+  "step": 5,
+  "type": "push_pq"
+ },
+ {
+  "highlight": {
+   "code_line": 3
+  },
+  "message": "Relax edge 0→2 (weight=1). New dist[2]=1.",
+  "state": {
+   "current": 0,
+   "dist": {
+    "0": 0,
+    "1": 4,
+    "2": 1,
+    "3": -1,
+    "4": -1
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1,
+      4
+     ],
+     [
+      0,
+      2,
+      1
+     ],
+     [
+      2,
+      1,
+      2
+     ],
+     [
+      1,
+      3,
+      1
+     ],
+     [
+      2,
+      3,
+      5
+     ],
+     [
+      3,
+      4,
+      3
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ]
+   },
+   "pq": [
+    {
+     "dist": 4,
+     "node": 1
+    }
+   ],
+   "relaxing_edge": {
+    "u": 0,
+    "v": 2,
+    "w": 1
+   },
+   "source": 0,
+   "visited": [
+    0
+   ]
+  },
+  "step": 6,
+  "type": "relax"
+ },
+ {
+  "highlight": {
+   "code_line": 1
+  },
+  "message": "Push node 2 with dist=1 onto priority queue.",
+  "state": {
+   "current": 0,
+   "dist": {
+    "0": 0,
+    "1": 4,
+    "2": 1,
+    "3": -1,
+    "4": -1
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1,
+      4
+     ],
+     [
+      0,
+      2,
+      1
+     ],
+     [
+      2,
+      1,
+      2
+     ],
+     [
+      1,
+      3,
+      1
+     ],
+     [
+      2,
+      3,
+      5
+     ],
+     [
+      3,
+      4,
+      3
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ]
+   },
+   "pq": [
+    {
+     "dist": 4,
+     "node": 1
+    },
+    {
+     "dist": 1,
+     "node": 2
+    }
+   ],
+   "relaxing_edge": {
+    "u": 0,
+    "v": 2,
+    "w": 1
+   },
+   "source": 0,
+   "visited": [
+    0
+   ]
+  },
+  "step": 7,
+  "type": "push_pq"
+ },
+ {
+  "highlight": {
+   "code_line": 2
+  },
+  "message": "Pop node 2 (dist=1) from priority queue.",
+  "state": {
+   "current": 2,
+   "dist": {
+    "0": 0,
+    "1": 4,
+    "2": 1,
+    "3": -1,
+    "4": -1
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1,
+      4
+     ],
+     [
+      0,
+      2,
+      1
+     ],
+     [
+      2,
+      1,
+      2
+     ],
+     [
+      1,
+      3,
+      1
+     ],
+     [
+      2,
+      3,
+      5
+     ],
+     [
+      3,
+      4,
+      3
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ]
+   },
+   "pq": [
+    {
+     "dist": 4,
+     "node": 1
+    }
+   ],
+   "relaxing_edge": null,
+   "source": 0,
+   "visited": [
+    0
+   ]
+  },
+  "step": 8,
+  "type": "pop_pq"
+ },
+ {
+  "highlight": {
+   "code_line": 3
+  },
+  "message": "Relax edge 2→1 (weight=2). New dist[1]=3.",
+  "state": {
+   "current": 2,
+   "dist": {
+    "0": 0,
+    "1": 3,
+    "2": 1,
+    "3": -1,
+    "4": -1
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1,
+      4
+     ],
+     [
+      0,
+      2,
+      1
+     ],
+     [
+      2,
+      1,
+      2
+     ],
+     [
+      1,
+      3,
+      1
+     ],
+     [
+      2,
+      3,
+      5
+     ],
+     [
+      3,
+      4,
+      3
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ]
+   },
+   "pq": [
+    {
+     "dist": 4,
+     "node": 1
+    }
+   ],
+   "relaxing_edge": {
+    "u": 2,
+    "v": 1,
+    "w": 2
+   },
+   "source": 0,
+   "visited": [
+    0,
+    2
+   ]
+  },
+  "step": 9,
+  "type": "relax"
+ },
+ {
+  "highlight": {
+   "code_line": 1
+  },
+  "message": "Push node 1 with dist=3 onto priority queue.",
+  "state": {
+   "current": 2,
+   "dist": {
+    "0": 0,
+    "1": 3,
+    "2": 1,
+    "3": -1,
+    "4": -1
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1,
+      4
+     ],
+     [
+      0,
+      2,
+      1
+     ],
+     [
+      2,
+      1,
+      2
+     ],
+     [
+      1,
+      3,
+      1
+     ],
+     [
+      2,
+      3,
+      5
+     ],
+     [
+      3,
+      4,
+      3
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ]
+   },
+   "pq": [
+    {
+     "dist": 4,
+     "node": 1
+    },
+    {
+     "dist": 3,
+     "node": 1
+    }
+   ],
+   "relaxing_edge": {
+    "u": 2,
+    "v": 1,
+    "w": 2
+   },
+   "source": 0,
+   "visited": [
+    0,
+    2
+   ]
+  },
+  "step": 10,
+  "type": "push_pq"
+ },
+ {
+  "highlight": {
+   "code_line": 3
+  },
+  "message": "Relax edge 2→3 (weight=5). New dist[3]=6.",
+  "state": {
+   "current": 2,
+   "dist": {
+    "0": 0,
+    "1": 3,
+    "2": 1,
+    "3": 6,
+    "4": -1
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1,
+      4
+     ],
+     [
+      0,
+      2,
+      1
+     ],
+     [
+      2,
+      1,
+      2
+     ],
+     [
+      1,
+      3,
+      1
+     ],
+     [
+      2,
+      3,
+      5
+     ],
+     [
+      3,
+      4,
+      3
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ]
+   },
+   "pq": [
+    {
+     "dist": 4,
+     "node": 1
+    },
+    {
+     "dist": 3,
+     "node": 1
+    }
+   ],
+   "relaxing_edge": {
+    "u": 2,
+    "v": 3,
+    "w": 5
+   },
+   "source": 0,
+   "visited": [
+    0,
+    2
+   ]
+  },
+  "step": 11,
+  "type": "relax"
+ },
+ {
+  "highlight": {
+   "code_line": 1
+  },
+  "message": "Push node 3 with dist=6 onto priority queue.",
+  "state": {
+   "current": 2,
+   "dist": {
+    "0": 0,
+    "1": 3,
+    "2": 1,
+    "3": 6,
+    "4": -1
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1,
+      4
+     ],
+     [
+      0,
+      2,
+      1
+     ],
+     [
+      2,
+      1,
+      2
+     ],
+     [
+      1,
+      3,
+      1
+     ],
+     [
+      2,
+      3,
+      5
+     ],
+     [
+      3,
+      4,
+      3
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ]
+   },
+   "pq": [
+    {
+     "dist": 4,
+     "node": 1
+    },
+    {
+     "dist": 3,
+     "node": 1
+    },
+    {
+     "dist": 6,
+     "node": 3
+    }
+   ],
+   "relaxing_edge": {
+    "u": 2,
+    "v": 3,
+    "w": 5
+   },
+   "source": 0,
+   "visited": [
+    0,
+    2
+   ]
+  },
+  "step": 12,
+  "type": "push_pq"
+ },
+ {
+  "highlight": {
+   "code_line": 2
+  },
+  "message": "Pop node 1 (dist=3) from priority queue.",
+  "state": {
+   "current": 1,
+   "dist": {
+    "0": 0,
+    "1": 3,
+    "2": 1,
+    "3": 6,
+    "4": -1
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1,
+      4
+     ],
+     [
+      0,
+      2,
+      1
+     ],
+     [
+      2,
+      1,
+      2
+     ],
+     [
+      1,
+      3,
+      1
+     ],
+     [
+      2,
+      3,
+      5
+     ],
+     [
+      3,
+      4,
+      3
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ]
+   },
+   "pq": [
+    {
+     "dist": 4,
+     "node": 1
+    },
+    {
+     "dist": 6,
+     "node": 3
+    }
+   ],
+   "relaxing_edge": null,
+   "source": 0,
+   "visited": [
+    0,
+    2
+   ]
+  },
+  "step": 13,
+  "type": "pop_pq"
+ },
+ {
+  "highlight": {
+   "code_line": 3
+  },
+  "message": "Relax edge 1→3 (weight=1). New dist[3]=4.",
+  "state": {
+   "current": 1,
+   "dist": {
+    "0": 0,
+    "1": 3,
+    "2": 1,
+    "3": 4,
+    "4": -1
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1,
+      4
+     ],
+     [
+      0,
+      2,
+      1
+     ],
+     [
+      2,
+      1,
+      2
+     ],
+     [
+      1,
+      3,
+      1
+     ],
+     [
+      2,
+      3,
+      5
+     ],
+     [
+      3,
+      4,
+      3
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ]
+   },
+   "pq": [
+    {
+     "dist": 4,
+     "node": 1
+    },
+    {
+     "dist": 6,
+     "node": 3
+    }
+   ],
+   "relaxing_edge": {
+    "u": 1,
+    "v": 3,
+    "w": 1
+   },
+   "source": 0,
+   "visited": [
+    0,
+    2,
+    1
+   ]
+  },
+  "step": 14,
+  "type": "relax"
+ },
+ {
+  "highlight": {
+   "code_line": 1
+  },
+  "message": "Push node 3 with dist=4 onto priority queue.",
+  "state": {
+   "current": 1,
+   "dist": {
+    "0": 0,
+    "1": 3,
+    "2": 1,
+    "3": 4,
+    "4": -1
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1,
+      4
+     ],
+     [
+      0,
+      2,
+      1
+     ],
+     [
+      2,
+      1,
+      2
+     ],
+     [
+      1,
+      3,
+      1
+     ],
+     [
+      2,
+      3,
+      5
+     ],
+     [
+      3,
+      4,
+      3
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ]
+   },
+   "pq": [
+    {
+     "dist": 4,
+     "node": 1
+    },
+    {
+     "dist": 6,
+     "node": 3
+    },
+    {
+     "dist": 4,
+     "node": 3
+    }
+   ],
+   "relaxing_edge": {
+    "u": 1,
+    "v": 3,
+    "w": 1
+   },
+   "source": 0,
+   "visited": [
+    0,
+    2,
+    1
+   ]
+  },
+  "step": 15,
+  "type": "push_pq"
+ },
+ {
+  "highlight": {
+   "code_line": 2
+  },
+  "message": "Pop node 1 (dist=4) from priority queue.",
+  "state": {
+   "current": 1,
+   "dist": {
+    "0": 0,
+    "1": 3,
+    "2": 1,
+    "3": 4,
+    "4": -1
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1,
+      4
+     ],
+     [
+      0,
+      2,
+      1
+     ],
+     [
+      2,
+      1,
+      2
+     ],
+     [
+      1,
+      3,
+      1
+     ],
+     [
+      2,
+      3,
+      5
+     ],
+     [
+      3,
+      4,
+      3
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ]
+   },
+   "pq": [
+    {
+     "dist": 6,
+     "node": 3
+    },
+    {
+     "dist": 4,
+     "node": 3
+    }
+   ],
+   "relaxing_edge": null,
+   "source": 0,
+   "visited": [
+    0,
+    2,
+    1
+   ]
+  },
+  "step": 16,
+  "type": "pop_pq"
+ },
+ {
+  "highlight": {
+   "code_line": 4
+  },
+  "message": "Node 1 already finalized. Skip stale entry.",
+  "state": {
+   "current": 1,
+   "dist": {
+    "0": 0,
+    "1": 3,
+    "2": 1,
+    "3": 4,
+    "4": -1
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1,
+      4
+     ],
+     [
+      0,
+      2,
+      1
+     ],
+     [
+      2,
+      1,
+      2
+     ],
+     [
+      1,
+      3,
+      1
+     ],
+     [
+      2,
+      3,
+      5
+     ],
+     [
+      3,
+      4,
+      3
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ]
+   },
+   "pq": [
+    {
+     "dist": 6,
+     "node": 3
+    },
+    {
+     "dist": 4,
+     "node": 3
+    }
+   ],
+   "relaxing_edge": null,
+   "source": 0,
+   "visited": [
+    0,
+    2,
+    1
+   ]
+  },
+  "step": 17,
+  "type": "skip"
+ },
+ {
+  "highlight": {
+   "code_line": 2
+  },
+  "message": "Pop node 3 (dist=4) from priority queue.",
+  "state": {
+   "current": 3,
+   "dist": {
+    "0": 0,
+    "1": 3,
+    "2": 1,
+    "3": 4,
+    "4": -1
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1,
+      4
+     ],
+     [
+      0,
+      2,
+      1
+     ],
+     [
+      2,
+      1,
+      2
+     ],
+     [
+      1,
+      3,
+      1
+     ],
+     [
+      2,
+      3,
+      5
+     ],
+     [
+      3,
+      4,
+      3
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ]
+   },
+   "pq": [
+    {
+     "dist": 6,
+     "node": 3
+    }
+   ],
+   "relaxing_edge": null,
+   "source": 0,
+   "visited": [
+    0,
+    2,
+    1
+   ]
+  },
+  "step": 18,
+  "type": "pop_pq"
+ },
+ {
+  "highlight": {
+   "code_line": 3
+  },
+  "message": "Relax edge 3→4 (weight=3). New dist[4]=7.",
+  "state": {
+   "current": 3,
+   "dist": {
+    "0": 0,
+    "1": 3,
+    "2": 1,
+    "3": 4,
+    "4": 7
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1,
+      4
+     ],
+     [
+      0,
+      2,
+      1
+     ],
+     [
+      2,
+      1,
+      2
+     ],
+     [
+      1,
+      3,
+      1
+     ],
+     [
+      2,
+      3,
+      5
+     ],
+     [
+      3,
+      4,
+      3
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ]
+   },
+   "pq": [
+    {
+     "dist": 6,
+     "node": 3
+    }
+   ],
+   "relaxing_edge": {
+    "u": 3,
+    "v": 4,
+    "w": 3
+   },
+   "source": 0,
+   "visited": [
+    0,
+    2,
+    1,
+    3
+   ]
+  },
+  "step": 19,
+  "type": "relax"
+ },
+ {
+  "highlight": {
+   "code_line": 1
+  },
+  "message": "Push node 4 with dist=7 onto priority queue.",
+  "state": {
+   "current": 3,
+   "dist": {
+    "0": 0,
+    "1": 3,
+    "2": 1,
+    "3": 4,
+    "4": 7
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1,
+      4
+     ],
+     [
+      0,
+      2,
+      1
+     ],
+     [
+      2,
+      1,
+      2
+     ],
+     [
+      1,
+      3,
+      1
+     ],
+     [
+      2,
+      3,
+      5
+     ],
+     [
+      3,
+      4,
+      3
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ]
+   },
+   "pq": [
+    {
+     "dist": 6,
+     "node": 3
+    },
+    {
+     "dist": 7,
+     "node": 4
+    }
+   ],
+   "relaxing_edge": {
+    "u": 3,
+    "v": 4,
+    "w": 3
+   },
+   "source": 0,
+   "visited": [
+    0,
+    2,
+    1,
+    3
+   ]
+  },
+  "step": 20,
+  "type": "push_pq"
+ },
+ {
+  "highlight": {
+   "code_line": 2
+  },
+  "message": "Pop node 3 (dist=6) from priority queue.",
+  "state": {
+   "current": 3,
+   "dist": {
+    "0": 0,
+    "1": 3,
+    "2": 1,
+    "3": 4,
+    "4": 7
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1,
+      4
+     ],
+     [
+      0,
+      2,
+      1
+     ],
+     [
+      2,
+      1,
+      2
+     ],
+     [
+      1,
+      3,
+      1
+     ],
+     [
+      2,
+      3,
+      5
+     ],
+     [
+      3,
+      4,
+      3
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ]
+   },
+   "pq": [
+    {
+     "dist": 7,
+     "node": 4
+    }
+   ],
+   "relaxing_edge": null,
+   "source": 0,
+   "visited": [
+    0,
+    2,
+    1,
+    3
+   ]
+  },
+  "step": 21,
+  "type": "pop_pq"
+ },
+ {
+  "highlight": {
+   "code_line": 4
+  },
+  "message": "Node 3 already finalized. Skip stale entry.",
+  "state": {
+   "current": 3,
+   "dist": {
+    "0": 0,
+    "1": 3,
+    "2": 1,
+    "3": 4,
+    "4": 7
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1,
+      4
+     ],
+     [
+      0,
+      2,
+      1
+     ],
+     [
+      2,
+      1,
+      2
+     ],
+     [
+      1,
+      3,
+      1
+     ],
+     [
+      2,
+      3,
+      5
+     ],
+     [
+      3,
+      4,
+      3
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ]
+   },
+   "pq": [
+    {
+     "dist": 7,
+     "node": 4
+    }
+   ],
+   "relaxing_edge": null,
+   "source": 0,
+   "visited": [
+    0,
+    2,
+    1,
+    3
+   ]
+  },
+  "step": 22,
+  "type": "skip"
+ },
+ {
+  "highlight": {
+   "code_line": 2
+  },
+  "message": "Pop node 4 (dist=7) from priority queue.",
+  "state": {
+   "current": 4,
+   "dist": {
+    "0": 0,
+    "1": 3,
+    "2": 1,
+    "3": 4,
+    "4": 7
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1,
+      4
+     ],
+     [
+      0,
+      2,
+      1
+     ],
+     [
+      2,
+      1,
+      2
+     ],
+     [
+      1,
+      3,
+      1
+     ],
+     [
+      2,
+      3,
+      5
+     ],
+     [
+      3,
+      4,
+      3
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ]
+   },
+   "pq": [],
+   "relaxing_edge": null,
+   "source": 0,
+   "visited": [
+    0,
+    2,
+    1,
+    3
+   ]
+  },
+  "step": 23,
+  "type": "pop_pq"
+ },
+ {
+  "highlight": {
+   "code_line": 5
+  },
+  "message": "Dijkstra complete! All 5 nodes processed. Shortest distances from source=0 computed.",
+  "state": {
+   "current": -1,
+   "dist": {
+    "0": 0,
+    "1": 3,
+    "2": 1,
+    "3": 4,
+    "4": 7
+   },
+   "graph": {
+    "edges": [
+     [
+      0,
+      1,
+      4
+     ],
+     [
+      0,
+      2,
+      1
+     ],
+     [
+      2,
+      1,
+      2
+     ],
+     [
+      1,
+      3,
+      1
+     ],
+     [
+      2,
+      3,
+      5
+     ],
+     [
+      3,
+      4,
+      3
+     ]
+    ],
+    "nodes": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ]
+   },
+   "pq": [],
+   "relaxing_edge": null,
+   "source": 0,
+   "visited": [
+    0,
+    2,
+    1,
+    3,
+    4
+   ]
+  },
+  "step": 24,
+  "type": "complete"
+ }
+];
