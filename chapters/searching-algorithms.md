@@ -137,7 +137,7 @@ The reason is everything binary search does that linear search doesn't. It jumps
 
 Linear search does the opposite. More comparisons, but each is nearly free: sequential access the prefetcher loves, and a branch that's almost always correctly predicted. For a small array — say a few dozen `int`s sitting in one or two cache lines — the scan finishes before binary search has paid for its first cache miss. The crossover point depends on your hardware and element size, but it is routinely in the tens-to-low-hundreds of elements. Below it, *just scan the vector.*
 
-This is the constant-factor lesson from [Chapter 2](02-complexity-analysis.md) in its sharpest form: two algorithms in different Big-O classes, and the "worse" one wins across the whole range of sizes that most code actually touches. It is also why [arrays](03-basic-data-structures.md) remain the default container — contiguous memory turns the naive algorithm into the fast one. If you want binary search's asymptotics *and* good cache behavior on large data, that is a real engineering problem with real solutions (a branch-free binary search, or an Eytzinger/BFS memory layout that makes the probes cache-friendly), but the first move is almost always simpler: reach for `std::lower_bound`, and don't hand-roll a search on an array small enough to scan.
+This is the constant-factor lesson from [Chapter 2](https://data-structures-on-systems.vercel.app/chapters/complexity-analysis) in its sharpest form: two algorithms in different Big-O classes, and the "worse" one wins across the whole range of sizes that most code actually touches. It is also why [arrays](https://data-structures-on-systems.vercel.app/chapters/basic-data-structures) remain the default container — contiguous memory turns the naive algorithm into the fast one. If you want binary search's asymptotics *and* good cache behavior on large data, that is a real engineering problem with real solutions (a branch-free binary search, or an Eytzinger/BFS memory layout that makes the probes cache-friendly), but the first move is almost always simpler: reach for `std::lower_bound`, and don't hand-roll a search on an array small enough to scan.
 
 ## Bounds: first, last, count, and insertion point
 
@@ -647,10 +647,10 @@ The same idea works on continuous functions and shows up in optimization ("searc
 
 When the data doesn't live in a sorted array, the search comes packaged with the structure — the point made at the top of the chapter, now concrete:
 
-- **Hash tables** ([Chapter 10](10-hash-tables-and-hashing.md)) — `O(1)` average lookup, `O(n)` worst case under adversarial collisions, no ordering. In C++ this is `std::unordered_map::find` / `std::unordered_set::count`. If you do many lookups and don't need order, this is the answer, and its cost was paid at insert time.
-- **Binary search trees** ([Chapter 6](06-trees-and-binary-trees.md)) — `O(log n)` on a balanced tree, `O(n)` on a degenerate one, while keeping elements ordered so you also get range queries and in-order traversal. `std::map` / `std::set` are balanced trees underneath.
-- **Strings** — substring search (naive, Boyer–Moore, KMP) is its own subject with its own hardware trade-offs; it has a dedicated treatment in [Chapter 7](07-string-search-algorithms.md).
-- **Tries and segment trees** ([Chapter 14](14-advanced-data-structures.md)) — prefix search and range queries respectively, when exact-match lookup isn't what you need.
+- **Hash tables** ([Chapter 12](https://data-structures-on-systems.vercel.app/chapters/hash-tables-and-hashing)) — `O(1)` average lookup, `O(n)` worst case under adversarial collisions, no ordering. In C++ this is `std::unordered_map::find` / `std::unordered_set::count`. If you do many lookups and don't need order, this is the answer, and its cost was paid at insert time.
+- **Binary search trees** ([Chapter 8](https://data-structures-on-systems.vercel.app/chapters/trees-and-binary-trees)) — `O(log n)` on a balanced tree, `O(n)` on a degenerate one, while keeping elements ordered so you also get range queries and in-order traversal. `std::map` / `std::set` are balanced trees underneath.
+- **Strings** — substring search (naive, Boyer–Moore, KMP) is its own subject with its own hardware trade-offs; it has a dedicated treatment in [Chapter 9](https://data-structures-on-systems.vercel.app/chapters/string-search-algorithms).
+- **Tries and segment trees** ([Chapter 16](https://data-structures-on-systems.vercel.app/chapters/advanced-data-structures)) — prefix search and range queries respectively, when exact-match lookup isn't what you need.
 
 ## Choosing a search
 
@@ -658,15 +658,15 @@ When the data doesn't live in a sorted array, the search comes packaged with the
 flowchart TD
     A[Find an element] --> B{Data already sorted<br/>in a contiguous array?}
     B -->|No, one-off lookup| C[Linear scan]
-    B -->|No, many lookups| D[Build a hash table<br/>Chapter 10]
-    B -->|No, need ordering + updates| E[Balanced BST<br/>Chapter 6]
+    B -->|No, many lookups| D[Build a hash table<br/>Chapter 12]
+    B -->|No, need ordering + updates| E[Balanced BST<br/>Chapter 8]
     B -->|Yes| F{How large?}
     F -->|Small: a few<br/>cache lines| C
     F -->|Large, values uniform| G[Interpolation search]
     F -->|Large, general| H[Binary search<br/>std::lower_bound]
 ```
 
-The decision is dominated by two questions, and neither is "which search algorithm is fastest in the abstract." First: **what structure is the data in already?** If it's a hash table or a tree, the search is chosen for you. If it's an unsorted array you'll query once, scan it — building an index to search a list a single time never pays off. Second, if it *is* a sorted array: **how big?** Small means scan; large means `std::lower_bound`; large-and-provably-uniform means interpolation is worth a benchmark. Sorting an unsorted array just to binary-search it costs `O(n log n)` (see [Chapter 9](09-sorting-algorithms.md)) and only pays back across many later searches.
+The decision is dominated by two questions, and neither is "which search algorithm is fastest in the abstract." First: **what structure is the data in already?** If it's a hash table or a tree, the search is chosen for you. If it's an unsorted array you'll query once, scan it — building an index to search a list a single time never pays off. Second, if it *is* a sorted array: **how big?** Small means scan; large means `std::lower_bound`; large-and-provably-uniform means interpolation is worth a benchmark. Sorting an unsorted array just to binary-search it costs `O(n log n)` (see [Chapter 11](https://data-structures-on-systems.vercel.app/chapters/sorting-algorithms)) and only pays back across many later searches.
 
 Every complexity table below is real, but the table is the least important thing in this chapter. Measure on your data and your hardware before you trust any row of it — the constant factors, not the exponents, usually decide.
 

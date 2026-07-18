@@ -103,7 +103,7 @@ The same discipline applies to the whole environment. Compare like with like: sa
 
 ## Measure a realistic size and cache state
 
-The number you get depends enormously on how much data you touch, because — as [the memory hierarchy chapter](03.6-memory-hierarchy-and-performance.md) showed at length — the same code is an order of magnitude slower when its working set spills from L2 to DRAM. A benchmark on a 100-element array lives entirely in L1 and will happily tell you a linear scan and a binary search cost the same. Run the real workload's size, or a spread of sizes, and watch where the curves cross.
+The number you get depends enormously on how much data you touch, because — as [the memory hierarchy chapter](https://data-structures-on-systems.vercel.app/chapters/memory-hierarchy) showed at length — the same code is an order of magnitude slower when its working set spills from L2 to DRAM. A benchmark on a 100-element array lives entirely in L1 and will happily tell you a linear scan and a binary search cost the same. Run the real workload's size, or a spread of sizes, and watch where the curves cross.
 
 Cache state is part of the input, not a nuisance to be scrubbed away. There are two honest questions and they have different answers:
 
@@ -232,7 +232,7 @@ A favorite interview question: *"Your benchmark says function X runs in 0.3 nano
 
 1. Take the summing loop from this chapter, benchmark it with `doNotOptimize` removed, and inspect the assembly (`-O3 -S`). Confirm the loop is gone. Add the barrier back and watch it return.
 2. Time a single operation that takes roughly 2 ns with a batch size of 1, then 10, then 1000. Explain the curve.
-3. Measure the same array-sum at sizes 1 KiB, 1 MiB, and 128 MiB. Relate the three numbers to the cache hierarchy from [Chapter 3.6](03.6-memory-hierarchy-and-performance.md).
+3. Measure the same array-sum at sizes 1 KiB, 1 MiB, and 128 MiB. Relate the three numbers to the cache hierarchy from [Chapter 5](https://data-structures-on-systems.vercel.app/chapters/memory-hierarchy).
 4. Build the same operation two ways — as a latency measurement (dependency chain) and a throughput measurement (independent operations) — and explain why the two numbers differ.
 5. Run the load driver as a concurrency sweep and find the point where p99 latency turns sharply upward. What resource is saturating there?
 

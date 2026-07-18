@@ -63,7 +63,7 @@ export function remarkRewriteLinks() {
       // The markdown chapters use absolute site URLs so links also work when
       // read on GitHub. On the site, strip the domain so they're relative and
       // survive a domain change (and never look like leaving the site).
-      const siteMatch = url.match(/^https?:\/\/sb2k16\.github\.io(\/[^\s]*)?$/i);
+      const siteMatch = url.match(/^https?:\/\/(?:sb2k16\.github\.io|data-structures-on-systems\.vercel\.app)(\/[^\s]*)?$/i);
       if (siteMatch) {
         node.url = siteMatch[1] || '/';
         return;

@@ -27,9 +27,9 @@ Here is the field. Memorize the shape of it, not the individual cells:
 | Selection | `O(n²)` | `O(n²)` | `O(n²)` | `O(1)` | No |
 | Merge | `O(n log n)` | `O(n log n)` | `O(n log n)` | `O(n)` | Yes |
 | Quick | `O(n log n)` | `O(n log n)` | `O(n²)` | `O(log n)` | No |
-| Heap | `O(n log n)` | `O(n log n)` | `O(n log n)` | `O(1)` | Yes* |
+| Heap | `O(n log n)` | `O(n log n)` | `O(n log n)` | `O(1)` | No |
 
-*Heapsort as written is not stable; the asterisk is a reminder that stability is a property of the implementation, not just the name. The three `O(n log n)` sorts each make a different trade — merge buys stability and a predictable worst case with `O(n)` memory; quick buys speed and in-place operation with a `O(n²)` worst case; heap buys a guaranteed worst case and `O(1)` space with poor cache behavior — and the rest of this chapter is about spending those trades wisely.
+Heapsort is not stable, and stability is a property of the implementation, not just the name. The three `O(n log n)` sorts each make a different trade — merge buys stability and a predictable worst case with `O(n)` memory; quick buys speed and in-place operation with a `O(n²)` worst case; heap buys a guaranteed worst case and `O(1)` space with poor cache behavior — and the rest of this chapter is about spending those trades wisely.
 
 ## Insertion sort: the O(n²) sort that refuses to die
 
@@ -747,4 +747,4 @@ The bugs that actually bite when you implement a sort:
 
 Sorting is where Big-O and the machine part ways most visibly. Three algorithms share the `O(n log n)` label and behave completely differently: mergesort streams memory sequentially and stays stable at the cost of `O(n)` space; quicksort partitions in place with the best constant factors but a `O(n²)` cliff on bad pivots; heapsort guarantees the worst case in `O(1)` space but pays for it in cache misses. The library's answer, introsort, refuses to choose — it runs quicksort, escapes to heapsort when pivots go bad, and finishes with insertion sort where small-`n` constants dominate. Underneath it all sit the two forces this book keeps returning to: the cache, which rewards mergesort's sequential access and punishes heapsort's scattered heap, and the branch predictor, which can make the *same* loop several times faster on sorted data. Master those two and you understand not just how to sort, but why the fastest sort on paper is rarely the fastest sort on your CPU.
 
-Next we turn to [searching](13-searching-algorithms.md) — the payoff that sorted data buys, and where the `O(log n)` we've been promising finally comes due.
+Next we turn to [searching](https://data-structures-on-systems.vercel.app/chapters/searching-algorithms) — the payoff that sorted data buys, and where the `O(log n)` we've been promising finally comes due.

@@ -22,7 +22,7 @@ Two properties, together, are what make that proof possible:
 - **The greedy-choice property.** There exists an optimal solution that includes the very first choice greedy makes. You are never forced to give up optimality by taking the greedy pick — it's always *safe*.
 - **Optimal substructure.** After you commit that choice, what remains is a smaller instance of the same problem, and an optimal solution to the remainder plus your choice is optimal overall.
 
-If both hold, induction finishes the job: the first greedy choice is safe, the rest of the problem is the same problem, so by induction the whole run is optimal. If either fails, greedy has no right to be correct, and you almost certainly want [dynamic programming](12-dynamic-programming.md) instead — which considers *all* choices at each step precisely because no single local choice is safe.
+If both hold, induction finishes the job: the first greedy choice is safe, the rest of the problem is the same problem, so by induction the whole run is optimal. If either fails, greedy has no right to be correct, and you almost certainly want [dynamic programming](https://data-structures-on-systems.vercel.app/chapters/dynamic-programming) instead — which considers *all* choices at each step precisely because no single local choice is safe.
 
 The workhorse tool for proving the greedy-choice property is the **exchange argument**, and it's worth learning once because it recurs across every problem below: take any optimal solution, show that you can swap the greedy choice in for whatever it did first *without making the solution worse*, and you've proven the greedy choice belongs to some optimal solution. We'll do it concretely in a moment.
 
@@ -219,7 +219,7 @@ That last sentence is the whole difference between this problem and its famous t
 // optimal:           skip item 1, take items 2 and 3      -> total 220
 ```
 
-The indivisibility is the killer. Taking the densest item first commits 10 units of capacity that would have been better spent as part of the 2+3 combination, and because you can't take a fraction of anything, there's no sliver to swap back — the exchange argument dies. No local criterion is safe, so 0-1 knapsack belongs to [dynamic programming](12-dynamic-programming.md), which weighs every subset implicitly. The tell is general: **when a choice is indivisible and blocks a strictly better combination, greedy fails and DP is the fallback.**
+The indivisibility is the killer. Taking the densest item first commits 10 units of capacity that would have been better spent as part of the 2+3 combination, and because you can't take a fraction of anything, there's no sliver to swap back — the exchange argument dies. No local criterion is safe, so 0-1 knapsack belongs to [dynamic programming](https://data-structures-on-systems.vercel.app/chapters/dynamic-programming), which weighs every subset implicitly. The tell is general: **when a choice is indivisible and blocks a strictly better combination, greedy fails and DP is the fallback.**
 
 ## Huffman coding: greedy as the engine of compression
 
@@ -413,11 +413,11 @@ The correctness proof is again an exchange argument, run on tree depth: swapping
 
 ## Greedy on graphs: Dijkstra and the MST
 
-Two of the most-used graph algorithms in production are greedy, and seeing *why* sharpens the intuition for the whole family. Both are covered in depth in [Chapter 11](11-graphs.md); here we care about the greedy argument.
+Two of the most-used graph algorithms in production are greedy, and seeing *why* sharpens the intuition for the whole family. Both are covered in depth in [Chapter 13](https://data-structures-on-systems.vercel.app/chapters/graphs); here we care about the greedy argument.
 
 **Dijkstra's shortest paths.** Repeatedly pull the unvisited vertex with the smallest tentative distance from a min-heap, finalize it, and relax its edges. The greedy claim is that the closest unvisited vertex already has its *final* shortest distance — nothing discovered later can improve it. That claim holds only because edge weights are non-negative: a detour through some farther vertex can never come back cheaper. Make one edge negative and the claim collapses — a longer-looking path can undercut a shorter one — which is exactly why negative weights force you off Dijkstra and onto Bellman-Ford. The greedy-choice property has a *precondition*, and non-negativity is it.
 
-**Minimum spanning tree.** Kruskal's algorithm sorts every edge by weight and adds each one that doesn't create a cycle, using a [union-find](14-advanced-data-structures.md) structure to test connectivity in near-constant time. Its correctness rests on the **cut property**: for any partition of the vertices into two sides, the cheapest edge crossing the partition belongs to some MST. That's a graph-flavored exchange argument — if an MST used a pricier crossing edge, swap in the cheapest one and the tree gets no heavier. Kruskal never adds a cycle-forming edge, so every edge it takes is the cheapest crossing some cut it hasn't yet spanned. Prim's algorithm is the same principle grown from a single vertex outward, always taking the cheapest edge leaving the tree built so far.
+**Minimum spanning tree.** Kruskal's algorithm sorts every edge by weight and adds each one that doesn't create a cycle, using a [union-find](https://data-structures-on-systems.vercel.app/chapters/advanced-data-structures) structure to test connectivity in near-constant time. Its correctness rests on the **cut property**: for any partition of the vertices into two sides, the cheapest edge crossing the partition belongs to some MST. That's a graph-flavored exchange argument — if an MST used a pricier crossing edge, swap in the cheapest one and the tree gets no heavier. Kruskal never adds a cycle-forming edge, so every edge it takes is the cheapest crossing some cut it hasn't yet spanned. Prim's algorithm is the same principle grown from a single vertex outward, always taking the cheapest edge leaving the tree built so far.
 
 ```cpp
 // Kruskal's MST — the greedy heart, assuming a DSU (union-find) type.

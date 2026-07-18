@@ -7,7 +7,7 @@ Two properties have to hold for the trick to work, and together they are the who
 - **Optimal substructure** — the optimal answer is built from optimal answers to subproblems. Fibonacci: `F(n) = F(n-1) + F(n-2)`. LCS, edit distance, and knapsack each have a one-line recurrence of the same shape.
 - **Overlapping subproblems** — the naive recursion solves the same subproblem many times. `F(3)` appears again and again in the call tree for `F(5)`; that repetition is what memoization erases.
 
-Both must be present. Without overlap, you want plain divide and conquer ([Chapter 17](17-divide-and-conquer.md)) — nothing to cache. When a locally optimal choice is provably globally optimal, you want a cheaper greedy algorithm ([Chapter 16](16-greedy-algorithms.md)). DP is the middle case — optimization or counting over sequences, grids, and subsets: sequence alignment, resource allocation, constrained shortest paths, edit distance, optimal game play.
+Both must be present. Without overlap, you want plain divide and conquer ([Chapter 19](https://data-structures-on-systems.vercel.app/chapters/divide-and-conquer)) — nothing to cache. When a locally optimal choice is provably globally optimal, you want a cheaper greedy algorithm ([Chapter 18](https://data-structures-on-systems.vercel.app/chapters/greedy-algorithms)). DP is the middle case — optimization or counting over sequences, grids, and subsets: sequence alignment, resource allocation, constrained shortest paths, edit distance, optimal game play.
 
 The mechanism comes in exactly two forms, and every algorithm in this chapter is one of them. **Memoization** (top-down) keeps the natural recursion but caches each result the first time it is computed, so it only ever touches the states it actually needs. **Tabulation** (bottom-up) drops the recursion and fills a table in dependency order, from the base cases toward the answer. They compute the same values with the same asymptotics; tabulation just has no call-stack overhead, is easier to space-optimize, and walks memory in a cache-friendly order — which, as [Performance and system considerations](#performance-and-system-considerations) shows, usually makes it the faster of the two.
 
@@ -287,7 +287,7 @@ The recurring bugs are off-by-one indexing (`dp[n]` vs `dp[n-1]`), missing base-
 
 ## Performance and system considerations
 
-DP performance on real hardware is dominated by memory behavior, not by the abstract operation count — the constant-factor lesson of [Chapter 2](02-complexity-analysis.md) applied to a table.
+DP performance on real hardware is dominated by memory behavior, not by the abstract operation count — the constant-factor lesson of [Chapter 2](https://data-structures-on-systems.vercel.app/chapters/complexity-analysis) applied to a table.
 
 **Cache locality — tabulation vs memoization.** Tabulation walks the table sequentially (row-major), which the prefetcher loves; memoization jumps around the recursion tree and, with a hash-map memo, pays unpredictable cache misses. A miss costs ~100–300 cycles and sequential access is roughly 10× faster than random, so tabulation is often 2–3× faster despite identical Big-O. When you do memoize, prefer a flat array over a hash map and store 2D tables row-major. Shrinking the footprint helps twice: a rolling array (`O(m×n) → O(n)`) saves memory *and* keeps the working set in cache.
 
@@ -1607,11 +1607,11 @@ func subsetSum(nums []int, target int) bool {
 }
 ```
 
-That single forward-vs-backward line is the entire difference between unbounded and 0/1 semantics. (Fractional knapsack, by contrast, is solved greedily, not by DP — [Chapter 16](16-greedy-algorithms.md).)
+That single forward-vs-backward line is the entire difference between unbounded and 0/1 semantics. (Fractional knapsack, by contrast, is solved greedily, not by DP — [Chapter 18](https://data-structures-on-systems.vercel.app/chapters/greedy-algorithms).)
 
 ## Backtracking with memoization
 
-Backtracking ([Chapter 8](08-recursion-and-backtracking.md)) explores solutions incrementally and abandons partial ones that can't be completed. When the same *state* — not the same path — recurs, memoization turns its exponential search into polynomial DP. The whole art is a state key that captures everything relevant to the remaining decisions and nothing more, so distinct paths reaching the same state share a cached result. Subset Sum is the clean example: the state is `(index, target)`, and both the include and exclude branches recurse into strictly smaller states.
+Backtracking ([Chapter 10](https://data-structures-on-systems.vercel.app/chapters/recursion-and-backtracking)) explores solutions incrementally and abandons partial ones that can't be completed. When the same *state* — not the same path — recurs, memoization turns its exponential search into polynomial DP. The whole art is a state key that captures everything relevant to the remaining decisions and nothing more, so distinct paths reaching the same state share a cached result. Subset Sum is the clean example: the state is `(index, target)`, and both the include and exclude branches recurse into strictly smaller states.
 
 ```cpp
 class SubsetSumSolver {

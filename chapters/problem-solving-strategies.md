@@ -103,7 +103,7 @@ func maxArea(height []int) int {
 }
 ```
 
-The same two-index idea drives 3Sum (fix one element, two-pointer the rest), palindrome checks (converge from both ends), and cycle detection in a linked list (slow and fast pointers). See [Chapter 3](03-basic-data-structures.md) for the array mechanics this rides on.
+The same two-index idea drives 3Sum (fix one element, two-pointer the rest), palindrome checks (converge from both ends), and cycle detection in a linked list (slow and fast pointers). See [Chapter 3](https://data-structures-on-systems.vercel.app/chapters/basic-data-structures) for the array mechanics this rides on.
 
 ### Sliding window
 
@@ -242,7 +242,7 @@ func twoSum(nums []int, target int) []int {
 }
 ```
 
-The trick generalizes. Group anagrams by keying on the sorted string. Count subarrays summing to `k` by hashing prefix sums. Detect duplicates in one pass. Any time the brute force is "compare everything to everything," ask whether a map of what-you've-seen kills the inner loop. Just remember what [Chapter 10](10-hash-tables-and-hashing.md) drilled in: `unordered_map` is O(1) *average* but scatters memory, and it gives you no ordering — if you need sorted keys or range queries, that job belongs to a tree.
+The trick generalizes. Group anagrams by keying on the sorted string. Count subarrays summing to `k` by hashing prefix sums. Detect duplicates in one pass. Any time the brute force is "compare everything to everything," ask whether a map of what-you've-seen kills the inner loop. Just remember what [Chapter 12](https://data-structures-on-systems.vercel.app/chapters/hash-tables-and-hashing) drilled in: `unordered_map` is O(1) *average* but scatters memory, and it gives you no ordering — if you need sorted keys or range queries, that job belongs to a tree.
 
 ### Binary search on the answer
 
@@ -345,7 +345,7 @@ func shipWithinDays(weights []int, days int) int {
 }
 ```
 
-"Minimize the largest ...", "maximize the smallest ...", "smallest capacity/speed/time such that ..." — these phrasings are the tell. Plain binary search on a sorted array (Chapter [13](13-searching-algorithms.md)) is just the special case where the predicate is `nums[mid] >= target`.
+"Minimize the largest ...", "maximize the smallest ...", "smallest capacity/speed/time such that ..." — these phrasings are the tell. Plain binary search on a sorted array (Chapter [15](https://data-structures-on-systems.vercel.app/chapters/searching-algorithms)) is just the special case where the predicate is `nums[mid] >= target`.
 
 ### BFS and DFS
 
@@ -449,7 +449,7 @@ func levelOrder(root *TreeNode) [][]int {
 }
 ```
 
-**DFS** goes deep before wide, using recursion (an implicit stack) or an explicit one. It is the natural fit for path problems, connected components, cycle detection, and anything tree-shaped. "Number of islands" is a DFS flood-fill; validating a BST is a DFS with bounds. Both traversals are O(V + E). See [Chapter 11](11-graphs.md) for the full treatment, including when the graph is weighted and you need Dijkstra instead.
+**DFS** goes deep before wide, using recursion (an implicit stack) or an explicit one. It is the natural fit for path problems, connected components, cycle detection, and anything tree-shaped. "Number of islands" is a DFS flood-fill; validating a BST is a DFS with bounds. Both traversals are O(V + E). See [Chapter 13](https://data-structures-on-systems.vercel.app/chapters/graphs) for the full treatment, including when the graph is weighted and you need Dijkstra instead.
 
 ### Dynamic programming
 
@@ -515,15 +515,15 @@ func rob(nums []int) int {
 }
 ```
 
-Climbing stairs, coin change, longest common subsequence, edit distance — same three moves every time: find the state, write the recurrence, decide top-down or bottom-up. [Chapter 12](12-dynamic-programming.md) is the deep dive.
+Climbing stairs, coin change, longest common subsequence, edit distance — same three moves every time: find the state, write the recurrence, decide top-down or bottom-up. [Chapter 14](https://data-structures-on-systems.vercel.app/chapters/dynamic-programming) is the deep dive.
 
 ### Greedy and backtracking, in one breath
 
 Two patterns round out the set, and both have dedicated chapters.
 
-**Greedy** (Chapter [16](16-greedy-algorithms.md)) makes the locally optimal choice and never reconsiders — sort activities by finish time, always take the earliest-ending one. It is faster and simpler than DP but only correct when a *greedy-choice property* holds, which you must justify, not assume. When you cannot prove greedy is safe, fall back to DP.
+**Greedy** (Chapter [18](https://data-structures-on-systems.vercel.app/chapters/greedy-algorithms)) makes the locally optimal choice and never reconsiders — sort activities by finish time, always take the earliest-ending one. It is faster and simpler than DP but only correct when a *greedy-choice property* holds, which you must justify, not assume. When you cannot prove greedy is safe, fall back to DP.
 
-**Backtracking** (Chapter [8](08-recursion-and-backtracking.md)) is exhaustive search with pruning: try a choice, recurse, and *undo it* on the way back. The undo is the whole pattern, and forgetting it is the classic bug.
+**Backtracking** (Chapter [10](https://data-structures-on-systems.vercel.app/chapters/recursion-and-backtracking)) is exhaustive search with pruning: try a choice, recurse, and *undo it* on the way back. The undo is the whole pattern, and forgetting it is the classic bug.
 
 ```cpp
 // Generate all valid parenthesis combinations. Helper declared first
@@ -649,7 +649,7 @@ A short list, because these five account for most wrong-answer verdicts:
 
 **Broken backtracking.** Every choice you make must be undone after the recursive call returns. A missing `path.pop_back()` (or its equivalent) silently corrupts every subsequent branch.
 
-**Wrong container for the access pattern.** A linear `std::find` in a hot loop is O(n) when an `unordered_set` would be O(1). Chapter [2](02-complexity-analysis.md) is the reflex to build: before you pick a structure, ask what operation you do most, and pick the container that makes *that* one cheap.
+**Wrong container for the access pattern.** A linear `std::find` in a hot loop is O(n) when an `unordered_set` would be O(1). Chapter [2](https://data-structures-on-systems.vercel.app/chapters/complexity-analysis) is the reflex to build: before you pick a structure, ask what operation you do most, and pick the container that makes *that* one cheap.
 
 None of this is glamorous, but the difference between a candidate who ships correct code and one who doesn't is usually not the algorithm — it is whether they remembered the empty array and the `long long`.
 

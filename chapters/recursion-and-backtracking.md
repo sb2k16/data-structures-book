@@ -9,7 +9,7 @@ A **recursive** function calls itself to solve a smaller version of its own prob
 Some problems are recursive in their bones, and forcing them into loops means hand-rolling a stack anyway:
 
 - **Hierarchies** — trees and graphs are defined recursively, so traversing them (DFS, tree walks) is naturally recursive.
-- **Divide and conquer** — sorting, searching, and many numerical algorithms split into smaller copies of themselves (Chapter 17).
+- **Divide and conquer** — sorting, searching, and many numerical algorithms split into smaller copies of themselves (Chapter 19).
 - **Combinatorial generation** — permutations, subsets, and partitions are built by choosing one element and recursing on the rest.
 - **Constraint satisfaction** — N-Queens, Sudoku, and parsing explore a space of partial solutions.
 
@@ -503,7 +503,7 @@ func fib(n int) int64 {
 }
 ```
 
-This is **top-down dynamic programming**, full stop. The moment a recursion has overlapping subproblems, memoization converts it to DP; flip the direction and fill the table bottom-up and you have removed the recursion (and its stack) entirely. Chapter 12 develops this into a discipline — for now, the reflex to build is: *overlapping subproblems ⇒ cache them.*
+This is **top-down dynamic programming**, full stop. The moment a recursion has overlapping subproblems, memoization converts it to DP; flip the direction and fill the table bottom-up and you have removed the recursion (and its stack) entirely. Chapter 14 develops this into a discipline — for now, the reflex to build is: *overlapping subproblems ⇒ cache them.*
 
 ## Backtracking: recursion that undoes its choices
 
@@ -906,7 +906,7 @@ Every recursion bug is one of these four, and all four are checkable in seconds:
 Recursion expresses a problem in terms of smaller copies of itself, anchored by a base case and driven forward by progress toward it. It runs on the call stack — a finite, fast array of frames — so its depth is a memory budget you spend, and overrunning it is a crash, not a warning. Backtracking is recursion aimed at search: build incrementally, validate early, and undo on the way out. Pruning is what makes that search tractable, cutting away subtrees that provably can't hold a solution. And memoization is the hinge between recursion and dynamic programming: cache overlapping subproblems and an exponential recursion becomes a linear one.
 
 **Related chapters:**
-- [Chapter 6: Trees](06-trees-and-binary-trees.md) — recursive traversal is the canonical application.
-- [Chapter 11: Graphs](11-graphs.md) — DFS is recursion (or an explicit stack) over a graph.
-- [Chapter 12: Dynamic Programming](12-dynamic-programming.md) — memoization, developed into a method.
-- [Chapter 17: Divide and Conquer](17-divide-and-conquer.md) — recursion as an algorithm-design strategy.
+- [Chapter 8: Trees](https://data-structures-on-systems.vercel.app/chapters/trees-and-binary-trees) — recursive traversal is the canonical application.
+- [Chapter 13: Graphs](https://data-structures-on-systems.vercel.app/chapters/graphs) — DFS is recursion (or an explicit stack) over a graph.
+- [Chapter 14: Dynamic Programming](https://data-structures-on-systems.vercel.app/chapters/dynamic-programming) — memoization, developed into a method.
+- [Chapter 19: Divide and Conquer](https://data-structures-on-systems.vercel.app/chapters/divide-and-conquer) — recursion as an algorithm-design strategy.

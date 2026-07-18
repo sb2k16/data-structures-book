@@ -26,7 +26,7 @@ have left this chapter and entered that one.
 ## The recurrence is the algorithm
 
 You cannot reason about a divide-and-conquer algorithm without writing its **recurrence** — the
-cost of a problem expressed in terms of its subproblems. [Chapter 2](02-complexity-analysis.md)
+cost of a problem expressed in terms of its subproblems. [Chapter 2](https://data-structures-on-systems.vercel.app/chapters/complexity-analysis)
 introduced the shape; here it earns its keep. Every algorithm in this chapter fits the template
 
 ```
@@ -405,7 +405,7 @@ about.
 ## Binary search and fast exponentiation: `a = 1`
 
 The leanest divide-and-conquer algorithms discard subproblems entirely. Binary search
-(covered in full in [Chapter 13](13-searching-algorithms.md)) inspects the middle element and recurses
+(covered in full in [Chapter 15](https://data-structures-on-systems.vercel.app/chapters/searching-algorithms)) inspects the middle element and recurses
 into *one* half, giving `T(n) = T(n/2) + O(1) = O(log n)`. Fast exponentiation applies the same
 halving to arithmetic: `xⁿ = (x^(n/2))²`, squaring one recursively computed result instead of
 multiplying `x` by itself `n` times.
@@ -884,7 +884,7 @@ gives divide and conquer its clean asymptotics *also*, with no extra effort, giv
 cache behavior — and it does so **without knowing the size of the cache**. Algorithms with that
 property are called **cache-oblivious**, and matrix multiplication is the cleanest demonstration.
 
-Recall from [Chapter 2](02-complexity-analysis.md) that the memory hierarchy, not the flop count,
+Recall from [Chapter 2](https://data-structures-on-systems.vercel.app/chapters/complexity-analysis) that the memory hierarchy, not the flop count,
 usually decides who wins. The textbook triple loop is the perfect victim:
 
 ```cpp

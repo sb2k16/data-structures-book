@@ -48,11 +48,10 @@ Thank you for your interest in contributing to this project! This document provi
 ## 🎯 Areas for Contribution
 
 ### High Priority
-- [ ] Complete missing chapters (Hash Tables, Graphs, etc.)
-- [ ] Add more code examples
-- [ ] Improve existing explanations
-- [ ] Add visual diagrams
-- [ ] Create practice exercises
+- [ ] More "watch it run" visualizations (e.g. B-tree split, more graph algorithms)
+- [ ] Additional language tabs on prose snippets that are still C++-only
+- [ ] Clearer explanations and more practice problems
+- [ ] Bug fixes in code, benchmarks, or diagrams
 
 ### Medium Priority
 - [ ] Add unit tests

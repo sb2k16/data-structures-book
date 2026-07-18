@@ -4,17 +4,17 @@
 
 Every algorithm in the preceding chapters was analyzed against an imaginary machine: one
 instruction at a time, every memory access equally cheap, every branch free. That model is what
-Big-O measures, and [Chapter 2](02-complexity-analysis.md) already warned you it hides the two
+Big-O measures, and [Chapter 2](https://data-structures-on-systems.vercel.app/chapters/complexity-analysis) already warned you it hides the two
 things that decide real performance. A modern CPU violates the model in four ways that matter here:
 
 - It executes **one instruction across many data lanes at once** (SIMD).
 - It **speculates past branches**, and pays 15-20 cycles when it guesses wrong.
 - It reads memory in **64-byte cache lines** through a tiered hierarchy where a miss costs
-  100x a hit ([Chapter 3.6](03.6-memory-hierarchy-and-performance.md)).
+  100x a hit ([Chapter 5](https://data-structures-on-systems.vercel.app/chapters/memory-hierarchy)).
 - It has **many cores** that fight over those cache lines.
 
 This chapter is about closing the gap between the textbook algorithm and the machine it runs on. We
-use exact string search — the algorithms of [Chapter 7](07-string-search-algorithms.md) — as the
+use exact string search — the algorithms of [Chapter 9](https://data-structures-on-systems.vercel.app/chapters/string-search-algorithms) — as the
 running example, because it is simple enough to fit in your head and stresses every one of those
 four hardware realities. The techniques (vectorization, branchless code, bit-parallelism,
 cache-line alignment, prefetching) transfer directly to hashing, sorting, parsing, and any hot loop
@@ -39,7 +39,7 @@ waiting on RAM. Knowing which world you are in is most of the battle.
 
 ## Optimal-hash q-gram matching
 
-Rabin-Karp (Chapter 7) hashes a window of text and compares it to the pattern's hash. Its weakness
+Rabin-Karp (Chapter 9) hashes a window of text and compares it to the pattern's hash. Its weakness
 is collisions: two different windows can share a hash, forcing an expensive character-by-character
 verification that usually fails. The **optimal-hash** family removes collisions by construction.
 
@@ -321,7 +321,7 @@ order in which you compare is itself a tunable parameter.*
 Now we cross from single-core to many-core. Suppose you parallelize a search by giving each thread a
 chunk of text and a private match counter. The counters are logically independent, so there should
 be no contention — yet the parallel version can run *slower* than single-threaded. The culprit is
-**false sharing** ([Chapter 3.6.7](03.6-memory-hierarchy-and-performance.md#367-false-sharing-and-cache-coherency)).
+**false sharing** ([Chapter 5](https://data-structures-on-systems.vercel.app/chapters/memory-hierarchy#false-sharing-and-cache-coherency)).
 
 Cache coherency operates at cache-line granularity, not variable granularity. If two threads'
 counters land in the same 64-byte line, every increment by one core invalidates the line in the
@@ -398,7 +398,7 @@ use, or prefetch past the end. There is no substitute for measuring — sweep `P
 Prefetching is a scalpel, not a hammer. The hardware prefetcher already handles sequential and
 simple strided access, so prefetching those does nothing. Software prefetch earns its keep only on
 irregular access where you can compute the address ahead of the use — and if you can *restructure*
-the algorithm to be sequential instead (see [Chapter 3.6](03.6-memory-hierarchy-and-performance.md)
+the algorithm to be sequential instead (see [Chapter 5](https://data-structures-on-systems.vercel.app/chapters/memory-hierarchy)
 on SoA layouts and blocking), that beats prefetching every time.
 
 ## GPU acceleration: throughput over latency
@@ -491,7 +491,7 @@ A few rules that keep numbers honest:
 - **Test realistic data.** Match rate, alphabet size, and pattern length swing these algorithms by
   an order of magnitude; a benchmark on random bytes tells you little about your logs or your genome.
 
-[Chapter 19](19-benchmarking-and-load-testing.md) develops this into a full methodology, and the
+[Chapter 21](https://data-structures-on-systems.vercel.app/chapters/benchmarking-and-load-testing) develops this into a full methodology, and the
 book's online edition runs several of these comparisons live in your browser so you can watch the
 gap open on your own CPU.
 

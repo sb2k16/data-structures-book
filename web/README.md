@@ -15,19 +15,17 @@ Copy `.env.example` to `.env` to switch on the newsletter form or the ad slot.
 
 ## How the chapters get here
 
-`../chapters/*.md` is the single source of truth. `src/content.config.ts` reads that directory
-directly, so editing a chapter updates the site and the GitHub-readable markdown at once — there is
-no copy step and nothing to keep in sync. Titles, ordering and blurbs live in `src/lib/book.ts`,
-which keeps the markdown free of frontmatter.
+Chapters come from two places. The **algorithm** chapters are plain markdown in `../chapters/*.md`,
+read directly by `src/content.config.ts` (no copy step; ids are derived from the filename slug). The
+11 **systems** chapters that need live benchmarks or "watch it run" visualizations are hand-authored
+MDX in `src/pages/chapters/*.mdx`, marked `custom: true` in `src/lib/book.ts` so the dynamic markdown
+route doesn't also generate a page at the same URL. Titles, ordering, blurbs, and chapter numbers all
+live in `src/lib/book.ts` — the single source of chapter metadata.
 
-The remark/rehype plugins in `src/lib/remark.mjs` adapt GitHub markdown for the web: they strip each
+The remark/rehype plugins in `src/lib/remark.mjs` adapt the markdown for the web: they strip each
 chapter's hand-written table of contents and duplicate H1 (the layout supplies both), hand `mermaid`
-blocks to the client-side renderer, rewrite `.md` links to site routes, and wrap wide tables in a
-scroll container.
-
-Chapter 3.6 is the exception: it is hand-authored at `src/pages/chapters/memory-hierarchy.mdx` so it
-can embed the live benchmarks. It is marked `custom: true` in `book.ts`, which keeps the dynamic
-route from generating a second page at the same URL.
+blocks to the client-side renderer, group adjacent multi-language code fences into C++/Python/Java/Go
+tabs, rewrite `.md` links to site routes, and wrap wide tables in a scroll container.
 
 ## The benchmarks
 

@@ -2,7 +2,7 @@
 
 Basic containers — arrays, linked lists, balanced trees — are generalists. They do everything adequately and a handful of things badly: a range sum over an array is O(n), finding the minimum of an unsorted set is O(n), matching a string prefix is O(n·m), an exact membership set costs O(n) space, snapshotting a structure per version costs O(n). Every structure in this chapter buys back one of those operations by giving up generality. A heap answers "what's most urgent?" in O(log n) but can't search. A segment tree answers any range query in O(log n) but is heavier than the array it wraps. A Bloom filter tests membership in a fraction of the space but occasionally lies. The skill isn't memorizing these structures — it's recognizing the one operation your workload leans on hardest, and reaching for the specialist only when a plain array or tree genuinely can't keep up.
 
-One systems lesson runs through the whole chapter, the same one from [Chapter 3](03-basic-data-structures.md): a structure that lives in a contiguous array beats a pointer-based one doing the same asymptotic work. A binary heap keeps every node a few array slots from its parent, so the prefetcher streams it in and there are no per-node allocations — it runs 2–3× faster than a pointer-based priority queue of the same O(log n) and uses about half the memory. Tries and skip lists, built from many small scattered nodes, pay a cache miss on nearly every step and fragment the allocator; a memory pool or a fixed-array node layout is the usual fix. When two structures share a Big-O, the array-backed one almost always wins — but measure the miss rate before you optimize.
+One systems lesson runs through the whole chapter, the same one from [Chapter 3](https://data-structures-on-systems.vercel.app/chapters/basic-data-structures): a structure that lives in a contiguous array beats a pointer-based one doing the same asymptotic work. A binary heap keeps every node a few array slots from its parent, so the prefetcher streams it in and there are no per-node allocations — it runs 2–3× faster than a pointer-based priority queue of the same O(log n) and uses about half the memory. Tries and skip lists, built from many small scattered nodes, pay a cache miss on nearly every step and fragment the allocator; a memory pool or a fixed-array node layout is the usual fix. When two structures share a Big-O, the array-backed one almost always wins — but measure the miss rate before you optimize.
 
 | Structure | Insert | Delete | Search | Query | Space |
 |-----------|--------|--------|--------|-------|-------|
@@ -1860,7 +1860,7 @@ That rounds out the range-query family. Pick by what constrains you:
 
 ## Skip Lists
 
-A **skip list** gets you a balanced tree's O(log n) search, insert, and delete without any of the rotation logic — you pay for it with randomness instead. It layers several sorted linked lists ([Chapter 4](04-linked-lists.md)), with higher "express lane" levels holding progressively fewer nodes; a node's height is chosen by coin flip. Redis uses skip lists for its sorted sets, partly because they are far easier to make concurrent than trees.
+A **skip list** gets you a balanced tree's O(log n) search, insert, and delete without any of the rotation logic — you pay for it with randomness instead. It layers several sorted linked lists ([Chapter 6](https://data-structures-on-systems.vercel.app/chapters/linked-lists)), with higher "express lane" levels holding progressively fewer nodes; a node's height is chosen by coin flip. Redis uses skip lists for its sorted sets, partly because they are far easier to make concurrent than trees.
 
 ```
 Level 3:  [1] --------------------------> [9]
@@ -3554,7 +3554,7 @@ func (sa *SuffixArray) GetSuffixArray() []int { return sa.suffixArray }
 func (sa *SuffixArray) GetLCP() []int         { return sa.lcp }
 ```
 
-A **suffix tree** is a compressed trie of all suffixes; Ukkonen's algorithm builds it in O(n) and searches a pattern in O(m), and it directly solves longest-common-substring, longest-repeated-substring, and drives applications from LZ77 compression to DNA analysis. But it is notoriously intricate to implement correctly, so a suffix array plus LCP is usually preferred in practice — comparable performance, far less code. Reach for either only when the same text is searched for many patterns; for a single search over small text, a direct string search ([Chapter 7](07-string-search-algorithms.md)) is simpler.
+A **suffix tree** is a compressed trie of all suffixes; Ukkonen's algorithm builds it in O(n) and searches a pattern in O(m), and it directly solves longest-common-substring, longest-repeated-substring, and drives applications from LZ77 compression to DNA analysis. But it is notoriously intricate to implement correctly, so a suffix array plus LCP is usually preferred in practice — comparable performance, far less code. Reach for either only when the same text is searched for many patterns; for a single search over small text, a direct string search ([Chapter 9](https://data-structures-on-systems.vercel.app/chapters/string-search-algorithms)) is simpler.
 
 ## Persistent Data Structures
 
@@ -4053,5 +4053,3 @@ The next chapter turns to **greedy algorithms**, many of which — Huffman codin
     ```
 
     This is *binary search on the answer*. The result lies in `[max(nums), sum(nums)]`: the lower bound must hold the largest single element, the upper bound puts everything in one subarray. For a candidate `mid`, a greedy pass (`canSplit`) counts how many subarrays are needed if each is capped at `mid`; feasibility is monotone in `mid`, so binary search converges on the smallest feasible cap. Time O(n·log(sum)), space O(1).
-</content>
-</invoke>

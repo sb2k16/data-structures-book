@@ -60,11 +60,11 @@ book like this: whether you *return* to it.
 
 Read it online, where the interactive benchmarks run in your own browser on your own CPU — a claim
 about performance means far more when you watch it happen on your machine than when you read a
-number someone else measured. The code examples are complete and compile; they live alongside the
-book in the repository so you can run and modify them.
+number someone else measured. Code appears inline in C++, Python, Java, and Go, and the practice
+problems compile and run right in the browser — so you can read, edit, and run without leaving the page.
 
 A note on complexity analysis, since it's the one piece of formal machinery the rest of the book
-leans on: [Chapter 2](02-complexity-analysis.md) covers Big-O, and just as importantly, the two
+leans on: [Chapter 2](https://data-structures-on-systems.vercel.app/chapters/complexity-analysis) covers Big-O, and just as importantly, the two
 things Big-O deliberately hides — the constant factor and the memory hierarchy — that decide which
 `O(n)` algorithm actually wins. If you read only one foundational chapter closely, read that one.
 
@@ -79,4 +79,4 @@ things Big-O deliberately hides — the constant factor and the memory hierarchy
 - **An interview checklist** — the questions you'll be asked and the mistakes to avoid.
 
 Let's begin where every performance conversation should: with [what the machine actually
-does](02-complexity-analysis.md), and why the tidy `O(1)` you were promised is only half the truth.
+does](https://data-structures-on-systems.vercel.app/chapters/complexity-analysis), and why the tidy `O(1)` you were promised is only half the truth.
