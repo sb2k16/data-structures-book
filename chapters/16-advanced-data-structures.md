@@ -1,4 +1,4 @@
-# Chapter 14: Advanced Data Structures
+# Advanced Data Structures
 
 Basic containers — arrays, linked lists, balanced trees — are generalists. They do everything adequately and a handful of things badly: a range sum over an array is O(n), finding the minimum of an unsorted set is O(n), matching a string prefix is O(n·m), an exact membership set costs O(n) space, snapshotting a structure per version costs O(n). Every structure in this chapter buys back one of those operations by giving up generality. A heap answers "what's most urgent?" in O(log n) but can't search. A segment tree answers any range query in O(log n) but is heavier than the array it wraps. A Bloom filter tests membership in a fraction of the space but occasionally lies. The skill isn't memorizing these structures — it's recognizing the one operation your workload leans on hardest, and reaching for the specialist only when a plain array or tree genuinely can't keep up.
 
@@ -16,7 +16,7 @@ One systems lesson runs through the whole chapter, the same one from [Chapter 3]
 
 (m = word/pattern length, k = hash functions, Σ = alphabet size, N words of average length M.)
 
-## 14.1 Heaps
+## Heaps
 
 Reach for a heap when you repeatedly need the most extreme element — the highest-priority task, the nearest point, the smallest remaining edge — and nothing else. A **heap** is a complete binary tree obeying one rule, the *heap property*: every parent dominates its children (≥ for a max-heap, ≤ for a min-heap). Because the tree is complete — every level full but the last, which fills left to right — it needs no pointers: it lives in a flat array where node `i` has parent `(i-1)/2` and children `2i+1`, `2i+2`. That layout is the whole reason a heap is fast, and it bounds the height at ⌊log₂ n⌋.
 
@@ -587,7 +587,7 @@ The array layout also gives the heap its cache edge. Every operation walks a sin
 | Build heap | O(n) | ~log n |
 | Heap sort | O(n log n) | — |
 
-## 14.2 Tries (Prefix Trees)
+## Tries (Prefix Trees)
 
 A **trie** stores strings along tree paths: the path from the root to a node spells a prefix, and a per-node flag marks where a stored word ends. Lookups and inserts cost O(m) in the word length, *independent of how many words are stored* — which is what makes tries the natural fit for autocomplete, spell checkers, and IP-prefix routing. The map-based node handles any alphabet:
 
@@ -912,7 +912,7 @@ public:
 };
 ```
 
-## 14.3 Segment Trees
+## Segment Trees
 
 A **segment tree** answers range aggregate queries *and* point updates in O(log n) — the full-service option when both the data and the queries move. Each node covers a contiguous range and stores the aggregate of its two children, so a query walks down only the O(log n) nodes whose ranges partition `[l, r]`. The tree lives in an array sized `4n` (enough for every node of the recursive layout). This version aggregates by sum:
 
@@ -1108,7 +1108,7 @@ func (st *SegmentTree) Query(l, r int) int  { return st.query(1, 0, st.n-1, l, r
 
 To answer a different aggregate, change only the combine step and the out-of-range identity: for range-minimum, replace `+` with `min(...)` and return `numeric_limits<int>::max()` instead of `0`. Build is O(n); query and update O(log n); space O(n). The one recurring bug is the range split — the right child must start at `mid + 1`, not `mid`, or overlapping ranges double-count and can recurse forever.
 
-## 14.4 Fenwick Trees (Binary Indexed Trees)
+## Fenwick Trees (Binary Indexed Trees)
 
 When the aggregate is invertible (a sum, not a min), a **Fenwick tree** does everything a segment tree does for prefix/point work in half the memory and with better cache behavior — from a single array and one bit trick. The operation `index & (-index)` isolates the lowest set bit, which is how each node reaches its parent (query) or next responsible node (update). Indices are 1-based internally, so both `update` and `query` convert the incoming 0-based index — forget it in one and every prefix sum is wrong.
 
@@ -1272,7 +1272,7 @@ func (ft *FenwickTree) PrefixSum(index int) int { return ft.getSum(index) }
 
 Build is O(n log n), query and update O(log n), space O(n). Less memory, less code, and faster in practice than a segment tree — the price is that it handles only invertible aggregates without extra machinery.
 
-## 14.5 Sparse Table
+## Sparse Table
 
 If the array never changes and the operation is idempotent (`f(x, x) = x` — min, max, GCD), a **sparse table** beats every log-time structure: O(1) queries after O(n log n) preprocessing. It precomputes the answer for every interval whose length is a power of two; a query covers `[l, r]` with two overlapping such intervals, and the overlap is harmless precisely because the operation is idempotent.
 
@@ -1451,7 +1451,7 @@ func (st *SparseTable) Query(l, r int) int { // inclusive [l, r]
 
 The catch is right there in the premise: no updates, and O(n log n) space. When the data is static and read-heavy, it's unbeatable; the moment an element can change, you're back to a segment tree.
 
-## 14.6 Sqrt Decomposition
+## Sqrt Decomposition
 
 **Sqrt decomposition** is the simplest range structure worth knowing, and a good stepping stone to the segment tree. Split the array into √n blocks and precompute one answer per block; a query then combines whole-block answers with the individual elements of the two partial end blocks — O(√n) per query and update. Here it maintains block minima:
 
@@ -1858,7 +1858,7 @@ That rounds out the range-query family. Pick by what constrains you:
 | Fenwick tree | O(log n) | O(log n) | O(n) | invertible, prefix/point |
 | Sqrt decomp | O(√n) | O(√n) | O(n) | simplest to write |
 
-## 14.7 Skip Lists
+## Skip Lists
 
 A **skip list** gets you a balanced tree's O(log n) search, insert, and delete without any of the rotation logic — you pay for it with randomness instead. It layers several sorted linked lists ([Chapter 4](04-linked-lists.md)), with higher "express lane" levels holding progressively fewer nodes; a node's height is chosen by coin flip. Redis uses skip lists for its sorted sets, partly because they are far easier to make concurrent than trees.
 
@@ -2211,7 +2211,7 @@ func (sl *SkipList) Remove(value int) {
 
 Search, insert, and delete are O(log n) expected, O(n) worst case; space is O(n), since each element appears in ~2 levels on average. You trade a balanced tree's deterministic guarantees for a much simpler implementation.
 
-## 14.8 Bloom Filters
+## Bloom Filters
 
 A **Bloom filter** answers "have I seen this?" in a tiny fraction of the space of an exact set — as long as you can tolerate a *maybe*. It's a bit array plus k hash functions; insertion sets the k hashed bits, and a lookup passes only if all k are set. It can report a false positive but never a false negative: if it says "not present," the element is definitely absent. That asymmetry is exactly what you want in front of an expensive lookup — a database block, a web cache, a router table — to cheaply rule out absent keys. Standard Bloom filters can't delete, since clearing a bit could evict other elements.
 
@@ -2538,7 +2538,7 @@ func (cb *CountingBloomFilter) Contains(key string) bool {
 }
 ```
 
-## 14.9 Count-Min Sketch
+## Count-Min Sketch
 
 The **Count-Min sketch** is the counting analogue of a Bloom filter: it estimates element *frequencies* in a stream from a `d × w` counter grid and d hash functions. Increment bumps one cell per row; a query returns the *minimum* of those d cells. Because collisions only ever add to a cell, the minimum is the tightest estimate — the sketch may overestimate but never underestimates.
 
@@ -2759,7 +2759,7 @@ func findHeavyHitters(stream []string, threshold float64, totalElements int) []s
 
 Reach for a Count-Min sketch when the stream is large, approximate counts suffice, and space is tight; skip it when you need exact counts or the data fits a plain hash table. Variants include Count sketch (±1 signs, lower average error but can underestimate) and conservative-update (increments only the minimum cells to curb overestimation).
 
-## 14.10 Fibonacci Heap
+## Fibonacci Heap
 
 A **Fibonacci heap** is a collection of heap-ordered trees that defers restructuring, buying O(1) *amortized* insert, decrease-key, and merge, with O(log n) amortized extract-min. The decrease-key bound is the one that matters: it's what lowers Dijkstra's algorithm on dense graphs from O((V+E) log V) to O(V log V + E).
 
@@ -3225,7 +3225,7 @@ func (h *FibonacciHeap) Empty() bool { return h.minNode == nil }
 
 In practice Fibonacci heaps carry large constant factors and poor cache behavior — pointer-heavy nodes, exactly the layout the intro warned against — so a plain binary heap, or a pairing heap, usually wins outside of graph algorithms dominated by decrease-key. Reach for one only when decrease-key or merge is genuinely the bottleneck.
 
-## 14.11 Suffix Array and Suffix Tree
+## Suffix Array and Suffix Tree
 
 A **suffix array** is the sorted array of starting indices of all suffixes of a string. Sort the suffixes once and you can find any substring by binary search — at a fraction of a suffix tree's memory. The build below is the simple O(n² log n) comparison sort; production code uses an O(n) or O(n log n) builder such as SA-IS or DC3. An accompanying LCP (longest-common-prefix) array records the overlap between adjacent suffixes and unlocks most of the interesting queries.
 
@@ -3556,7 +3556,7 @@ func (sa *SuffixArray) GetLCP() []int         { return sa.lcp }
 
 A **suffix tree** is a compressed trie of all suffixes; Ukkonen's algorithm builds it in O(n) and searches a pattern in O(m), and it directly solves longest-common-substring, longest-repeated-substring, and drives applications from LZ77 compression to DNA analysis. But it is notoriously intricate to implement correctly, so a suffix array plus LCP is usually preferred in practice — comparable performance, far less code. Reach for either only when the same text is searched for many patterns; for a single search over small text, a direct string search ([Chapter 7](07-string-search-algorithms.md)) is simpler.
 
-## 14.12 Persistent Data Structures
+## Persistent Data Structures
 
 A **persistent** structure keeps its old versions when modified — so you can query the past, not just the present. (Partial persistence reads any version but writes only the latest; full persistence writes any version; confluent persistence merges them.) The standard trick is *path copying*: an update clones only the O(log n) nodes on the path it changes and shares the rest with the previous version, so each version costs O(log n) extra space instead of O(n).
 
@@ -3820,7 +3820,7 @@ func (pst *PersistentSegmentTree) GetLatestVersion() int { return len(pst.roots)
 
 Persistence powers time-travel queries ("what was the sum at version t?"), immutable/functional data, and rollback. Use it when history matters; a regular structure is smaller and simpler when only the current state does.
 
-## 14.13 Failure Modes and Common Pitfalls
+## Failure Modes and Common Pitfalls
 
 Each pitfall below is a real production bug shown as a wrong/right pair.
 
@@ -3846,15 +3846,15 @@ Overlapping `mid`/`mid` ranges double-count and can recurse forever.
 
 **6. Fenwick 0-vs-1-based confusion.** Both `update` and `query` must convert the incoming 0-based index to 1-based; forgetting it in one yields wrong prefix sums.
 
-## 14.14 Concurrency Considerations
+## Concurrency Considerations
 
-This section applies the concurrency fundamentals from [Chapter 3.5](03.5-concurrency-fundamentals.md) to heaps and priority queues (see 3.5.3 for invariant-based reasoning and 3.5.9 for producer-consumer patterns).
+This section applies the concurrency fundamentals from the [Concurrency chapter](/chapters/concurrency-fundamentals) to heaps and priority queues — its invariant-under-interleavings reasoning and the bounded producer-consumer queue in particular.
 
 A heap's invariants — the heap property, the complete-tree shape, and `size` matching the element count — must never be observed half-updated, yet `insert` and `extractMax` are both multi-step, and between the steps the invariants are temporarily broken. Two concurrent inserts can see each other's in-progress bubble-up and write inconsistent parents; testing `size > 0` and then extracting is a race, since another thread can empty the heap in between; guarding `insert` but not `extractMax` leaves extraction racing against insertion.
 
 The practical answer is a **coarse-grained lock** — one `std::mutex` around each whole operation. Simple and correct, but it serializes all access, so throughput collapses under contention. Fine-grained per-node locking is impractical here (operations traverse the tree and would need many locks with deadlock risk), and read-write locks help little because heap operations are write-heavy. If contention is the real problem, prefer multiple thread-local heaps merged periodically, or a bounded priority queue on a `std::condition_variable` (re-checking the predicate in a loop to handle spurious wakeups). Lock-free heaps are research-grade and rarely worth it — a lock-free skip list is the usual route to a concurrent priority queue. For production, reach for `std::priority_queue` with external synchronization or a proven library, and go more exotic only when profiling demands it.
 
-## 14.15 Summary
+## Summary
 
 Advanced data structures each specialize one operation that basic structures handle poorly:
 
@@ -3867,7 +3867,7 @@ The systems throughline recurs: array-backed layouts beat pointer-chasing on cac
 
 The next chapter turns to **greedy algorithms**, many of which — Huffman coding among them — are built directly on the heaps introduced here.
 
-## 14.16 Exercises
+## Exercises
 
 1. Implement a k-way merge using a min-heap.
 2. Create a trie that supports wildcard (`.`) matching.

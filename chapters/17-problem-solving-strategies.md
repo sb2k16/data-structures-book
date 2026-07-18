@@ -1,4 +1,4 @@
-# Chapter 15: Problem Solving Strategies
+# Problem Solving Strategies
 
 Every chapter before this one taught you a structure. This one teaches you the harder skill: looking at a problem you have never seen and knowing, within a minute or two, which structure and which technique will crack it. That skill is not talent. It is pattern recognition, and patterns are learnable — a handful of them cover the overwhelming majority of algorithmic problems you will meet in interviews, contests, and the occasional real system.
 

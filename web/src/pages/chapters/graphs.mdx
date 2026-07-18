@@ -7,7 +7,7 @@ import AlgoViz from '../../components/problem/AlgoViz';
 import { bfsTrace } from '../../lib/traces';
 
 
-## 11.1 When the Relationships Are the Data
+## When the Relationships Are the Data
 
 Most structures in this book impose a shape on your data — a sequence, a hierarchy, a key-value mapping. A graph imposes none. It is what you reach for when the *relationships between things* are the data: who follows whom, which road connects which cities, what task blocks what other task. A graph is nothing but a set of vertices and a set of edges joining them, and that minimalism is exactly why it models everything from social networks to build dependencies to internet routing. GPS navigation, web crawlers, `make`, package managers, and recommendation engines are all graph algorithms wearing an application's clothes.
 
@@ -48,11 +48,11 @@ graph LR
 
 Two more types are worth naming because algorithms below depend on them: a **complete** graph connects every pair of vertices (the dense extreme), and a **bipartite** graph splits its vertices into two sides with no edge inside a side — the structure behind matching and two-coloring problems.
 
-## 11.2 Representations: The Memory Decision That Governs Everything
+## Representations: The Memory Decision That Governs Everything
 
 Before any algorithm runs, you have to decide how the graph lives in memory, and the two choices — adjacency matrix and adjacency list — are a genuine memory-versus-cache trade-off, not a formality. Everything downstream inherits it: the matrix makes "is there an edge `u→v`?" a single array access but costs `O(V²)` memory whether the graph has a million edges or three; the list costs only `O(V + E)` but answers the same question by scanning a vertex's neighbors. Almost every real graph — road networks, social graphs, web graphs — is *sparse* (`E ≪ V²`), so the adjacency list is the default. The matrix earns its keep only when the graph is dense or you need constant-time edge tests on a small graph.
 
-### 11.2.1 Adjacency Matrix
+### Adjacency Matrix
 
 An **adjacency matrix** is a `V × V` array where `matrix[i][j]` holds the weight of edge `i→j` (or 0/1 for its presence). Edge lookup, insert, and delete are all `O(1)`, and the code is trivial:
 
@@ -300,7 +300,7 @@ The catch is the `O(V²)` memory, paid whether the graph is full or nearly empty
 
 There is a subtler reason the matrix can outrun a list even when it "shouldn't," and it comes straight from the memory hierarchy of [Chapter 3.6](03.6-memory-hierarchy-and-performance.md): the matrix is one contiguous block, so an edge query is a single cache-friendly load (~5–10 cycles), whereas an adjacency list is an array of separately allocated node chains, and walking one means pointer-chasing across scattered addresses — every hop risks a cache miss of 50–200 cycles. On a dense graph that fits in cache, the matrix's sequential layout can beat the list's asymptotically-better bounds outright. This is the same constant-factor story as binary versus linear search in [Chapter 13](13-searching-algorithms.md): Big-O picks the representation, but memory layout picks the winner.
 
-### 11.2.2 Adjacency List
+### Adjacency List
 
 An **adjacency list** stores, for each vertex, a list of its neighbors — `O(V + E)` memory, which for a sparse graph is dramatically smaller. It is the representation every algorithm in this chapter assumes unless noted, because those algorithms iterate a vertex's neighbors far more often than they test a specific edge, and neighbor iteration is exactly what the list does well (`O(degree)`, not `O(V)`).
 
@@ -576,9 +576,9 @@ Its one real weakness is the edge test: checking whether `u→v` exists means sc
 | Cache behavior | contiguous, friendly | pointer-chasing |
 | Best for | dense / small graphs | sparse / large graphs |
 
-## 11.3 Graph Traversal
+## Graph Traversal
 
-### 11.3.1 Depth-First Search (DFS)
+### Depth-First Search (DFS)
 
 **Depth-First Search** explores as far as possible along each branch before backtracking. Think of it like exploring a maze: you go as deep as possible down one path, and only when you hit a dead end do you backtrack to try another path.
 
@@ -927,7 +927,7 @@ func (g *GraphDFS) DFSIterative(start int) []int {
 
 DFS is the engine under a surprising number of later algorithms in this chapter: cycle detection, topological sort, bridges and articulation points, and strongly connected components are all DFS with extra bookkeeping. Anywhere you need to fully explore one region before moving on — maze solving, connected components, reachability — it is the natural traversal.
 
-### 11.3.2 Breadth-First Search (BFS)
+### Breadth-First Search (BFS)
 
 **Breadth-First Search** explores all neighbors at the current depth before moving to the next level. Think of it like ripples in water: it expands outward level by level, exploring all vertices at distance 1, then all at distance 2, and so on.
 
@@ -1236,9 +1236,9 @@ You just read BFS in four languages; here it is on a small graph. Watch the fron
 
 <AlgoViz client:visible kind="graph" steps={bfsTrace} title="Watch it run: BFS explores level by level" />
 
-## 11.4 Shortest Path Algorithms
+## Shortest Path Algorithms
 
-### 11.4.1 Dijkstra's Algorithm
+### Dijkstra's Algorithm
 
 **Dijkstra's algorithm** finds the shortest path from a source vertex to all other vertices in a weighted graph with non-negative edge weights. It uses a greedy approach: at each step, it selects the unvisited vertex with the smallest known distance and updates distances to its neighbors.
 
@@ -1648,7 +1648,7 @@ func (g *Dijkstra) ShortestPathTo(start, end int) []int {
 
 With a binary-heap priority queue this runs in `O((V + E) log V)` time and `O(V)` space. The non-negative-weight requirement isn't a limitation to route around — it is the exact condition under which "finalize a vertex the moment it's extracted" is correct. When weights can go negative, you need the next algorithm.
 
-### 11.4.2 Bellman-Ford Algorithm
+### Bellman-Ford Algorithm
 
 **Bellman-Ford** trades speed for generality: it handles negative edge weights and, as a bonus, *detects* negative cycles (where "shortest path" stops being well-defined). Instead of Dijkstra's greedy finalization, it simply relaxes every edge `V−1` times — enough for any shortest path, which can span at most `V−1` edges, to settle — then one more pass to check whether anything still improves, which would mean a negative cycle.
 
@@ -1879,7 +1879,7 @@ func (g *BellmanFord) HasNegativeCycle() bool {
 
 The cost of that generality is `O(V × E)` time — a full order slower than Dijkstra — so use Bellman-Ford only when negative weights actually appear.
 
-### 11.4.3 Floyd-Warshall Algorithm
+### Floyd-Warshall Algorithm
 
 Dijkstra and Bellman-Ford give shortest paths from *one* source. When you need the distance between *every* pair of vertices, **Floyd-Warshall** does it in three nested loops and `O(V³)` time. The idea is deceptively simple: for each intermediate vertex `k`, ask whether routing through `k` shortens any pair `i→j`, and if so, take it. After considering every `k`, `dist[i][j]` holds the true shortest distance. It's compact, cache-friendly (dense arrays), and the natural choice on small dense graphs where `V³` beats running Dijkstra `V` times.
 
@@ -2049,7 +2049,7 @@ func (g *FloydWarshall) HasNegativeCycle() bool {
 
 Beyond all-pairs distances, the same `O(V²)` space and `O(V³)` time also compute transitive closure (reachability) and detect negative cycles — a negative value on the diagonal means a vertex can reach itself at negative cost.
 
-## 11.5 Union-Find (Disjoint Sets)
+## Union-Find (Disjoint Sets)
 
 Union-Find is not a graph structure at all — it's the little data structure that makes several graph algorithms fast, so it earns its place here. It maintains a partition of elements into disjoint sets under two operations: **find**, which returns a set's representative, and **union**, which merges two sets. That's exactly what you need to answer "are these two vertices already connected?" in near-constant time — the question at the heart of Kruskal's MST, connected-component labeling, and cycle detection in an undirected graph.
 
@@ -2649,11 +2649,11 @@ func hasCycle(edges [][2]int, numVertices int) bool {
 
 That last column is the one to remember: path compression flattens trees during `find`, union by rank keeps them shallow, and together they buy effectively constant-time connectivity — the foundation Kruskal's MST is about to stand on.
 
-## 11.6 Minimum Spanning Trees
+## Minimum Spanning Trees
 
 A **minimum spanning tree (MST)** is the cheapest set of edges that keeps every vertex connected — think of laying cable to wire up every building for the least total length. Both classic algorithms are greedy (Chapter 16), and both are correct for the same reason: the *cut property* guarantees the lightest edge crossing any partition of the vertices is safe to include.
 
-### 11.6.1 Kruskal's Algorithm
+### Kruskal's Algorithm
 
 **Kruskal's algorithm** builds MST by adding edges in increasing order of weight, skipping edges that would create cycles. It uses Union-Find (Disjoint Set) to efficiently check for cycles.
 
@@ -2982,7 +2982,7 @@ func (g *Kruskal) MSTWeight() int {
 
 Sorting the edges dominates, so Kruskal runs in `O(E log E) = O(E log V)` — a clean fit for sparse graphs, where you already have an edge list in hand.
 
-### 11.6.2 Prim's Algorithm
+### Prim's Algorithm
 
 Prim grows the tree from a single vertex instead of sorting all edges up front. At each step it adds the cheapest edge leaving the current tree, using a priority queue to find it fast.
 
@@ -3264,7 +3264,7 @@ func (g *Prim) FindMST(start int) []MSTEdge {
 
 With a binary heap Prim runs in `O((V + E) log V)`. Its inner loop is Dijkstra's almost exactly — same priority queue, same relaxation — differing only in the key: Prim keys on the single edge weight into the tree, Dijkstra on the accumulated distance from the source. Kruskal tends to win on sparse graphs (you already have the edge list), Prim on dense ones.
 
-## 11.7 Topological Sorting
+## Topological Sorting
 
 **Topological sort** linearizes a DAG so that every edge `u→v` points forward: if task A depends on task B, B comes first. It is the algorithm behind build systems, package managers, and course-prerequisite planners — anywhere dependencies must be resolved into an order.
 
@@ -3621,7 +3621,7 @@ func (g *TopologicalSort) TopologicalSortKahn() []int {
 }
 ```
 
-## 11.8 Bridges and Articulation Points
+## Bridges and Articulation Points
 
 Some connections are load-bearing: remove them and the graph falls apart. A **bridge** is such an edge and an **articulation point** such a vertex — a critical link whose removal increases the number of connected components. Both answer the same production question (which single failure partitions the network?), and remarkably both fall out of one DFS carrying two timestamps per vertex:
 
@@ -4179,7 +4179,7 @@ func (a *ArticulationPointFinder) FindArticulationPoints() []int {
 
 Also `O(V + E)`. Together, bridges and articulation points are the standard vocabulary for network-vulnerability analysis: the single edges and nodes whose failure fragments the system.
 
-## 11.9 Strongly Connected Components
+## Strongly Connected Components
 
 In a directed graph, a **strongly connected component (SCC)** is a maximal set of vertices where every one can reach every other — mutual reachability, not just connectivity. SCCs matter in compiler control-flow analysis, dependency resolution (a cycle of mutually-dependent modules is an SCC), and web-graph structure. Two `O(V + E)` algorithms find them.
 
@@ -4773,7 +4773,7 @@ func (t *TarjanSCC) FindSCCs() [][]int {
 
 **Tarjan's algorithm** does the same job in a *single* DFS by keeping vertices on a stack and using the same `disc`/`low` timestamps as bridge-finding: when a vertex's `low` equals its own `disc`, it's the root of an SCC, and everything above it on the stack is that component. One pass instead of two, at the cost of trickier bookkeeping.
 
-## 11.10 0-1 BFS
+## 0-1 BFS
 
 When every edge weight is 0 or 1, you don't need Dijkstra's `log` factor. **0-1 BFS** replaces the priority queue with a double-ended queue: relax an edge of weight 0 and push the neighbor to the *front* (same distance layer), weight 1 and push to the *back* (next layer). The deque stays sorted by distance for free, so the whole thing runs in `O(V + E)` — Dijkstra's answer at BFS's cost. It's the right tool for grid problems mixing free and unit moves, or "teleport" edges of weight 0.
 
@@ -5116,7 +5116,7 @@ func (g *BFS01) ShortestPathTo(start, end int) []int {
 }
 ```
 
-## 11.11 A Few Everyday Graph Routines
+## A Few Everyday Graph Routines
 
 Three short functions come up constantly and are worth seeing because each is a two-line variation on a traversal you already know. **Connected components** is DFS restarted from every unvisited vertex, one component per restart:
 
@@ -5460,7 +5460,7 @@ func isBipartite(graph [][]int) bool {
 }
 ```
 
-## 11.12 A* Search
+## A* Search
 
 A* is Dijkstra with a sense of direction. Dijkstra expands outward blindly, equally in all directions; A* adds a **heuristic** `h(n)` estimating the remaining distance to the goal and prioritizes nodes by `f(n) = g(n) + h(n)` — cost-so-far plus estimated cost-to-go. That nudges the search toward the target instead of exploring the whole graph, which is why games and robotics pathfinders use it. The one rule that keeps it correct: the heuristic must be **admissible** — never *over*estimate the true remaining cost. Straight-line (or Manhattan, on a grid) distance is the classic admissible choice. Set `h(n) = 0` and A* degenerates back into Dijkstra.
 
@@ -5854,7 +5854,7 @@ func (a *AStar) FindPath(start, goal [2]int) [][2]int {
 
 The three shortest-path tools now form a ladder: BFS for unweighted graphs, Dijkstra when weights matter but you have no heuristic, A* when you do. Use the most informed one your problem allows.
 
-## 11.13 Network Flow
+## Network Flow
 
 A different question about weighted graphs: given a network of pipes with capacities, a **source**, and a **sink**, how much can flow from source to sink at once? The **Ford-Fulkerson** method answers it by repeatedly finding an *augmenting path* — any source-to-sink route with spare capacity — and pushing as much flow as its tightest edge allows, updating a *residual graph* that tracks remaining capacity (and lets flow be "pushed back" to reroute). When no augmenting path remains, the flow is maximal. Finding each path with BFS (the Edmonds-Karp refinement below) bounds the work at `O(V·E²)`.
 
@@ -6156,7 +6156,7 @@ func (f *FordFulkerson) MaxFlow(source, sink int) int {
 
 Max flow is more useful than it looks: by the max-flow/min-cut theorem the maximum flow equals the *minimum cut* — the cheapest set of edges whose removal severs source from sink — so the same code solves bipartite matching, network reliability, and resource-allocation problems that don't look like flow at all. Faster variants trade complexity for speed: Edmonds-Karp is `O(V·E²)`, Dinic's `O(V²·E)`.
 
-## 11.14 Graph Coloring
+## Graph Coloring
 
 **Graph coloring** assigns a color to each vertex so that no edge joins two of the same color; the fewest colors that suffice is the graph's **chromatic number**. It's the abstract form of conflict-free scheduling: exam timetabling, register allocation in compilers (variables that are live at once conflict), and map coloring are all colorings. The catch is that finding the chromatic number is NP-hard, so in practice you either settle for a fast greedy approximation or brute-force small instances with backtracking.
 
@@ -6628,7 +6628,7 @@ func graphColoringBacktracking(graph [][]int, maxColors int) []int {
 
 Greedy coloring is the default; reach for backtracking only when you need the true minimum on a small graph.
 
-## 11.15 Concurrency: Traversing a Shared Graph
+## Concurrency: Traversing a Shared Graph
 
 Parallelizing graph work runs straight into the concurrency fundamentals of [Chapter 3.5](03.5-concurrency-fundamentals.md), and the sharpest hazard is the `visited` array. Two threads that both read `visited[v] == false` will both process `v` — the classic check-then-act race — corrupting results or looping forever. The fix is to make the check-and-set a single atomic step:
 
@@ -6643,7 +6643,7 @@ One `exchange` both tests and claims the vertex, so exactly one thread ever ente
 
 Mutating the graph *during* traversal is the other trap — an edge added mid-iteration can invalidate the adjacency list a thread is walking. If you must allow concurrent structure changes, a coarse-grained lock around the whole graph is simple and correct but serializes everything; per-vertex locks buy parallelism at the cost of deadlock risk (always acquire in a fixed order). The honest production advice is to avoid the problem: keep the graph **immutable** during read-heavy traversal so no synchronization is needed, or use a graph-processing framework (Pregel, GraphX) built to handle the concurrency. Don't hand-roll fine-grained graph locking unless profiling proves you need it.
 
-## 11.16 Summary
+## Summary
 
 Graphs are the structure for data whose essence is *relationships*, and the through-line of this chapter is that two upfront choices govern everything after: the representation (adjacency list for the sparse graphs that dominate reality, matrix for dense or small ones — a real memory-and-cache decision) and the traversal (DFS to go deep, BFS to find shortest unweighted paths). Almost every named algorithm here is one of those two with extra bookkeeping.
 

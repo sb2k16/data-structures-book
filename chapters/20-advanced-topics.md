@@ -1,6 +1,6 @@
-# Chapter 18: Advanced Topics and Modern Optimizations
+# Advanced Topics and Modern Optimizations
 
-## 18.1 Why this chapter exists
+## Why this chapter exists
 
 Every algorithm in the preceding chapters was analyzed against an imaginary machine: one
 instruction at a time, every memory access equally cheap, every branch free. That model is what
@@ -37,7 +37,7 @@ flowchart TD
 Pulling the SIMD lever on a memory-bound loop wins you nothing — the cores were already idle,
 waiting on RAM. Knowing which world you are in is most of the battle.
 
-## 18.2 Optimal-hash q-gram matching
+## Optimal-hash q-gram matching
 
 Rabin-Karp (Chapter 7) hashes a window of text and compares it to the pattern's hash. Its weakness
 is collisions: two different windows can share a hash, forcing an expensive character-by-character
@@ -111,7 +111,7 @@ on adversarial, highly repetitive input. A common refinement, **elongated q-gram
 opposite of `findOptimalQ` — it picks the *largest* `q` that keeps q-grams unique, trading a bigger
 index for longer skips.
 
-## 18.3 SIMD: one instruction, thirty-two comparisons
+## SIMD: one instruction, thirty-two comparisons
 
 Character-by-character comparison wastes a 256-bit-wide machine one byte at a time. A single AVX2
 instruction compares 32 bytes against 32 bytes and hands you a 32-bit mask of which lanes matched.
@@ -176,7 +176,7 @@ shape is exactly how a modern `memchr`, `std::string::find`, and JSON/HTTP parse
 delimiters. The lesson generalizes: **whenever a hot loop tests one element at a time, ask whether
 one instruction could test a whole cache line's worth at once.**
 
-## 18.4 Branchless code and branch prediction
+## Branchless code and branch prediction
 
 A mispredicted branch costs 15-20 cycles while the pipeline refills. A branch the CPU predicts
 correctly is nearly free. The difference between the two is not the `if` — it is whether the
@@ -225,7 +225,7 @@ when profiling shows a hot, genuinely unpredictable branch.
 > branch for free. Measure the misprediction rate (`perf stat -e branch-misses`) before you reach
 > for this.
 
-## 18.5 Bit-parallelism: the whole comparison in one word
+## Bit-parallelism: the whole comparison in one word
 
 SIMD widens comparison to 32 bytes; **bit-parallelism** does something subtler — it encodes the
 entire matching *state machine* in the bits of a single machine word and advances it with a couple
@@ -266,7 +266,7 @@ with a small ladder of states) or add wildcards and character classes, and you h
 inside `grep`-style matchers and simple regex evaluators. The ceiling is the word size — beyond 64
 characters you chain multiple words, and the constant factor grows.
 
-## 18.6 Scan order and skipping: Boyer-Moore-Horspool
+## Scan order and skipping: Boyer-Moore-Horspool
 
 The naive scanner tests the pattern left-to-right and advances one position on a mismatch. Two
 independent ideas make it dramatically faster in practice: **scan from the right**, and **skip by
@@ -316,7 +316,7 @@ mismatch. It is more intricate to implement correctly than Horspool and rarely w
 — Horspool's simplicity and cache behavior usually win — but it makes the principle explicit: *the
 order in which you compare is itself a tunable parameter.*
 
-## 18.7 False sharing: when alignment is a correctness-adjacent bug
+## False sharing: when alignment is a correctness-adjacent bug
 
 Now we cross from single-core to many-core. Suppose you parallelize a search by giving each thread a
 chunk of text and a private match counter. The counters are logically independent, so there should
@@ -361,9 +361,9 @@ almost never worth it for cold or read-mostly data.
 > code is correct and fast until you add threads, then throughput collapses and *worsens* with more
 > cores. `perf c2c` (cache-to-cache) is the tool that names the offending line.
 
-## 18.8 Prefetching: hiding the miss you cannot avoid
+## Prefetching: hiding the miss you cannot avoid
 
-Sequential scans (§18.3, §18.6) are cache-friendly because the hardware prefetcher sees the stride
+Sequential scans ([SIMD: one instruction, thirty-two comparisons](#simd-one-instruction-thirty-two-comparisons), [Scan order and skipping: Boyer-Moore-Horspool](#scan-order-and-skipping-boyer-moore-horspool)) are cache-friendly because the hardware prefetcher sees the stride
 and fetches ahead automatically. The hard case is **random** access — probing a hash table, chasing
 pointers, gathering through an index array — where the CPU cannot predict the next address and
 stalls ~200 cycles on each miss.
@@ -401,7 +401,7 @@ irregular access where you can compute the address ahead of the use — and if y
 the algorithm to be sequential instead (see [Chapter 3.6](03.6-memory-hierarchy-and-performance.md)
 on SoA layouts and blocking), that beats prefetching every time.
 
-## 18.9 GPU acceleration: throughput over latency
+## GPU acceleration: throughput over latency
 
 A CPU minimizes the latency of one task; a GPU maximizes the throughput of thousands. For exact
 search over a large corpus, that maps naturally onto the hardware: give each of tens of thousands of
@@ -457,10 +457,10 @@ costs more than the search itself — the GPU only pays off when the corpus alre
 device or is reused across many patterns (intrusion detection scanning millions of packets against
 thousands of signatures is the textbook fit). Second, **thread divergence**: when threads in a warp
 take different branches (some verifying, some not), the warp serializes them, so the raw core count
-overstates real throughput. GPUs win at scale and lose at small inputs; the CPU SIMD path of §18.3
+overstates real throughput. GPUs win at scale and lose at small inputs; the CPU SIMD path of [SIMD: one instruction, thirty-two comparisons](#simd-one-instruction-thirty-two-comparisons)
 is the right tool for anything that fits in cache.
 
-## 18.10 Quantum matching: a reality check
+## Quantum matching: a reality check
 
 Grover's algorithm searches an unstructured space of `n` items in `O(√n)` oracle queries versus the
 classical `O(n)`, and string matching can be phrased as finding a position where an oracle reports a
@@ -474,7 +474,7 @@ classical algorithm is not instant. For the foreseeable future, quantum string m
 theory-of-computation result, not an engineering tool. The bit-parallel and SIMD techniques in this
 chapter are where the real, shippable speedups live.
 
-## 18.11 Measuring it honestly
+## Measuring it honestly
 
 Every claim in this chapter is a claim about a specific machine, and the only way to trust one is to
 measure it on yours. Theoretical complexity does not capture cache behavior, branch prediction, or
@@ -486,7 +486,7 @@ A few rules that keep numbers honest:
 - **Defeat the optimizer.** A benchmark whose result is unused is legally deleted; consume the output
   (e.g., feed it to a volatile sink) or the compiler will "optimize" your loop to nothing.
 - **Use hardware counters,** not just wall-clock: `perf stat` reports IPC, cache misses, and
-  branch-misses, which tell you *why* a number moved — the difference between §18.4's branchy and
+  branch-misses, which tell you *why* a number moved — the difference between [Branchless code and branch prediction](#branchless-code-and-branch-prediction)'s branchy and
   branchless loops shows up as a branch-miss delta, not a mystery.
 - **Test realistic data.** Match rate, alphabet size, and pattern length swing these algorithms by
   an order of magnitude; a benchmark on random bytes tells you little about your logs or your genome.
@@ -495,7 +495,7 @@ A few rules that keep numbers honest:
 book's online edition runs several of these comparisons live in your browser so you can watch the
 gap open on your own CPU.
 
-## 18.12 Summary
+## Summary
 
 The through-line of this chapter is a single shift in perspective: stop treating the CPU as the
 abstract machine of Big-O and start treating it as the wide, speculative, cache-tiered, many-core
@@ -503,8 +503,8 @@ device it actually is.
 
 - **Match the lever to the bottleneck.** SIMD and branchless code fix compute-bound loops; layout,
   prefetching, and killing false sharing fix memory-bound ones. Profile before you choose.
-- **Filter, then verify** is the master pattern for scanning — SIMD (§18.3), q-gram skipping
-  (§18.2), and Horspool (§18.6) are all the same idea: reject the many cheaply, examine the few
+- **Filter, then verify** is the master pattern for scanning — SIMD ([SIMD: one instruction, thirty-two comparisons](#simd-one-instruction-thirty-two-comparisons)), q-gram skipping
+  ([Optimal-hash q-gram matching](#optimal-hash-q-gram-matching)), and Horspool ([Scan order and skipping: Boyer-Moore-Horspool](#scan-order-and-skipping-boyer-moore-horspool)) are all the same idea: reject the many cheaply, examine the few
   carefully.
 - **Predictability beats cleverness** at the branch level; **one instruction beats one byte** at the
   data level; and **one writer per cache line** is the rule that keeps parallel code from
@@ -513,7 +513,7 @@ device it actually is.
   amortizes the transfer; quantum matching is not yet an engineering option. The durable wins are the
   hardware-aware techniques you can apply on the machine already on your desk.
 
-## 18.13 References and further reading
+## References and further reading
 
 **Optimal-hash and q-gram matching**
 - Lecroq, T. (2007). "Fast exact string matching algorithms." *Information Processing Letters*,
@@ -523,7 +523,7 @@ device it actually is.
 
 **SIMD and bit-parallelism**
 - Muła, W. "SIMD-friendly algorithms for substring searching." (`0x80.pl`) — the first/last-byte
-  filter used in §18.3.
+  filter used in [SIMD: one instruction, thirty-two comparisons](#simd-one-instruction-thirty-two-comparisons).
 - Baeza-Yates, R., & Gonnet, G. (1992). "A new approach to text searching." *CACM*, 35(10), 74-82 —
   the Shift-Or/Shift-And family.
 - Navarro, G., & Raffinot, M. (2002). *Flexible Pattern Matching in Strings.* Cambridge University

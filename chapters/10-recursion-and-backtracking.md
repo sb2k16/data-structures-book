@@ -1,4 +1,4 @@
-# Chapter 8: Recursion and Backtracking
+# Recursion and Backtracking
 
 Recursion is the first idea in this book that isn't a data structure — it's a control-flow technique. It earns its place here because it runs on one: the **call stack**, a real, finite block of memory the CPU manages for you. Every recursive call pushes a frame onto that stack; every return pops one. So recursion depth is not an abstraction. It is literally how many frames are stacked in that array of memory, and when you push past the end, the array overflows — that is exactly what a stack overflow is. Hold that picture and almost everything about recursion follows from it: its cost, its failure modes, and the moment you should abandon it for a plain loop.
 

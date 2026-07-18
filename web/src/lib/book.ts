@@ -53,7 +53,7 @@ export const CHAPTERS: ChapterMeta[] = [
   {
     id: 'concurrency-fundamentals',
     slug: 'concurrency-fundamentals',
-    number: '3.5',
+    number: '4',
     title: 'Concurrency for Data Structures',
     part: 'Linear Structures',
     blurb: 'Locks, atomics, and what "thread-safe" costs you — with the data race and its fix animated step by step.',
@@ -62,7 +62,7 @@ export const CHAPTERS: ChapterMeta[] = [
   {
     id: 'memory-hierarchy-and-performance',
     slug: 'memory-hierarchy',
-    number: '3.6',
+    number: '5',
     title: 'Memory Hierarchy and Performance',
     part: 'Linear Structures',
     blurb: 'Cache lines, prefetchers, and the 100× that Big-O cannot see. Measured live, in your browser.',
@@ -71,7 +71,7 @@ export const CHAPTERS: ChapterMeta[] = [
   {
     id: 'linked-lists',
     slug: 'linked-lists',
-    number: '4',
+    number: '6',
     title: 'Linked Lists',
     part: 'Linear Structures',
     blurb: 'O(1) insertion — bought by giving up the contiguity that made arrays fast, a trade real hardware rarely rewards. Measured live.',
@@ -80,7 +80,7 @@ export const CHAPTERS: ChapterMeta[] = [
   {
     id: 'stacks-and-queues',
     slug: 'stacks-and-queues',
-    number: '5',
+    number: '7',
     title: 'Stacks and Queues',
     part: 'Linear Structures',
     blurb: 'The two most useful restrictions on a sequence — LIFO and FIFO — running everything from your call stack to message brokers.',
@@ -89,7 +89,7 @@ export const CHAPTERS: ChapterMeta[] = [
   {
     id: 'trees-and-binary-trees',
     slug: 'trees-and-binary-trees',
-    number: '6',
+    number: '8',
     title: 'Trees and Binary Trees',
     part: 'Non-Linear Structures',
     blurb: 'Ordering and O(log n) at once — the thing hash tables threw away — plus why databases don’t actually use binary trees.',
@@ -98,7 +98,7 @@ export const CHAPTERS: ChapterMeta[] = [
   {
     id: 'string-search-algorithms',
     slug: 'string-search-algorithms',
-    number: '7',
+    number: '9',
     title: 'String Search Algorithms',
     part: 'Non-Linear Structures',
     blurb: 'KMP, Boyer-Moore, Rabin-Karp — and why the naive scan often wins in practice.',
@@ -106,7 +106,7 @@ export const CHAPTERS: ChapterMeta[] = [
   {
     id: 'recursion-and-backtracking',
     slug: 'recursion-and-backtracking',
-    number: '8',
+    number: '10',
     title: 'Recursion and Backtracking',
     part: 'Non-Linear Structures',
     blurb: 'The call stack as a data structure, and pruning as the only thing that makes search tractable.',
@@ -114,7 +114,7 @@ export const CHAPTERS: ChapterMeta[] = [
   {
     id: 'sorting-algorithms',
     slug: 'sorting-algorithms',
-    number: '9',
+    number: '11',
     title: 'Sorting Algorithms',
     part: 'Non-Linear Structures',
     blurb: 'From quicksort to Tim Sort, plus the branch predictor that decides which one is fast today.',
@@ -122,7 +122,7 @@ export const CHAPTERS: ChapterMeta[] = [
   {
     id: 'hash-tables-and-hashing',
     slug: 'hash-tables-and-hashing',
-    number: '10',
+    number: '12',
     title: 'Hash Tables and Hashing',
     part: 'Non-Linear Structures',
     blurb: 'Why they exist, why chaining loses to open addressing on real hardware, and how the same idea scales from a dict to OpenSearch shard routing. Measured live.',
@@ -131,7 +131,7 @@ export const CHAPTERS: ChapterMeta[] = [
   {
     id: 'graphs',
     slug: 'graphs',
-    number: '11',
+    number: '13',
     title: 'Graphs',
     part: 'Non-Linear Structures',
     blurb: 'Traversal, shortest paths, A*, flow, and the representation choices that dominate runtime.',
@@ -140,7 +140,7 @@ export const CHAPTERS: ChapterMeta[] = [
   {
     id: 'dynamic-programming',
     slug: 'dynamic-programming',
-    number: '12',
+    number: '14',
     title: 'Dynamic Programming',
     part: 'Algorithm Design',
     blurb: 'A taxonomy of DP patterns, and the space optimizations that turn a table into a row.',
@@ -148,7 +148,7 @@ export const CHAPTERS: ChapterMeta[] = [
   {
     id: 'searching-algorithms',
     slug: 'searching-algorithms',
-    number: '13',
+    number: '15',
     title: 'Searching Algorithms',
     part: 'Algorithm Design',
     blurb: 'Binary search, and why a linear scan beats it on small arrays every single time.',
@@ -156,7 +156,7 @@ export const CHAPTERS: ChapterMeta[] = [
   {
     id: 'advanced-data-structures',
     slug: 'advanced-data-structures',
-    number: '14',
+    number: '16',
     title: 'Heaps, Tries, and Beyond',
     part: 'Algorithm Design',
     blurb: 'Fibonacci heaps, suffix arrays, persistent structures, and when the constant factor kills them.',
@@ -164,7 +164,7 @@ export const CHAPTERS: ChapterMeta[] = [
   {
     id: 'problem-solving-strategies',
     slug: 'problem-solving-strategies',
-    number: '15',
+    number: '17',
     title: 'Problem Solving Strategies',
     part: 'Algorithm Design',
     blurb: 'Pattern recognition as a learnable skill, with a framework for the interview and the job.',
@@ -172,7 +172,7 @@ export const CHAPTERS: ChapterMeta[] = [
   {
     id: 'greedy-algorithms',
     slug: 'greedy-algorithms',
-    number: '16',
+    number: '18',
     title: 'Greedy Algorithms',
     part: 'Algorithm Design',
     blurb: 'When local choices are provably global, and how to tell before you ship.',
@@ -180,7 +180,7 @@ export const CHAPTERS: ChapterMeta[] = [
   {
     id: 'divide-and-conquer',
     slug: 'divide-and-conquer',
-    number: '17',
+    number: '19',
     title: 'Divide and Conquer',
     part: 'Algorithm Design',
     blurb: 'Recurrences, the master theorem, and cache-oblivious algorithms that win for free.',
@@ -188,7 +188,7 @@ export const CHAPTERS: ChapterMeta[] = [
   {
     id: 'advanced-topics',
     slug: 'advanced-topics',
-    number: '18',
+    number: '20',
     title: 'Modern Optimizations',
     part: 'Advanced Topics',
     blurb: 'SIMD, branchless code, false sharing, and the tricks that separate fast from fastest.',
@@ -196,7 +196,7 @@ export const CHAPTERS: ChapterMeta[] = [
   {
     id: 'benchmarking-and-load-testing',
     slug: 'benchmarking-and-load-testing',
-    number: '19',
+    number: '21',
     title: 'Benchmarking and Load Testing',
     part: 'Advanced Topics',
     blurb: 'How to measure without lying to yourself. The chapter most books skip entirely.',
@@ -204,7 +204,7 @@ export const CHAPTERS: ChapterMeta[] = [
   {
     id: 'b-trees',
     slug: 'b-trees',
-    number: '20',
+    number: '22',
     title: 'B-Trees',
     part: 'Storage Engines at Scale',
     blurb: 'Why every database index is a B-tree and not a binary tree: wide, cache-line-sized nodes turn 20 cache misses into a handful. ~8× faster, measured live.',
@@ -213,7 +213,7 @@ export const CHAPTERS: ChapterMeta[] = [
   {
     id: 'lsm-trees',
     slug: 'lsm-trees',
-    number: '21',
+    number: '23',
     title: 'LSM Trees',
     part: 'Storage Engines at Scale',
     blurb: 'Turning every random write into a sequential append — the engine behind RocksDB, Cassandra, and the write path of modern data infrastructure.',

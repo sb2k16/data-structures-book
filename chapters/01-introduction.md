@@ -1,4 +1,4 @@
-# Chapter 1: Introduction
+# Introduction
 
 There is no shortage of books on data structures and algorithms. This one is different in a
 specific way, and it's worth saying up front so you can decide whether it's the book you want.

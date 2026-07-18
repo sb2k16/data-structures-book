@@ -1,4 +1,4 @@
-# Chapter 17: Divide and Conquer
+# Divide and Conquer
 
 Most of this book is about *structures* — arrays, trees, hash tables — and the way they lay
 themselves out in memory. This chapter is about a *strategy*, and it is the one strategy whose

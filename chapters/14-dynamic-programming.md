@@ -1,4 +1,4 @@
-# Chapter 12: Dynamic Programming
+# Dynamic Programming
 
 Dynamic programming is what you reach for when a recursive solution is *correct but hopelessly slow* because it keeps re-solving the same subproblems. Naive Fibonacci is `O(2ⁿ)`; brute-force longest common subsequence, coin change, and knapsack are all exponential — not because the problems are hard, but because the recursion recomputes the same answers exponentially many times. DP fixes exactly that: solve each distinct subproblem once, store the result, reuse it. The exponential collapses to polynomial — usually `O(n²)` or `O(n³)` — paid for in memory.
 
@@ -9,11 +9,11 @@ Two properties have to hold for the trick to work, and together they are the who
 
 Both must be present. Without overlap, you want plain divide and conquer ([Chapter 17](17-divide-and-conquer.md)) — nothing to cache. When a locally optimal choice is provably globally optimal, you want a cheaper greedy algorithm ([Chapter 16](16-greedy-algorithms.md)). DP is the middle case — optimization or counting over sequences, grids, and subsets: sequence alignment, resource allocation, constrained shortest paths, edit distance, optimal game play.
 
-The mechanism comes in exactly two forms, and every algorithm in this chapter is one of them. **Memoization** (top-down) keeps the natural recursion but caches each result the first time it is computed, so it only ever touches the states it actually needs. **Tabulation** (bottom-up) drops the recursion and fills a table in dependency order, from the base cases toward the answer. They compute the same values with the same asymptotics; tabulation just has no call-stack overhead, is easier to space-optimize, and walks memory in a cache-friendly order — which, as §12.3 shows, usually makes it the faster of the two.
+The mechanism comes in exactly two forms, and every algorithm in this chapter is one of them. **Memoization** (top-down) keeps the natural recursion but caches each result the first time it is computed, so it only ever touches the states it actually needs. **Tabulation** (bottom-up) drops the recursion and fills a table in dependency order, from the base cases toward the answer. They compute the same values with the same asymptotics; tabulation just has no call-stack overhead, is easier to space-optimize, and walks memory in a cache-friendly order — which, as [Performance and system considerations](#performance-and-system-considerations) shows, usually makes it the faster of the two.
 
 Correctness of either form rests on three facts worth checking every time: base cases are correct by definition; every other state is computed from strictly *smaller* states, so its value is final before anything reads it; and the state space is finite with acyclic dependencies, so the process terminates. Get the base cases, the recurrence, and the dependency order right and the algorithm is right.
 
-## 12.1 The two faces of DP: Fibonacci
+## The two faces of DP: Fibonacci
 
 Fibonacci is the smallest problem that shows the whole idea. The naive recursion transcribes the definition directly:
 
@@ -263,7 +263,7 @@ FUNCTION solve():                         # tabulation (bottom-up)
     RETURN dp[target]
 ```
 
-## 12.2 Edge cases and failure modes
+## Edge cases and failure modes
 
 **Empty and tiny inputs.** Guard array and string DP before indexing:
 
@@ -285,7 +285,7 @@ Reading `nums[1]` when `size() == 1`, or `text1[0]` on an empty string, is undef
 
 The recurring bugs are off-by-one indexing (`dp[n]` vs `dp[n-1]`), missing base-case initialization, an uninitialized first row or column in 2D DP, and negative-index access. Bounds-check before reading a predecessor: `if (i > 0) result = max(result, dp[i-1][j] + value);`.
 
-## 12.3 Performance and system considerations
+## Performance and system considerations
 
 DP performance on real hardware is dominated by memory behavior, not by the abstract operation count — the constant-factor lesson of [Chapter 2](02-complexity-analysis.md) applied to a table.
 
@@ -299,7 +299,7 @@ DP performance on real hardware is dominated by memory behavior, not by the abst
 
 The practical rules: prefer tabulation for large problems, keep the layout row-major, pre-allocate, apply space optimization, choose `int` vs `long long` deliberately, and profile before optimizing.
 
-## 12.4 Classic DP problems
+## Classic DP problems
 
 ### Climbing Stairs
 
@@ -1147,7 +1147,7 @@ func getLIS(nums []int) []int {
 }
 ```
 
-## 12.5 Two-dimensional DP
+## Two-dimensional DP
 
 ### Unique Paths
 
@@ -1332,7 +1332,7 @@ func minimumTotalOptimized(triangle [][]int) int {
 }
 ```
 
-## 12.6 Two more classics: palindromes and word break
+## Two more classics: palindromes and word break
 
 **Longest Palindromic Subsequence.** `dp[i][j]` is the longest palindromic subsequence of `s[i..j]`, filled by increasing length; matching ends add 2 to the inner range. The rolling-array form uses O(n) space:
 
@@ -1463,7 +1463,7 @@ func wordBreak(s string, wordDict []string) bool {
 }
 ```
 
-## 12.7 Knapsack variants
+## Knapsack variants
 
 The 0/1 knapsack — each item used at most once — is the mental model for most DP: at each item, take it or skip it. Its 1D optimization iterates capacity **backwards** so an item can't be reused within its own pass:
 
@@ -1609,7 +1609,7 @@ func subsetSum(nums []int, target int) bool {
 
 That single forward-vs-backward line is the entire difference between unbounded and 0/1 semantics. (Fractional knapsack, by contrast, is solved greedily, not by DP — [Chapter 16](16-greedy-algorithms.md).)
 
-## 12.8 Backtracking with memoization
+## Backtracking with memoization
 
 Backtracking ([Chapter 8](08-recursion-and-backtracking.md)) explores solutions incrementally and abandons partial ones that can't be completed. When the same *state* — not the same path — recurs, memoization turns its exponential search into polynomial DP. The whole art is a state key that captures everything relevant to the remaining decisions and nothing more, so distinct paths reaching the same state share a cached result. Subset Sum is the clean example: the state is `(index, target)`, and both the include and exclude branches recurse into strictly smaller states.
 
@@ -1832,13 +1832,13 @@ func (k *Knapsack3D) Knapsack(wt, val, vol []int, maxW, maxV int) int {
 
 The lesson is state design, not backtracking mechanics: a good key collapses the search space, while a key that encodes an entire path (a full board layout, say) never repeats and so memoizes nothing.
 
-## 12.9 Ten must-know DP patterns
+## Ten must-know DP patterns
 
 Most DP interview problems are variations on a handful of patterns. Recognize the pattern and you have the recurrence; the recurrence hands you the code. Each below gives its signal words and a representative implementation.
 
 ### Pattern 1: 1D DP (Linear)
 
-The answer at position `i` depends on a constant number of earlier positions. Signal words: "ways to reach", "max/min up to `i`". Time O(n), space O(n) or O(1). Climbing Stairs (`dp[i]=dp[i-1]+dp[i-2]`) and House Robber (`dp[i]=max(dp[i-1], dp[i-2]+nums[i])`), both in §12.4, are the canonical cases.
+The answer at position `i` depends on a constant number of earlier positions. Signal words: "ways to reach", "max/min up to `i`". Time O(n), space O(n) or O(1). Climbing Stairs (`dp[i]=dp[i-1]+dp[i-2]`) and House Robber (`dp[i]=max(dp[i-1], dp[i-2]+nums[i])`), both in [Classic DP problems](#classic-dp-problems), are the canonical cases.
 
 ### Pattern 2: 2D Grid DP
 
@@ -1916,7 +1916,7 @@ func minPathSum(grid [][]int) int {
 
 ### Pattern 3: Knapsack (Pick or Skip)
 
-At each item, decide take or skip. Signal words: "subset", "partition", "can you make sum X". The 1D optimization iterates capacity **backwards** for 0/1 semantics (§12.7).
+At each item, decide take or skip. Signal words: "subset", "partition", "can you make sum X". The 1D optimization iterates capacity **backwards** for 0/1 semantics ([Knapsack variants](#knapsack-variants)).
 
 ```cpp
 // LeetCode 416: Partition Equal Subset Sum (subset sum to totalSum/2)
@@ -1988,7 +1988,7 @@ func canPartition(nums []int) bool {
 
 ### Pattern 4: Longest Subsequence / Subarray
 
-Compare the current element against earlier ones to extend a run. Signal words: "longest", "increasing", "common". One sequence → 1D (LIS, O(n²) or O(n log n)); two sequences → 2D (LCS, O(m×n)). Both are in §12.4.
+Compare the current element against earlier ones to extend a run. Signal words: "longest", "increasing", "common". One sequence → 1D (LIS, O(n²) or O(n log n)); two sequences → 2D (LCS, O(m×n)). Both are in [Classic DP problems](#classic-dp-problems).
 
 ### Pattern 5: Interval DP
 
@@ -2153,7 +2153,7 @@ func matrixChainOrder(p []int) int { // len(p) == numMatrices + 1
 
 ### Pattern 6: DP on Strings
 
-Two indices `dp[i][j]` compare two strings, deciding to match or apply an edit. Signal words: "edit", "match", "transform". Time O(m×n). Edit Distance is in §12.4; regular-expression matching is the same idea with `.`/`*` transitions:
+Two indices `dp[i][j]` compare two strings, deciding to match or apply an edit. Signal words: "edit", "match", "transform". Time O(m×n). Edit Distance is in [Classic DP problems](#classic-dp-problems); regular-expression matching is the same idea with `.`/`*` transitions:
 
 ```cpp
 // LeetCode 10: Regular Expression Matching
@@ -2644,16 +2644,16 @@ At-most-k transactions generalizes this by tracking a buy/sell pair per transact
 
 The workflow: match keywords to a pattern, write the recurrence, implement it with memoization or tabulation, then space-optimize if asked.
 
-## 12.10 Space optimization techniques
+## Space optimization techniques
 
-Cutting a DP's footprint saves memory and, with a smaller working set, improves cache behavior (§12.3). Four moves cover most cases:
+Cutting a DP's footprint saves memory and, with a smaller working set, improves cache behavior ([Performance and system considerations](#performance-and-system-considerations)). Four moves cover most cases:
 
-- **Rolling array.** When the current row depends only on the previous one, collapse a 2D table to one or two rows — Unique Paths and Edit Distance (§12.4–12.5) reach O(n) this way, at the cost of easy path reconstruction.
+- **Rolling array.** When the current row depends only on the previous one, collapse a 2D table to one or two rows — Unique Paths and Edit Distance ([Classic DP problems](#classic-dp-problems)–[Two-dimensional DP](#two-dimensional-dp)) reach O(n) this way, at the cost of easy path reconstruction.
 - **Variable reduction.** When only the last few values matter, drop the array entirely: Fibonacci and Climbing Stairs keep two scalars for O(1) space.
-- **State compression.** Encode a set as a bitmask integer so an exponential set of states fits in an array indexed by the mask — the TSP `dp[mask][last]` in Pattern 9 (§12.9), bounded by ~32–64 bits.
+- **State compression.** Encode a set as a bitmask integer so an exponential set of states fits in an array indexed by the mask — the TSP `dp[mask][last]` in Pattern 9 ([Ten must-know DP patterns](#ten-must-know-dp-patterns)), bounded by ~32–64 bits.
 - **Interval reuse.** In interval DP, process by increasing length so only the current length's results stay live.
 
-## 12.11 DP vs recursion vs greedy
+## DP vs recursion vs greedy
 
 ```mermaid
 graph TD
@@ -2685,7 +2685,7 @@ Plain recursion solves subproblems independently and may recompute them; DP stor
 | Greedy | Local → global optimal | Polynomial | O(1)–O(n) | Activity Selection, Dijkstra |
 | DP | Overlap + optimal substructure | Polynomial | O(n)–O(n²) | Coin Change, LIS, Knapsack |
 
-## 12.12 Real-world implementations
+## Real-world implementations
 
 DP is problem-specific, so standard libraries rarely ship a generic DP, but the technique underlies a lot of production code:
 
@@ -2697,7 +2697,7 @@ DP is problem-specific, so standard libraries rarely ship a generic DP, but the 
 
 Real systems weigh space against time (often space-optimized DP to fit memory), sometimes accept an approximate DP for very large inputs, and must decide how to update a table when the input changes incrementally.
 
-## 12.13 Common pitfalls and interview traps
+## Common pitfalls and interview traps
 
 **"DP is just memoization."** DP requires *optimal substructure*, not merely overlapping subproblems, and tabulation is equally DP. Tree traversal has no overlap and is plain recursion, not DP.
 
@@ -2715,11 +2715,11 @@ for (int i = 2; i <= n; i++) dp[i] = dp[i-1] + dp[i-2];
 
 **Interview gotchas.** *"Optimize the space?"* — name the rolling-array/variable reductions and their trade-off (losing easy reconstruction). *"Time complexity?"* — for 2D DP it is O(m×n), not O(n²); count unique states × work per state. *"Reconstruct the solution?"* — store parent pointers or backtrack through the table rather than returning only the value. *"Reuse items unlimited times?"* — that flips 0/1 knapsack (`dp[i-1][w-wt]`) to unbounded (`dp[w-wt]`, same row). To debug, print the table, verify base cases, hand-trace a small example, and test empty, single-element, and all-equal inputs.
 
-## 12.14 Summary and practice
+## Summary and practice
 
 Dynamic programming turns exponential-time recursion into polynomial time by identifying overlapping subproblems and storing their solutions. The core is small: DP applies exactly when a problem has both **optimal substructure** and **overlapping subproblems**; **memoization** (top-down) caches recursive results while **tabulation** (bottom-up) fills a table in dependency order; and space optimizations — rolling arrays, variable reduction, bitmasks — often cut memory by an order of magnitude while improving cache behavior. Mastery comes from recognizing patterns rather than memorizing solutions: start from Fibonacci and work up through the 2D, knapsack, interval, string, tree, graph, bitmask, and state-machine patterns. On real hardware, cache locality and footprint decide the winner — which is why bottom-up tabulation with space optimization usually beats an equivalent top-down memoization despite identical asymptotics.
 
-For practice, group problems by the pattern they exercise (§12.9); implement each with both memoization and tabulation, then space-optimize:
+For practice, group problems by the pattern they exercise ([Ten must-know DP patterns](#ten-must-know-dp-patterns)); implement each with both memoization and tabulation, then space-optimize:
 
 - **1D / linear:** Maximum Subarray (Kadane), Decode Ways, Jump Game II.
 - **Knapsack family:** Target Sum, Coin Change II (count ways), Partition to K Equal Sum Subsets.

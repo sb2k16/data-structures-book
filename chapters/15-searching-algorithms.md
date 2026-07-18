@@ -1,4 +1,4 @@
-# Chapter 13: Searching Algorithms
+# Searching Algorithms
 
 Searching is the operation you perform more than any other, and most of the time you never think about it — you call `map.find(key)` or `set.contains(x)` and move on. That is the first and most important lesson of this chapter: **the search algorithm you get is almost always decided by the data structure you already chose.** A hash table gives you `O(1)` lookup, a balanced tree `O(log n)`, an unsorted array `O(n)`, and none of those is a decision you make at search time — it was made back when you picked the container.
 

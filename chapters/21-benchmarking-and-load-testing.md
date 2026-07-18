@@ -1,4 +1,4 @@
-# Chapter 19: Benchmarking and Load Testing
+# Benchmarking and Load Testing
 
 This is the chapter the rest of the book leans on. Every performance claim we have made — that an array outruns a linked list, that a B-tree beats a binary tree, that open addressing wins — is a claim about a number someone measured. The live benchmarks that run in your browser as you read the online edition are all built on the handful of techniques in this chapter. So is every benchmark you will ever be tempted to trust from a blog post, a vendor, or your own terminal.
 

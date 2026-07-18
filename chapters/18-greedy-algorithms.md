@@ -1,4 +1,4 @@
-# Chapter 16: Greedy Algorithms
+# Greedy Algorithms
 
 A greedy algorithm is the most optimistic strategy in the book: at every step it grabs whatever looks best right now and never looks back. No branching, no backtracking, no table of subproblems — just a sequence of committed local decisions. When that optimism is justified, greedy is the cheapest way to an optimal answer you will ever find: usually a sort plus a single pass, `O(n log n)` and a few lines of code. When it isn't justified, greedy fails silently, returning a plausible-looking answer that is simply wrong.
 

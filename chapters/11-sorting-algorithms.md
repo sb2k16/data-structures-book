@@ -1,4 +1,4 @@
-# Chapter 9: Sorting Algorithms
+# Sorting Algorithms
 
 Sorting is the most-studied problem in computing, and by now it is a solved one: every language ships a sort you should use instead of writing your own. So why spend a chapter on it? Because sorting is the cleanest lens we have on the theme of this book — the gap between what Big-O promises and what the machine delivers. Three algorithms in this chapter, quicksort, mergesort, and heapsort, are all `O(n log n)`. On paper they are interchangeable. On real hardware they are not remotely interchangeable, and *why* is a short course in cache behavior, branch prediction, and constant factors. The algorithm your standard library actually runs is none of the three in pure form; it is a hybrid stitched together from all the lessons below.
 

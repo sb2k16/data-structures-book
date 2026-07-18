@@ -1,4 +1,4 @@
-# Chapter 7: String Search Algorithms
+# String Search Algorithms
 
 Finding a pattern inside a text is one of the oldest and most-run operations in computing — every Ctrl+F, every `grep`, every intrusion-detection rule, every genome aligner is a string search underneath. And like sorting and searching before it, the naive way is obvious, correct, and quadratic: slide the pattern along the text and, at each of the `n` positions, compare up to `m` characters. That `O(n·m)` is fine until it isn't, and the whole field of clever algorithms exists to buy back that factor.
 
