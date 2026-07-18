@@ -122,10 +122,10 @@ Brief description of changes
 7. Open a Pull Request
 
 ### Local Development
-- Use a C++17 compatible compiler
-- Follow the compilation guide in `docs/compilation-guide.md`
-- Test all code examples
-- Verify markdown rendering
+- The site is in `web/`: `cd web && npm install && npm run dev`
+- Run `npm run build` before opening a PR to confirm it still builds
+- Prose code snippets in the chapters are C++/Python/Java/Go — keep the four in sync when you edit one
+- Verify markdown/MDX rendering locally
 
 ## 📚 Resources
 
