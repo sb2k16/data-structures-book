@@ -4,10 +4,15 @@ import Base from '../layouts/Base.astro';
 const DESC =
   'Data Structures on Systems is free and open source. If it helped you see the machine underneath the code, chip in to keep it free, ad-light, and growing.';
 
-// Stripe Payment Link (donor chooses the amount). Set PUBLIC_STRIPE_DONATE_URL
-// to a LIVE link when going live; the fallback below is the current test link.
-const DONATE_URL =
-  import.meta.env.PUBLIC_STRIPE_DONATE_URL ?? 'https://buy.stripe.com/test_fZu8wRfKVcao1aL06L2ZO00';
+// Stripe Payment Link (donor chooses the amount), from PUBLIC_STRIPE_DONATE_URL.
+// There is deliberately no fallback: a test-mode link (buy.stripe.com/test_...)
+// renders a TEST MODE banner and declines every real card, so shipping one is
+// worse than shipping no button at all — the reader tries to give and can't.
+// Unset, or set to a test link in a production build, degrades to the
+// "other ways to help" state instead.
+const RAW_DONATE_URL = import.meta.env.PUBLIC_STRIPE_DONATE_URL ?? '';
+const IS_TEST_LINK = RAW_DONATE_URL.includes('buy.stripe.com/test_');
+const DONATE_URL = !RAW_DONATE_URL || (IS_TEST_LINK && import.meta.env.PROD) ? null : RAW_DONATE_URL;
 
 const TIERS = [
   { amount: '$5', name: 'Buy a coffee', blurb: 'A small thanks that keeps the lights on.', mid: false },
@@ -38,34 +43,46 @@ const TIERS = [
 
   <section class="mx-auto max-w-3xl px-5 pb-6">
     <div class="grid gap-4 sm:grid-cols-3">
-      {TIERS.map((t) => (
-        <a
-          href={DONATE_URL}
-          target="_blank"
-          rel="noopener"
-          class="group flex flex-col rounded-xl border p-5 no-underline transition-colors"
-          style={`border-color: ${t.mid ? 'var(--accent)' : 'var(--border)'}; background: ${t.mid ? 'color-mix(in srgb, var(--accent) 6%, var(--surface-1))' : 'var(--surface-1)'}`}
-        >
-          <div class="text-2xl font-bold" style="color: var(--text-primary)">{t.amount}</div>
-          <div class="mt-1 text-sm font-semibold" style={`color: ${t.mid ? 'var(--accent)' : 'var(--text-primary)'}`}>{t.name}</div>
-          <p class="mt-2 text-sm leading-snug" style="color: var(--text-muted)">{t.blurb}</p>
-        </a>
-      ))}
+      {TIERS.map((t) => {
+        const Tag = DONATE_URL ? 'a' : 'div';
+        return (
+          <Tag
+            href={DONATE_URL ?? undefined}
+            target={DONATE_URL ? '_blank' : undefined}
+            rel={DONATE_URL ? 'noopener' : undefined}
+            class="group flex flex-col rounded-xl border p-5 no-underline transition-colors"
+            style={`border-color: ${t.mid ? 'var(--accent)' : 'var(--border)'}; background: ${t.mid ? 'color-mix(in srgb, var(--accent) 6%, var(--surface-1))' : 'var(--surface-1)'}`}
+          >
+            <div class="text-2xl font-bold" style="color: var(--text-primary)">{t.amount}</div>
+            <div class="mt-1 text-sm font-semibold" style={`color: ${t.mid ? 'var(--accent)' : 'var(--text-primary)'}`}>{t.name}</div>
+            <p class="mt-2 text-sm leading-snug" style="color: var(--text-muted)">{t.blurb}</p>
+          </Tag>
+        );
+      })}
     </div>
 
     <div class="mt-8 flex flex-col items-start gap-3">
-      <a
-        href={DONATE_URL}
-        target="_blank"
-        rel="noopener"
-        class="rounded-lg px-5 py-3 text-base font-semibold no-underline"
-        style="background: var(--accent); color: #fff"
-      >
-        Support the book →
-      </a>
-      <p class="text-xs" style="color: var(--text-muted)">
-        Secure checkout via Stripe · one-time · choose your own amount. No account needed.
-      </p>
+      {DONATE_URL ? (
+        <>
+          <a
+            href={DONATE_URL}
+            target="_blank"
+            rel="noopener"
+            class="rounded-lg px-5 py-3 text-base font-semibold no-underline"
+            style="background: var(--accent); color: #fff"
+          >
+            Support the book →
+          </a>
+          <p class="text-xs" style="color: var(--text-muted)">
+            Secure checkout via Stripe · one-time · choose your own amount. No account needed.
+          </p>
+        </>
+      ) : (
+        <p class="text-sm leading-relaxed" style="color: var(--text-muted)">
+          Donations open shortly — checkout isn't live yet. In the meantime, the ways to help below
+          are worth just as much.
+        </p>
+      )}
     </div>
   </section>
 
