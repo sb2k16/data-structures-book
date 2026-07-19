@@ -22,7 +22,9 @@ export default defineConfig({
   // User Pages site serves at the root, so no `base` path is needed. Override
   // SITE_URL at build time if a custom domain is added later.
   site: process.env.SITE_URL ?? 'https://sb2k16.github.io',
-  integrations: [mdx(), react(), sitemap()],
+  // /support is unlinked while donations are parked; keeping it out of the
+  // sitemap stops search from surfacing a page the nav deliberately doesn't.
+  integrations: [mdx(), react(), sitemap({ filter: (page) => !page.includes('/support') })],
   vite: { plugins: [tailwind()] },
   markdown: {
     shikiConfig: {
