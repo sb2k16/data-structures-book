@@ -32,9 +32,11 @@ look like as `n` heads toward infinity?*
 | O(2ⁿ) | Exponential | Generating every subset |
 
 The distances between these rows are staggering. At `n = 1,000,000`, a log n algorithm does
-about 20 units of work, a linear one does a million, and a quadratic one does a trillion —
-the difference between instant and *next week*. That is why growth rate is the first thing to
-reason about, and why the rest of this book cares about it.
+about 20 units of work, a linear one does a million, and a quadratic one does a trillion. At the
+billion-or-so simple operations a second one core manages, that is the difference between *instant*
+and *about a quarter of an hour* — and one more zero on `n` stretches that quarter hour past a full
+day. That is why growth rate is the first thing to reason about, and why the rest of this book
+cares about it.
 
 The mechanics are worth knowing and quick to state:
 
@@ -93,8 +95,9 @@ and the other does fifteen.
 That gap is the **constant factor**, and Big-O deletes it by definition. In an interview, "it's
 `O(n)`" is the right answer. In production, the constant factor is often the entire story:
 
-- `std::sort` is `O(n log n)` and beats a hand-written `O(n)` bucket sort on most real inputs,
-  because its constant is tiny and the bucket sort's is not.
+- `std::sort` is `O(n log n)` and beats a hand-written `O(n log n)` mergesort on in-memory data,
+  because its partition loop is in-place and cache-resident while the merge pays for a scratch
+  buffer on every level. Same complexity class, and the constant decides it.
 - A linear scan of a small array beats a binary search on it, even though binary search is
   `O(log n)` and the scan is `O(n)` — the scan's inner loop is a handful of instructions with
   no branch misprediction, and for small `n` that wins outright.

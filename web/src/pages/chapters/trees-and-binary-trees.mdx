@@ -142,7 +142,8 @@ cannot see why.
 Walk a binary tree and each level does almost no work: one comparison, then follow a pointer to a
 child. But that child was allocated whenever it was inserted, so it lives at some unpredictable
 address on the heap. Following the pointer is very likely a **cache miss** — the CPU stalls for
-~100 cycles fetching a line from main memory, and the *only* useful thing on that line is one
+~100ns — roughly 300 cycles — fetching a line from main memory, and the *only* useful thing on
+that line is one
 key and two more pointers. So you pay a full cache miss to make one comparison, then do it again
 at the next level, and the next.
 
@@ -167,7 +168,7 @@ Trees show up in two distinct roles: as **ordered maps** (the balanced-BST story
 
 <InProduction>
 - **`std::map`, `std::set`, Java `TreeMap` / `TreeSet`** — the ordered associative containers in these standard libraries are red-black trees. You get O(log n) lookup *plus* sorted iteration, `lower_bound`/`upper_bound` range queries, and floor/ceiling — the exact operations a hash map can't do.
-- **Linux process scheduling** — the Completely Fair Scheduler (CFS) keeps runnable tasks in a red-black tree keyed by each task's virtual runtime. "Who runs next" is just "leftmost node," and inserting a woken task is O(log n). Ordered structure, chosen for a hot kernel path.
+- **Linux process scheduling** — the Completely Fair Scheduler (CFS), the default from 2007 until EEVDF replaced its core algorithm in Linux 6.6 (2023), keeps runnable tasks in a red-black tree keyed by each task's virtual runtime. "Who runs next" is just "leftmost node," and inserting a woken task is O(log n). Ordered structure, chosen for a hot kernel path.
 - **Interval and range trees** — augmented BSTs that answer "which stored intervals overlap this one?" in O(log n + k). They power collision detection, calendar/booking conflict checks, and genomic range queries.
 - **Compilers and query planners** — a parsed program or SQL statement *is* a tree: the abstract syntax tree and the query plan. Optimizers rewrite them by walking and transforming subtrees.
 - **The DOM** — every web page is a tree of nodes, and every `querySelector`, layout pass, and style resolution is a tree traversal. The most-manipulated data structure on Earth is a tree.

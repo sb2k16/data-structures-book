@@ -23,18 +23,20 @@ cache hit or a cache miss.**
 Walk a balanced binary search tree of a million keys and you descend about 20 levels. Each level is
 a single comparison — trivial work — followed by a pointer to one of two children. But those
 children were allocated whenever they were inserted, so each lives at some unpredictable address on
-the heap. Every step down the tree is therefore a **cache miss**: the CPU stalls ~100 cycles
-fetching a line from main memory just to read one key and one pointer, then does it again, twenty
+the heap. Every step down the tree is therefore a **cache miss**: the CPU stalls ~100ns, roughly
+300 cycles, fetching a line from main memory just to read one key and one pointer, then does it
+again, twenty
 times. The tree is `O(log n)` in comparisons and `O(log n)` in *cache misses*, and on modern
 hardware the second number is the one that hurts.
 
 The fix is almost obvious once you see the problem. A cache miss brings in a whole 64-byte line
-whether you use one key or sixteen. So — use sixteen. Or thirty-two. Put *many* keys in each node,
-sized to a cache line (or, on disk, a page), and do a small linear or binary scan within the node
-before descending. Now each expensive memory fetch does real work, and because each node has many
-children instead of two, the tree is dramatically **shallower**: a B-tree with 32 keys per node
-holds a million keys in about four levels instead of twenty. Fewer levels, and each level is one
-cache line instead of a scattered pointer. That is the entire idea of a **B-tree**.
+whether you use one key or sixteen, so put *many* keys in each node — sized in whole cache lines
+in memory, or a page on disk — and do a small linear or binary scan within the node before
+descending. The node stops being a place to hold one key and becomes a batch of them. Now each
+expensive memory fetch does real work, and because each node has many children instead of two, the
+tree is dramatically **shallower**: a B-tree with 32 keys per node holds a million keys in about
+four levels instead of twenty. Twenty scattered pointer chases become four short contiguous scans.
+That is the entire idea of a **B-tree**.
 
 Width has a cost, though: nodes must be kept between half-full and full so the tree stays balanced
 and shallow. The mechanism is the **split** — when a node overflows, its median key moves up to the
@@ -60,8 +62,8 @@ lookups. Both are `O(log n)`. The only difference is node width — binary versu
 
 Roughly **8× faster**, for the same keys and the same complexity class, purely because the B-tree
 turned twenty cache misses into a handful. When the data lives on disk instead of in RAM the effect
-is even more extreme — a disk seek is not 100 cycles but ten *million* — which is why the idea was
-invented for disks in 1970 and never left.
+is even more extreme — an SSD read is not 100 nanoseconds but a hundred *thousand*, and a spinning
+disk's seek is ten *million* — which is why the idea was invented for disks in 1970 and never left.
 
 ## Why databases are built on this
 

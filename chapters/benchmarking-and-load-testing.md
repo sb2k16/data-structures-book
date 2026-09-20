@@ -133,7 +133,7 @@ Every item on this list has produced a confident, published, wrong number. Read 
 - **Skip the warmup.** Your first iteration pays for cold caches and a downclocked CPU, and if you only run once, that is the number you ship.
 - **Measure a toy size.** L1-resident data hides every cache effect that dominates the real workload. Measure the size you actually run.
 - **Trust one run.** A single measurement has no error bar. If you cannot state the variance, you cannot tell a real 5% win from scheduler noise.
-- **Believe a null result.** If a benchmark reports that a real effect does not exist — two layouts "identical," a change with "no impact" — suspect the benchmark before you believe it. That is exactly how the online array-of-structures benchmark initially reported a 1.0× ratio: a single accumulator serialized the additions and measured the floating-point adder in both cases, and the memory system in neither. If a benchmark tells you an effect does not exist, suspect the benchmark.
+- **Believe a null result.** If a benchmark reports that a real effect does not exist — two layouts "identical," a change with "no impact" — suspect the benchmark before you believe it. That is exactly how the online array-of-structures benchmark initially reported a 1.0× ratio: a single accumulator serialized the additions and measured the floating-point adder in both cases, and the memory system in neither.
 
 ## Controlling the machine
 

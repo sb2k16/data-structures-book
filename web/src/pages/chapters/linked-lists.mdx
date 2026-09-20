@@ -79,8 +79,8 @@ The array is the memory system's best case.
 Walk a linked list and every step is a leap into the dark. Each node was allocated separately,
 whenever it happened to be inserted, so it lives at some unrelated address on the heap. Following
 `next` means dereferencing a pointer to an address the CPU could not have predicted — so the
-prefetcher can't help, and each hop is very likely a **cache miss**: a ~100-cycle stall waiting for
-main memory. This is the **pointer chase**, and you pay it once per node, for the entire length of
+prefetcher can't help, and each hop is very likely a **cache miss**: a ~100ns stall, roughly 300
+cycles, waiting for main memory. This is the **pointer chase**, and you pay it once per node, for the entire length of
 the list.
 
 Both walks are O(n) and do one dereference per element. Big-O says they're identical. Watch what the

@@ -11,7 +11,7 @@ import { bfsTrace, dfsTrace, dijkstraTrace } from '../../lib/traces';
 
 Most structures in this book impose a shape on your data — a sequence, a hierarchy, a key-value mapping. A graph imposes none. It is what you reach for when the *relationships between things* are the data: who follows whom, which road connects which cities, what task blocks what other task. A graph is nothing but a set of vertices and a set of edges joining them, and that minimalism is exactly why it models everything from social networks to build dependencies to internet routing. GPS navigation, web crawlers, `make`, package managers, and recommendation engines are all graph algorithms wearing an application's clothes.
 
-The flexibility isn't free. Trees (Chapter 6) guarantee one parent, no cycles, and exactly `n−1` edges — constraints that make them cheap to reason about. Graphs relax all of it: any vertex may connect to any other, cycles are allowed, and there may be no root and no single connected piece at all. That freedom is what buys you the more elaborate algorithms in the rest of this chapter. If your data is genuinely a sequence, a lookup table, or a hierarchy, use the structure built for it; reach for a graph only when connectivity itself is the problem.
+The flexibility isn't free. Trees ([Chapter 8](/chapters/trees-and-binary-trees)) guarantee one parent, no cycles, and exactly `n−1` edges — constraints that make them cheap to reason about. Graphs relax all of it: any vertex may connect to any other, cycles are allowed, and there may be no root and no single connected piece at all. That freedom is what buys you the more elaborate algorithms in the rest of this chapter. If your data is genuinely a sequence, a lookup table, or a hierarchy, use the structure built for it; reach for a graph only when connectivity itself is the problem.
 
 Formally a graph is `G = (V, E)`: a set of vertices `V` and a set of edges `E`, each edge joining two of them. A little vocabulary, fixed once, carries the whole chapter:
 
@@ -298,7 +298,7 @@ func (g *GraphMatrix) NumVertices() int { return g.numVertices }
 
 The catch is the `O(V²)` memory, paid whether the graph is full or nearly empty, plus expensive vertex insertion and removal. A million-vertex sparse graph would need a trillion-entry matrix — hopeless. The matrix wins only when the graph is dense enough that you'd store most of those entries anyway.
 
-There is a subtler reason the matrix can outrun a list even when it "shouldn't," and it comes straight from the memory hierarchy of [Chapter 3.6](03.6-memory-hierarchy-and-performance.md): the matrix is one contiguous block, so an edge query is a single cache-friendly load (~5–10 cycles), whereas an adjacency list is an array of separately allocated node chains, and walking one means pointer-chasing across scattered addresses — every hop risks a cache miss of 50–200 cycles. On a dense graph that fits in cache, the matrix's sequential layout can beat the list's asymptotically-better bounds outright. This is the same constant-factor story as binary versus linear search in [Chapter 13](13-searching-algorithms.md): Big-O picks the representation, but memory layout picks the winner.
+There is a subtler reason the matrix can outrun a list even when it "shouldn't," and it comes straight from the memory hierarchy of [Chapter 5](/chapters/memory-hierarchy): the matrix is one contiguous block, so an edge query is a single cache-friendly load (~5–10 cycles), whereas an adjacency list is an array of separately allocated node chains, and walking one means pointer-chasing across scattered addresses — every hop risks a cache miss of 50–200 cycles. On a dense graph that fits in cache, the matrix's sequential layout can beat the list's asymptotically-better bounds outright. This is the same constant-factor story as binary versus linear search in [Chapter 15](/chapters/searching-algorithms): Big-O picks the representation, but memory layout picks the winner.
 
 ### Adjacency List
 
@@ -2659,7 +2659,7 @@ That last column is the one to remember: path compression flattens trees during 
 
 ## Minimum Spanning Trees
 
-A **minimum spanning tree (MST)** is the cheapest set of edges that keeps every vertex connected — think of laying cable to wire up every building for the least total length. Both classic algorithms are greedy (Chapter 16), and both are correct for the same reason: the *cut property* guarantees the lightest edge crossing any partition of the vertices is safe to include.
+A **minimum spanning tree (MST)** is the cheapest set of edges that keeps every vertex connected — think of laying cable to wire up every building for the least total length. Both classic algorithms are greedy ([Chapter 18](/chapters/greedy-algorithms)), and both are correct for the same reason: the *cut property* guarantees the lightest edge crossing any partition of the vertices is safe to include.
 
 ### Kruskal's Algorithm
 
@@ -3892,7 +3892,7 @@ Bridge-finding is a single DFS, `O(V + E)`, and is the standard tool for network
 
 An **articulation point** is the vertex analogue, found by the same DFS with two adjustments. The condition softens from `>` to `>=`: a non-root vertex `u` is an articulation point when some child `v` has `low[v] >= disc[u]`. The equality case is the whole difference. If `v`'s subtree can climb back to `u` *itself* but no higher, cutting the *edge* `(u, v)` disconnects nothing — which is exactly why it wasn't a bridge — yet deleting the *vertex* `u` still severs that subtree. Removing a vertex is strictly more destructive than removing an edge, so the bar is lower.
 
-The root needs its own rule, because it has no ancestor to escape to and the low-link test is meaningless there. Instead, the root is an articulation point precisely when it has two or more DFS children: two independent subtrees joined only through it. (Every bridge forces an articulation point at one of its ends, but not the reverse — a vertex can be critical without any single edge being.)
+The root needs its own rule, because it has no ancestor to escape to and the low-link test is meaningless there. Instead, the root is an articulation point precisely when it has two or more DFS children: two independent subtrees joined only through it. (Every bridge forces an articulation point at whichever of its ends has another edge — in a lone two-vertex component neither end qualifies — but not the reverse: a vertex can be critical without any single edge being.)
 
 ```cpp
 class ArticulationPointFinder {
@@ -6638,7 +6638,7 @@ Greedy coloring is the default; reach for backtracking only when you need the tr
 
 ## Concurrency: Traversing a Shared Graph
 
-Parallelizing graph work runs straight into the concurrency fundamentals of [Chapter 3.5](03.5-concurrency-fundamentals.md), and the sharpest hazard is the `visited` array. Two threads that both read `visited[v] == false` will both process `v` — the classic check-then-act race — corrupting results or looping forever. The fix is to make the check-and-set a single atomic step:
+Parallelizing graph work runs straight into the concurrency fundamentals of [Chapter 4](/chapters/concurrency-fundamentals), and the sharpest hazard is the `visited` array. Two threads that both read `visited[v] == false` will both process `v` — the classic check-then-act race — corrupting results or looping forever. The fix is to make the check-and-set a single atomic step:
 
 ```cpp
 std::vector<std::atomic<bool>> visited(numVertices);
