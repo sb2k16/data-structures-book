@@ -67,7 +67,8 @@ On paper these are the same: both are O(1) average, O(n) worst case. Introductor
 them as a matter of taste. But watch what the machine does. A chaining lookup, after hashing to
 its bucket, has to follow a pointer to a list node — and that node was allocated whenever it was
 inserted, so it lives at some unpredictable address on the heap. Following that pointer is very
-likely a **cache miss**: the CPU stalls for ~100 cycles fetching a line from main memory. An
+likely a **cache miss**: the CPU stalls for ~100ns — roughly 300 cycles — fetching a line from
+main memory. An
 open-addressing lookup, by contrast, hashes to a slot in a flat array and reads it — and if it
 has to probe, slot+1 is almost certainly on the *same cache line* it already paid for.
 
@@ -100,9 +101,10 @@ hash table no more than about 70% full** — and why exceeding that triggers a r
 
 The **load factor** is simply `elements / slots` — how full the table is. It governs everything:
 too low wastes memory; too high means long probe sequences or long chains, and O(1) quietly
-degrades toward O(n). Implementations watch it, and when it crosses a threshold (commonly 0.7,
-0.75, or for the fastest tables 0.5) they **resize**: allocate a bigger array, then rehash every
-existing key into it.
+degrades toward O(n). Implementations watch it, and when it crosses a threshold (commonly 0.7 or
+0.75 — and as high as 0.875 in the SwissTable-style designs named above, whose SIMD probing stays
+cheap enough to run the array nearly full) they **resize**: allocate a bigger array, then rehash
+every existing key into it.
 
 Resizing is O(n), which sounds alarming for a structure that promises O(1). It isn't, for the
 same amortized reason a dynamic array's `push_back` is O(1): because the table doubles, a given

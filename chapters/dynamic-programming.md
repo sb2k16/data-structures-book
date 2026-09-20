@@ -70,7 +70,7 @@ fib(2)  fib(1) fib(1) fib(0) fib(1) fib(0)
 fib(1) fib(0)
 ```
 
-`fibonacci(3)` is computed twice, `fibonacci(2)` three times, `fibonacci(1)` five times — and the redundancy compounds: `fibonacci(40)` makes about a trillion calls. Each does `O(1)` work, but there are `O(2ⁿ)` of them, at recursion depth `O(n)`.
+`fibonacci(3)` is computed twice, `fibonacci(2)` three times, `fibonacci(1)` five times — and the redundancy compounds: `fibonacci(40)` makes about 331 million calls. Each does `O(1)` work, but there are `O(2ⁿ)` of them, at recursion depth `O(n)`. (The tree actually grows like `φⁿ`, φ ≈ 1.618 — `O(2ⁿ)` is the bound above it, not the count.)
 
 **Memoization** caches each result the first time it is needed, so every distinct `n` is computed once. That one change collapses `O(2ⁿ)` to `O(n)` while keeping the recursive shape:
 

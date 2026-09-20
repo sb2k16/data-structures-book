@@ -321,7 +321,7 @@ order in which you compare is itself a tunable parameter.*
 Now we cross from single-core to many-core. Suppose you parallelize a search by giving each thread a
 chunk of text and a private match counter. The counters are logically independent, so there should
 be no contention — yet the parallel version can run *slower* than single-threaded. The culprit is
-**false sharing** ([Chapter 5](https://data-structures-on-systems.vercel.app/chapters/memory-hierarchy#false-sharing-and-cache-coherency)).
+**false sharing** ([Chapter 4](https://data-structures-on-systems.vercel.app/chapters/concurrency-fundamentals)).
 
 Cache coherency operates at cache-line granularity, not variable granularity. If two threads'
 counters land in the same 64-byte line, every increment by one core invalidates the line in the

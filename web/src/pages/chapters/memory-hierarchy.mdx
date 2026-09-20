@@ -94,7 +94,9 @@ whole line containing it, on the theory that you will want its neighbors shortly
 theory is called *spatial locality*, and it is right often enough to have shaped every
 processor built since 1980.
 
-A cache line is 64 bytes on x86-64 and 128 bytes on Apple Silicon. Nothing in your
+A cache line is 64 bytes on x86-64, and 64 bytes on Apple Silicon too — but its
+prefetcher pulls in the adjacent line as a pair, so for anything that depends on
+locality the effective unit there behaves like 128 bytes. Nothing in your
 program can request less. Read one `int` and you have paid for sixteen of them, whether
 or not you ever look at the other fifteen.
 
@@ -114,8 +116,9 @@ the line is what got moved when it did.
     own, then flatten. Where it flattens is the line.
   </p>
   <p class="mt-2.5 text-sm leading-relaxed" style="color: var(--text-secondary)">
-    That experiment does not survive the trip into a browser. JavaScript spends roughly
-    half a nanosecond per loop iteration on bounds checks and dispatch, which is <em>more</em>
+    That experiment does not survive the trip into a browser. JavaScript spends on the order
+    of a nanosecond per loop iteration on bounds checks and dispatch — measured on the machines
+    this page was developed against, not a figure to quote — which is <em>more</em>
     than the amortized cost of an access that shares a cache line with its neighbors. The
     interesting half of the curve is underneath the noise floor, and a version of this page
     that plotted it anyway would have confidently told Apple Silicon readers their cache

@@ -84,7 +84,7 @@ LSM tree optimizes writes and pays on reads.** Which one a database chooses tell
 its designers cared about most.
 
 <InProduction>
-- **RocksDB and LevelDB** — the canonical embedded LSM engines. RocksDB (Facebook's fork of Google's LevelDB) is the storage layer inside an enormous amount of infrastructure: it backs Kafka Streams' state stores, CockroachDB, TiKV, and countless internal databases.
+- **RocksDB and LevelDB** — the canonical embedded LSM engines. RocksDB (Facebook's fork of Google's LevelDB) is the storage layer inside an enormous amount of infrastructure: it backs Kafka Streams' state stores, TiKV, and countless internal databases (CockroachDB ran on it too, until it moved to Pebble, its own LSM engine, in 2021).
 - **Cassandra and ScyllaDB** — wide-column stores built for write-heavy, always-on workloads; their SSTable-and-compaction storage is a direct, canonical LSM implementation.
 - **HBase and Google Bigtable** — Bigtable's design paper is where much of this vocabulary (SSTable, memtable, compaction) entered wide use; HBase is its open-source lineage.
 - **Search engines** — Lucene, under OpenSearch and Elasticsearch, is LSM-shaped: indexing buffers documents in memory, flushes **immutable segments** to disk, and a background merge process compacts small segments into larger ones. A "force merge" is compaction by another name. The write path of a search cluster is this chapter.
@@ -105,7 +105,7 @@ hold. The response is to spread the data across many machines — and to decide 
 which key, you reach back to the very first idea in the [hash-tables](/chapters/hash-tables-and-hashing)
 chapter. `hash(key) % N` picks a node; **consistent hashing** lets `N` change without reshuffling the
 world. The storage engine on each node is very often an LSM tree; the routing layer that binds them
-into one logical database is consistent hashing. That is how systems like Cassandra, DynamoDB, and
+into one logical database is consistent hashing. That is how systems like Cassandra, ScyllaDB, and
 distributed search clusters are built — a hash table of machines, each running a log-structured merge
 tree. The data structures you started with, all the way down, are the ones running the largest systems
 in the world.

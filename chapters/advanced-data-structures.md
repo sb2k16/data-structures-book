@@ -584,7 +584,7 @@ The array layout also gives the heap its cache edge. Every operation walks a sin
 |----------------|------|--------------|
 | Insert / extract | O(log n) | 0–2 (adjacent parent/children) |
 | Peek | O(1) | 0 |
-| Build heap | O(n) | ~log n |
+| Build heap | O(n) | ~n/16 (one per line touched) |
 | Heap sort | O(n log n) | — |
 
 ## Tries (Prefix Trees)
